@@ -7,12 +7,14 @@ import time
 ########
 # Params
 ########
-TRADE_USD = 2000 # <----------
+TRADE_BTC_NOTIONAL = 10000
+TRADE_ETH_NOTIONAL = 5000
+TRADE_FTT_NOTIONAL = 1000
 
 ########
 # Limits
 ########
-MAX_USD = 10000
+MAX_NOTIONAL = 50000
 MAX_BTC = 0.5
 MAX_ETH = 10
 MAX_FTT = 100
@@ -27,7 +29,7 @@ def ftxRelOrder(side,ftx,ticker,trade_coin):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
   if side != 'BUY' and side != 'SELL':
     sl.stop()
-  print(sl.getCurrentTime()+': Sending FTX '+side+' order for '+ticker+' ....')
+  print(sl.getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_coin,6))+') ....')
   if side=='BUY':
     limitPrice = ftxGetBid(ftx, ticker)
     orderId = ftx.create_limit_buy_order(ticker, trade_coin, limitPrice)['info']['id']
@@ -54,7 +56,7 @@ def bnMarketOrder(side,bn,ccy,trade_usd):
   if side != 'BUY' and side != 'SELL':
     sl.stop()
   ticker=ccy+'USD_PERP'
-  print(sl.getCurrentTime() + ': Sending BN ' + side + ' order for ' + ticker + ' ....')
+  print(sl.getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_usd))+') ....')
   if ccy=='BTC':
     qty=int(trade_usd/100)
   elif ccy=='ETH':
@@ -72,7 +74,7 @@ def bbRelOrder(side,bb,ccy,trade_usd):
     sl.stop()
   ticker1=ccy+'/USD'
   ticker2=ccy+'USD'
-  print(sl.getCurrentTime() + ': Sending BB ' + side + ' order for ' + ticker1 + ' ....')
+  print(sl.getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_usd))+') ....')
   if side=='BUY':
     limitPrice = bbGetBid(bb, ticker1)
     orderId = bb.create_limit_buy_order(ticker1, trade_usd, limitPrice)['info']['order_id']
@@ -114,29 +116,34 @@ ftxWallet=ftxWallet.set_index('Ccy').loc[['BTC','ETH','FTT','USD']]
 spotBTC = ftxWallet.loc['BTC', 'usdValue'] / ftxWallet.loc['BTC', 'total']
 spotETH = ftxWallet.loc['ETH', 'usdValue'] / ftxWallet.loc['ETH', 'total']
 spotFTT = ftxWallet.loc['FTT', 'usdValue'] / ftxWallet.loc['FTT', 'total']
-trade_usd = np.clip(TRADE_USD,-MAX_USD,MAX_USD)
-trade_btc = np.clip(TRADE_USD/spotBTC,-MAX_BTC,MAX_BTC)
-trade_eth = np.clip(TRADE_USD/spotETH,-MAX_ETH,MAX_ETH)
-trade_ftt = np.clip(TRADE_USD/spotFTT,-MAX_FTT,MAX_FTT)
-sl.printHeader('CruptoTrader')
-print('Trade $:'.rjust(12),round(trade_usd))
-print('Trade BTC:'.rjust(12),round(trade_btc,6))
-print('Trade ETH:'.rjust(12),round(trade_eth,6))
-print('Trade FTT:'.rjust(12),round(trade_ftt,6))
+trade_btc = np.min([np.min([TRADE_BTC_NOTIONAL,MAX_NOTIONAL])/spotBTC,MAX_BTC])
+trade_eth = np.min([np.min([TRADE_ETH_NOTIONAL,MAX_NOTIONAL])/spotETH,MAX_ETH])
+trade_ftt = np.min([np.min([TRADE_FTT_NOTIONAL,MAX_NOTIONAL])/spotFTT,MAX_FTT])
+trade_btc_notional = trade_btc*spotBTC
+trade_eth_notional = trade_eth*spotETH
+trade_ftt_notional = trade_ftt*spotFTT
+
+sl.printHeader('CryptoTrader')
+print('Target BTC: '+str(round(trade_btc,6))+' ($'+str(round(trade_btc_notional))+')')
+print('Target ETH: '+str(round(trade_eth,6))+' ($'+str(round(trade_eth_notional))+')')
+print('Target FTT: '+str(round(trade_ftt,6))+' ($'+str(round(trade_ftt_notional))+')')
 
 ######
 # Main
 ######
 if False:
   ##########################
-  ccy = 'FTT'  # <----------
+  ccy = 'ETH'  # <----------
   ##########################
   if ccy=='BTC':
     trade_coin=trade_btc
+    trade_usd=trade_btc_notional
   elif ccy=='ETH':
     trade_coin=trade_eth
+    trade_usd = trade_eth_notional
   elif ccy=='FTT':
     trade_coin=trade_ftt
+    trade_usd = trade_ftt_notional
   else:
     sl.stop()
 
@@ -147,7 +154,7 @@ if False:
   #ftxRelOrder('SELL', ftx, ccy+'/USD, trade_coin) # FTX Spot Sell (Maker)
 
   #ftxRelOrder('BUY', ftx, ccy + '/USD', trade_coin)  # FTX Fut Buy (Maker)
-  ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
+  #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
 
   #bbRelOrder('BUY', bb, ccy, trade_usd) # BB Fut Buy (Maker)
   #bbRelOrder('SELL', bb, ccy, trade_usd) # BB Fut Sell (Maker)
@@ -156,7 +163,7 @@ if False:
   # Taker
   #######
   #bnMarketOrder('BUY', bn, ccy, trade_usd) # BN Fut Buy (Taker)
-  #bnMarketOrder('SELL', bn, ccy, trade_usd) # BN Fut Sell (Taker)
+  bnMarketOrder('SELL', bn, ccy, trade_usd) # BN Fut Sell (Taker)
 
   #ftx.create_market_buy_order(ccy+'/USD', trade_coin) # FTX Spot Buy (Taker)
   #ftx.create_market_sell_order(ccy+'/USD', trade_coin) # FTX Spot Sell (Taker)

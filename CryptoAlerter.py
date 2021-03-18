@@ -64,17 +64,19 @@ def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
     n=25
   z+=')'
   z=z.ljust(n)
-  print(termcolor.colored(z,color),end='')
   if (premBps<=tgt_L) or (premBps>=tgt_H):
     status+=1
   else:
     status=0
   if status>=3:
+    print('*' + termcolor.colored(z, color), end='')
     if premBps>=tgt_H:
       winsound.Beep(2888,888)
     else:
       winsound.Beep(888, 888)
     status-=1
+  else:
+    print(' ' + termcolor.colored(z, color), end='')
   return status
 
 ######
