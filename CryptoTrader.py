@@ -133,7 +133,7 @@ print('Target FTT: '+str(round(trade_ftt,6))+' ($'+str(round(trade_ftt_notional)
 ######
 if False:
   ##########################
-  ccy = 'ETH'  # <----------
+  ccy = 'BTC'  # <----------
   ##########################
   if ccy=='BTC':
     trade_coin=trade_btc
@@ -154,7 +154,7 @@ if False:
   #ftxRelOrder('SELL', ftx, ccy+'/USD, trade_coin) # FTX Spot Sell (Maker)
 
   #ftxRelOrder('BUY', ftx, ccy + '/USD', trade_coin)  # FTX Fut Buy (Maker)
-  #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
+  ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
 
   #bbRelOrder('BUY', bb, ccy, trade_usd) # BB Fut Buy (Maker)
   #bbRelOrder('SELL', bb, ccy, trade_usd) # BB Fut Sell (Maker)
@@ -163,7 +163,7 @@ if False:
   # Taker
   #######
   #bnMarketOrder('BUY', bn, ccy, trade_usd) # BN Fut Buy (Taker)
-  bnMarketOrder('SELL', bn, ccy, trade_usd) # BN Fut Sell (Taker)
+  #bnMarketOrder('SELL', bn, ccy, trade_usd) # BN Fut Sell (Taker)
 
   #ftx.create_market_buy_order(ccy+'/USD', trade_coin) # FTX Spot Buy (Taker)
   #ftx.create_market_sell_order(ccy+'/USD', trade_coin) # FTX Spot Sell (Taker)
