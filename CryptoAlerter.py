@@ -51,7 +51,13 @@ def bnGetFut(bn,ccy):
   return (float(bnBookTicker['bidPrice']) + float(bnBookTicker['askPrice'])) / 2
 
 def bbGetFut(bb,ccy):
-  bbTickers=bb.v2PublicGetTickers({'symbol':ccy+'USD'})['result'][0]
+  while True:
+    try:
+      bbTickers=bb.v2PublicGetTickers({'symbol':ccy+'USD'})['result'][0]
+    except:
+      continue
+    else:
+      break
   return (float(bbTickers['bid_price'])+float(bbTickers['ask_price']))/2
 
 def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
