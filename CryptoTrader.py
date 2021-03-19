@@ -22,20 +22,20 @@ MAX_FTT = 100
 ###########
 # Functions
 ###########
-def ftxRelOrder(side,ftx,ticker,trade_coin):
+def ftxRelOrder(side,ftx,ticker,trade_qty):
   def ftxGetBid(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
   def ftxGetAsk(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
   if side != 'BUY' and side != 'SELL':
     sl.stop()
-  print(sl.getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_coin,6))+') ....')
+  print(sl.getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_qty,6))+') ....')
   if side=='BUY':
     limitPrice = ftxGetBid(ftx, ticker)
-    orderId = ftx.create_limit_buy_order(ticker, trade_coin, limitPrice)['info']['id']
+    orderId = ftx.create_limit_buy_order(ticker, trade_qty, limitPrice)['info']['id']
   else:
     limitPrice = ftxGetAsk(ftx, ticker)
-    orderId = ftx.create_limit_sell_order(ticker, trade_coin, limitPrice)['info']['id']
+    orderId = ftx.create_limit_sell_order(ticker, trade_qty, limitPrice)['info']['id']
   while True:
     if ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'] == 0:
       break
@@ -122,17 +122,17 @@ trade_ftt = np.min([np.min([TRADE_FTT_NOTIONAL,MAX_NOTIONAL])/spotFTT,MAX_FTT])
 trade_btc_notional = trade_btc*spotBTC
 trade_eth_notional = trade_eth*spotETH
 trade_ftt_notional = trade_ftt*spotFTT
-coin_dict=dict()
-coin_dict['BTC']=trade_btc
-coin_dict['ETH']=trade_eth
-coin_dict['FTT']=trade_ftt
+qty_dict=dict()
+qty_dict['BTC']=trade_btc
+qty_dict['ETH']=trade_eth
+qty_dict['FTT']=trade_ftt
 notional_dict=dict()
 notional_dict['BTC']=trade_btc_notional
 notional_dict['ETH']=trade_eth_notional
 notional_dict['FTT']=trade_ftt_notional
 
 sl.printHeader('CryptoTrader')
-print('Coins:    ',coin_dict)
+print('Qtys:     ',qty_dict)
 print('Notionals:',notional_dict)
 
 ######
@@ -142,19 +142,19 @@ if False:
   ##########################
   ccy = 'ETH'  # <----------
   ##########################
-  trade_coin=coin_dict[ccy]
+  trade_qty=qty_dict[ccy]
   trade_notional=notional_dict[ccy]
 
-  ftxRelOrder('BUY', ftx, ccy+'/USD', trade_coin) # FTX Spot Buy (Maker)
-  #ftxRelOrder('SELL', ftx, ccy+'/USD', trade_coin) # FTX Spot Sell (Maker)
+  ftxRelOrder('BUY', ftx, ccy+'/USD', trade_qty) # FTX Spot Buy (Maker)
+  #ftxRelOrder('SELL', ftx, ccy+'/USD', trade_qty) # FTX Spot Sell (Maker)
 
-  #ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_coin)  # FTX Fut Buy (Maker)
-  #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
+  #ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
+  #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_qty) # FTX Fut Sell (Maker)
 
   #bnMarketOrder('BUY', bn, ccy, trade_notional) # Binance Fut Buy (Taker)
-  #bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
+  bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
 
   #bbRelOrder('BUY', bb, ccy, trade_notional) # Bybit Fut Buy (Maker)
-  bbRelOrder('SELL', bb, ccy, trade_notional) # Bybit Fut Sell (Maker)
+  #bbRelOrder('SELL', bb, ccy, trade_notional) # Bybit Fut Sell (Maker)
 
   print(sl.getCurrentTime()+': Done')
