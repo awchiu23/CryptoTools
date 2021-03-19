@@ -52,20 +52,20 @@ def ftxRelOrder(side,ftx,ticker,trade_coin):
           break
       time.sleep(1)
 
-def bnMarketOrder(side,bn,ccy,trade_usd):
+def bnMarketOrder(side,bn,ccy,trade_notional):
   if side != 'BUY' and side != 'SELL':
     sl.stop()
   ticker=ccy+'USD_PERP'
-  print(sl.getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_usd))+') ....')
+  print(sl.getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if ccy=='BTC':
-    qty=int(trade_usd/100)
+    qty=int(trade_notional/100)
   elif ccy=='ETH':
-    qty=int(trade_usd/10)
+    qty=int(trade_notional/10)
   else:
     sl.stop()
   bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'MARKET', 'quantity': qty})
 
-def bbRelOrder(side,bb,ccy,trade_usd):
+def bbRelOrder(side,bb,ccy,trade_notional):
   def bbGetBid(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
   def bbGetAsk(bb,ticker):
@@ -74,13 +74,13 @@ def bbRelOrder(side,bb,ccy,trade_usd):
     sl.stop()
   ticker1=ccy+'/USD'
   ticker2=ccy+'USD'
-  print(sl.getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_usd))+') ....')
+  print(sl.getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
   if side=='BUY':
     limitPrice = bbGetBid(bb, ticker1)
-    orderId = bb.create_limit_buy_order(ticker1, trade_usd, limitPrice)['info']['order_id']
+    orderId = bb.create_limit_buy_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   else:
     limitPrice = bbGetAsk(bb, ticker1)
-    orderId = bb.create_limit_sell_order(ticker1, trade_usd, limitPrice)['info']['order_id']
+    orderId = bb.create_limit_sell_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   while True:
     if len(bb.v2_private_get_order({'symbol':ticker2,'orderid':orderId})['result'])==0:
       break
@@ -122,11 +122,18 @@ trade_ftt = np.min([np.min([TRADE_FTT_NOTIONAL,MAX_NOTIONAL])/spotFTT,MAX_FTT])
 trade_btc_notional = trade_btc*spotBTC
 trade_eth_notional = trade_eth*spotETH
 trade_ftt_notional = trade_ftt*spotFTT
+coin_dict=dict()
+coin_dict['BTC']=trade_btc
+coin_dict['ETH']=trade_eth
+coin_dict['FTT']=trade_ftt
+notional_dict=dict()
+notional_dict['BTC']=trade_btc_notional
+notional_dict['ETH']=trade_eth_notional
+notional_dict['FTT']=trade_ftt_notional
 
 sl.printHeader('CryptoTrader')
-print('Target BTC: '+str(round(trade_btc,6))+' ($'+str(round(trade_btc_notional))+')')
-print('Target ETH: '+str(round(trade_eth,6))+' ($'+str(round(trade_eth_notional))+')')
-print('Target FTT: '+str(round(trade_ftt,6))+' ($'+str(round(trade_ftt_notional))+')')
+print('Coins:    ',coin_dict)
+print('Notionals:',notional_dict)
 
 ######
 # Main
@@ -135,17 +142,8 @@ if False:
   ##########################
   ccy = 'ETH'  # <----------
   ##########################
-  if ccy=='BTC':
-    trade_coin=trade_btc
-    trade_usd=trade_btc_notional
-  elif ccy=='ETH':
-    trade_coin=trade_eth
-    trade_usd = trade_eth_notional
-  elif ccy=='FTT':
-    trade_coin=trade_ftt
-    trade_usd = trade_ftt_notional
-  else:
-    sl.stop()
+  trade_coin=coin_dict[ccy]
+  trade_notional=notional_dict[ccy]
 
   ftxRelOrder('BUY', ftx, ccy+'/USD', trade_coin) # FTX Spot Buy (Maker)
   #ftxRelOrder('SELL', ftx, ccy+'/USD', trade_coin) # FTX Spot Sell (Maker)
@@ -153,10 +151,10 @@ if False:
   #ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_coin)  # FTX Fut Buy (Maker)
   #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
 
-  #bnMarketOrder('BUY', bn, ccy, trade_usd) # Binance Fut Buy (Taker)
-  #bnMarketOrder('SELL', bn, ccy, trade_usd)  # Binance Fut Sell (Taker)
+  #bnMarketOrder('BUY', bn, ccy, trade_notional) # Binance Fut Buy (Taker)
+  #bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
 
-  #bbRelOrder('BUY', bb, ccy, trade_usd) # Bybit Fut Buy (Maker)
-  bbRelOrder('SELL', bb, ccy, trade_usd) # Bybit Fut Sell (Maker)
+  #bbRelOrder('BUY', bb, ccy, trade_notional) # Bybit Fut Buy (Maker)
+  bbRelOrder('SELL', bb, ccy, trade_notional) # Bybit Fut Sell (Maker)
 
   print(sl.getCurrentTime()+': Done')
