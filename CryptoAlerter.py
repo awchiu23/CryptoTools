@@ -16,7 +16,7 @@ API_KEY_BYBIT = sl.jLoad('API_KEY_BYBIT')
 API_SECRET_BYBIT = sl.jLoad('API_SECRET_BYBIT')
 
 BASE_L=-10
-BASE_H=20
+BASE_H=15
 
 ftxBTC_L=BASE_L
 ftxBTC_H=BASE_H
@@ -65,6 +65,26 @@ def bbGetFut(bb,ccy):
     else:
       break
   return (float(bbTickers['bid_price'])+float(bbTickers['ask_price']))/2
+
+def bbGetEstFunding1(bb,ccy):
+  while True:
+    try:
+      ef = float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
+    except:
+      continue
+    else:
+      break
+  return ef
+
+def bbGetEstFunding2(bb, ccy):
+  while True:
+    try:
+      ef2 = bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
+    except:
+      continue
+    else:
+      break
+  return ef2
 
 def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
   premBps = prem * 10000
@@ -138,10 +158,10 @@ while True:
   bbFutETH=bbGetFut(bb,'ETH')
   bbBTCPrem = bbFutBTC / spotBTC - 1
   bbETHPrem = bbFutETH / spotETH - 1
-  bbEstFunding1BTC = float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': 'BTCUSD'})['result']['funding_rate']) * 3 * 365
-  bbEstFunding1ETH = float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': 'ETHUSD'})['result']['funding_rate']) * 3 * 365
-  bbEstFunding2BTC = bb.v2PrivateGetFundingPredictedFunding({'symbol': 'BTCUSD'})['result']['predicted_funding_rate'] * 3 * 365
-  bbEstFunding2ETH = bb.v2PrivateGetFundingPredictedFunding({'symbol': 'ETHUSD'})['result']['predicted_funding_rate'] * 3 * 365
+  bbEstFunding1BTC = bbGetEstFunding1(bb,'BTC')
+  bbEstFunding1ETH = bbGetEstFunding1(bb,'ETH')
+  bbEstFunding2BTC = bbGetEstFunding2(bb,'BTC')
+  bbEstFunding2ETH = bbGetEstFunding2(bb,'ETH')
 
   print('FTX_USD: (' + str(round(ftxEstBorrow * 100)) + '%)  ',end='')
   ftxBTCStatus=process('FTX_BTC',ftxBTCPrem,ftxBTC_L,ftxBTC_H,ftxBTCStatus,'blue',ftxEstFundingBTC)
