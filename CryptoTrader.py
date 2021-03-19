@@ -133,7 +133,7 @@ print('Target FTT: '+str(round(trade_ftt,6))+' ($'+str(round(trade_ftt_notional)
 ######
 if False:
   ##########################
-  ccy = 'FTT'  # <----------
+  ccy = 'ETH'  # <----------
   ##########################
   if ccy=='BTC':
     trade_coin=trade_btc
@@ -147,16 +147,16 @@ if False:
   else:
     sl.stop()
 
-  #ftxRelOrder('BUY', ftx, ccy+'/USD', trade_coin) # FTX Spot Buy (Maker)
-  ftxRelOrder('SELL', ftx, ccy+'/USD', trade_coin) # FTX Spot Sell (Maker)
+  ftxRelOrder('BUY', ftx, ccy+'/USD', trade_coin) # FTX Spot Buy (Maker)
+  #ftxRelOrder('SELL', ftx, ccy+'/USD', trade_coin) # FTX Spot Sell (Maker)
 
-  ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_coin)  # FTX Fut Buy (Maker)
+  #ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_coin)  # FTX Fut Buy (Maker)
   #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_coin) # FTX Fut Sell (Maker)
 
-  # bnMarketOrder('BUY', bn, ccy, trade_usd) # Binance Fut Buy (Taker)
+  #bnMarketOrder('BUY', bn, ccy, trade_usd) # Binance Fut Buy (Taker)
   #bnMarketOrder('SELL', bn, ccy, trade_usd)  # Binance Fut Sell (Taker)
 
   #bbRelOrder('BUY', bb, ccy, trade_usd) # Bybit Fut Buy (Maker)
-  #bbRelOrder('SELL', bb, ccy, trade_usd) # Bybit Fut Sell (Maker)
+  bbRelOrder('SELL', bb, ccy, trade_usd) # Bybit Fut Sell (Maker)
 
   print(sl.getCurrentTime()+': Done')
