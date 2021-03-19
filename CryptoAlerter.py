@@ -47,7 +47,13 @@ def ftxGetMid(ftxMarkets, name):
   return float((df['bid'] + df['ask']) / 2)
 
 def bnGetFut(bn,ccy):
-  bnBookTicker = bn.dapiPublicGetTickerBookTicker({'symbol': ccy + 'USD_PERP'})[0]
+  while True:
+    try:
+      bnBookTicker = bn.dapiPublicGetTickerBookTicker({'symbol': ccy + 'USD_PERP'})[0]
+    except:
+      continue
+    else:
+      break
   return (float(bnBookTicker['bidPrice']) + float(bnBookTicker['askPrice'])) / 2
 
 def bbGetFut(bb,ccy):
