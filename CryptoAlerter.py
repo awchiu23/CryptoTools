@@ -46,6 +46,26 @@ def ftxGetMid(ftxMarkets, name):
   df = ftxMarkets[ftxMarkets['name'] == name]
   return float((df['bid'] + df['ask']) / 2)
 
+def ftxGetEstFunding(ftx, ccy):
+  while True:
+    try:
+      ef = ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
+    except:
+      continue
+    else:
+      break
+  return ef
+
+def ftxGetEstBorrow(ftx):
+  while True:
+    try:
+      eb = pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+    except:
+      continue
+    else:
+      break
+  return eb
+
 def bnGetFut(bn,ccy):
   while True:
     try:
@@ -55,6 +75,16 @@ def bnGetFut(bn,ccy):
     else:
       break
   return (float(bnBookTicker['bidPrice']) + float(bnBookTicker['askPrice'])) / 2
+
+def bnGetEstFunding(bn, ccy):
+  while True:
+    try:
+      ef = float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
+    except:
+      continue
+    else:
+      break
+  return ef
 
 def bbGetFut(bb,ccy):
   while True:
@@ -142,17 +172,17 @@ while True:
   ftxBTCPrem=ftxFutBTC/spotBTC-1
   ftxETHPrem=ftxFutETH/spotETH-1
   ftxFTTPrem=ftxFutFTT/spotFTT-1
-  ftxEstFundingBTC = ftx.public_get_futures_future_name_stats({'future_name': 'BTC-PERP'})['result']['nextFundingRate'] * 24 * 365
-  ftxEstFundingETH = ftx.public_get_futures_future_name_stats({'future_name': 'ETH-PERP'})['result']['nextFundingRate'] * 24 * 365
-  ftxEstFundingFTT = ftx.public_get_futures_future_name_stats({'future_name': 'FTT-PERP'})['result']['nextFundingRate'] * 24 * 365
-  ftxEstBorrow = pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+  ftxEstFundingBTC = ftxGetEstFunding(ftx,'BTC')
+  ftxEstFundingETH = ftxGetEstFunding(ftx,'ETH')
+  ftxEstFundingFTT = ftxGetEstFunding(ftx,'FTT')
+  ftxEstBorrow = ftxGetEstBorrow(ftx)
 
   bnFutBTC=bnGetFut(bn,'BTC')
   bnFutETH=bnGetFut(bn,'ETH')
   bnBTCPrem=bnFutBTC/spotBTC-1
   bnETHPrem=bnFutETH/spotETH-1
-  bnEstFundingBTC = float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': 'BTCUSD_PERP'}))['lastFundingRate']) * 3 * 365
-  bnEstFundingETH = float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': 'ETHUSD_PERP'}))['lastFundingRate']) * 3 * 365
+  bnEstFundingBTC = bnGetEstFunding(bn,'BTC')
+  bnEstFundingETH = bnGetEstFunding(bn,'ETH')
 
   bbFutBTC=bbGetFut(bb,'BTC')
   bbFutETH=bbGetFut(bb,'ETH')
