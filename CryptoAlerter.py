@@ -9,7 +9,7 @@ import winsound
 # Params
 ########
 BASE_L=-10
-BASE_H=20
+BASE_H=25
 
 ftxBTC_L=BASE_L
 ftxBTC_H=BASE_H
