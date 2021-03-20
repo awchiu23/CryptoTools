@@ -15,9 +15,9 @@ isActivated=True           # Turn on at your own risk!
 ccy = 'ETH'                 # 'BTC','ETH','FTT'
 futExch = 'bb'              # 'ftx','bn','bb'
 isSellPrem = True           # Set False if buying premium
-premTgtBps = 10             # Target premium in bps
+premTgtBps = 15             # Target premium in bps
 nObs = 3                    # Number of observations through target before proceeding
-nPrograms = 1               # Number of programs (each program being a pair of trades)
+nPrograms = 3               # Number of programs (each program being a pair of trades)
 
 TRADE_BTC_NOTIONAL = 5000
 TRADE_ETH_NOTIONAL = 5000
@@ -111,7 +111,10 @@ def bbRelOrder(side,bb,ccy,trade_notional):
         newPrice=bbGetAsk(bb,ticker1)
       if newPrice != limitPrice:
         limitPrice = newPrice
-        bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
+        try:
+          bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
+        except:
+          break
     time.sleep(1)
 
 ######
@@ -171,6 +174,7 @@ if isActivated:
       print(z.ljust(40).rjust(50).ljust(60) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
       if status>=nObs:
         winsound.Beep(3888, 888)
+        print()
         if isSellPrem: # i.e., selling premium
           ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
           if futExch=='ftx':
