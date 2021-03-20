@@ -94,7 +94,7 @@ def bbRelOrder(side,bb,ccy,trade_notional):
     sys.exit(1)
   ticker1=ccy+'/USD'
   ticker2=ccy+'USD'
-  print(sl.getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
+  print(cl.getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
   if side=='BUY':
     limitPrice = bbGetBid(bb, ticker1)
     orderId = bb.create_limit_buy_order(ticker1, trade_notional, limitPrice)['info']['order_id']
@@ -166,8 +166,9 @@ if isActivated:
         z='('+str(status)+') '
       else:
         status=0
-        z=''
-      print((z+termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')).rjust(50).ljust(60) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
+        z='    '
+      z+=termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')
+      print(z.ljust(40).rjust(50).ljust(60) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
       if status>=nObs:
         winsound.Beep(3888, 888)
         if isSellPrem: # i.e., selling premium
