@@ -1,4 +1,4 @@
-import SimonLib as sl
+import CryptoLib as cl
 import pandas as pd
 import ccxt
 import time
@@ -8,13 +8,6 @@ import winsound
 ########
 # Params
 ########
-API_KEY_FTX = sl.jLoad('API_KEY_FTX')
-API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
-API_KEY_BINANCE = sl.jLoad('API_KEY_BINANCE')
-API_SECRET_BINANCE = sl.jLoad('API_SECRET_BINANCE')
-API_KEY_BYBIT = sl.jLoad('API_KEY_BYBIT')
-API_SECRET_BYBIT = sl.jLoad('API_SECRET_BYBIT')
-
 BASE_L=-10
 BASE_H=20
 
@@ -42,80 +35,6 @@ bbETH_H=BASE_H
 ###########
 # Functions
 ###########
-def ftxGetMid(ftxMarkets, name):
-  df = ftxMarkets[ftxMarkets['name'] == name]
-  return float((df['bid'] + df['ask']) / 2)
-
-def ftxGetEstFunding(ftx, ccy):
-  while True:
-    try:
-      ef = ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
-    except:
-      continue
-    else:
-      break
-  return ef
-
-def ftxGetEstBorrow(ftx):
-  while True:
-    try:
-      eb = pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
-    except:
-      continue
-    else:
-      break
-  return eb
-
-def bnGetFut(bn,ccy):
-  while True:
-    try:
-      bnBookTicker = bn.dapiPublicGetTickerBookTicker({'symbol': ccy + 'USD_PERP'})[0]
-    except:
-      continue
-    else:
-      break
-  return (float(bnBookTicker['bidPrice']) + float(bnBookTicker['askPrice'])) / 2
-
-def bnGetEstFunding(bn, ccy):
-  while True:
-    try:
-      ef = float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
-    except:
-      continue
-    else:
-      break
-  return ef
-
-def bbGetFut(bb,ccy):
-  while True:
-    try:
-      bbTickers=bb.v2PublicGetTickers({'symbol':ccy+'USD'})['result'][0]
-    except:
-      continue
-    else:
-      break
-  return (float(bbTickers['bid_price'])+float(bbTickers['ask_price']))/2
-
-def bbGetEstFunding1(bb,ccy):
-  while True:
-    try:
-      ef = float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
-    except:
-      continue
-    else:
-      break
-  return ef
-
-def bbGetEstFunding2(bb, ccy):
-  while True:
-    try:
-      ef2 = bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
-    except:
-      continue
-    else:
-      break
-  return ef2
-
 def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
   premBps = prem * 10000
   z=ccy+': ' + str(round(premBps)) + 'bps('+str(round(funding*100))+'%'
@@ -144,14 +63,14 @@ def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
 ######
 # Init
 ######
-ftx=ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
-bn = ccxt.binance({'apiKey': API_KEY_BINANCE, 'secret': API_SECRET_BINANCE, 'enableRateLimit': True})
-bb = ccxt.bybit({'apiKey': API_KEY_BYBIT, 'secret': API_SECRET_BYBIT, 'enableRateLimit': True})
+ftx=ccxt.ftx({'apiKey': cl.API_KEY_FTX, 'secret': cl.API_SECRET_FTX, 'enableRateLimit': True})
+bn=ccxt.binance({'apiKey': cl.API_KEY_BINANCE, 'secret': cl.API_SECRET_BINANCE, 'enableRateLimit': True})
+bb=ccxt.bybit({'apiKey': cl.API_KEY_BYBIT, 'secret': cl.API_SECRET_BYBIT, 'enableRateLimit': True})
 
 ######
 # Main
 ######
-sl.printHeader('CryptoAlerter')
+cl.printHeader('CryptoAlerter')
 
 ftxBTCStatus=0
 ftxETHStatus=0
@@ -163,35 +82,35 @@ bbETHStatus=0
 
 while True:
   ftxMarkets=pd.DataFrame(ftx.public_get_markets()['result'])
-  spotBTC=ftxGetMid(ftxMarkets,'BTC/USD')
-  spotETH=ftxGetMid(ftxMarkets,'ETH/USD')
-  spotFTT=ftxGetMid(ftxMarkets,'FTT/USD')
-  ftxFutBTC=ftxGetMid(ftxMarkets,'BTC-PERP')
-  ftxFutETH=ftxGetMid(ftxMarkets,'ETH-PERP')
-  ftxFutFTT=ftxGetMid(ftxMarkets,'FTT-PERP')
+  spotBTC=cl.ftxGetMid(ftxMarkets,'BTC/USD')
+  spotETH=cl.ftxGetMid(ftxMarkets,'ETH/USD')
+  spotFTT=cl.ftxGetMid(ftxMarkets,'FTT/USD')
+  ftxFutBTC=cl.ftxGetMid(ftxMarkets,'BTC-PERP')
+  ftxFutETH=cl.ftxGetMid(ftxMarkets,'ETH-PERP')
+  ftxFutFTT=cl.ftxGetMid(ftxMarkets,'FTT-PERP')
   ftxBTCPrem=ftxFutBTC/spotBTC-1
   ftxETHPrem=ftxFutETH/spotETH-1
   ftxFTTPrem=ftxFutFTT/spotFTT-1
-  ftxEstFundingBTC = ftxGetEstFunding(ftx,'BTC')
-  ftxEstFundingETH = ftxGetEstFunding(ftx,'ETH')
-  ftxEstFundingFTT = ftxGetEstFunding(ftx,'FTT')
-  ftxEstBorrow = ftxGetEstBorrow(ftx)
+  ftxEstFundingBTC = cl.ftxGetEstFunding(ftx,'BTC')
+  ftxEstFundingETH = cl.ftxGetEstFunding(ftx,'ETH')
+  ftxEstFundingFTT = cl.ftxGetEstFunding(ftx,'FTT')
+  ftxEstBorrow = cl.ftxGetEstBorrow(ftx)
 
-  bnFutBTC=bnGetFut(bn,'BTC')
-  bnFutETH=bnGetFut(bn,'ETH')
+  bnFutBTC=cl.bnGetFut(bn,'BTC')
+  bnFutETH=cl.bnGetFut(bn,'ETH')
   bnBTCPrem=bnFutBTC/spotBTC-1
   bnETHPrem=bnFutETH/spotETH-1
-  bnEstFundingBTC = bnGetEstFunding(bn,'BTC')
-  bnEstFundingETH = bnGetEstFunding(bn,'ETH')
+  bnEstFundingBTC = cl.bnGetEstFunding(bn,'BTC')
+  bnEstFundingETH = cl.bnGetEstFunding(bn,'ETH')
 
-  bbFutBTC=bbGetFut(bb,'BTC')
-  bbFutETH=bbGetFut(bb,'ETH')
+  bbFutBTC=cl.bbGetFut(bb,'BTC')
+  bbFutETH=cl.bbGetFut(bb,'ETH')
   bbBTCPrem = bbFutBTC / spotBTC - 1
   bbETHPrem = bbFutETH / spotETH - 1
-  bbEstFunding1BTC = bbGetEstFunding1(bb,'BTC')
-  bbEstFunding1ETH = bbGetEstFunding1(bb,'ETH')
-  bbEstFunding2BTC = bbGetEstFunding2(bb,'BTC')
-  bbEstFunding2ETH = bbGetEstFunding2(bb,'ETH')
+  bbEstFunding1BTC = cl.bbGetEstFunding1(bb,'BTC')
+  bbEstFunding1ETH = cl.bbGetEstFunding1(bb,'ETH')
+  bbEstFunding2BTC = cl.bbGetEstFunding2(bb,'BTC')
+  bbEstFunding2ETH = cl.bbGetEstFunding2(bb,'ETH')
 
   print('FTX_USD: (' + str(round(ftxEstBorrow * 100)) + '%)  ',end='')
   ftxBTCStatus=process('FTX_BTC',ftxBTCPrem,ftxBTC_L,ftxBTC_H,ftxBTCStatus,'blue',ftxEstFundingBTC)

@@ -1,20 +1,8 @@
-import SimonLib as sl
+import CryptoLib as cl
 import pandas as pd
 import datetime
 import ccxt
 import termcolor
-
-########
-# Params
-########
-API_KEY_FTX = sl.jLoad('API_KEY_FTX')
-API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
-API_KEY_BINANCE = sl.jLoad('API_KEY_BINANCE')
-API_SECRET_BINANCE = sl.jLoad('API_SECRET_BINANCE')
-API_KEY_BYBIT = sl.jLoad('API_KEY_BYBIT')
-API_SECRET_BYBIT = sl.jLoad('API_SECRET_BYBIT')
-API_KEY_CB = sl.jLoad('API_KEY_CB')
-API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 
 ###########
 # Functions
@@ -104,12 +92,21 @@ def ftxInit(ftx):
          ftxNAV,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT
 
 def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
-  futName=ccy+'-PERP'
-  df=ftxPayments[ftxPayments['future']==futName]
+  df=ftxPayments[ftxPayments['future']==ccy+'-PERP']
   oneDayFunding = df['rate'].mean() * 24 * 365
   prevFunding = df['rate'][-1] * 24 * 365
-  estFunding = ftx.public_get_futures_future_name_stats({'future_name':futName})['result']['nextFundingRate'] * 24 * 365
+  estFunding = cl.ftxGetEstFunding(ftx,ccy)
   printFunding('FTX',ftxPositions,ccy,oneDayFunding,prevFunding,estFunding)
+
+def ftxGetEstBorrow(ftx):
+  while True:
+    try:
+      eb = pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+    except:
+      continue
+    else:
+      break
+  return eb
 
 def ftxPrintBorrow(ftx,ftxWallet,ftxBorrows):
   df=ftxBorrows[ftxBorrows['coin']=='USD']
@@ -119,7 +116,7 @@ def ftxPrintBorrow(ftx,ftxWallet,ftxBorrows):
   else:
     oneDayBorrow =0
     prevBorrow = 0
-  estBorrow = pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+  estBorrow = cl.ftxGetEstBorrow(ftx)
   usdBalance = ftxWallet.loc['USD', 'total']
   print('FTX USD 24h/prev/est borrow: '.rjust(41) + str(round(oneDayBorrow * 100)) + '%/' + str(round(prevBorrow * 100)) + '%/' + str(round(estBorrow * 100)) + \
         '% p.a. ($' + str(round(usdBalance))+')')
@@ -176,15 +173,14 @@ def bnInit(bn,spotBTC,spotETH):
          bnNAV, bnMarginBTC, bnMarginETH
 
 def bnPrintFunding(bn,bnPR,ccy):
-  futName = ccy + 'USD_PERP'
-  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': futName}))
+  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
   df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['fundingTime']]
   df = df.set_index('date')
   df['fundingRate']=[float(fr) for fr in df['fundingRate']]
   df=getOneDay(df)
   oneDayFunding = df['fundingRate'].mean() * 3 * 365
   prevFunding = df['fundingRate'][-1] * 3 * 365
-  estFunding=float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': futName}))['lastFundingRate'])*3*365
+  estFunding=cl.bnGetEstFunding(bn,ccy)
   printFunding('Binance', bnPR, ccy, oneDayFunding, prevFunding, estFunding)
 
 def bbInit(bb,spotBTC,spotETH):
@@ -231,12 +227,11 @@ def bbInit(bb,spotBTC,spotETH):
          bbNAV,bbMarginBTC,bbMarginETH
 
 def bbPrintFunding(bb,bbPL,bbPayments,ccy):
-  futName = ccy + 'USD'
-  df=bbPayments[bbPayments['symbol']==futName]
+  df=bbPayments[bbPayments['symbol']==ccy + 'USD']
   oneDayFunding = -df['fee_rate'].mean() * 3 * 365
   prevFunding = -df['fee_rate'][-1] * 3 * 365
-  estFunding1 = float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': futName})['result']['funding_rate']) * 3 * 365
-  estFunding2 = bb.v2PrivateGetFundingPredictedFunding({'symbol': futName})['result']['predicted_funding_rate'] * 3 * 365
+  estFunding1 = cl.bbGetEstFunding1(bb,ccy)
+  estFunding2 = cl.bbGetEstFunding2(bb,ccy)
   printFunding('Bybit', bbPL, ccy, oneDayFunding, prevFunding, estFunding1,estFunding2)
 
 def cbInit(cb,spotBTC,spotETH):
@@ -249,10 +244,10 @@ def cbInit(cb,spotBTC,spotETH):
 ######
 # Init
 ######
-ftx=ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
-bn = ccxt.binance({'apiKey': API_KEY_BINANCE, 'secret': API_SECRET_BINANCE, 'enableRateLimit': True})
-bb = ccxt.bybit({'apiKey': API_KEY_BYBIT, 'secret': API_SECRET_BYBIT, 'enableRateLimit': True})
-cb=ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
+ftx=ccxt.ftx({'apiKey': cl.API_KEY_FTX, 'secret': cl.API_SECRET_FTX, 'enableRateLimit': True})
+bn = ccxt.binance({'apiKey': cl.API_KEY_BINANCE, 'secret': cl.API_SECRET_BINANCE, 'enableRateLimit': True})
+bb = ccxt.bybit({'apiKey': cl.API_KEY_BYBIT, 'secret': cl.API_SECRET_BYBIT, 'enableRateLimit': True})
+cb=ccxt.coinbase({'apiKey': cl.API_KEY_CB, 'secret': cl.API_SECRET_CB, 'enableRateLimit': True})
 
 ftxWallet,ftxPositions,ftxPayments,ftxBorrows, \
   ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
@@ -305,7 +300,7 @@ futDeltaFTT+=ftxPositions.loc['FTT','FutDelta']
 ########
 # Output
 ########
-sl.printHeader('CryptoReporter - '+sl.getCurrentTime())
+cl.printHeader('CryptoReporter - '+cl.getCurrentTime())
 z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
