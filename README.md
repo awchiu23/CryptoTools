@@ -1,18 +1,16 @@
-# Instructions:
+# CryptoTools
+I have created these tools for my own crypto arbitrage trading activities.  Enjoy!
+
 ## CryptoLib.Py
+- Replace the defaults with your own API keys.
 
 ## Crypto Alerter
-1. Remove the following lines within the script:
-```
-import SimonLib as sl
-sl.printHeader('Crypto ....')
-```
-
-2. Replace the API lines within the params block with your own API strings.
-3. Note that for the purpose of calculating prem/disc%, the spot prices from FTX are used.  This is assuming that you will trade your spot on FTX.
+- This tool is for monitoring premium/discounts as well as funding rates.
+- For the purpose of calculating premium/discount%, the spot prices from FTX are used.  This is assuming that you will trade your spot on FTX.
 
 ## Crypto Reporter
-Same procedures as above.
+- This tool is for monitoring your NAVs and positions.
 
 ## Crypto Trader
-This one is for reference only; use at your own risk!
+- This tool is for machine trading on the exchanges.
+- For reference only--use at your own risk!
