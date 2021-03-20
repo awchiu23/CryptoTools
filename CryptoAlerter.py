@@ -81,47 +81,31 @@ bbBTCStatus=0
 bbETHStatus=0
 
 while True:
-  ftxMarkets=pd.DataFrame(ftx.public_get_markets()['result'])
-  spotBTC=cl.ftxGetMid(ftxMarkets,'BTC/USD')
-  spotETH=cl.ftxGetMid(ftxMarkets,'ETH/USD')
-  spotFTT=cl.ftxGetMid(ftxMarkets,'FTT/USD')
-  ftxFutBTC=cl.ftxGetMid(ftxMarkets,'BTC-PERP')
-  ftxFutETH=cl.ftxGetMid(ftxMarkets,'ETH-PERP')
-  ftxFutFTT=cl.ftxGetMid(ftxMarkets,'FTT-PERP')
-  ftxBTCPrem=ftxFutBTC/spotBTC-1
-  ftxETHPrem=ftxFutETH/spotETH-1
-  ftxFTTPrem=ftxFutFTT/spotFTT-1
+  d=cl.getPremDict(ftx,bn,bb)
+
   ftxEstFundingBTC = cl.ftxGetEstFunding(ftx,'BTC')
   ftxEstFundingETH = cl.ftxGetEstFunding(ftx,'ETH')
   ftxEstFundingFTT = cl.ftxGetEstFunding(ftx,'FTT')
   ftxEstBorrow = cl.ftxGetEstBorrow(ftx)
 
-  bnFutBTC=cl.bnGetFut(bn,'BTC')
-  bnFutETH=cl.bnGetFut(bn,'ETH')
-  bnBTCPrem=bnFutBTC/spotBTC-1
-  bnETHPrem=bnFutETH/spotETH-1
   bnEstFundingBTC = cl.bnGetEstFunding(bn,'BTC')
   bnEstFundingETH = cl.bnGetEstFunding(bn,'ETH')
 
-  bbFutBTC=cl.bbGetFut(bb,'BTC')
-  bbFutETH=cl.bbGetFut(bb,'ETH')
-  bbBTCPrem = bbFutBTC / spotBTC - 1
-  bbETHPrem = bbFutETH / spotETH - 1
   bbEstFunding1BTC = cl.bbGetEstFunding1(bb,'BTC')
   bbEstFunding1ETH = cl.bbGetEstFunding1(bb,'ETH')
   bbEstFunding2BTC = cl.bbGetEstFunding2(bb,'BTC')
   bbEstFunding2ETH = cl.bbGetEstFunding2(bb,'ETH')
 
   print('FTX_USD: (' + str(round(ftxEstBorrow * 100)) + '%)  ',end='')
-  ftxBTCStatus=process('FTX_BTC',ftxBTCPrem,ftxBTC_L,ftxBTC_H,ftxBTCStatus,'blue',ftxEstFundingBTC)
-  bnBTCStatus = process('BN_BTC', bnBTCPrem, bnBTC_L, bnBTC_H, bnBTCStatus,'blue',bnEstFundingBTC)
-  bbBTCStatus = process('BB_BTC', bbBTCPrem, bbBTC_L, bbBTC_H, bbBTCStatus,'blue',bbEstFunding1BTC,bbEstFunding2BTC)
+  ftxBTCStatus=process('FTX_BTC',d['ftxBTCPrem'],ftxBTC_L,ftxBTC_H,ftxBTCStatus,'blue',ftxEstFundingBTC)
+  bnBTCStatus = process('BN_BTC', d['bnBTCPrem'], bnBTC_L, bnBTC_H, bnBTCStatus,'blue',bnEstFundingBTC)
+  bbBTCStatus = process('BB_BTC', d['bbBTCPrem'], bbBTC_L, bbBTC_H, bbBTCStatus,'blue',bbEstFunding1BTC,bbEstFunding2BTC)
   
-  ftxETHStatus=process('FTX_ETH',ftxETHPrem,ftxETH_L,ftxETH_H,ftxETHStatus,'red',ftxEstFundingETH)
-  bnETHStatus = process('BN_ETH', bnETHPrem, bnETH_L, bnETH_H, bnETHStatus,'red',bnEstFundingETH)
-  bbETHStatus = process('BB_ETH', bbETHPrem, bbETH_L, bbETH_H, bbETHStatus,'red',bbEstFunding1ETH,bbEstFunding2ETH)
+  ftxETHStatus=process('FTX_ETH',d['ftxETHPrem'],ftxETH_L,ftxETH_H,ftxETHStatus,'red',ftxEstFundingETH)
+  bnETHStatus = process('BN_ETH', d['bnETHPrem'], bnETH_L, bnETH_H, bnETHStatus,'red',bnEstFundingETH)
+  bbETHStatus = process('BB_ETH', d['bbETHPrem'], bbETH_L, bbETH_H, bbETHStatus,'red',bbEstFunding1ETH,bbEstFunding2ETH)
   
-  ftxFTTStatus=process('FTX_FTT',ftxFTTPrem,ftxFTT_L,ftxFTT_H,ftxFTTStatus,'magenta',ftxEstFundingFTT)
+  ftxFTTStatus=process('FTX_FTT',d['ftxFTTPrem'],ftxFTT_L,ftxFTT_H,ftxFTTStatus,'magenta',ftxEstFundingFTT)
   print()
 
   time.sleep(5)

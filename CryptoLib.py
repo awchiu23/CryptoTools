@@ -105,6 +105,32 @@ def bbGetEstFunding2(bb, ccy):
 
 #############################################################################################
 
+def getPremDict(ftx,bn,bb):
+  d=dict()
+  ftxMarkets = pd.DataFrame(ftx.public_get_markets()['result'])
+  spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
+  spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
+  spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
+  ftxFutBTC = ftxGetMid(ftxMarkets, 'BTC-PERP')
+  ftxFutETH = ftxGetMid(ftxMarkets, 'ETH-PERP')
+  ftxFutFTT = ftxGetMid(ftxMarkets, 'FTT-PERP')
+  d['ftxBTCPrem']=ftxFutBTC / spotBTC - 1
+  d['ftxETHPrem']=ftxFutETH / spotETH - 1
+  d['ftxFTTPrem']=ftxFutFTT / spotFTT - 1
+
+  bnFutBTC = bnGetFut(bn, 'BTC')
+  bnFutETH = bnGetFut(bn, 'ETH')
+  d['bnBTCPrem'] = bnFutBTC / spotBTC - 1
+  d['bnETHPrem'] = bnFutETH / spotETH - 1
+
+  bbFutBTC = bbGetFut(bb, 'BTC')
+  bbFutETH = bbGetFut(bb, 'ETH')
+  d['bbBTCPrem'] = bbFutBTC / spotBTC - 1
+  d['bbETHPrem'] = bbFutETH / spotETH - 1
+
+  return d
+
+#############################################################################################
 #####
 # Etc
 #####
