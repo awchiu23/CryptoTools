@@ -12,10 +12,10 @@ import winsound
 ########
 isActivated=True           # Turn on at your own risk!
 
-ccy = 'ETH'                 # 'BTC','ETH','FTT'
-futExch = 'bn'              # 'ftx','bn','bb'
+ccy = 'BTC'                 # 'BTC','ETH','FTT'
+futExch = 'ftx'              # 'ftx','bn','bb'
 isSellPrem = True           # Set False if buying premium
-premTgtBps = 15             # Target premium in bps
+premTgtBps = 20             # Target premium in bps
 nObs = 3                    # Number of observations through target before proceeding
 nPrograms = 3               # Number of programs (each program being a pair of trades)
 

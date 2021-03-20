@@ -185,7 +185,8 @@ def bnPrintFunding(bn,bnPR,ccy):
 
 def bbInit(bb,spotBTC,spotETH):
   def getPayments(ccy):
-    return pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','limit':1000})['result']['trade_list']).set_index('symbol',drop=False)
+    start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
+    return pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time,'limit':1000})['result']['trade_list']).set_index('symbol',drop=False)
   bbBal=bb.fetch_balance()
   bbSpotDeltaBTC=bbBal['BTC']['total']
   bbSpotDeltaETH=bbBal['ETH']['total']
