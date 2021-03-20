@@ -161,16 +161,12 @@ def bnInit(bn,spotBTC,spotETH):
   bnOneDayAnnRet = (bnOneDayIncome / bnNDays * 365) / bnNotional
   #####
   bnNAV = bnBal.loc['BTC','SpotDelta'] * spotBTC +  bnBal.loc['ETH', 'SpotDelta'] * spotETH
-  bnAC=pd.DataFrame(bn.dapiPrivateGetAccount()['positions'])
-  bnAC = bnAC[['USD_PERP' in z for z in bnAC['symbol']]]
-  bnAC['Ccy'] = [z[:3] for z in bnAC['symbol']]
-  bnAC = bnAC.set_index('Ccy').loc[['BTC', 'ETH']]
-  bnMarginBTC = bnBal.loc['BTC','SpotDelta'] / float(bnAC.loc['BTC','maintMargin'])
-  bnMarginETH = bnBal.loc['ETH','SpotDelta'] / float(bnAC.loc['ETH', 'maintMargin'])
+  bnLiqBTC=float(bnPR.loc['BTC', 'liquidationPrice']) / float(bnPR.loc['BTC', 'markPrice'])
+  bnLiqETH=float(bnPR.loc['ETH', 'liquidationPrice']) / float(bnPR.loc['ETH', 'markPrice'])
   #####
   return bnBal, bnPR, bnPayments, \
          bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
-         bnNAV, bnMarginBTC, bnMarginETH
+         bnNAV, bnLiqBTC, bnLiqETH
 
 def bnPrintFunding(bn,bnPR,ccy):
   df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
@@ -187,6 +183,12 @@ def bbInit(bb,spotBTC,spotETH):
   def getPayments(ccy):
     start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
     return pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time,'limit':1000})['result']['trade_list']).set_index('symbol',drop=False)
+
+  def getLiq(bbPL,ccy):
+    liqPrice = float(bbPL.loc[ccy, 'liq_price'])
+    markPrice = float(bbPL.loc[ccy, 'size']) / float(bbPL.loc[ccy, 'position_value'])
+    return liqPrice/markPrice
+
   bbBal=bb.fetch_balance()
   bbSpotDeltaBTC=bbBal['BTC']['total']
   bbSpotDeltaETH=bbBal['ETH']['total']
@@ -220,12 +222,12 @@ def bbInit(bb,spotBTC,spotETH):
   bbOneDayAnnRet = (bbOneDayIncome / bbNDays * 365) / bbNotional
   #####
   bbNAV = bbSpotDeltaBTC * spotBTC + bbSpotDeltaETH * spotETH
-  bbMarginBTC = bbSpotDeltaBTC / float(bbPL.loc['BTC', 'position_margin'])
-  bbMarginETH = bbSpotDeltaETH / float(bbPL.loc['ETH', 'position_margin'])
+  bbLiqBTC = getLiq(bbPL,'BTC')
+  bbLiqETH = getLiq(bbPL,'ETH')
   #####
   return bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
          bbPrevIncome, bbPrevAnnRet, bbOneDayIncome, bbOneDayAnnRet, \
-         bbNAV,bbMarginBTC,bbMarginETH
+         bbNAV,bbLiqBTC,bbLiqETH
 
 def bbPrintFunding(bb,bbPL,bbPayments,ccy):
   df=bbPayments[bbPayments['symbol']==ccy + 'USD']
@@ -256,11 +258,11 @@ ftxWallet,ftxPositions,ftxPayments,ftxBorrows, \
 
 bnBal, bnPR, bnPayments, \
   bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
-  bnNAV, bnMarginBTC, bnMarginETH = bnInit(bn, spotBTC, spotETH)
+  bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
 
 bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
   bbPrevIncome, bbPrevAnnRet, bbOneDayIncome, bbOneDayAnnRet, \
-  bbNAV, bbMarginBTC, bbMarginETH = bbInit(bb, spotBTC, spotETH)
+  bbNAV, bbLiqBTC, bbLiqETH = bbInit(bb, spotBTC, spotETH)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
@@ -320,12 +322,12 @@ print()
 printIncomes('Binance',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
 bnPrintFunding(bn,bnPR,'BTC')
 bnPrintFunding(bn,bnPR,'ETH')
-print(termcolor.colored('Binance margins (BTC/ETH): '.rjust(41)+str(round(bnMarginBTC,1))+'/'+str(round(bnMarginETH,1))+' (vs. 1 limit)','red'))
+print(termcolor.colored('Binance liquidation (BTC/ETH): '.rjust(41)+str(round(bnLiqBTC*100,1))+'%/'+str(round(bnLiqETH*100,1))+'% (of spot)','red'))
 print()
 printIncomes('Bybit',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
 bbPrintFunding(bb,bbPL,bbPayments,'BTC')
 bbPrintFunding(bb,bbPL,bbPayments,'ETH')
-print(termcolor.colored('Bybit margins (BTC/ETH): '.rjust(41)+str(round(bbMarginBTC,1))+'/'+str(round(bbMarginETH,1))+' (vs. 1 limit)','red'))
+print(termcolor.colored('Bybit liquidation (BTC/ETH): '.rjust(41)+str(round(bbLiqBTC*100,1))+'%/'+str(round(bbLiqETH*100,1))+'% (of spot)','red'))
 print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)

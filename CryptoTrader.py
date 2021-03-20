@@ -17,11 +17,11 @@ futExch = 'bb'              # 'ftx','bn','bb'
 isSellPrem = True           # Set False if buying premium
 premTgtBps = 20             # Target premium in bps
 nObs = 3                    # Number of observations through target before proceeding
-nPrograms = 3               # Number of programs (each program being a pair of trades)
+nPrograms = 10               # Number of programs (each program being a pair of trades)
 
-TRADE_BTC_NOTIONAL = 5000
-TRADE_ETH_NOTIONAL = 5000
-TRADE_FTT_NOTIONAL = 2000
+TRADE_BTC_NOTIONAL = 3000
+TRADE_ETH_NOTIONAL = 3000
+TRADE_FTT_NOTIONAL = 1000
 
 ########
 # Limits
@@ -149,6 +149,7 @@ notional_dict['FTT']=trade_ftt_notional
 cl.printHeader('CryptoTrader')
 print('Qtys:     ',qty_dict)
 print('Notionals:',notional_dict)
+print()
 
 ######
 # Main
@@ -159,19 +160,19 @@ if isActivated:
   trade_notional = notional_dict[ccy]
 
   for i in range(nPrograms):
-    cl.printHeader('Program '+str(i+1))
     status=0
     while True:
       d = cl.getPremDict(ftx, bn, bb)
       premBps = d[futExch + ccy + 'Prem']*10000
+      z=('Program '+str(i+1)+': ').rjust(15)
       if (isSellPrem and premBps>premTgtBps) or (not isSellPrem and premBps<premTgtBps):
         status+=1
-        z='('+str(status)+') '
+        z+=('('+str(status)+') ').rjust(10)
       else:
         status=0
-        z='    '
+        z+=''.rjust(10)
       z+=termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')
-      print(z.ljust(40).rjust(50).ljust(60) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
+      print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
       if status>=nObs:
         winsound.Beep(3888, 888)
         print()
@@ -192,5 +193,6 @@ if isActivated:
           else:
             bbRelOrder('BUY', bb, ccy, trade_notional) # Bybit Fut Buy (Maker)
         print(cl.getCurrentTime()+': Done')
+        print()
         break
       time.sleep(5)
