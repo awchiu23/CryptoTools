@@ -1,12 +1,24 @@
-import SimonLib as sl
+import CryptoLib as cl
 import pandas as pd
-import ccxt
 import numpy as np
 import time
+import sys
+import ccxt
+import termcolor
+import winsound
 
 ########
 # Params
 ########
+isActivated=True           # Turn on at your own risk!
+
+ccy = 'ETH'                 # 'BTC','ETH','FTT'
+futExch = 'bb'              # 'ftx','bn','bb'
+isSellPrem = True           # Set False if buying premium
+premTgtBps = 10             # Target premium in bps
+nObs = 3                    # Number of observations through target before proceeding
+nPrograms = 1               # Number of programs (each program being a pair of trades)
+
 TRADE_BTC_NOTIONAL = 5000
 TRADE_ETH_NOTIONAL = 5000
 TRADE_FTT_NOTIONAL = 2000
@@ -22,14 +34,22 @@ MAX_FTT = 100
 ###########
 # Functions
 ###########
+def assertParams(ccy,futExch):
+  if not ccy in ['BTC', 'ETH', 'FTT']:
+    print('Invalid ccy!')
+    sys.exit(1)
+  if not futExch in ['ftx', 'bn', 'bb']:
+    print('Invalid futExch!')
+    sys.exit(1)
+
 def ftxRelOrder(side,ftx,ticker,trade_qty):
   def ftxGetBid(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
   def ftxGetAsk(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
   if side != 'BUY' and side != 'SELL':
-    sl.stop()
-  print(sl.getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_qty,6))+') ....')
+    sys.exit(1)
+  print(cl.getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_qty,6))+') ....')
   if side=='BUY':
     limitPrice = ftxGetBid(ftx, ticker)
     orderId = ftx.create_limit_buy_order(ticker, trade_qty, limitPrice)['info']['id']
@@ -54,15 +74,15 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 
 def bnMarketOrder(side,bn,ccy,trade_notional):
   if side != 'BUY' and side != 'SELL':
-    sl.stop()
+    sys.exit(1)()
   ticker=ccy+'USD_PERP'
-  print(sl.getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
+  print(cl.getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if ccy=='BTC':
     qty=int(trade_notional/100)
   elif ccy=='ETH':
     qty=int(trade_notional/10)
   else:
-    sl.stop()
+    sys.exit(1)
   bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'MARKET', 'quantity': qty})
 
 def bbRelOrder(side,bb,ccy,trade_notional):
@@ -71,7 +91,7 @@ def bbRelOrder(side,bb,ccy,trade_notional):
   def bbGetAsk(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
   if side != 'BUY' and side != 'SELL':
-    sl.stop()
+    sys.exit(1)
   ticker1=ccy+'/USD'
   ticker2=ccy+'USD'
   print(sl.getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
@@ -97,18 +117,10 @@ def bbRelOrder(side,bb,ccy,trade_notional):
 ######
 # Init
 ######
-API_KEY_FTX = sl.jLoad('API_KEY_FTX')
-API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
-API_KEY_BINANCE = sl.jLoad('API_KEY_BINANCE')
-API_SECRET_BINANCE = sl.jLoad('API_SECRET_BINANCE')
-API_KEY_BYBIT = sl.jLoad('API_KEY_BYBIT')
-API_SECRET_BYBIT = sl.jLoad('API_SECRET_BYBIT')
-API_KEY_CB = sl.jLoad('API_KEY_CB')
-API_SECRET_CB = sl.jLoad('API_SECRET_CB')
-ftx=ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
-bn = ccxt.binance({'apiKey': API_KEY_BINANCE, 'secret': API_SECRET_BINANCE, 'enableRateLimit': True})
-bb = ccxt.bybit({'apiKey': API_KEY_BYBIT, 'secret': API_SECRET_BYBIT, 'enableRateLimit': True})
-cb=ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
+ftx=ccxt.ftx({'apiKey': cl.API_KEY_FTX, 'secret': cl.API_SECRET_FTX, 'enableRateLimit': True})
+bn = ccxt.binance({'apiKey': cl.API_KEY_BINANCE, 'secret': cl.API_SECRET_BINANCE, 'enableRateLimit': True})
+bb = ccxt.bybit({'apiKey': cl.API_KEY_BYBIT, 'secret': cl.API_SECRET_BYBIT, 'enableRateLimit': True})
+cb=ccxt.coinbase({'apiKey': cl.API_KEY_CB, 'secret': cl.API_SECRET_CB, 'enableRateLimit': True})
 ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main'])
 ftxWallet['Ccy']=ftxWallet['coin']
 ftxWallet['SpotDelta']=ftxWallet['total']
@@ -131,30 +143,49 @@ notional_dict['BTC']=trade_btc_notional
 notional_dict['ETH']=trade_eth_notional
 notional_dict['FTT']=trade_ftt_notional
 
-sl.printHeader('CryptoTrader')
+cl.printHeader('CryptoTrader')
 print('Qtys:     ',qty_dict)
 print('Notionals:',notional_dict)
 
 ######
 # Main
 ######
-if False:
-  ##########################
-  ccy = 'ETH'  # <----------
-  ##########################
-  trade_qty=qty_dict[ccy]
-  trade_notional=notional_dict[ccy]
+if isActivated:
+  assertParams(ccy, futExch)
+  trade_qty = qty_dict[ccy]
+  trade_notional = notional_dict[ccy]
 
-  ftxRelOrder('BUY', ftx, ccy+'/USD', trade_qty) # FTX Spot Buy (Maker)
-  #ftxRelOrder('SELL', ftx, ccy+'/USD', trade_qty) # FTX Spot Sell (Maker)
-
-  #ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
-  #ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_qty) # FTX Fut Sell (Maker)
-
-  #bnMarketOrder('BUY', bn, ccy, trade_notional) # Binance Fut Buy (Taker)
-  bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
-
-  #bbRelOrder('BUY', bb, ccy, trade_notional) # Bybit Fut Buy (Maker)
-  #bbRelOrder('SELL', bb, ccy, trade_notional) # Bybit Fut Sell (Maker)
-
-  print(sl.getCurrentTime()+': Done')
+  for i in range(nPrograms):
+    cl.printHeader('Program '+str(i+1))
+    status=0
+    while True:
+      d = cl.getPremDict(ftx, bn, bb)
+      premBps = d[futExch + ccy + 'Prem']*10000
+      if (isSellPrem and premBps>premTgtBps) or (not isSellPrem and premBps<premTgtBps):
+        status+=1
+        z='('+str(status)+') '
+      else:
+        status=0
+        z=''
+      print((z+termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')).rjust(50).ljust(60) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
+      if status>=nObs:
+        winsound.Beep(3888, 888)
+        if isSellPrem: # i.e., selling premium
+          ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+          if futExch=='ftx':
+            ftxRelOrder('SELL', ftx, ccy+'-PERP', trade_qty) # FTX Fut Sell (Maker)
+          elif futExch=='bn':
+            bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
+          else:
+            bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
+        else: # i.e., buying premium
+          ftxRelOrder('SELL', ftx, ccy+'/USD', trade_qty) # FTX Spot Sell (Maker)
+          if futExch=='ftx':
+            ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
+          elif futExch=='bn':
+            bnMarketOrder('BUY', bn, ccy, trade_notional) # Binance Fut Buy (Taker)
+          else:
+            bbRelOrder('BUY', bb, ccy, trade_notional) # Bybit Fut Buy (Maker)
+        print(cl.getCurrentTime()+': Done')
+        break
+      time.sleep(5)
