@@ -1,5 +1,5 @@
 # CryptoTools
-I have created these tools for my own crypto arbitrage trading activities.  Enjoy!
+I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 
 ## CryptoLib.Py
 - Replace the defaults with your own API keys.
