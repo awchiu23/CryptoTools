@@ -1,5 +1,4 @@
 import CryptoLib as cl
-import ccxt
 import time
 import termcolor
 
@@ -64,17 +63,12 @@ def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
   return status
 
 ######
-# Init
-######
-ftx=ccxt.ftx({'apiKey': cl.API_KEY_FTX, 'secret': cl.API_SECRET_FTX, 'enableRateLimit': True})
-bn=ccxt.binance({'apiKey': cl.API_KEY_BINANCE, 'secret': cl.API_SECRET_BINANCE, 'enableRateLimit': True})
-bb=ccxt.bybit({'apiKey': cl.API_KEY_BYBIT, 'secret': cl.API_SECRET_BYBIT, 'enableRateLimit': True})
-
-######
 # Main
 ######
 cl.printHeader('CryptoAlerter')
-
+ftx=cl.ftxCCXTInit()
+bn=cl.bnCCXTInit()
+bb=cl.bbCCXTInit()
 ftxBTCStatus=0
 ftxETHStatus=0
 ftxFTTStatus=0
@@ -84,31 +78,19 @@ bbBTCStatus=0
 bbETHStatus=0
 
 while True:
-  d=cl.getPremDict(ftx,bn,bb)
-
-  ftxEstFundingBTC = cl.ftxGetEstFunding(ftx,'BTC')
-  ftxEstFundingETH = cl.ftxGetEstFunding(ftx,'ETH')
-  ftxEstFundingFTT = cl.ftxGetEstFunding(ftx,'FTT')
-  ftxEstBorrow = cl.ftxGetEstBorrow(ftx)
-
-  bnEstFundingBTC = cl.bnGetEstFunding(bn,'BTC')
-  bnEstFundingETH = cl.bnGetEstFunding(bn,'ETH')
-
-  bbEstFunding1BTC = cl.bbGetEstFunding1(bb,'BTC')
-  bbEstFunding1ETH = cl.bbGetEstFunding1(bb,'ETH')
-  bbEstFunding2BTC = cl.bbGetEstFunding2(bb,'BTC')
-  bbEstFunding2ETH = cl.bbGetEstFunding2(bb,'ETH')
-
-  print('FTX_USD: (' + str(round(ftxEstBorrow * 100)) + '%)  ',end='')
-  ftxBTCStatus=process('FTX_BTC', d['ftxBTCPrem'], FTX_BTC_L, FTX_BTC_H, ftxBTCStatus, 'blue', ftxEstFundingBTC)
-  bnBTCStatus = process('BN_BTC', d['bnBTCPrem'], BN_BTC_L, BN_BTC_H, bnBTCStatus, 'blue', bnEstFundingBTC)
-  bbBTCStatus = process('BB_BTC', d['bbBTCPrem'], BB_BTC_L, BB_BTC_H, bbBTCStatus, 'blue', bbEstFunding1BTC, bbEstFunding2BTC)
+  fundingDict = cl.getFundingDict(ftx,bn,bb)
+  premDict =cl.getPremDict(ftx,bn,bb,fundingDict)
   
-  ftxETHStatus=process('FTX_ETH', d['ftxETHPrem'], FTX_ETH_L, FTX_ETH_H, ftxETHStatus, 'red', ftxEstFundingETH)
-  bnETHStatus = process('BN_ETH', d['bnETHPrem'], BN_ETH_L, BN_ETH_H, bnETHStatus, 'red', bnEstFundingETH)
-  bbETHStatus = process('BB_ETH', d['bbETHPrem'], BB_ETH_L, BB_ETH_H, bbETHStatus, 'red', bbEstFunding1ETH, bbEstFunding2ETH)
+  print('FTX_USD: (' + str(round(fundingDict['ftxEstBorrow'] * 100)) + '%)  ',end='')
+  ftxBTCStatus=process('FTX_BTC', premDict['ftxBTCPrem'], FTX_BTC_L, FTX_BTC_H, ftxBTCStatus, 'blue', fundingDict['ftxEstFundingBTC'])
+  bnBTCStatus = process('BN_BTC', premDict['bnBTCPrem'], BN_BTC_L, BN_BTC_H, bnBTCStatus, 'blue', fundingDict['bnEstFundingBTC'])
+  bbBTCStatus = process('BB_BTC', premDict['bbBTCPrem'], BB_BTC_L, BB_BTC_H, bbBTCStatus, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
   
-  ftxFTTStatus=process('FTX_FTT', d['ftxFTTPrem'], FTX_FTT_L, FTX_FTT_H, ftxFTTStatus, 'magenta', ftxEstFundingFTT)
+  ftxETHStatus=process('FTX_ETH', premDict['ftxETHPrem'], FTX_ETH_L, FTX_ETH_H, ftxETHStatus, 'red', fundingDict['ftxEstFundingETH'])
+  bnETHStatus = process('BN_ETH', premDict['bnETHPrem'], BN_ETH_L, BN_ETH_H, bnETHStatus, 'red', fundingDict['bnEstFundingETH'])
+  bbETHStatus = process('BB_ETH', premDict['bbETHPrem'], BB_ETH_L, BB_ETH_H, bbETHStatus, 'red', fundingDict['bbEstFunding1ETH'], fundingDict['bbEstFunding2ETH'])
+  
+  ftxFTTStatus=process('FTX_FTT', premDict['ftxFTTPrem'], FTX_FTT_L, FTX_FTT_H, ftxFTTStatus, 'magenta', fundingDict['ftxEstFundingFTT'])
   print()
 
   time.sleep(5)

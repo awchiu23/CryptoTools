@@ -71,9 +71,22 @@ CT_MAX_FTT = 100               # Hard limit
 
 #############################################################################################
 
-def ftxGetMid(ftxMarkets, name):
-  df = ftxMarkets[ftxMarkets['name'] == name]
-  return float((df['bid'] + df['ask']) / 2)
+###########
+# Functions
+###########
+def ftxCCXTInit():
+  return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
+
+def bnCCXTInit():
+  return  ccxt.binance({'apiKey': API_KEY_BINANCE, 'secret': API_SECRET_BINANCE, 'enableRateLimit': True})
+
+def bbCCXTInit():
+  return ccxt.bybit({'apiKey': API_KEY_BYBIT, 'secret': API_SECRET_BYBIT, 'enableRateLimit': True})
+
+def cbCCXTInit():
+  return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
+
+#############################################################################################
 
 def ftxGetEstFunding(ftx, ccy):
   while True:
@@ -94,6 +107,16 @@ def ftxGetEstBorrow(ftx):
     else:
       break
   return eb
+
+def ftxGetEstLending(ftx):
+  while True:
+    try:
+      el = pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+    except:
+      continue
+    else:
+      break
+  return el
 
 def ftxRelOrder(side,ftx,ticker,trade_qty):
   def ftxGetBid(ftx,ticker):
@@ -135,6 +158,8 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
           break
       time.sleep(1)
 
+#####
+
 def bnGetFut(bn,ccy):
   while True:
     try:
@@ -167,6 +192,8 @@ def bnMarketOrder(side,bn,ccy,trade_notional):
   else:
     sys.exit(1)
   bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'MARKET', 'quantity': qty})
+
+#####
 
 def bbGetFut(bb,ccy):
   while True:
@@ -235,7 +262,26 @@ def bbRelOrder(side,bb,ccy,trade_notional):
 ################
 # Multi-exchange
 ################
-def getPremDict(ftx,bn,bb):
+def getFundingDict(ftx,bn,bb):
+  d=dict()
+  d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
+  d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
+  d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
+  d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
+  d['ftxEstLending'] = ftxGetEstLending(ftx)
+  d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
+  d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
+  d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
+  d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
+  d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
+  d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
+  return d
+
+def getPremDict(ftx,bn,bb,fundingDict):
+  def ftxGetMid(ftxMarkets, name):
+    df = ftxMarkets[ftxMarkets['name'] == name]
+    return float((df['bid'] + df['ask']) / 2)
+  #####
   def getPremAdj(fundingPA, hoursInterval):
     BASE_FUNDING_PA = 0.1
     HALF_LIFE_HOURS = 4
@@ -270,12 +316,12 @@ def getPremDict(ftx,bn,bb):
   d['bbETHPrem'] = bbFutETH / spotETH - 1
   #####
   # Adjust premium with fundings
-  d['ftxBTCPrem'] +=getPremAdj(ftxGetEstFunding(ftx,'BTC'), 1)
-  d['ftxETHPrem'] +=getPremAdj(ftxGetEstFunding(ftx,'ETH'), 1)
-  d['bnBTCPrem'] += getPremAdj(bnGetEstFunding(bn,'BTC'), 8)
-  d['bnETHPrem'] += getPremAdj(bnGetEstFunding(bn,'ETH'), 8)
-  d['bbBTCPrem'] += (bbGetEstFunding1(bb, 'BTC')/365/3 + getPremAdj(bbGetEstFunding2(bb,'BTC'), 8))
-  d['bbETHPrem'] += (bbGetEstFunding1(bb, 'ETH')/365/3 + getPremAdj(bbGetEstFunding2(bb,'ETH'), 8))
+  d['ftxBTCPrem'] +=getPremAdj(fundingDict['ftxEstFundingBTC'], 1)
+  d['ftxETHPrem'] +=getPremAdj(fundingDict['ftxEstFundingETH'], 1)
+  d['bnBTCPrem'] += getPremAdj(fundingDict['bnEstFundingBTC'], 8)
+  d['bnETHPrem'] += getPremAdj(fundingDict['bnEstFundingETH'], 8)
+  d['bbBTCPrem'] += (fundingDict['bbEstFunding1BTC']/365/3 + getPremAdj(fundingDict['bbEstFunding2BTC'], 8))
+  d['bbETHPrem'] += (fundingDict['bbEstFunding1ETH']/365/3 + getPremAdj(fundingDict['bbEstFunding2ETH'], 8))
 
   return d
 
@@ -285,9 +331,9 @@ def getPremDict(ftx,bn,bb):
 # CryptoTrader helpers
 ######################
 def cryptoTraderInit(config):
-  ftx=ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
-  bn = ccxt.binance({'apiKey': API_KEY_BINANCE, 'secret': API_SECRET_BINANCE, 'enableRateLimit': True})
-  bb = ccxt.bybit({'apiKey': API_KEY_BYBIT, 'secret': API_SECRET_BYBIT, 'enableRateLimit': True})
+  ftx=ftxCCXTInit()
+  bn = bnCCXTInit()
+  bb = bbCCXTInit()
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main'])
   ftxWallet['Ccy']=ftxWallet['coin']
   ftxWallet['SpotDelta']=ftxWallet['total']
