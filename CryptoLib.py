@@ -4,10 +4,10 @@
 import pandas as pd
 import numpy as np
 import datetime
-import termcolor
-import winsound
 import sys
 import time
+import win32com.client as wincl
+import termcolor
 import ccxt
 
 #############################################################################################
@@ -316,7 +316,7 @@ def cryptoTraderRun(config):
       z += termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')
       print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
       if status >= CT_NOBS:
-        winsound.Beep(3888, 888)
+        speak('Trading')
         print()
         if isSellPrem:  # i.e., selling premium
           ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
@@ -336,6 +336,7 @@ def cryptoTraderRun(config):
             bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
         print(getCurrentTime() + ': Done')
         print()
+        speak('Done')
         break
       time.sleep(5)
 
@@ -356,3 +357,7 @@ def printHeader(header=''):
   if len(header) > 0:
     print('['+header+']')
     print()
+
+# Speak text
+def speak(text):
+  wincl.Dispatch("SAPI.SpVoice").Speak(text)
