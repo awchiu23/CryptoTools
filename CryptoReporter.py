@@ -11,6 +11,11 @@ def getOneDay(df):
   df2=df.sort_index()
   return df2[df2.index > (df2.index[-1] - pd.DateOffset(days=1))]
 
+def printIncomes(name,prevIncome,prevAnnRet,oneDayIncome,oneDayAnnRet):
+  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+  z2='$' + str(round(prevIncome)) + ' (' + str(round(prevAnnRet * 100)) + '% p.a.)'
+  print(termcolor.colored((name + ' 24h/prev income: ').rjust(41) + z1 + ' / ' + z2,'blue'))
+
 def printFunding(name,df,ccy,oneDayFunding,prevFunding,estFunding,est2Funding=None):
   prefix=name + ' ' + ccy + ' 24h/prev/est'
   if name=='Bybit':
@@ -21,11 +26,6 @@ def printFunding(name,df,ccy,oneDayFunding,prevFunding,estFunding,est2Funding=No
     suffix+='/' + str(round(est2Funding * 100)) + '%'
   suffix+=' p.a. ($' + str(round(df.loc[ccy, 'FutDeltaUSD'])) + ')'
   print(prefix.rjust(40) + ' ' + suffix)
-
-def printIncomes(name,prevIncome,prevAnnRet,oneDayIncome,oneDayAnnRet):
-  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
-  z2='$' + str(round(prevIncome)) + ' (' + str(round(prevAnnRet * 100)) + '% p.a.)'
-  print(termcolor.colored((name + ' 24h/prev income: ').rjust(41) + z1 + ' / ' + z2,'blue'))
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
   netDelta=spotDelta+futDelta
@@ -92,13 +92,6 @@ def ftxInit(ftx):
          ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet,ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet, \
          ftxNAV,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT
 
-def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
-  df=ftxPayments[ftxPayments['future']==ccy+'-PERP']
-  oneDayFunding = df['rate'].mean() * 24 * 365
-  prevFunding = df['rate'][-1] * 24 * 365
-  estFunding = cl.ftxGetEstFunding(ftx,ccy)
-  printFunding('FTX',ftxPositions,ccy,oneDayFunding,prevFunding,estFunding)
-
 def ftxPrintBorrowSummary(ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet):
   z1 = '$' + str(round(ftxOneDayUSDFlows)) + ' (' + str(round(ftxOneDayUSDFlowsAnnRet * 100)) + '% p.a.)'
   z2 = '$' + str(round(ftxPrevUSDFlows)) + ' (' + str(round(ftxPrevUSDFlowsAnnRet * 100)) + '% p.a.)'
@@ -112,6 +105,13 @@ def ftxPrintBorrow(ftx,ftxWallet,ftxBorrows):
   usdBalance = ftxWallet.loc['USD', 'total']
   print('FTX USD 24h/prev/est borrow: '.rjust(41) + str(round(oneDayBorrow * 100)) + '%/' + str(round(prevBorrow * 100)) + '%/' + str(round(estBorrow * 100)) + \
         '% p.a. ($' + str(round(usdBalance))+')')
+
+def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
+  df=ftxPayments[ftxPayments['future']==ccy+'-PERP']
+  oneDayFunding = df['rate'].mean() * 24 * 365
+  prevFunding = df['rate'][-1] * 24 * 365
+  estFunding = cl.ftxGetEstFunding(ftx,ccy)
+  printFunding('FTX',ftxPositions,ccy,oneDayFunding,prevFunding,estFunding)
 
 #####
 
@@ -301,13 +301,13 @@ z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
 print()
+ftxPrintBorrowSummary(ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet)
+ftxPrintBorrow(ftx,ftxWallet,ftxBorrows)
+print()
 printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'FTT')
-print()
-ftxPrintBorrowSummary(ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet)
-ftxPrintBorrow(ftx,ftxWallet,ftxBorrows)
 print(termcolor.colored('FTX margin: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
 print()
 printIncomes('Binance',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)

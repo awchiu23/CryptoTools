@@ -1,9 +1,7 @@
 import CryptoLib as cl
-import pandas as pd
 import ccxt
 import time
 import termcolor
-import winsound
 
 ########
 # Params
@@ -11,26 +9,26 @@ import winsound
 BASE_L=0
 BASE_H=20
 
-ftxBTC_L=BASE_L
-ftxBTC_H=BASE_H
+FTX_BTC_L=BASE_L
+FTX_BTC_H=BASE_H
 
-ftxETH_L=BASE_L
-ftxETH_H=BASE_H
+FTX_ETH_L=BASE_L
+FTX_ETH_H=BASE_H
 
-ftxFTT_L=BASE_L-5
-ftxFTT_H=BASE_H+5
+FTX_FTT_L= BASE_L - 10
+FTX_FTT_H= BASE_H + 10
 
-bnBTC_L=BASE_L
-bnBTC_H=BASE_H
+BN_BTC_L=BASE_L
+BN_BTC_H=BASE_H
 
-bnETH_L=BASE_L
-bnETH_H=BASE_H
+BN_ETH_L=BASE_L
+BN_ETH_H=BASE_H
 
-bbBTC_L=BASE_L
-bbBTC_H=BASE_H
+BB_BTC_L=BASE_L
+BB_BTC_H=BASE_H
 
-bbETH_L=BASE_L
-bbETH_H=BASE_H
+BB_ETH_L=BASE_L
+BB_ETH_H=BASE_H
 
 ###########
 # Functions
@@ -52,9 +50,11 @@ def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
   if status>=3:
     print('*' + termcolor.colored(z, color), end='')
     if premBps>=tgt_H:
-      winsound.Beep(2888,888)
+      cl.speak('High')
+      #winsound.Beep(2888,888)
     else:
-      winsound.Beep(888, 888)
+      cl.speak('Low')
+      #winsound.Beep(888, 888)
     status-=1
   else:
     print(' ' + termcolor.colored(z, color), end='')
@@ -97,15 +97,15 @@ while True:
   bbEstFunding2ETH = cl.bbGetEstFunding2(bb,'ETH')
 
   print('FTX_USD: (' + str(round(ftxEstBorrow * 100)) + '%)  ',end='')
-  ftxBTCStatus=process('FTX_BTC',d['ftxBTCPrem'],ftxBTC_L,ftxBTC_H,ftxBTCStatus,'blue',ftxEstFundingBTC)
-  bnBTCStatus = process('BN_BTC', d['bnBTCPrem'], bnBTC_L, bnBTC_H, bnBTCStatus,'blue',bnEstFundingBTC)
-  bbBTCStatus = process('BB_BTC', d['bbBTCPrem'], bbBTC_L, bbBTC_H, bbBTCStatus,'blue',bbEstFunding1BTC,bbEstFunding2BTC)
+  ftxBTCStatus=process('FTX_BTC', d['ftxBTCPrem'], FTX_BTC_L, FTX_BTC_H, ftxBTCStatus, 'blue', ftxEstFundingBTC)
+  bnBTCStatus = process('BN_BTC', d['bnBTCPrem'], BN_BTC_L, BN_BTC_H, bnBTCStatus, 'blue', bnEstFundingBTC)
+  bbBTCStatus = process('BB_BTC', d['bbBTCPrem'], BB_BTC_L, BB_BTC_H, bbBTCStatus, 'blue', bbEstFunding1BTC, bbEstFunding2BTC)
   
-  ftxETHStatus=process('FTX_ETH',d['ftxETHPrem'],ftxETH_L,ftxETH_H,ftxETHStatus,'red',ftxEstFundingETH)
-  bnETHStatus = process('BN_ETH', d['bnETHPrem'], bnETH_L, bnETH_H, bnETHStatus,'red',bnEstFundingETH)
-  bbETHStatus = process('BB_ETH', d['bbETHPrem'], bbETH_L, bbETH_H, bbETHStatus,'red',bbEstFunding1ETH,bbEstFunding2ETH)
+  ftxETHStatus=process('FTX_ETH', d['ftxETHPrem'], FTX_ETH_L, FTX_ETH_H, ftxETHStatus, 'red', ftxEstFundingETH)
+  bnETHStatus = process('BN_ETH', d['bnETHPrem'], BN_ETH_L, BN_ETH_H, bnETHStatus, 'red', bnEstFundingETH)
+  bbETHStatus = process('BB_ETH', d['bbETHPrem'], BB_ETH_L, BB_ETH_H, bbETHStatus, 'red', bbEstFunding1ETH, bbEstFunding2ETH)
   
-  ftxFTTStatus=process('FTX_FTT',d['ftxFTTPrem'],ftxFTT_L,ftxFTT_H,ftxFTTStatus,'magenta',ftxEstFundingFTT)
+  ftxFTTStatus=process('FTX_FTT', d['ftxFTTPrem'], FTX_FTT_L, FTX_FTT_H, ftxFTTStatus, 'magenta', ftxEstFundingFTT)
   print()
 
   time.sleep(5)
