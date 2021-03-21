@@ -339,7 +339,8 @@ def cryptoTraderRun(config):
         speak('Done')
         break
       time.sleep(5)
-
+  speak('All done')
+  
 #############################################################################################
 
 #####

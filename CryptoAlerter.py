@@ -17,8 +17,8 @@ ftxBTC_H=BASE_H
 ftxETH_L=BASE_L
 ftxETH_H=BASE_H
 
-ftxFTT_L=BASE_L
-ftxFTT_H=BASE_H
+ftxFTT_L=BASE_L-5
+ftxFTT_H=BASE_H+5
 
 bnBTC_L=BASE_L
 bnBTC_H=BASE_H
@@ -26,10 +26,10 @@ bnBTC_H=BASE_H
 bnETH_L=BASE_L
 bnETH_H=BASE_H
 
-bbBTC_L=BASE_L-5
+bbBTC_L=BASE_L-10
 bbBTC_H=BASE_H
 
-bbETH_L=BASE_L-5
+bbETH_L=BASE_L-10
 bbETH_H=BASE_H
 
 ###########
