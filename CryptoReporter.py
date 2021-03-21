@@ -37,6 +37,7 @@ def printDeltas(ccy,spot,spotDelta,futDelta):
 def ftxInit(ftx):
   def cleanBorrows(ftxPayments, df):
     df2 = df.copy()
+    df2=df2[df2['coin']=='USD']
     df2.index = pd.to_datetime(df2.index).tz_localize(None)
     df2 = df2.sort_index()
     return df2.reindex(ftxPayments.index.unique()).fillna(0).copy()
