@@ -57,7 +57,7 @@ CT_CONFIGS_DICT['BN_ETH_BUY']=['bn','ETH',False,CT_DEFAULT_BUY_TGT_BPS]
 CT_CONFIGS_DICT['BB_ETH_BUY']=['bb','ETH',False,CT_DEFAULT_BUY_TGT_BPS]
 CT_CONFIGS_DICT['FTX_FTT_BUY']=['ftx','FTT',False,CT_DEFAULT_BUY_TGT_BPS-10]
 
-CT_NOBS = 3          # Number of observations through target before triggering
+CT_NOBS = 5          # Number of observations through target before triggering
 CT_NPROGRAMS = 10    # Number of programs (each program being a pair of trades)
 
 CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
@@ -100,6 +100,16 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
   def ftxGetAsk(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
+  def ftxGetRemainingSize(ftx,orderId):
+    while True:
+      try:
+        remainingSize=ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
+      except:
+        continue
+      else:
+        break
+    return remainingSize
+  #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_qty,6))+') ....')
@@ -110,7 +120,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
     limitPrice = ftxGetAsk(ftx, ticker)
     orderId = ftx.create_limit_sell_order(ticker, trade_qty, limitPrice)['info']['id']
   while True:
-    if ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'] == 0:
+    if ftxGetRemainingSize(ftx,orderId) == 0:
       break
     else:
       if side=='BUY':
@@ -226,6 +236,17 @@ def bbRelOrder(side,bb,ccy,trade_notional):
 # Multi-exchange
 ################
 def getPremDict(ftx,bn,bb):
+  def getPremAdj(fundingPA, hoursInterval):
+    BASE_FUNDING_PA = 0.1
+    HALF_LIFE_HOURS = 4
+    utcNow = datetime.datetime.utcnow()
+    pctElapsed = (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
+    pctRemaining = 1 - pctElapsed
+    fundingStart = fundingPA
+    fundingEnd = np.interp(pctRemaining * hoursInterval, [0, HALF_LIFE_HOURS*2], [fundingPA, BASE_FUNDING_PA])
+    fundingMean = (fundingStart+fundingEnd)/2
+    return (pctElapsed * fundingPA + pctRemaining * fundingMean) / 365 / (24/hoursInterval)
+  #####
   d=dict()
   ftxMarkets = pd.DataFrame(ftx.public_get_markets()['result'])
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
@@ -237,16 +258,24 @@ def getPremDict(ftx,bn,bb):
   d['ftxBTCPrem']=ftxFutBTC / spotBTC - 1
   d['ftxETHPrem']=ftxFutETH / spotETH - 1
   d['ftxFTTPrem']=ftxFutFTT / spotFTT - 1
-
+  #####
   bnFutBTC = bnGetFut(bn, 'BTC')
   bnFutETH = bnGetFut(bn, 'ETH')
   d['bnBTCPrem'] = bnFutBTC / spotBTC - 1
   d['bnETHPrem'] = bnFutETH / spotETH - 1
-
+  #####
   bbFutBTC = bbGetFut(bb, 'BTC')
   bbFutETH = bbGetFut(bb, 'ETH')
   d['bbBTCPrem'] = bbFutBTC / spotBTC - 1
   d['bbETHPrem'] = bbFutETH / spotETH - 1
+  #####
+  # Adjust premium with fundings
+  d['ftxBTCPrem'] +=getPremAdj(ftxGetEstFunding(ftx,'BTC'), 1)
+  d['ftxETHPrem'] +=getPremAdj(ftxGetEstFunding(ftx,'ETH'), 1)
+  d['bnBTCPrem'] += getPremAdj(bnGetEstFunding(bn,'BTC'), 8)
+  d['bnETHPrem'] += getPremAdj(bnGetEstFunding(bn,'ETH'), 8)
+  d['bbBTCPrem'] += (bbGetEstFunding1(bb, 'BTC')/365/3 + getPremAdj(bbGetEstFunding2(bb,'BTC'), 8))
+  d['bbETHPrem'] += (bbGetEstFunding1(bb, 'ETH')/365/3 + getPremAdj(bbGetEstFunding2(bb,'ETH'), 8))
 
   return d
 

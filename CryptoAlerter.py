@@ -30,6 +30,8 @@ BB_BTC_H=BASE_H
 BB_ETH_L=BASE_L
 BB_ETH_H=BASE_H
 
+NOBS=5 # Number of observations through target before triggering
+
 ###########
 # Functions
 ###########
@@ -43,17 +45,20 @@ def process(ccy,prem,tgt_L,tgt_H,status,color,funding,funding2=None):
     n=25
   z+=')'
   z=z.ljust(n)
-  if (premBps<=tgt_L) or (premBps>=tgt_H):
+  if premBps<=tgt_L:
+    status-=1
+  elif premBps>=tgt_H:
     status+=1
   else:
     status=0
-  if status>=3:
+  if status>=NOBS:
     print('*' + termcolor.colored(z, color), end='')
-    if premBps>=tgt_H:
-      cl.speak('High')
-    else:
-      cl.speak('Low')
-    status-=1
+    cl.speak('High')
+    status=0
+  elif status<=(-NOBS):
+    print('*' + termcolor.colored(z, color), end='')
+    cl.speak('Low')
+    status=0
   else:
     print(' ' + termcolor.colored(z, color), end='')
   return status
