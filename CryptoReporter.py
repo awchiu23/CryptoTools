@@ -97,14 +97,10 @@ def ftxPrintBorrowSummary(ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFl
   z2 = '$' + str(round(ftxPrevUSDFlows)) + ' (' + str(round(ftxPrevUSDFlowsAnnRet * 100)) + '% p.a.)'
   print(termcolor.colored(('FTX 24h/prev USD flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
 
-def ftxPrintBorrow(ftx,ftxWallet,ftxBorrows):
-  df=ftxBorrows
-  oneDayBorrow = df['cost'].sum()/df['size'].sum()*24*365
-  prevBorrow = df['rate'][-1] * 24 * 365
+def ftxPrintBorrow(ftx,ftxWallet):
   estBorrow = cl.ftxGetEstBorrow(ftx)
   usdBalance = ftxWallet.loc['USD', 'total']
-  print('FTX USD 24h/prev/est borrow: '.rjust(41) + str(round(oneDayBorrow * 100)) + '%/' + str(round(prevBorrow * 100)) + '%/' + str(round(estBorrow * 100)) + \
-        '% p.a. ($' + str(round(usdBalance))+')')
+  print('FTX USD est borrow: '.rjust(41) + str(round(estBorrow * 100)) + '% p.a. ($' + str(round(usdBalance))+')')
 
 def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
   df=ftxPayments[ftxPayments['future']==ccy+'-PERP']
@@ -302,7 +298,7 @@ print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
 print()
 ftxPrintBorrowSummary(ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet)
-ftxPrintBorrow(ftx,ftxWallet,ftxBorrows)
+ftxPrintBorrow(ftx,ftxWallet)
 print()
 printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
