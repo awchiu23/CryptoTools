@@ -60,7 +60,7 @@ CT_CONFIGS_DICT['FTX_FTT_BUY']=['ftx','FTT',False,CT_DEFAULT_BUY_TGT_BPS-10]
 CT_NOBS = 3          # Number of observations through target before triggering
 CT_NPROGRAMS = 10    # Number of programs (each program being a pair of trades)
 
-CT_TRADE_BTC_NOTIONAL = 10000  # Per trade notional
+CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
 CT_TRADE_FTT_NOTIONAL = 1000   # Per trade notional
 
