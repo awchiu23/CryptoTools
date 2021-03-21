@@ -4,6 +4,8 @@
 import pandas as pd
 import numpy as np
 import datetime
+import termcolor
+import winsound
 import sys
 import time
 import ccxt
@@ -251,9 +253,9 @@ def getPremDict(ftx,bn,bb):
 
 #############################################################################################
 
-#####################
-# CryptoTrader helper
-#####################
+######################
+# CryptoTrader helpers
+######################
 def cryptoTraderInit(config):
   ftx=ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
   bn = ccxt.binance({'apiKey': API_KEY_BINANCE, 'secret': API_SECRET_BINANCE, 'enableRateLimit': True})
@@ -296,6 +298,46 @@ def cryptoTraderInit(config):
   trade_notional = notional_dict[ccy]
 
   return ftx,bn,bb,futExch,ccy,isSellPrem,premTgtBps,trade_qty,trade_notional
+
+def cryptoTraderRun(config):
+  ftx, bn, bb, futExch, ccy, isSellPrem, premTgtBps, trade_qty, trade_notional = cryptoTraderInit(config)
+  for i in range(CT_NPROGRAMS):
+    status = 0
+    while True:
+      d = getPremDict(ftx, bn, bb)
+      premBps = d[futExch + ccy + 'Prem'] * 10000
+      z = ('Program ' + str(i + 1) + ': ').rjust(15)
+      if (isSellPrem and premBps > premTgtBps) or (not isSellPrem and premBps < premTgtBps):
+        status += 1
+        z += ('(' + str(status) + ') ').rjust(10)
+      else:
+        status = 0
+        z += ''.rjust(10)
+      z += termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')
+      print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
+      if status >= CT_NOBS:
+        winsound.Beep(3888, 888)
+        print()
+        if isSellPrem:  # i.e., selling premium
+          ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+          if futExch == 'ftx':
+            ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
+          elif futExch == 'bn':
+            bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
+          else:
+            bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
+        else:  # i.e., buying premium
+          ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+          if futExch == 'ftx':
+            ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
+          elif futExch == 'bn':
+            bnMarketOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
+          else:
+            bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
+        print(getCurrentTime() + ': Done')
+        print()
+        break
+      time.sleep(5)
 
 #############################################################################################
 
