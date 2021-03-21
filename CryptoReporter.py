@@ -78,9 +78,10 @@ def ftxInit(ftx):
   ftxPrevBorrow = ftxBorrows.loc[tm]['cost']
   ftxPrevLoan = ftxLoans.loc[tm]['proceeds']
   ftxPrevUSDFlows=ftxPrevLoan-ftxPrevBorrow
-  ftxPrevUSDFlowsAnnRet = -ftxPrevUSDFlows * 24 * 365 / ftxWallet.loc['USD', 'total']
+  absUSD=abs(ftxWallet.loc['USD', 'total'])
+  ftxPrevUSDFlowsAnnRet = ftxPrevUSDFlows * 24 * 365 / absUSD
   ftxOneDayUSDFlows = ftxLoans['proceeds'].sum()-ftxBorrows['cost'].sum()
-  ftxOneDayUSDFlowsAnnRet = -ftxOneDayUSDFlows * 365 / ftxWallet.loc['USD', 'total']
+  ftxOneDayUSDFlowsAnnRet = ftxOneDayUSDFlows * 365 / absUSD
   #####
   ftxNAV = ftxWallet['usdValue'].sum()
   ftxMF = ftxInfo['marginFraction']
