@@ -361,4 +361,7 @@ def printHeader(header=''):
 
 # Speak text
 def speak(text):
-  wincl.Dispatch("SAPI.SpVoice").Speak(text)
+  try:
+    wincl.Dispatch("SAPI.SpVoice").Speak(text)
+  except:
+    pass
