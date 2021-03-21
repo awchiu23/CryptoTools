@@ -312,7 +312,9 @@ print()
 printIncomes('Binance',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
 bnPrintFunding(bn,bnPR,'BTC')
 bnPrintFunding(bn,bnPR,'ETH')
-print(termcolor.colored('Binance liquidation (BTC/ETH): '.rjust(41)+str(round(bnLiqBTC*100,1))+'%/'+str(round(bnLiqETH*100,1))+'% (of spot)','red'))
+zBTC='never' if bnLiqBTC==0 else str(round(bnLiqBTC*100,1))+'%'
+zETH='never' if bnLiqETH==0 else str(round(bnLiqETH*100,1))+'%'
+print(termcolor.colored('Binance liquidation (BTC/ETH): '.rjust(41)+zBTC+'/'+zETH+' (of spot)','red'))
 print()
 printIncomes('Bybit',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
 bbPrintFunding(bb,bbPL,bbPayments,'BTC')
