@@ -6,7 +6,6 @@ import numpy as np
 import datetime
 import sys
 import time
-import win32com.client as wincl
 import termcolor
 import ccxt
 
@@ -361,6 +360,7 @@ def printHeader(header=''):
 
 # Speak text
 def speak(text):
+  import win32com.client as wincl
   try:
     wincl.Dispatch("SAPI.SpVoice").Speak(text)
   except:
