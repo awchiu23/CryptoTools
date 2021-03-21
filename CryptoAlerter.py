@@ -26,10 +26,10 @@ bnBTC_H=BASE_H
 bnETH_L=BASE_L
 bnETH_H=BASE_H
 
-bbBTC_L=BASE_L-10
+bbBTC_L=BASE_L
 bbBTC_H=BASE_H
 
-bbETH_L=BASE_L-10
+bbETH_L=BASE_L
 bbETH_H=BASE_H
 
 ###########

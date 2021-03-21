@@ -178,6 +178,11 @@ def bbInit(bb,spotBTC,spotETH):
     start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
     return pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time,'limit':1000})['result']['trade_list']).set_index('symbol',drop=False)
   #####
+  def getLiq(bbPL,ccy):
+    liqPrice = float(bbPL.loc[ccy, 'liq_price'])
+    markPrice = float(bbPL.loc[ccy, 'size']) / (float(bbPL.loc[ccy, 'position_value']) + float(bbPL.loc[ccy, 'unrealised_pnl']))
+    return liqPrice/markPrice
+  #####
   bbBal=bb.fetch_balance()
   bbSpotDeltaBTC=bbBal['BTC']['total']
   bbSpotDeltaETH=bbBal['ETH']['total']
@@ -209,8 +214,8 @@ def bbInit(bb,spotBTC,spotETH):
   bbOneDayAnnRet = bbOneDayIncome * 365 / bbNotional
   #####
   bbNAV = bbSpotDeltaBTC * spotBTC + bbSpotDeltaETH * spotETH
-  bbLiqBTC = float(bbPL.loc['BTC', 'liq_price'])/spotBTC
-  bbLiqETH = float(bbPL.loc['ETH', 'liq_price'])/spotETH
+  bbLiqBTC = getLiq(bbPL,'BTC')
+  bbLiqETH = getLiq(bbPL,'ETH')
   #####
   return bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
          bbPrevIncome, bbPrevAnnRet, bbOneDayIncome, bbOneDayAnnRet, \
