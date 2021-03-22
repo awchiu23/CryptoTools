@@ -356,8 +356,8 @@ def cryptoTraderRun(config):
     slippageBps = mult * (premBps - basisBps)
     print(getCurrentTime() + ': Realized premium  = ' + str(round(premBps))+'bps')
     print(getCurrentTime() + ': Realized slippage = ' + str(round(slippageBps))+'bps')
-    realizedPremBps=realizedPremBps.append(premBps)
-    realizedSlippageBps=realizedSlippageBps.append(slippageBps)
+    realizedPremBps.append(premBps)
+    realizedSlippageBps.append(slippageBps)
     return realizedPremBps,realizedSlippageBps
   #####
   ftx=ftxCCXTInit()
