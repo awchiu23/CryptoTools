@@ -38,8 +38,8 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #######################################
 # Params for CryptoTrader/CryptoAlerter
 #######################################
-CT_DEFAULT_BUY_TGT_BPS = -10
-CT_DEFAULT_SELL_TGT_BPS = 20
+CT_DEFAULT_BUY_TGT_BPS = -5
+CT_DEFAULT_SELL_TGT_BPS = 15
 
 CT_CONFIGS_DICT=dict()
 CT_CONFIGS_DICT['FTX_BTC']=['ftx','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
@@ -250,12 +250,12 @@ def getOneDayShortSpotEdge(fundingDict):
   usdRate=(fundingDict['ftxEstBorrow']+fundingDict['ftxEstLending'])/2
   return getOneDayDecayedMean(usdRate,BASE_USD_RATE,HALF_LIFE_HOURS)/365
 
-def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,estFundingRate,prevFundingRate=None):
+def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None):
   edge=basis-getOneDayDecayedValues(basis,BASE_BASIS,HALF_LIFE_HOURS)[-1]
   edge+=getOneDayDecayedMean(snapFundingRate,baseFundingRate,HALF_LIFE_HOURS)/365
-  edge+=estFundingRate/365/(24/hoursInterval) * getPctElapsed(hoursInterval)  # Locked funding from elapsed
+  edge+=estFundingRate/365/(24/hoursInterval) * (getPctElapsed(hoursInterval)**pctElapsedPower)  # Locked funding from elapsed
   if not prevFundingRate is None:
-    edge+=prevFundingRate/365/(24/hoursInterval)                              # Locked funding from previous reset
+    edge+=prevFundingRate/365/(24/hoursInterval)                                                 # Locked funding from previous reset
   return edge
 
 def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
@@ -285,14 +285,14 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   premIndex=np.mean([float(n) for n in pd.DataFrame(bn.dapiData_get_basis({'pair':ccy+'USD','contractType':'PERPETUAL','period':'5m'}))[-3:]['basisRate']])
   premIndex=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
   snapFundingRate=premIndex*365
-  return getOneDayShortFutEdge(8, basis,snapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy])
+  return getOneDayShortFutEdge(8, basis,snapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
 def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
   premIndex=np.mean([float(n) for n in pd.DataFrame(bb.v2_public_get_premium_index_kline({'symbol':ccy+'USD','interval':'1','from':start_time})['result'])['close']])
   premIndex = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
   snapFundingRate=premIndex*365
-  return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
 def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
   def ftxGetMarkets(ftx):
@@ -351,9 +351,14 @@ def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
 # CryptoTrader
 ##############
 def cryptoTraderRun(config):
-  def printRealizedPrem(spotFill,futFill):
+  def printTradeStats(spotFill,futFill,basisBps, mult,realizedPremBps,realizedSlippageBps):
     premBps=(futFill/spotFill-1)*10000
-    print(getCurrentTime() + ': Realized premium = ' + str(round(premBps))+'bps')
+    slippageBps = mult * (premBps - basisBps)
+    print(getCurrentTime() + ': Realized premium  = ' + str(round(premBps))+'bps')
+    print(getCurrentTime() + ': Realized slippage = ' + str(round(slippageBps))+'bps')
+    realizedPremBps=realizedPremBps.append(premBps)
+    realizedSlippageBps=realizedSlippageBps.append(slippageBps)
+    return realizedPremBps,realizedSlippageBps
   #####
   ftx=ftxCCXTInit()
   bn = bnCCXTInit()
@@ -399,6 +404,8 @@ def cryptoTraderRun(config):
   # Main loop
   ###########
   for i in range(CT_NPROGRAMS):
+    realizedPremBps=[]
+    realizedSlippageBps=[]
     status = 0
     while True:
       fundingDict=getFundingDict(ftx, bn, bb,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
@@ -426,32 +433,35 @@ def cryptoTraderRun(config):
           if futExch == 'ftx':
             spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
             futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
-            printRealizedPrem(spotFill,futFill)
+            realizedPremBps,realizedSlippageBps=printTradeStats(spotFill,futFill,basisBps,-1,realizedPremBps,realizedSlippageBps)
           elif futExch == 'bn':
             ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
             bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
           else:
             futFill=bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
             spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
-            printRealizedPrem(spotFill, futFill)
+            realizedPremBps,realizedSlippageBps=printTradeStats(spotFill,futFill,basisBps,-1,realizedPremBps,realizedSlippageBps)
         else:
           speak('Buying')
           if futExch == 'ftx':
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
             futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
-            printRealizedPrem(spotFill, futFill)
+            realizedPremBps,realizedSlippageBps=printTradeStats(spotFill,futFill,basisBps,1,realizedPremBps,realizedSlippageBps)
           elif futExch == 'bn':
             ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
             bnMarketOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-            printRealizedPrem(spotFill, futFill)
+            realizedPremBps,realizedSlippageBps=printTradeStats(spotFill,futFill,basisBps,1,realizedPremBps,realizedSlippageBps)
         print(getCurrentTime() + ': Done')
         print()
         speak('Done')
         break
       time.sleep(CT_SLEEP)
+  if len(realizedPremBps) > 0:
+    print(getCurrentTime() + ': Average realized premium  = ' + str(round(np.mean(realizedPremBps))) + 'bps')
+    print(getCurrentTime() + ': Average realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
   speak('All done')
 
 #############################################################################################
