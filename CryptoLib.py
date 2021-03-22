@@ -94,23 +94,26 @@ def cbCCXTInit():
 
 #############################################################################################
 
+@retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
   return ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
 
+@retry(wait_fixed=1000)
 def ftxGetEstBorrow(ftx):
   return pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
+@retry(wait_fixed=1000)
 def ftxGetEstLending(ftx):
   return pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
 def ftxRelOrder(side,ftx,ticker,trade_qty):
-  @retry
+  @retry(wait_fixed=1000)
   def ftxGetBid(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
-  @retry
+  @retry(wait_fixed=1000)
   def ftxGetAsk(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
-  @retry
+  @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
   #####
@@ -141,6 +144,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 
 #####
 
+@retry(wait_fixed=1000)
 def bnGetEstFunding(bn, ccy):
   return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
@@ -159,20 +163,22 @@ def bnMarketOrder(side,bn,ccy,trade_notional):
 
 #####
 
+@retry(wait_fixed=1000)
 def bbGetEstFunding1(bb,ccy):
   return float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
 
+@retry(wait_fixed=1000)
 def bbGetEstFunding2(bb, ccy):
   return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
 
 def bbRelOrder(side,bb,ccy,trade_notional):
-  @retry
+  @retry(wait_fixed=1000)
   def bbGetBid(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
-  @retry
+  @retry(wait_fixed=1000)
   def bbGetAsk(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
-  @retry
+  @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     return bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
   #####
@@ -459,7 +465,7 @@ def printHeader(header=''):
     print()
 
 # Speak text
-@retry
+@retry(wait_fixed=1000)
 def speak(text):
   import win32com.client as wincl
   wincl.Dispatch("SAPI.SpVoice").Speak(text)
