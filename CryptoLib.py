@@ -35,30 +35,23 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 
 #############################################################################################
 
-#########################
-# Params for CryptoTrader
-#########################
-CT_DEFAULT_SELL_TGT_BPS = 20
-CT_DEFAULT_BUY_TGT_BPS = 0
+#######################################
+# Params for CryptoTrader/CryptoAlerter
+#######################################
+CT_DEFAULT_BUY_TGT_BPS = -5
+CT_DEFAULT_SELL_TGT_BPS = 15
 
-CT_CONFIGS_DICT=dict() # Future exchange, Ccy, Is sell prem?, Target prem in bps
-CT_CONFIGS_DICT['FTX_BTC_SELL']=['ftx','BTC',True,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BN_BTC_SELL']=['bn','BTC',True,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BB_BTC_SELL']=['bb','BTC',True,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_ETH_SELL']=['ftx','ETH',True,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BN_ETH_SELL']=['bn','ETH',True,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BB_ETH_SELL']=['bb','ETH',True,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_FTT_SELL']=['ftx','FTT',True,CT_DEFAULT_SELL_TGT_BPS+10]
-
-CT_CONFIGS_DICT['FTX_BTC_BUY']=['ftx','BTC',False,CT_DEFAULT_BUY_TGT_BPS]
-CT_CONFIGS_DICT['BN_BTC_BUY']=['bn','BTC',False,CT_DEFAULT_BUY_TGT_BPS]
-CT_CONFIGS_DICT['BB_BTC_BUY']=['bb','BTC',False,CT_DEFAULT_BUY_TGT_BPS]
-CT_CONFIGS_DICT['FTX_ETH_BUY']=['ftx','ETH',False,CT_DEFAULT_BUY_TGT_BPS]
-CT_CONFIGS_DICT['BN_ETH_BUY']=['bn','ETH',False,CT_DEFAULT_BUY_TGT_BPS]
-CT_CONFIGS_DICT['BB_ETH_BUY']=['bb','ETH',False,CT_DEFAULT_BUY_TGT_BPS]
-CT_CONFIGS_DICT['FTX_FTT_BUY']=['ftx','FTT',False,CT_DEFAULT_BUY_TGT_BPS-10]
+CT_CONFIGS_DICT=dict()
+CT_CONFIGS_DICT['FTX_BTC']=['ftx','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['BN_BTC']=['bn','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['BB_BTC']=['bb','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-5,CT_DEFAULT_SELL_TGT_BPS+5]
 
 CT_NOBS = 5          # Number of observations through target before triggering
+CT_SLEEP = 3         # Delay in seconds between observations
 CT_NPROGRAMS = 10    # Number of programs (each program being a pair of trades)
 
 CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
@@ -185,6 +178,11 @@ def bbRelOrder(side,bb,ccy,trade_notional):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
   def bbGetAsk(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
+
+  @retry
+  def bbGetOrder(bb,ticker,orderId):
+    return bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
+
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   ticker1=ccy+'/USD'
@@ -197,7 +195,7 @@ def bbRelOrder(side,bb,ccy,trade_notional):
     limitPrice = bbGetAsk(bb, ticker1)
     orderId = bb.create_limit_sell_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   while True:
-    if len(bb.v2_private_get_order({'symbol':ticker2,'orderid':orderId})['result'])==0:
+    if len(bbGetOrder(bb,ticker2,orderId))==0:
       break
     else:
       if side=='BUY':
@@ -253,7 +251,7 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
     ftxGetOneDayShortFutEdge.emaFTT = fundingDict['ftxEstFundingFTT']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(df['mark'] / df['index'] - 1)*365
-  k=2/(14+1)
+  k=2/(900+1)
   if ccy=='BTC':
     ftxGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaBTC * (1 - k)
     smoothedSnapFundingRate=ftxGetOneDayShortFutEdge.emaBTC
@@ -268,39 +266,17 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
   return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate,BASE_FUNDING_RATE_FTX,fundingDict['ftxEstFunding' + ccy])
 
 def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
-  if not hasattr(bnGetOneDayShortFutEdge,'emaBTC'):
-    bnGetOneDayShortFutEdge.emaBTC = fundingDict['bnEstFundingBTC']
-  if not hasattr(bnGetOneDayShortFutEdge, 'emaETH'):
-    bnGetOneDayShortFutEdge.emaETH = fundingDict['bnEstFundingETH']  
-  df=bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]
-  snapFundingRate = (float(df['markPrice']) / float(df['indexPrice']) - 1) * 365
-  k = 2 / (14 + 1)
-  if ccy == 'BTC':
-    bnGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + bnGetOneDayShortFutEdge.emaBTC * (1 - k)
-    smoothedSnapFundingRate = bnGetOneDayShortFutEdge.emaBTC
-  elif ccy == 'ETH':
-    bnGetOneDayShortFutEdge.emaETH = snapFundingRate * k + bnGetOneDayShortFutEdge.emaETH * (1 - k)
-    smoothedSnapFundingRate = bnGetOneDayShortFutEdge.emaETH
-  else:
-    sys.exit(1)
-  return getOneDayShortFutEdge(8, basis,smoothedSnapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy])
+  premIndex=np.mean([float(n) for n in pd.DataFrame(bn.dapiData_get_basis({'pair':ccy+'USD','contractType':'PERPETUAL','period':'5m'}))[-3:]['basisRate']])
+  premIndex=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
+  snapFundingRate=premIndex*365
+  return getOneDayShortFutEdge(8, basis,snapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy])
 
-def bbGetOneDayShortFutEdge(bbTickers, fundingDict, ccy, basis):
-  if not hasattr(bbGetOneDayShortFutEdge,'emaBTC'):
-    bbGetOneDayShortFutEdge.emaBTC = fundingDict['bbEstFunding2BTC']
-  if not hasattr(bbGetOneDayShortFutEdge, 'emaETH'):
-    bbGetOneDayShortFutEdge.emaETH = fundingDict['bbEstFunding2ETH']
-  snapFundingRate=(float(bbTickers.loc[ccy+'USD']['mark_price'])/float(bbTickers.loc[ccy+'USD']['index_price'])-1)*365
-  k = 2 / (14 + 1)
-  if ccy == 'BTC':
-    bbGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + bbGetOneDayShortFutEdge.emaBTC * (1 - k)
-    smoothedSnapFundingRate = bbGetOneDayShortFutEdge.emaBTC
-  elif ccy == 'ETH':
-    bbGetOneDayShortFutEdge.emaETH = snapFundingRate * k + bbGetOneDayShortFutEdge.emaETH * (1 - k)
-    smoothedSnapFundingRate = bbGetOneDayShortFutEdge.emaETH
-  else:
-    sys.exit(1)
-  return getOneDayShortFutEdge(8, basis, smoothedSnapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
+def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
+  start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
+  premIndex=np.mean([float(n) for n in pd.DataFrame(bb.v2_public_get_premium_index_kline({'symbol':ccy+'USD','interval':'1','from':start_time})['result'])['close']])
+  premIndex = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
+  snapFundingRate=premIndex*365
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
 
 def getPremDict(ftx,bn,bb,fundingDict):
   def ftxGetMid(ftxMarkets, name):
@@ -320,22 +296,22 @@ def getPremDict(ftx,bn,bb,fundingDict):
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
-  ftxBTCBasis = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
-  ftxETHBasis = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
-  ftxFTTBasis = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
-  bnBTCBasis = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
-  bnETHBasis = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
-  bbBTCBasis = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
-  bbETHBasis = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
+  d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
+  d['ftxETHBasis'] = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
+  d['ftxFTTBasis'] = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
+  d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
+  d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
+  d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
+  d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
   #####
   oneDayShortSpotEdge=getOneDayShortSpotEdge(fundingDict)
-  d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'BTC',ftxBTCBasis) - oneDayShortSpotEdge)
-  d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'ETH',ftxETHBasis) - oneDayShortSpotEdge)
-  d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'FTT',ftxFTTBasis) - oneDayShortSpotEdge)
-  d['bnBTCPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'BTC',bnBTCBasis) - oneDayShortSpotEdge)
-  d['bnETHPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'ETH',bnETHBasis) - oneDayShortSpotEdge)
-  d['bbBTCPrem'] = (bbGetOneDayShortFutEdge(bbTickers,fundingDict, 'BTC',bbBTCBasis) - oneDayShortSpotEdge)
-  d['bbETHPrem'] = (bbGetOneDayShortFutEdge(bbTickers,fundingDict, 'ETH',bbETHBasis) - oneDayShortSpotEdge)
+  d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'BTC',d['ftxBTCBasis']) - oneDayShortSpotEdge)
+  d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'ETH',d['ftxETHBasis']) - oneDayShortSpotEdge)
+  d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'FTT',d['ftxFTTBasis']) - oneDayShortSpotEdge)
+  d['bnBTCPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'BTC',d['bnBTCBasis']) - oneDayShortSpotEdge)
+  d['bnETHPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'ETH',d['bnETHBasis']) - oneDayShortSpotEdge)
+  d['bbBTCPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
+  d['bbETHPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
   return d
 
 #############################################################################################
@@ -343,7 +319,7 @@ def getPremDict(ftx,bn,bb,fundingDict):
 ##############
 # CryptoTrader
 ##############
-def cryptoTraderInit(config):
+def cryptoTraderRun(config):
   ftx=ftxCCXTInit()
   bn = bnCCXTInit()
   bb = bbCCXTInit()
@@ -374,7 +350,7 @@ def cryptoTraderInit(config):
   print('Notionals:',notional_dict)
   print()
 
-  futExch, ccy, isSellPrem, premTgtBps = CT_CONFIGS_DICT[config]
+  futExch, ccy, buyTgtBps, sellTgtBps = CT_CONFIGS_DICT[config]
   if not futExch in ['ftx', 'bn', 'bb']:
     print('Invalid futExch!')
     sys.exit(1)
@@ -384,48 +360,57 @@ def cryptoTraderInit(config):
   trade_qty = qty_dict[ccy]
   trade_notional = notional_dict[ccy]
 
-  return ftx,bn,bb,futExch,ccy,isSellPrem,premTgtBps,trade_qty,trade_notional
-
-def cryptoTraderRun(config):
-  ftx, bn, bb, futExch, ccy, isSellPrem, premTgtBps, trade_qty, trade_notional = cryptoTraderInit(config)
+  ###########
+  # Main loop
+  ###########
   for i in range(CT_NPROGRAMS):
     status = 0
     while True:
-      d = getPremDict(ftx, bn, bb)
-      premBps = d[futExch + ccy + 'Prem'] * 10000
+      fundingDict=getFundingDict(ftx, bn, bb)
+      premDict= getPremDict(ftx, bn, bb,fundingDict)
+      premBps = premDict[futExch + ccy + 'Prem'] * 10000
       z = ('Program ' + str(i + 1) + ': ').rjust(15)
-      if (isSellPrem and premBps > premTgtBps) or (not isSellPrem and premBps < premTgtBps):
-        status += 1
+      if premBps<=buyTgtBps:
+        status-=1
+        z += ('(' + str(status) + ') ').rjust(10)
+      elif premBps>=sellTgtBps:
+        status+=1
         z += ('(' + str(status) + ') ').rjust(10)
       else:
-        status = 0
+        status=0
         z += ''.rjust(10)
       z += termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')
-      print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Target: ' + str(round(premTgtBps)) + 'bps', 'red'))
-      if status >= CT_NOBS:
-        speak('Trading')
+      print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'red'))
+
+      if abs(status) >= CT_NOBS:
         print()
-        if isSellPrem:  # i.e., selling premium
-          ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+        if status>0:
+          speak('Selling')
           if futExch == 'ftx':
+            ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
             ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
           elif futExch == 'bn':
+            ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
             bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
           else:
             bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
-        else:  # i.e., buying premium
-          ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+            ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+        else:
+          speak('Buying')
           if futExch == 'ftx':
+            ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
             ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
           elif futExch == 'bn':
+            ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
             bnMarketOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
           else:
             bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
+            ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
         print(getCurrentTime() + ': Done')
         print()
         speak('Done')
         break
-      time.sleep(5)
+      time.sleep(CT_SLEEP)
   speak('All done')
 
 #############################################################################################
