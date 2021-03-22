@@ -38,7 +38,7 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #######################################
 # Params for CryptoTrader/CryptoAlerter
 #######################################
-CT_DEFAULT_BUY_TGT_BPS = -5
+CT_DEFAULT_BUY_TGT_BPS = -10
 CT_DEFAULT_SELL_TGT_BPS = 20
 
 CT_CONFIGS_DICT=dict()
