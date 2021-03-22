@@ -110,11 +110,9 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
   @retry
   def ftxGetBid(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
-
   @retry
   def ftxGetAsk(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
-
   @retry
   def ftxGetRemainingSize(ftx,orderId):
     return ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
@@ -174,15 +172,16 @@ def bbGetEstFunding2(bb, ccy):
   return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
 
 def bbRelOrder(side,bb,ccy,trade_notional):
+  @retry
   def bbGetBid(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
+  @retry
   def bbGetAsk(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
-
   @retry
   def bbGetOrder(bb,ticker,orderId):
     return bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
-
+  #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   ticker1=ccy+'/USD'
@@ -278,21 +277,34 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
 
+@retry
 def getPremDict(ftx,bn,bb,fundingDict):
+  def ftxGetMarkets(ftx):
+    return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
+  #####
+  def ftxGetFutures(ftx):
+    return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
+  #####
   def ftxGetMid(ftxMarkets, name):
     return (ftxMarkets.loc[name,'bid'] + ftxMarkets.loc[name,'ask']) / 2
   #####
+  def bnGetBookTicker(bn):
+    return pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
+  #####
   def bnGetMid(bnBookTicker, ccy):
     return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
+  #####
+  def bbGetTickers(bb):
+    return pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
   #####
   def bbGetMid(bbTickers, ccy):
     return (float(bbTickers.loc[ccy,'bid_price']) + float(bbTickers.loc[ccy,'ask_price'])) / 2
   #####
   d=dict()
-  ftxMarkets = pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
-  ftxFutures = pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
-  bnBookTicker = pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
-  bbTickers = pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
+  ftxMarkets = ftxGetMarkets(ftx)
+  ftxFutures = ftxGetFutures(ftx)
+  bnBookTicker = bnGetBookTicker(bn)
+  bbTickers = bbGetTickers(bb)
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
