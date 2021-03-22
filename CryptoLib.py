@@ -45,7 +45,7 @@ CT_CONFIGS_DICT=dict()
 CT_CONFIGS_DICT['FTX_BTC']=['ftx','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BN_BTC']=['bn','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BB_BTC']=['bb','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS-5]
 CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-5,CT_DEFAULT_SELL_TGT_BPS+5]
@@ -144,8 +144,10 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
         except:
           break
       time.sleep(1)
-  print(getCurrentTime() + ': Filled at '+str(round(ftxGetFillPrice(ftx,orderId),6)))
-  
+  fill=ftxGetFillPrice(ftx,orderId)
+  print(getCurrentTime() + ': Last filled at '+str(round(fill,6)))
+  return fill
+
 #####
 
 @retry(wait_fixed=1000)
@@ -185,6 +187,12 @@ def bbRelOrder(side,bb,ccy,trade_notional):
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     return bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
+  @retry(wait_fixed=1000)
+  def bbGetFillPrice(bb, ticker, orderId):
+    df = pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ticker, 'order_id': orderId})['result']['trade_list'])
+    df['exec_qty'] = [float(n) for n in df['exec_qty']]
+    df['exec_price'] = [float(n) for n in df['exec_price']]
+    return (df['exec_qty'] * df['exec_price']).sum() / df['exec_qty'].sum()
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -212,6 +220,9 @@ def bbRelOrder(side,bb,ccy,trade_notional):
         except:
           break
     time.sleep(1)
+  fill=bbGetFillPrice(bb, ticker2, orderId)
+  print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
+  return fill
 
 #############################################################################################
 
@@ -340,6 +351,10 @@ def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
 # CryptoTrader
 ##############
 def cryptoTraderRun(config):
+  def printRealizedPrem(spotFill,futFill):
+    premBps=(futFill/spotFill-1)*10000
+    print(getCurrentTime() + ': Realized premium = ' + str(round(premBps))+'bps')
+  #####
   ftx=ftxCCXTInit()
   bn = bnCCXTInit()
   bb = bbCCXTInit()
@@ -409,25 +424,29 @@ def cryptoTraderRun(config):
         if status>0:
           speak('Selling')
           if futExch == 'ftx':
-            ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
-            ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
+            spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+            futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
+            printRealizedPrem(spotFill,futFill)
           elif futExch == 'bn':
             ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
             bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
           else:
-            bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
-            ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+            futFill=bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
+            spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+            printRealizedPrem(spotFill, futFill)
         else:
           speak('Buying')
           if futExch == 'ftx':
-            ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-            ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
+            spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+            futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
+            printRealizedPrem(spotFill, futFill)
           elif futExch == 'bn':
             ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
             bnMarketOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
           else:
-            bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
-            ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+            futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
+            spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+            printRealizedPrem(spotFill, futFill)
         print(getCurrentTime() + ': Done')
         print()
         speak('Done')
