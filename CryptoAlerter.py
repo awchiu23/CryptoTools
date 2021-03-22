@@ -5,8 +5,8 @@ import termcolor
 ########
 # Params
 ########
-BASE_L=-20
-BASE_H=20
+BASE_L=-10
+BASE_H=10
 
 FTX_BTC_L=BASE_L
 FTX_BTC_H=BASE_H
@@ -79,9 +79,8 @@ bbETHStatus=0
 
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
-  premDict =cl.getPremDict(ftx,bn,bb,fundingDict)
-  
-  print('FTX_USD: (' + str(round(fundingDict['ftxEstBorrow'] * 100)) + '%)  ',end='')
+  premDict = cl.getPremDict(ftx,bn,bb,fundingDict)
+
   ftxBTCStatus=process('FTX_BTC', premDict['ftxBTCPrem'], FTX_BTC_L, FTX_BTC_H, ftxBTCStatus, 'blue', fundingDict['ftxEstFundingBTC'])
   bnBTCStatus = process('BN_BTC', premDict['bnBTCPrem'], BN_BTC_L, BN_BTC_H, bnBTCStatus, 'blue', fundingDict['bnEstFundingBTC'])
   bbBTCStatus = process('BB_BTC', premDict['bbBTCPrem'], BB_BTC_L, BB_BTC_H, bbBTCStatus, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])

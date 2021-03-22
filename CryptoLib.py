@@ -75,10 +75,12 @@ CT_MAX_FTT = 100               # Hard limit
 ###########################
 # Params for Premium Models
 ###########################
-HALF_LIFE_HOURS = 4            # Half life of exponential decay in hours
-BASE_USD_RATE = 0.15           # Equilibrium USD rate P.A.
-BASE_FUNDING_RATE = 0.11       # Equilibrium funding rate P.A. (all exchanges)
-BASE_BASIS = 0.001             # Equilibrium future basis
+HALF_LIFE_HOURS = 4                     # Half life of exponential decay in hours
+BASE_USD_RATE = 0.25                    # Equilibrium USD rate P.A.
+BASE_FUNDING_RATE_FTX = 0.25            # Equilibrium funding rate P.A.
+BASE_FUNDING_RATE_BN = 0.30             # Equilibrium funding rate P.A.
+BASE_FUNDING_RATE_BB = 0.35             # Equilibrium funding rate P.A.
+BASE_BASIS = BASE_FUNDING_RATE_FTX/365  # Equilibrium future basis
 
 #############################################################################################
 
@@ -217,11 +219,11 @@ def bbRelOrder(side,bb,ccy,trade_notional):
 ################
 def getFundingDict(ftx,bn,bb):
   d=dict()
+  d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
+  d['ftxEstLending'] = ftxGetEstLending(ftx)
   d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
   d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
   d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
-  d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
-  d['ftxEstLending'] = ftxGetEstLending(ftx)
   d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
   d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
   d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
@@ -234,27 +236,71 @@ def getOneDayShortSpotEdge(fundingDict):
   usdRate=(fundingDict['ftxEstBorrow']+fundingDict['ftxEstLending'])/2
   return getOneDayDecayedMean(usdRate,BASE_USD_RATE,HALF_LIFE_HOURS)/365
 
-def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,prevFundingRate=None):
-  edge=basis-getOneDayDecayedMean(basis,BASE_BASIS,HALF_LIFE_HOURS)
-  edge+=getOneDayDecayedMean(snapFundingRate,BASE_FUNDING_RATE,HALF_LIFE_HOURS)/365
+def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,estFundingRate,prevFundingRate=None):
+  edge=basis-getOneDayDecayedValues(basis,BASE_BASIS,HALF_LIFE_HOURS)[-1]
+  edge+=getOneDayDecayedMean(snapFundingRate,baseFundingRate,HALF_LIFE_HOURS)/365
   edge+=estFundingRate/365/(24/hoursInterval) * getPctElapsed(hoursInterval)  # Locked funding from elapsed
   if not prevFundingRate is None:
     edge+=prevFundingRate/365/(24/hoursInterval)                              # Locked funding from previous reset
   return edge
 
 def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
+  if not hasattr(ftxGetOneDayShortFutEdge,'emaBTC'):
+    ftxGetOneDayShortFutEdge.emaBTC = fundingDict['ftxEstFundingBTC']
+  if not hasattr(ftxGetOneDayShortFutEdge, 'emaETH'):
+    ftxGetOneDayShortFutEdge.emaETH = fundingDict['ftxEstFundingETH']
+  if not hasattr(ftxGetOneDayShortFutEdge, 'emaFTT'):
+    ftxGetOneDayShortFutEdge.emaFTT = fundingDict['ftxEstFundingFTT']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(df['mark'] / df['index'] - 1)*365
-  return getOneDayShortFutEdge(1,basis,snapFundingRate,fundingDict['ftxEstFunding' + ccy])
+  k=2/(14+1)
+  if ccy=='BTC':
+    ftxGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaBTC * (1 - k)
+    smoothedSnapFundingRate=ftxGetOneDayShortFutEdge.emaBTC
+  elif ccy=='ETH':
+    ftxGetOneDayShortFutEdge.emaETH = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaETH * (1 - k)
+    smoothedSnapFundingRate = ftxGetOneDayShortFutEdge.emaETH
+  elif ccy=='FTT':
+    ftxGetOneDayShortFutEdge.emaFTT = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaFTT * (1 - k)
+    smoothedSnapFundingRate = ftxGetOneDayShortFutEdge.emaFTT
+  else:
+    sys.exit(1)
+  return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate,BASE_FUNDING_RATE_FTX,fundingDict['ftxEstFunding' + ccy])
 
 def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
+  if not hasattr(bnGetOneDayShortFutEdge,'emaBTC'):
+    bnGetOneDayShortFutEdge.emaBTC = fundingDict['bnEstFundingBTC']
+  if not hasattr(bnGetOneDayShortFutEdge, 'emaETH'):
+    bnGetOneDayShortFutEdge.emaETH = fundingDict['bnEstFundingETH']  
   df=bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]
   snapFundingRate = (float(df['markPrice']) / float(df['indexPrice']) - 1) * 365
-  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bnEstFunding' + ccy])
+  k = 2 / (14 + 1)
+  if ccy == 'BTC':
+    bnGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + bnGetOneDayShortFutEdge.emaBTC * (1 - k)
+    smoothedSnapFundingRate = bnGetOneDayShortFutEdge.emaBTC
+  elif ccy == 'ETH':
+    bnGetOneDayShortFutEdge.emaETH = snapFundingRate * k + bnGetOneDayShortFutEdge.emaETH * (1 - k)
+    smoothedSnapFundingRate = bnGetOneDayShortFutEdge.emaETH
+  else:
+    sys.exit(1)
+  return getOneDayShortFutEdge(8, basis,smoothedSnapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy])
 
 def bbGetOneDayShortFutEdge(bbTickers, fundingDict, ccy, basis):
+  if not hasattr(bbGetOneDayShortFutEdge,'emaBTC'):
+    bbGetOneDayShortFutEdge.emaBTC = fundingDict['bbEstFunding2BTC']
+  if not hasattr(bbGetOneDayShortFutEdge, 'emaETH'):
+    bbGetOneDayShortFutEdge.emaETH = fundingDict['bbEstFunding2ETH']
   snapFundingRate=(float(bbTickers.loc[ccy+'USD']['mark_price'])/float(bbTickers.loc[ccy+'USD']['index_price'])-1)*365
-  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
+  k = 2 / (14 + 1)
+  if ccy == 'BTC':
+    bbGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + bbGetOneDayShortFutEdge.emaBTC * (1 - k)
+    smoothedSnapFundingRate = bbGetOneDayShortFutEdge.emaBTC
+  elif ccy == 'ETH':
+    bbGetOneDayShortFutEdge.emaETH = snapFundingRate * k + bbGetOneDayShortFutEdge.emaETH * (1 - k)
+    smoothedSnapFundingRate = bbGetOneDayShortFutEdge.emaETH
+  else:
+    sys.exit(1)
+  return getOneDayShortFutEdge(8, basis, smoothedSnapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
 
 def getPremDict(ftx,bn,bb,fundingDict):
   def ftxGetMid(ftxMarkets, name):
@@ -268,6 +314,7 @@ def getPremDict(ftx,bn,bb,fundingDict):
   #####
   d=dict()
   ftxMarkets = pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
+  ftxFutures = pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
   bnBookTicker = pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
   bbTickers = pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
@@ -282,7 +329,6 @@ def getPremDict(ftx,bn,bb,fundingDict):
   bbETHBasis = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
   #####
   oneDayShortSpotEdge=getOneDayShortSpotEdge(fundingDict)
-  ftxFutures = pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
   d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'BTC',ftxBTCBasis) - oneDayShortSpotEdge)
   d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'ETH',ftxETHBasis) - oneDayShortSpotEdge)
   d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'FTT',ftxFTTBasis) - oneDayShortSpotEdge)
@@ -391,11 +437,15 @@ def cryptoTraderRun(config):
 def getCurrentTime():
   return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
+# Get values over one day with exponential decay features
+def getOneDayDecayedValues(current,terminal,halfLifeHours):
+  values = [1.0 * (0.5 ** (1 / halfLifeHours)) ** i for i in range(25)]  # T0, T1 .... T24 (25 values)
+  values = [i * (current - terminal) + terminal for i in values]
+  return values
+
 # Get mean over one day with exponential decay features
 def getOneDayDecayedMean(current,terminal,halfLifeHours):
-  values=[1.0 * (0.5**(1/halfLifeHours)) ** i for i in range(25)] # T0, T1 .... T24 (25 values)
-  values=[i*(current-terminal)+terminal for i in values]
-  return np.mean(values)
+  return np.mean(getOneDayDecayedValues(current,terminal,halfLifeHours))
 
 # Get percent of funding period that has elapsed
 def getPctElapsed(hoursInterval):
