@@ -250,7 +250,7 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
     ftxGetOneDayShortFutEdge.emaFTT = fundingDict['ftxEstFundingFTT']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(df['mark'] / df['index'] - 1)*365
-  k=2/(900+1)
+  k=2/(300+1)
   if ccy=='BTC':
     ftxGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaBTC * (1 - k)
     smoothedSnapFundingRate=ftxGetOneDayShortFutEdge.emaBTC
