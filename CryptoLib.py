@@ -116,6 +116,9 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
+  @retry(wait_fixed=1000)
+  def ftxGetFillPrice(ftx,orderId):
+    return ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice']
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -141,7 +144,8 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
         except:
           break
       time.sleep(1)
-
+  print(getCurrentTime() + ': Filled at '+str(round(ftxGetFillPrice(ftx,orderId),6)))
+  
 #####
 
 @retry(wait_fixed=1000)
