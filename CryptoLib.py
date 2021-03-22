@@ -8,6 +8,7 @@ import sys
 import time
 import termcolor
 import ccxt
+from retrying import retry
 
 #############################################################################################
 
@@ -71,6 +72,16 @@ CT_MAX_FTT = 100               # Hard limit
 
 #############################################################################################
 
+###########################
+# Params for Premium Models
+###########################
+HALF_LIFE_HOURS = 4            # Half life of exponential decay in hours
+BASE_USD_RATE = 0.15           # Equilibrium USD rate P.A.
+BASE_FUNDING_RATE = 0.11       # Equilibrium funding rate P.A. (all exchanges)
+BASE_BASIS = 0.001             # Equilibrium future basis
+
+#############################################################################################
+
 ###########
 # Functions
 ###########
@@ -88,50 +99,30 @@ def cbCCXTInit():
 
 #############################################################################################
 
+@retry
 def ftxGetEstFunding(ftx, ccy):
-  while True:
-    try:
-      ef = ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
-    except:
-      continue
-    else:
-      break
-  return ef
+  return ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
 
+@retry
 def ftxGetEstBorrow(ftx):
-  while True:
-    try:
-      eb = pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
-    except:
-      continue
-    else:
-      break
-  return eb
+  return pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
+@retry
 def ftxGetEstLending(ftx):
-  while True:
-    try:
-      el = pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
-    except:
-      continue
-    else:
-      break
-  return el
+  return pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
 def ftxRelOrder(side,ftx,ticker,trade_qty):
+  @retry
   def ftxGetBid(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
+
+  @retry
   def ftxGetAsk(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
+
+  @retry
   def ftxGetRemainingSize(ftx,orderId):
-    while True:
-      try:
-        remainingSize=ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
-      except:
-        continue
-      else:
-        break
-    return remainingSize
+    return ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -160,25 +151,9 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 
 #####
 
-def bnGetFut(bn,ccy):
-  while True:
-    try:
-      bnBookTicker = bn.dapiPublicGetTickerBookTicker({'symbol': ccy + 'USD_PERP'})[0]
-    except:
-      continue
-    else:
-      break
-  return (float(bnBookTicker['bidPrice']) + float(bnBookTicker['askPrice'])) / 2
-
+@retry
 def bnGetEstFunding(bn, ccy):
-  while True:
-    try:
-      ef = float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
-    except:
-      continue
-    else:
-      break
-  return ef
+  return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
 def bnMarketOrder(side,bn,ccy,trade_notional):
   if side != 'BUY' and side != 'SELL':
@@ -195,35 +170,13 @@ def bnMarketOrder(side,bn,ccy,trade_notional):
 
 #####
 
-def bbGetFut(bb,ccy):
-  while True:
-    try:
-      bbTickers=bb.v2PublicGetTickers({'symbol':ccy+'USD'})['result'][0]
-    except:
-      continue
-    else:
-      break
-  return (float(bbTickers['bid_price'])+float(bbTickers['ask_price']))/2
-
+@retry
 def bbGetEstFunding1(bb,ccy):
-  while True:
-    try:
-      ef = float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
-    except:
-      continue
-    else:
-      break
-  return ef
+  return float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
 
+@retry
 def bbGetEstFunding2(bb, ccy):
-  while True:
-    try:
-      ef2 = bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
-    except:
-      continue
-    else:
-      break
-  return ef2
+  return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
 
 def bbRelOrder(side,bb,ccy,trade_notional):
   def bbGetBid(bb,ticker):
@@ -260,7 +213,7 @@ def bbRelOrder(side,bb,ccy,trade_notional):
 #############################################################################################
 
 ################
-# Multi-exchange
+# Premium models
 ################
 def getFundingDict(ftx,bn,bb):
   d=dict()
@@ -277,59 +230,73 @@ def getFundingDict(ftx,bn,bb):
   d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
   return d
 
+def getOneDayShortSpotEdge(fundingDict):
+  usdRate=(fundingDict['ftxEstBorrow']+fundingDict['ftxEstLending'])/2
+  return getOneDayDecayedMean(usdRate,BASE_USD_RATE,HALF_LIFE_HOURS)/365
+
+def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,prevFundingRate=None):
+  edge=basis-getOneDayDecayedMean(basis,BASE_BASIS,HALF_LIFE_HOURS)
+  edge+=getOneDayDecayedMean(snapFundingRate,BASE_FUNDING_RATE,HALF_LIFE_HOURS)/365
+  edge+=estFundingRate/365/(24/hoursInterval) * getPctElapsed(hoursInterval)  # Locked funding from elapsed
+  if not prevFundingRate is None:
+    edge+=prevFundingRate/365/(24/hoursInterval)                              # Locked funding from previous reset
+  return edge
+
+def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
+  df=ftxFutures.loc[ccy+'-PERP']
+  snapFundingRate=(df['mark'] / df['index'] - 1)*365
+  return getOneDayShortFutEdge(1,basis,snapFundingRate,fundingDict['ftxEstFunding' + ccy])
+
+def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
+  df=bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]
+  snapFundingRate = (float(df['markPrice']) / float(df['indexPrice']) - 1) * 365
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bnEstFunding' + ccy])
+
+def bbGetOneDayShortFutEdge(bbTickers, fundingDict, ccy, basis):
+  snapFundingRate=(float(bbTickers.loc[ccy+'USD']['mark_price'])/float(bbTickers.loc[ccy+'USD']['index_price'])-1)*365
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
+
 def getPremDict(ftx,bn,bb,fundingDict):
   def ftxGetMid(ftxMarkets, name):
-    df = ftxMarkets[ftxMarkets['name'] == name]
-    return float((df['bid'] + df['ask']) / 2)
+    return (ftxMarkets.loc[name,'bid'] + ftxMarkets.loc[name,'ask']) / 2
   #####
-  def getPremAdj(fundingPA, hoursInterval):
-    BASE_FUNDING_PA = 0.1
-    HALF_LIFE_HOURS = 4
-    utcNow = datetime.datetime.utcnow()
-    pctElapsed = (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
-    pctRemaining = 1 - pctElapsed
-    fundingStart = fundingPA
-    fundingEnd = np.interp(pctRemaining * hoursInterval, [0, HALF_LIFE_HOURS*2], [fundingPA, BASE_FUNDING_PA])
-    fundingMean = (fundingStart+fundingEnd)/2
-    return (pctElapsed * fundingPA + pctRemaining * fundingMean) / 365 / (24/hoursInterval)
+  def bnGetMid(bnBookTicker, ccy):
+    return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
+  #####
+  def bbGetMid(bbTickers, ccy):
+    return (float(bbTickers.loc[ccy,'bid_price']) + float(bbTickers.loc[ccy,'ask_price'])) / 2
   #####
   d=dict()
-  ftxMarkets = pd.DataFrame(ftx.public_get_markets()['result'])
+  ftxMarkets = pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
+  bnBookTicker = pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
+  bbTickers = pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
-  ftxFutBTC = ftxGetMid(ftxMarkets, 'BTC-PERP')
-  ftxFutETH = ftxGetMid(ftxMarkets, 'ETH-PERP')
-  ftxFutFTT = ftxGetMid(ftxMarkets, 'FTT-PERP')
-  d['ftxBTCPrem']=ftxFutBTC / spotBTC - 1
-  d['ftxETHPrem']=ftxFutETH / spotETH - 1
-  d['ftxFTTPrem']=ftxFutFTT / spotFTT - 1
+  ftxBTCBasis = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
+  ftxETHBasis = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
+  ftxFTTBasis = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
+  bnBTCBasis = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
+  bnETHBasis = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
+  bbBTCBasis = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
+  bbETHBasis = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
   #####
-  bnFutBTC = bnGetFut(bn, 'BTC')
-  bnFutETH = bnGetFut(bn, 'ETH')
-  d['bnBTCPrem'] = bnFutBTC / spotBTC - 1
-  d['bnETHPrem'] = bnFutETH / spotETH - 1
-  #####
-  bbFutBTC = bbGetFut(bb, 'BTC')
-  bbFutETH = bbGetFut(bb, 'ETH')
-  d['bbBTCPrem'] = bbFutBTC / spotBTC - 1
-  d['bbETHPrem'] = bbFutETH / spotETH - 1
-  #####
-  # Adjust premium with fundings
-  d['ftxBTCPrem'] +=getPremAdj(fundingDict['ftxEstFundingBTC'], 1)
-  d['ftxETHPrem'] +=getPremAdj(fundingDict['ftxEstFundingETH'], 1)
-  d['bnBTCPrem'] += getPremAdj(fundingDict['bnEstFundingBTC'], 8)
-  d['bnETHPrem'] += getPremAdj(fundingDict['bnEstFundingETH'], 8)
-  d['bbBTCPrem'] += (fundingDict['bbEstFunding1BTC']/365/3 + getPremAdj(fundingDict['bbEstFunding2BTC'], 8))
-  d['bbETHPrem'] += (fundingDict['bbEstFunding1ETH']/365/3 + getPremAdj(fundingDict['bbEstFunding2ETH'], 8))
-
+  oneDayShortSpotEdge=getOneDayShortSpotEdge(fundingDict)
+  ftxFutures = pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
+  d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'BTC',ftxBTCBasis) - oneDayShortSpotEdge)
+  d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'ETH',ftxETHBasis) - oneDayShortSpotEdge)
+  d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'FTT',ftxFTTBasis) - oneDayShortSpotEdge)
+  d['bnBTCPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'BTC',bnBTCBasis) - oneDayShortSpotEdge)
+  d['bnETHPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'ETH',bnETHBasis) - oneDayShortSpotEdge)
+  d['bbBTCPrem'] = (bbGetOneDayShortFutEdge(bbTickers,fundingDict, 'BTC',bbBTCBasis) - oneDayShortSpotEdge)
+  d['bbETHPrem'] = (bbGetOneDayShortFutEdge(bbTickers,fundingDict, 'ETH',bbETHBasis) - oneDayShortSpotEdge)
   return d
 
 #############################################################################################
 
-######################
-# CryptoTrader helpers
-######################
+##############
+# CryptoTrader
+##############
 def cryptoTraderInit(config):
   ftx=ftxCCXTInit()
   bn = bnCCXTInit()
@@ -424,6 +391,17 @@ def cryptoTraderRun(config):
 def getCurrentTime():
   return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
+# Get mean over one day with exponential decay features
+def getOneDayDecayedMean(current,terminal,halfLifeHours):
+  values=[1.0 * (0.5**(1/halfLifeHours)) ** i for i in range(25)] # T0, T1 .... T24 (25 values)
+  values=[i*(current-terminal)+terminal for i in values]
+  return np.mean(values)
+
+# Get percent of funding period that has elapsed
+def getPctElapsed(hoursInterval):
+  utcNow = datetime.datetime.utcnow()
+  return (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
+
 # Print header
 def printHeader(header=''):
   print()
@@ -434,9 +412,7 @@ def printHeader(header=''):
     print()
 
 # Speak text
+@retry
 def speak(text):
   import win32com.client as wincl
-  try:
-    wincl.Dispatch("SAPI.SpVoice").Speak(text)
-  except:
-    pass
+  wincl.Dispatch("SAPI.SpVoice").Speak(text)

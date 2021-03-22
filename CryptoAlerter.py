@@ -5,7 +5,7 @@ import termcolor
 ########
 # Params
 ########
-BASE_L=0
+BASE_L=-20
 BASE_H=20
 
 FTX_BTC_L=BASE_L
