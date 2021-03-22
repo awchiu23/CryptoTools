@@ -94,15 +94,12 @@ def cbCCXTInit():
 
 #############################################################################################
 
-@retry
 def ftxGetEstFunding(ftx, ccy):
   return ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
 
-@retry
 def ftxGetEstBorrow(ftx):
   return pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
-@retry
 def ftxGetEstLending(ftx):
   return pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
@@ -144,7 +141,6 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 
 #####
 
-@retry
 def bnGetEstFunding(bn, ccy):
   return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
@@ -163,11 +159,9 @@ def bnMarketOrder(side,bn,ccy,trade_notional):
 
 #####
 
-@retry
 def bbGetEstFunding1(bb,ccy):
   return float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
 
-@retry
 def bbGetEstFunding2(bb, ccy):
   return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
 
@@ -277,8 +271,7 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], fundingDict['bbEstFunding1'+ccy])
 
-@retry
-def getPremDict(ftx,bn,bb,fundingDict):
+def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
   #####
@@ -300,30 +293,33 @@ def getPremDict(ftx,bn,bb,fundingDict):
   def bbGetMid(bbTickers, ccy):
     return (float(bbTickers.loc[ccy,'bid_price']) + float(bbTickers.loc[ccy,'ask_price'])) / 2
   #####
-  d=dict()
+  oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   ftxMarkets = ftxGetMarkets(ftx)
   ftxFutures = ftxGetFutures(ftx)
-  bnBookTicker = bnGetBookTicker(bn)
-  bbTickers = bbGetTickers(bb)
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
+  d = dict()
   d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
   d['ftxETHBasis'] = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
   d['ftxFTTBasis'] = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
-  d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
-  d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
-  d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
-  d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
+  d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge)
+  d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge)
+  d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge)
   #####
-  oneDayShortSpotEdge=getOneDayShortSpotEdge(fundingDict)
-  d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'BTC',d['ftxBTCBasis']) - oneDayShortSpotEdge)
-  d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'ETH',d['ftxETHBasis']) - oneDayShortSpotEdge)
-  d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures,fundingDict,'FTT',d['ftxFTTBasis']) - oneDayShortSpotEdge)
-  d['bnBTCPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'BTC',d['bnBTCBasis']) - oneDayShortSpotEdge)
-  d['bnETHPrem'] = (bnGetOneDayShortFutEdge(bn,fundingDict, 'ETH',d['bnETHBasis']) - oneDayShortSpotEdge)
-  d['bbBTCPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
-  d['bbETHPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
+  if not isSkipBN:
+    bnBookTicker = bnGetBookTicker(bn)
+    d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
+    d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
+    d['bnBTCPrem'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge)
+    d['bnETHPrem'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge)
+  ####
+  if not isSkipBB:
+    bbTickers = bbGetTickers(bb)
+    d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
+    d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
+    d['bbBTCPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
+    d['bbETHPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
   return d
 
 #############################################################################################
@@ -379,7 +375,7 @@ def cryptoTraderRun(config):
     status = 0
     while True:
       fundingDict=getFundingDict(ftx, bn, bb)
-      premDict= getPremDict(ftx, bn, bb,fundingDict)
+      premDict= getPremDict(ftx, bn, bb,fundingDict,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
       premBps = premDict[futExch + ccy + 'Prem'] * 10000
       z = ('Program ' + str(i + 1) + ': ').rjust(15)
       if premBps<=buyTgtBps:
