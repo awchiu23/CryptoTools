@@ -12,8 +12,8 @@ def process(config,premDict,status,color,funding,funding2=None):
   _, _, buyTgtBps, sellTgtBps = cl.CT_CONFIGS_DICT[config]
   tmp=config.split('_')
   prefix=tmp[0].lower()+tmp[1]
-  basisBps=premDict[prefix+'Basis'] * 10000
   premBps = premDict[prefix+'Prem'] * 10000
+  basisBps = premDict[prefix + 'Basis'] * 10000
   z=config+': ' + str(round(premBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))+'%'
   if funding2 is None:
     n=25

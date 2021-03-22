@@ -208,19 +208,21 @@ def bbRelOrder(side,bb,ccy,trade_notional):
 ################
 # Premium models
 ################
-def getFundingDict(ftx,bn,bb):
+def getFundingDict(ftx,bn,bb,isSkipBN=False,isSkipBB=False):
   d=dict()
   d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
   d['ftxEstLending'] = ftxGetEstLending(ftx)
   d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
   d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
   d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
-  d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
-  d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
-  d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
-  d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
-  d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
-  d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
+  if not isSkipBN:
+    d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
+    d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
+  if not isSkipBB:
+    d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
+    d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
+    d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
+    d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
   return d
 
 def getOneDayShortSpotEdge(fundingDict):
@@ -374,9 +376,11 @@ def cryptoTraderRun(config):
   for i in range(CT_NPROGRAMS):
     status = 0
     while True:
-      fundingDict=getFundingDict(ftx, bn, bb)
+      fundingDict=getFundingDict(ftx, bn, bb,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
       premDict= getPremDict(ftx, bn, bb,fundingDict,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
-      premBps = premDict[futExch + ccy + 'Prem'] * 10000
+      prefix=futExch+ccy
+      premBps = premDict[prefix + 'Prem'] * 10000
+      basisBps = premDict[prefix + 'Basis'] * 10000
       z = ('Program ' + str(i + 1) + ': ').rjust(15)
       if premBps<=buyTgtBps:
         status-=1
@@ -387,7 +391,7 @@ def cryptoTraderRun(config):
       else:
         status=0
         z += ''.rjust(10)
-      z += termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + 'bps', 'blue')
+      z += termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + '/' +str(round(basisBps)) + 'bps', 'blue')
       print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'red'))
 
       if abs(status) >= CT_NOBS:
