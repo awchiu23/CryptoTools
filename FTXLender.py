@@ -7,8 +7,8 @@ import sys
 ########
 # Params
 ########
-isRunNow=False  # Set to true to run once and stop, otherwise loop continuously and run one minute before every reset
-lendRatio=.99
+isRunNow=False  # If true--run once and stop; otherwise loop continuously and run one minute before every reset
+loanRatio=.99   # Percentage of positive USD balance to lend out
 
 ######
 # Main
@@ -21,8 +21,8 @@ while True:
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
   ftx=cl.ftxCCXTInit()
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
-  tgtLendSize = np.max(0,round(wallet.loc['USD']['total']*lendRatio))
-  print(cl.getCurrentTime()+': Modifying lending size to $'+str(tgtLendSize)+' ....')
+  tgtLendSize = np.max(0,round(wallet.loc['USD']['total']*loanRatio))
+  print(cl.getCurrentTime()+': Modifying loan size to $'+str(tgtLendSize)+' ....')
   result=ftx.private_post_spot_margin_offers({'coin':'USD','size':tgtLendSize,'rate':1e-6})
   if result['success']:
     print(cl.getCurrentTime()+': Success!')
