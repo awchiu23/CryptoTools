@@ -38,17 +38,17 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #######################################
 # Params for CryptoTrader/CryptoAlerter
 #######################################
-CT_DEFAULT_BUY_TGT_BPS = -5
+CT_DEFAULT_BUY_TGT_BPS = -15
 CT_DEFAULT_SELL_TGT_BPS = 15
 
 CT_CONFIGS_DICT=dict()
-CT_CONFIGS_DICT['FTX_BTC']=['ftx','BTC',CT_DEFAULT_BUY_TGT_BPS-10,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['FTX_BTC']=['ftx','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BN_BTC']=['bn','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BB_BTC']=['bb','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS-10,CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-15,CT_DEFAULT_SELL_TGT_BPS+5]
+CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-100,CT_DEFAULT_SELL_TGT_BPS+5]
 
 CT_NOBS = 5          # Number of observations through target before triggering
 CT_SLEEP = 3         # Delay in seconds between observations
@@ -65,9 +65,9 @@ CT_MAX_FTT = 100               # Hard limit
 
 #############################################################################################
 
-###########################
-# Params for Premium Models
-###########################
+###############################
+# Params for Smart Basis Models
+###############################
 HALF_LIFE_HOURS = 4                     # Half life of exponential decay in hours
 BASE_USD_RATE = 0.25                    # Equilibrium USD rate P.A.
 BASE_FUNDING_RATE_FTX = 0.25            # Equilibrium funding rate P.A.
@@ -143,7 +143,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
           orderId=ftx.private_post_orders_order_id_modify({'order_id':orderId,'price':limitPrice})['result']['id']
         except:
           break
-      time.sleep(3)
+      time.sleep(1)
   fill=ftxGetFillPrice(ftx,orderId)
   print(getCurrentTime() + ': Last filled at '+str(round(fill,6)))
   return fill
@@ -173,10 +173,36 @@ def bnMarketOrder(side,bn,ccy,trade_notional):
     orderStatus = bnGetOrder(bn, ticker, orderId)
     if orderStatus['status']=='FILLED':
       break
-    time.sleep(3)
+    time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
   return fill
+
+### Work in progress ###
+def bnRelOrder(side,bn,ccy,trade_notional):
+  @retry(wait_fixed=1000)
+  def bnGetOrder(bn, ticker, orderId):
+    return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
+  if side != 'BUY' and side != 'SELL':
+    sys.exit(1)()
+  ticker=ccy+'USD_PERP'
+  print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
+  if ccy=='BTC':
+    qty=int(trade_notional/100)
+  elif ccy=='ETH':
+    qty=int(trade_notional/10)
+  else:
+    sys.exit(1)
+  orderId=bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'MARKET', 'quantity': qty})['orderId']
+  while True:
+    orderStatus = bnGetOrder(bn, ticker, orderId)
+    if orderStatus['status']=='FILLED':
+      break
+    time.sleep(1)
+  fill=float(orderStatus['avgPrice'])
+  print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
+  return fill
+### Work in progress ###
 
 #####
 
@@ -230,16 +256,16 @@ def bbRelOrder(side,bb,ccy,trade_notional):
           bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
         except:
           break
-    time.sleep(3)
+    time.sleep(1)
   fill=bbGetFillPrice(bb, ticker2, orderId)
   print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
   return fill
 
 #############################################################################################
 
-################
-# Premium models
-################
+####################
+# Smart basis models
+####################
 def getFundingDict(ftx,bn,bb,isSkipBN=False,isSkipBB=False):
   d=dict()
   d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
@@ -305,7 +331,7 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
-def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
+def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=False, isSkipBB=False):
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
   #####
@@ -337,23 +363,23 @@ def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
   d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
   d['ftxETHBasis'] = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
   d['ftxFTTBasis'] = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
-  d['ftxBTCPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge)
-  d['ftxETHPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge)
-  d['ftxFTTPrem'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge)
+  d['ftxBTCSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge)
+  d['ftxETHSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge)
+  d['ftxFTTSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge)
   #####
   if not isSkipBN:
     bnBookTicker = bnGetBookTicker(bn)
     d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
     d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
-    d['bnBTCPrem'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge)
-    d['bnETHPrem'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge)
+    d['bnBTCSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge)
+    d['bnETHSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge)
   ####
   if not isSkipBB:
     bbTickers = bbGetTickers(bb)
     d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
     d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
-    d['bbBTCPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
-    d['bbETHPrem'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
+    d['bbBTCSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
+    d['bbETHSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
   return d
 
 #############################################################################################
@@ -362,14 +388,14 @@ def getPremDict(ftx,bn,bb,fundingDict,isSkipBN=False,isSkipBB=False):
 # CryptoTrader
 ##############
 def cryptoTraderRun(config):
-  def printTradeStats(spotFill,futFill,basisBps, mult,realizedPremBps,realizedSlippageBps):
-    premBps=(futFill/spotFill-1)*10000
-    slippageBps = mult * (premBps - basisBps)
-    print(getCurrentTime() + ': Realized premium  = ' + str(round(premBps))+'bps')
-    print(getCurrentTime() + ': Realized slippage = ' + str(round(slippageBps))+'bps')
-    realizedPremBps.append(premBps)
-    realizedSlippageBps.append(slippageBps)
-    return realizedPremBps,realizedSlippageBps
+  def printTradeStats(spotFill, futFill, mult, obsBasisBps, realizedBasisBps, realizedSlippageBps):
+    b=(futFill/spotFill-1)*10000
+    s= mult * (b - obsBasisBps)
+    print(getCurrentTime() + ': Realized basis    = ' + str(round(b))+'bps')
+    print(getCurrentTime() + ': Realized slippage = ' + str(round(s))+'bps')
+    realizedBasisBps.append(b)
+    realizedSlippageBps.append(s)
+    return realizedBasisBps,realizedSlippageBps
   #####
   ftx=ftxCCXTInit()
   bn = bnCCXTInit()
@@ -414,28 +440,34 @@ def cryptoTraderRun(config):
   ###########
   # Main loop
   ###########
-  realizedPremBps = []
+  realizedBasisBps = []
   realizedSlippageBps = []
   for i in range(CT_NPROGRAMS):
     status = 0
     while True:
       fundingDict=getFundingDict(ftx, bn, bb,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
-      premDict= getPremDict(ftx, bn, bb,fundingDict,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
+      smartBasisDict= getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=futExch != 'bn', isSkipBB=futExch != 'bb')
       prefix=futExch+ccy
-      premBps = premDict[prefix + 'Prem'] * 10000
-      basisBps = premDict[prefix + 'Basis'] * 10000
+      smartBasisBps = smartBasisDict[prefix + 'SmartBasis'] * 10000
+      basisBps      = smartBasisDict[prefix + 'Basis'] * 10000
       z = ('Program ' + str(i + 1) + ': ').rjust(15)
-      if premBps<=buyTgtBps:
-        status-=1
+      if basisBps<=buyTgtBps:
+        if status<=0:
+          status-=1
+        else:
+          status=0
         z += ('(' + str(status) + ') ').rjust(10)
-      elif premBps>=sellTgtBps:
-        status+=1
+      elif basisBps>=sellTgtBps:
+        if status>=0:
+          status+=1
+        else:
+          status=0
         z += ('(' + str(status) + ') ').rjust(10)
       else:
         status=0
         z += ''.rjust(10)
-      z += termcolor.colored(ccy + ' Premium (' + futExch + '): ' + str(round(premBps)) + '/' +str(round(basisBps)) + 'bps', 'blue')
-      print(z.ljust(30).rjust(40).ljust(70) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'red'))
+      z += termcolor.colored(ccy + ' (' + futExch + ') Smart/Raw Basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps', 'blue')
+      print(z.ljust(30).rjust(40).ljust(80) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'red'))
 
       if abs(status) >= CT_NOBS:
         print()
@@ -463,14 +495,14 @@ def cryptoTraderRun(config):
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-        realizedPremBps, realizedSlippageBps = printTradeStats(spotFill, futFill, basisBps, mult, realizedPremBps, realizedSlippageBps)
+        realizedBasisBps, realizedSlippageBps = printTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps)
         print(getCurrentTime() + ': Done')
         print()
         speak('Done')
         break
       time.sleep(CT_SLEEP)
-  if len(realizedPremBps) > 0:
-    print(getCurrentTime() + ': Average realized premium  = ' + str(round(np.mean(realizedPremBps))) + 'bps')
+  if len(realizedBasisBps) > 0:
+    print(getCurrentTime() + ': Average realized basis    = ' + str(round(np.mean(realizedBasisBps))) + 'bps')
     print(getCurrentTime() + ': Average realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
   speak('All done')
 

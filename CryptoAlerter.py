@@ -5,16 +5,16 @@ import termcolor
 ###########
 # Functions
 ###########
-def process(config,premDict,status,color,funding,funding2=None):
+def process(config,smartBasisDict,status,color,funding,funding2=None):
   def printStar():
     print('*' + termcolor.colored(z, color), end='')
   #####
   _, _, buyTgtBps, sellTgtBps = cl.CT_CONFIGS_DICT[config]
   tmp=config.split('_')
   prefix=tmp[0].lower()+tmp[1]
-  premBps = premDict[prefix+'Prem'] * 10000
-  basisBps = premDict[prefix + 'Basis'] * 10000
-  z=config+': ' + str(round(premBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))+'%'
+  smartBasisBps = smartBasisDict[prefix+'SmartBasis'] * 10000
+  basisBps = smartBasisDict[prefix + 'Basis'] * 10000
+  z=config+': ' + str(round(smartBasisBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))+'%'
   if funding2 is None:
     n=25
   else:
@@ -22,9 +22,9 @@ def process(config,premDict,status,color,funding,funding2=None):
     n=30
   z+=')'
   z=z.ljust(n)
-  if premBps<=buyTgtBps:
+  if smartBasisBps<=buyTgtBps:
     status-=1
-  elif premBps>=sellTgtBps:
+  elif smartBasisBps>=sellTgtBps:
     status+=1
   else:
     status=0
@@ -44,7 +44,7 @@ def process(config,premDict,status,color,funding,funding2=None):
 # Main
 ######
 cl.printHeader('CryptoAlerter')
-print(' Item 1:           Premium (i.e., smart basis)')
+print(' Item 1:           Smart basis')
 print(' Item 2:           Raw basis')
 print(' Inside brackets:  Estimated funding rate')
 print()
@@ -62,13 +62,13 @@ bbETHStatus=0
 
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
-  premDict = cl.getPremDict(ftx,bn,bb,fundingDict)
-  ftxBTCStatus=process('FTX_BTC', premDict, ftxBTCStatus, 'blue', fundingDict['ftxEstFundingBTC'])
-  bnBTCStatus = process('BN_BTC', premDict, bnBTCStatus, 'blue', fundingDict['bnEstFundingBTC'])
-  bbBTCStatus = process('BB_BTC', premDict, bbBTCStatus, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
-  ftxETHStatus=process('FTX_ETH', premDict, ftxETHStatus, 'red', fundingDict['ftxEstFundingETH'])
-  bnETHStatus = process('BN_ETH', premDict, bnETHStatus, 'red', fundingDict['bnEstFundingETH'])
-  bbETHStatus = process('BB_ETH', premDict, bbETHStatus, 'red', fundingDict['bbEstFunding1ETH'], fundingDict['bbEstFunding2ETH'])
-  ftxFTTStatus=process('FTX_FTT', premDict, ftxFTTStatus, 'magenta', fundingDict['ftxEstFundingFTT'])
+  smartBasisDict = cl.getSmartBasisDict(ftx, bn, bb, fundingDict)
+  ftxBTCStatus=process('FTX_BTC', smartBasisDict, ftxBTCStatus, 'blue', fundingDict['ftxEstFundingBTC'])
+  bnBTCStatus = process('BN_BTC', smartBasisDict, bnBTCStatus, 'blue', fundingDict['bnEstFundingBTC'])
+  bbBTCStatus = process('BB_BTC', smartBasisDict, bbBTCStatus, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
+  ftxETHStatus=process('FTX_ETH', smartBasisDict, ftxETHStatus, 'red', fundingDict['ftxEstFundingETH'])
+  bnETHStatus = process('BN_ETH', smartBasisDict, bnETHStatus, 'red', fundingDict['bnEstFundingETH'])
+  bbETHStatus = process('BB_ETH', smartBasisDict, bbETHStatus, 'red', fundingDict['bbEstFunding1ETH'], fundingDict['bbEstFunding2ETH'])
+  ftxFTTStatus=process('FTX_FTT', smartBasisDict, ftxFTTStatus, 'magenta', fundingDict['ftxEstFundingFTT'])
   print()
   time.sleep(cl.CT_SLEEP)
