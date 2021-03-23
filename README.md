@@ -15,3 +15,6 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 ## CryptoTrader
 - This tool is for machine trading on the exchanges.
 - For reference only--use at your own risk!
+
+## FTXLender
+- This tool runs on a loop and automatically modifies your USD loan size one minute before every reset.

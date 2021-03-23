@@ -391,10 +391,13 @@ def cryptoTraderRun(config):
   def printTradeStats(spotFill, futFill, mult, obsBasisBps, realizedBasisBps, realizedSlippageBps):
     b=(futFill/spotFill-1)*10000
     s= mult * (b - obsBasisBps)
-    print(getCurrentTime() + ': Realized basis    = ' + str(round(b))+'bps')
-    print(getCurrentTime() + ': Realized slippage = ' + str(round(s))+'bps')
+    print(getCurrentTime() +   ': Realized basis    = ' + str(round(b))+'bps')
+    print(getCurrentTime() +   ': Realized slippage = ' + str(round(s))+'bps')
     realizedBasisBps.append(b)
     realizedSlippageBps.append(s)
+    if len(realizedBasisBps) > 1:
+      print(getCurrentTime() + ': Avg realized basis    = ' + str(round(np.mean(realizedBasisBps))) + 'bps')
+      print(getCurrentTime() + ': Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
     return realizedBasisBps,realizedSlippageBps
   #####
   ftx=ftxCCXTInit()
@@ -501,9 +504,7 @@ def cryptoTraderRun(config):
         speak('Done')
         break
       time.sleep(CT_SLEEP)
-  if len(realizedBasisBps) > 0:
-    print(getCurrentTime() + ': Average realized basis    = ' + str(round(np.mean(realizedBasisBps))) + 'bps')
-    print(getCurrentTime() + ': Average realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
+
   speak('All done')
 
 #############################################################################################
@@ -551,6 +552,18 @@ def printHeader(header=''):
   if len(header) > 0:
     print('['+header+']')
     print()
+
+# Sleep until time chosen
+def sleepUntil(h, m, s):
+  t = datetime.datetime.today()
+  future = datetime.datetime(t.year, t.month, t.day, h, m, s)
+  if future < t:
+    future += datetime.timedelta(days=1)
+  fmt = '%Y-%m-%d %H:%M:%S'
+  print('Current time is', t.strftime(fmt))
+  print('Sleeping until ', future.strftime(fmt), '....')
+  print('')
+  time.sleep((future - t).seconds+1)
 
 # Speak text
 @retry(wait_fixed=1000)
