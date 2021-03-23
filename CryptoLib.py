@@ -466,7 +466,7 @@ def cryptoTraderRun(config):
       else:
         status=0
         z += ''.rjust(10)
-      z += termcolor.colored(ccy + ' (' + futExch + ') Smart/Raw Basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps', 'blue')
+      z += termcolor.colored(ccy + ' (' + futExch + ') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps', 'blue')
       print(z.ljust(30).rjust(40).ljust(80) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'red'))
 
       if abs(status) >= CT_NOBS:
@@ -529,6 +529,19 @@ def getOneDayDecayedMean(current,terminal,halfLifeHours):
 def getPctElapsed(hoursInterval):
   utcNow = datetime.datetime.utcnow()
   return (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
+
+# Print dictionary
+def printDict(d, indent=0, isSort=True):
+  keys=d.keys()
+  if isSort:
+    keys=sorted(keys)
+  for key in keys:
+    value=d[key]
+    print('\t' * indent + str(key))
+    if isinstance(value, dict):
+      printDict(value, indent + 1, isSort=isSort)
+    else:
+      print('\t' * (indent + 1) + str(value))
 
 # Print header
 def printHeader(header=''):
