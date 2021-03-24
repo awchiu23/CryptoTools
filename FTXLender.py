@@ -26,12 +26,12 @@ while True:
   ftx=cl.ftxCCXTInit()
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   loanSize = float(np.max([0,round(wallet.loc['USD']['total']*loanRatio)]))
-  print(cl.getCurrentTime()+': Modifying loan size to $'+str(loanSize)+' ....')
+  print(cl.getCurrentTime()+': Modifying loan size to $'+str(loanSize)+' .... ',end='')
   result=ftx.private_post_spot_margin_offers({'coin':'USD','size':loanSize,'rate':1e-6})
   if result['success']:
-    print(cl.getCurrentTime()+': Success!')
+    print('Success')
   else:
-    print(cl.getCurrentTime()+': Failed!')
+    print('Failed')
     sys.stop(1)
   print()
   if isRunNow:
