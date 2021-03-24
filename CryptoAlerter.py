@@ -48,7 +48,7 @@ def process(config,smartBasisDict,status,color,funding,funding2=None):
 cl.printHeader('CryptoAlerter')
 cl.printDict(cl.CT_CONFIGS_DICT)
 print()
-print('Column 1: (FTX USD borrow rate % / FTX USD lending rate %)')
+print('Column 1: FTX USD borrow rate % / FTX USD lending rate %')
 print('Body:     Smart basis / Raw basis (Est. funding rate %)')
 print()
 
