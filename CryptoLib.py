@@ -50,9 +50,10 @@ CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT
 CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-100,CT_DEFAULT_SELL_TGT_BPS+5]
 
-CT_NOBS = 5          # Number of observations through target before triggering
-CT_SLEEP = 3         # Delay in seconds between observations
-CT_NPROGRAMS = 10    # Number of programs (each program being a pair of trades)
+CT_NOBS = 5                    # Number of observations through target before triggering
+CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
+CT_SLEEP = 3                   # Delay in seconds between observations
+CT_NPROGRAMS = 10              # Number of programs (each program being a pair of trades)
 
 CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
@@ -463,6 +464,7 @@ def cryptoTraderRun(config):
   ###########
   # Main loop
   ###########
+  prevSmartBasis = []
   realizedBasisBps = []
   realizedSlippageBps = []
   for i in range(CT_NPROGRAMS):
@@ -473,14 +475,17 @@ def cryptoTraderRun(config):
       prefix=futExch+ccy
       smartBasisBps = smartBasisDict[prefix + 'SmartBasis'] * 10000
       basisBps      = smartBasisDict[prefix + 'Basis'] * 10000
+      prevSmartBasis.append(smartBasisBps)
+      prevSmartBasis=prevSmartBasis[-CT_NOBS:]
+      isStable=(np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_OBS_ALLOWED_BPS_RANGE
       z = ('Program ' + str(i + 1) + ': ').rjust(15)
-      if smartBasisBps<=buyTgtBps:
+      if smartBasisBps<=buyTgtBps and isStable:
         if status<=0:
           status-=1
         else:
           status=0
         z += ('(' + str(status) + ') ').rjust(10)
-      elif smartBasisBps>=sellTgtBps:
+      elif smartBasisBps>=sellTgtBps and isStable:
         if status>=0:
           status+=1
         else:
