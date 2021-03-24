@@ -6,9 +6,6 @@ import termcolor
 # Functions
 ###########
 def process(config,smartBasisDict,status,color,funding,funding2=None):
-  def printStar():
-    print('*' + termcolor.colored(z, color), end='')
-  #####
   _, _, buyTgtBps, sellTgtBps = cl.CT_CONFIGS_DICT[config]
   tmp=config.split('_')
   prefix=tmp[0].lower()+tmp[1]
@@ -19,25 +16,30 @@ def process(config,smartBasisDict,status,color,funding,funding2=None):
     n=25
   else:
     z=z+'/'+str(round(funding2*100))+'%'
-    n=30
+    n=29
   z+=')'
   z=z.ljust(n)
   if smartBasisBps<=buyTgtBps:
     status-=1
+    symbol = str(status).rjust(2)
   elif smartBasisBps>=sellTgtBps:
     status+=1
+    symbol = str(status).rjust(2)
   else:
-    status=0
+    status = 0
+    symbol = '  '
   if status>=cl.CT_NOBS:
-    printStar()
-    cl.speak('High')
-    status=0
+    status = 0
+    symbol=' H'
   elif status<=(-cl.CT_NOBS):
-    printStar()
+    status = 0
+    symbol=' L'
+
+  print(termcolor.colored(symbol,'red')+' ' + termcolor.colored(z, color), end='')
+  if symbol==' H':
+    cl.speak('High')
+  elif symbol==' L':
     cl.speak('Low')
-    status=0
-  else:
-    print(' ' + termcolor.colored(z, color), end='')
   return status
 
 ######
@@ -64,13 +66,13 @@ bbETHStatus=0
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
   smartBasisDict = cl.getSmartBasisDict(ftx, bn, bb, fundingDict)
-  print(('USD: (' + str(round(fundingDict['ftxEstBorrow'] * 100)) + '/' + str(round(fundingDict['ftxEstLending'] * 100)) + '%)').ljust(18),end='')
+  print(('USD: (' + str(round(fundingDict['ftxEstBorrow'] * 100)) + '/' + str(round(fundingDict['ftxEstLending'] * 100)) + '%)').ljust(16),end='')
   ftxBTCStatus=process('FTX_BTC', smartBasisDict, ftxBTCStatus, 'blue', fundingDict['ftxEstFundingBTC'])
   bnBTCStatus = process('BN_BTC', smartBasisDict, bnBTCStatus, 'blue', fundingDict['bnEstFundingBTC'])
   bbBTCStatus = process('BB_BTC', smartBasisDict, bbBTCStatus, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
-  ftxETHStatus=process('FTX_ETH', smartBasisDict, ftxETHStatus, 'red', fundingDict['ftxEstFundingETH'])
-  bnETHStatus = process('BN_ETH', smartBasisDict, bnETHStatus, 'red', fundingDict['bnEstFundingETH'])
-  bbETHStatus = process('BB_ETH', smartBasisDict, bbETHStatus, 'red', fundingDict['bbEstFunding1ETH'], fundingDict['bbEstFunding2ETH'])
-  ftxFTTStatus=process('FTX_FTT', smartBasisDict, ftxFTTStatus, 'magenta', fundingDict['ftxEstFundingFTT'])
+  ftxETHStatus=process('FTX_ETH', smartBasisDict, ftxETHStatus, 'magenta', fundingDict['ftxEstFundingETH'])
+  bnETHStatus = process('BN_ETH', smartBasisDict, bnETHStatus, 'magenta', fundingDict['bnEstFundingETH'])
+  bbETHStatus = process('BB_ETH', smartBasisDict, bbETHStatus, 'magenta', fundingDict['bbEstFunding1ETH'], fundingDict['bbEstFunding2ETH'])
+  ftxFTTStatus=process('FTX_FTT', smartBasisDict, ftxFTTStatus, 'blue', fundingDict['ftxEstFundingFTT'])
   print()
   time.sleep(cl.CT_SLEEP)
