@@ -46,8 +46,8 @@ def process(config,smartBasisDict,status,color,funding,funding2=None):
 # Main
 ######
 cl.printHeader('CryptoAlerter')
-print('USD:  (FTX USD borrow rate % / FTX USD lending rate %)')
-print('Body: Smart basis / Raw basis (Est. funding rate %)')
+print('Column 1: (FTX USD borrow rate % / FTX USD lending rate %)')
+print('Body:     Smart basis / Raw basis (Est. funding rate %)')
 print()
 cl.printDict(cl.CT_CONFIGS_DICT)
 print()
@@ -66,7 +66,7 @@ bbETHStatus=0
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
   smartBasisDict = cl.getSmartBasisDict(ftx, bn, bb, fundingDict)
-  print(('USD: (' + str(round(fundingDict['ftxEstBorrow'] * 100)) + '/' + str(round(fundingDict['ftxEstLending'] * 100)) + '%)').ljust(16),end='')
+  print(('(' + str(round(fundingDict['ftxEstBorrow'] * 100)) + '/' + str(round(fundingDict['ftxEstLending'] * 100)) + '%)').ljust(16),end='')
   ftxBTCStatus=process('FTX_BTC', smartBasisDict, ftxBTCStatus, 'blue', fundingDict['ftxEstFundingBTC'])
   bnBTCStatus = process('BN_BTC', smartBasisDict, bnBTCStatus, 'blue', fundingDict['bnEstFundingBTC'])
   bbBTCStatus = process('BB_BTC', smartBasisDict, bbBTCStatus, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
