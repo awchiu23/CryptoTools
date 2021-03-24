@@ -400,8 +400,8 @@ def cryptoTraderRun(config):
   def printTradeStats(spotFill, futFill, mult, obsBasisBps, realizedBasisBps, realizedSlippageBps):
     b=(futFill/spotFill-1)*10000
     s= mult * (b - obsBasisBps)
-    print(getCurrentTime() +   ': Realized basis    = ' + str(round(b))+'bps')
-    print(getCurrentTime() +   ': Realized slippage = ' + str(round(s))+'bps')
+    print(getCurrentTime() +   ': Realized basis        = ' + str(round(b))+'bps')
+    print(getCurrentTime() +   ': Realized slippage     = ' + str(round(s))+'bps')
     realizedBasisBps.append(b)
     realizedSlippageBps.append(s)
     if len(realizedBasisBps) > 1:
