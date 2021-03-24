@@ -484,18 +484,18 @@ def cryptoTraderRun(config):
           status-=1
         else:
           status=0
-        z += ('(' + str(status) + ') ').rjust(10)
+        z += termcolor.colored(str(status),'red').rjust(9)+' '
       elif smartBasisBps>=sellTgtBps:
         if status>=0:
           status+=1
         else:
           status=0
-        z += ('(' + str(status) + ') ').rjust(10)
+        z += termcolor.colored(str(status),'red').rjust(9)+' '
       else:
         status=0
         z += ''.rjust(10)
       z += termcolor.colored(ccy + ' (' + futExch + ') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps', 'blue')
-      print(z.ljust(30).rjust(40).ljust(80) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'red'))
+      print(z.ljust(30).rjust(40).ljust(80) + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'magenta'))
 
       if abs(status) >= CT_NOBS and isStable:
         print()
