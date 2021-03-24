@@ -166,12 +166,11 @@ def bnRelOrder(side,bn,ccy,trade_notional):
     return bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
   # Do not use @retry!
   def bnCancelOrder(bn, ticker, orderId):
-    #prevOrderStatus = bnGetOrder(bn, ticker, orderId)
     try:
       orderStatus=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
       if orderStatus['status']!='CANCELED':
         sys.stop(1)
-      return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty']) # remaining qty
+      return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty'])
     except:
       orderStatus=bnGetOrder(bn, ticker, orderId)
       return orderStatus,0
