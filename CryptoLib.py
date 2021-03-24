@@ -297,11 +297,22 @@ def getOneDayShortSpotEdge(fundingDict):
   return getOneDayDecayedMean(usdRate,BASE_USD_RATE,HALF_LIFE_HOURS)/365
 
 def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None):
+  # gain on projected basis mtm after 1 day
   edge=basis-getOneDayDecayedValues(basis,BASE_BASIS,HALF_LIFE_HOURS)[-1]
-  edge+=getOneDayDecayedMean(snapFundingRate,baseFundingRate,HALF_LIFE_HOURS)/365
-  edge+=estFundingRate/365/(24/hoursInterval) * (getPctElapsed(hoursInterval)**pctElapsedPower)  # Locked funding from elapsed
+
+  # gain on coupon from elapsed time
+  edge += estFundingRate / 365 / (24 / hoursInterval) * (getPctElapsed(hoursInterval) ** pctElapsedPower)
+  hoursAccountedFor=getPctElapsed(hoursInterval)*hoursInterval
+
+  # gain on coupon from previous reset (bb)
   if not prevFundingRate is None:
-    edge+=prevFundingRate/365/(24/hoursInterval)                                                 # Locked funding from previous reset
+    edge+=prevFundingRate/365/(24/hoursInterval)
+    hoursAccountedFor+=hoursInterval
+
+  # gain on projected funding pickup
+  nMinutes = 1440 - round(hoursAccountedFor * 60)
+  edge+=getOneDayDecayedMean(snapFundingRate,baseFundingRate,HALF_LIFE_HOURS,nMinutes=nMinutes)/365
+
   return edge
 
 def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
@@ -525,15 +536,16 @@ def cryptoTraderRun(config):
 def getCurrentTime():
   return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
-# Get values over one day with exponential decay features
+# Get values over next 1440 minutes (one day) with exponential decay features
 def getOneDayDecayedValues(current,terminal,halfLifeHours):
-  values = [1.0 * (0.5 ** (1 / halfLifeHours)) ** i for i in range(25)]  # T0, T1 .... T24 (25 values)
+  halfLifeMinutes=halfLifeHours*60
+  values = [1.0 * (0.5 ** (1 / halfLifeMinutes)) ** i for i in range(1,1441)]  # 1min, 2min .... 1440mins
   values = [i * (current - terminal) + terminal for i in values]
   return values
 
-# Get mean over one day with exponential decay features
-def getOneDayDecayedMean(current,terminal,halfLifeHours):
-  return np.mean(getOneDayDecayedValues(current,terminal,halfLifeHours))
+# Get mean over next specified minutes with exponential decay features
+def getOneDayDecayedMean(current,terminal,halfLifeHours,nMinutes=1440):
+  return np.mean(getOneDayDecayedValues(current,terminal,halfLifeHours)[:nMinutes])
 
 # Get percent of funding period that has elapsed
 def getPctElapsed(hoursInterval):
