@@ -154,37 +154,31 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 def bnGetEstFunding(bn, ccy):
   return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
-def bnMarketOrder(side,bn,ccy,trade_notional):
-  @retry(wait_fixed=1000)
-  def bnGetOrder(bn, ticker, orderId):
-    return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)()
-  ticker=ccy+'USD_PERP'
-  print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
-  if ccy=='BTC':
-    qty=int(trade_notional/100)
-  elif ccy=='ETH':
-    qty=int(trade_notional/10)
-  else:
-    sys.exit(1)
-  orderId=bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'MARKET', 'quantity': qty})['orderId']
-  while True:
-    orderStatus = bnGetOrder(bn, ticker, orderId)
-    if orderStatus['status']=='FILLED':
-      break
-    time.sleep(1)
-  fill=float(orderStatus['avgPrice'])
-  print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
-  return fill
-
-### Work in progress ###
 def bnRelOrder(side,bn,ccy,trade_notional):
   @retry(wait_fixed=1000)
+  def bnGetBid(bn, ticker):
+    return float(bn.dapiPublicGetTickerBookTicker({'symbol':ticker})[0]['bidPrice'])
+  @retry(wait_fixed=1000)
+  def bnGetAsk(bn, ticker):
+    return float(bn.dapiPublicGetTickerBookTicker({'symbol': ticker})[0]['askPrice'])
+  # Do not use @retry!
+  def bnPlaceOrder(bn, ticker, side, qty, limitPrice):
+    return bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
+  # Do not use @retry!
+  def bnCancelOrder(bn, ticker, orderId):
+    try:
+      d=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
+      if d['status']!='CANCELED':
+        sys.stop(1)
+      return float(d['origQty'])-float(d['executedQty']) # remaining qty
+    except:
+      return 0
+  @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
+  #####
   if side != 'BUY' and side != 'SELL':
-    sys.exit(1)()
+    sys.exit(1)
   ticker=ccy+'USD_PERP'
   print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if ccy=='BTC':
@@ -193,16 +187,30 @@ def bnRelOrder(side,bn,ccy,trade_notional):
     qty=int(trade_notional/10)
   else:
     sys.exit(1)
-  orderId=bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'MARKET', 'quantity': qty})['orderId']
+  if side == 'BUY':
+    limitPrice = bnGetBid(bn, ticker)
+  else:
+    limitPrice = bnGetAsk(bn, ticker)
+  orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
   while True:
     orderStatus = bnGetOrder(bn, ticker, orderId)
     if orderStatus['status']=='FILLED':
       break
+    else:
+      if side=='BUY':
+        newPrice=bnGetBid(bn,ticker)
+      else:
+        newPrice=bnGetAsk(bn,ticker)
+      if newPrice != limitPrice:
+        limitPrice = newPrice
+        qty=bnCancelOrder(bn,ticker,orderId)
+        if qty==0:
+          break
+        orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
   return fill
-### Work in progress ###
 
 #####
 
@@ -475,26 +483,26 @@ def cryptoTraderRun(config):
       if abs(status) >= CT_NOBS:
         print()
         if status>0:
-          speak('Selling')
+          speak('Entering')
           mult = -1
           if futExch == 'ftx':
             spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
             futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
           elif futExch == 'bn':
+            futFill = bnRelOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
             spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
-            futFill=bnMarketOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
           else:
             futFill=bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
             spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
         else:
-          speak('Buying')
+          speak('Unwinding')
           mult = 1
           if futExch == 'ftx':
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
             futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
           elif futExch == 'bn':
+            futFill = bnRelOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-            futFill=bnMarketOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)

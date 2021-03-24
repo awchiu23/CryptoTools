@@ -17,7 +17,11 @@ cl.printHeader('FTXLender')
 while True:
   if not isRunNow:
     now=datetime.datetime.now()
-    tgtTime=now-pd.DateOffset(hours=-1,minutes=now.minute+1,seconds=now.second,microseconds=now.microsecond)
+    if now.minute==59:
+      hoursShift=0
+    else:
+      hoursShift=1
+    tgtTime = now - pd.DateOffset(hours=-hoursShift, minutes=now.minute + 1, seconds=now.second, microseconds=now.microsecond)
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
   ftx=cl.ftxCCXTInit()
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
