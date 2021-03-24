@@ -316,7 +316,7 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,es
 
   return edge
 
-@retry
+@retry(wait_fixed=1000)
 def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
   if not hasattr(ftxGetOneDayShortFutEdge,'emaBTC'):
     ftxGetOneDayShortFutEdge.emaBTC = fundingDict['ftxEstFundingBTC']
@@ -340,14 +340,14 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
     sys.exit(1)
   return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate,BASE_FUNDING_RATE_FTX,fundingDict['ftxEstFunding' + ccy])
 
-@retry
+@retry(wait_fixed=1000)
 def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   premIndex=np.mean([float(n) for n in pd.DataFrame(bn.dapiData_get_basis({'pair':ccy+'USD','contractType':'PERPETUAL','period':'5m'}))[-3:]['basisRate']])
   premIndex=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis,snapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
-@retry
+@retry(wait_fixed=1000)
 def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
   premIndex=np.mean([float(n) for n in pd.DataFrame(bb.v2_public_get_premium_index_kline({'symbol':ccy+'USD','interval':'1','from':start_time})['result'])['close']])
