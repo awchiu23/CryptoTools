@@ -356,21 +356,25 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
 def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=False, isSkipBB=False):
+  @retry(wait_fixed=1000)
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
   #####
+  @retry(wait_fixed=1000)
   def ftxGetFutures(ftx):
     return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
   #####
   def ftxGetMid(ftxMarkets, name):
     return (ftxMarkets.loc[name,'bid'] + ftxMarkets.loc[name,'ask']) / 2
   #####
+  @retry(wait_fixed=1000)
   def bnGetBookTicker(bn):
     return pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
   #####
   def bnGetMid(bnBookTicker, ccy):
     return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
   #####
+  @retry(wait_fixed=1000)
   def bbGetTickers(bb):
     return pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
   #####
