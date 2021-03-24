@@ -166,13 +166,15 @@ def bnRelOrder(side,bn,ccy,trade_notional):
     return bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
   # Do not use @retry!
   def bnCancelOrder(bn, ticker, orderId):
+    #prevOrderStatus = bnGetOrder(bn, ticker, orderId)
     try:
-      d=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
-      if d['status']!='CANCELED':
+      orderStatus=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
+      if orderStatus['status']!='CANCELED':
         sys.stop(1)
-      return float(d['origQty'])-float(d['executedQty']) # remaining qty
+      return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty']) # remaining qty
     except:
-      return 0
+      orderStatus=bnGetOrder(bn, ticker, orderId)
+      return orderStatus,0
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
@@ -203,7 +205,7 @@ def bnRelOrder(side,bn,ccy,trade_notional):
         newPrice=bnGetAsk(bn,ticker)
       if newPrice != limitPrice:
         limitPrice = newPrice
-        qty=bnCancelOrder(bn,ticker,orderId)
+        orderStatus,qty=bnCancelOrder(bn,ticker,orderId)
         if qty==0:
           break
         orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)

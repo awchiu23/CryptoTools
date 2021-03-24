@@ -18,7 +18,7 @@ while True:
   if not isRunNow:
     now=datetime.datetime.now()
     if now.minute==59:
-      hoursShift=0
+      hoursShift=2
     else:
       hoursShift=1
     tgtTime = now - pd.DateOffset(hours=-hoursShift, minutes=now.minute + 1, seconds=now.second, microseconds=now.microsecond)
