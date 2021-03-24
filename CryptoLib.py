@@ -409,17 +409,22 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=False, isSkipBB=False):
 # CryptoTrader
 ##############
 def cryptoTraderRun(config):
-  def printTradeStats(spotFill, futFill, mult, obsBasisBps, realizedBasisBps, realizedSlippageBps):
+  def printTradeStats(spotFill, futFill, mult, obsBasisBps, realizedBasisBps, realizedSlippageBps, savedMults):
     b=(futFill/spotFill-1)*10000
     s= mult * (b - obsBasisBps)
     print(getCurrentTime() +   ': Realized basis        = ' + str(round(b))+'bps')
     print(getCurrentTime() +   ': Realized slippage     = ' + str(round(s))+'bps')
     realizedBasisBps.append(b)
     realizedSlippageBps.append(s)
+    savedMults.append(mult)
     if len(realizedBasisBps) > 1:
-      print(getCurrentTime() + ': Avg realized basis    = ' + str(round(np.mean(realizedBasisBps))) + 'bps')
+      if np.sum(savedMults)!=0:
+        products=[]
+        for n1,n2 in zip(realizedBasisBps,savedMults):
+          products.append(n1*n2)
+        print(getCurrentTime() + ': Avg realized basis    = ' + str(round(abs(np.sum(products)/np.sum(savedMults)))) + 'bps')
       print(getCurrentTime() + ': Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
-    return realizedBasisBps,realizedSlippageBps
+    return realizedBasisBps,realizedSlippageBps,savedMults
   #####
   ftx=ftxCCXTInit()
   bn = bnCCXTInit()
@@ -467,6 +472,7 @@ def cryptoTraderRun(config):
   prevSmartBasis = []
   realizedBasisBps = []
   realizedSlippageBps = []
+  savedMults = []
   for i in range(CT_NPROGRAMS):
     status = 0
     while True:
@@ -518,7 +524,7 @@ def cryptoTraderRun(config):
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-        realizedBasisBps, realizedSlippageBps = printTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps)
+        realizedBasisBps, realizedSlippageBps, savedMults = printTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps,savedMults)
         print(getCurrentTime() + ': Done')
         print()
         speak('Done')
