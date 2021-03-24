@@ -462,13 +462,13 @@ def cryptoTraderRun(config):
       smartBasisBps = smartBasisDict[prefix + 'SmartBasis'] * 10000
       basisBps      = smartBasisDict[prefix + 'Basis'] * 10000
       z = ('Program ' + str(i + 1) + ': ').rjust(15)
-      if basisBps<=buyTgtBps:
+      if smartBasisBps<=buyTgtBps:
         if status<=0:
           status-=1
         else:
           status=0
         z += ('(' + str(status) + ') ').rjust(10)
-      elif basisBps>=sellTgtBps:
+      elif smartBasisBps>=sellTgtBps:
         if status>=0:
           status+=1
         else:
