@@ -554,12 +554,12 @@ def cryptoTraderRun(config):
           elif futExch == 'bn':
             futFill = bnRelOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
             if futFill!=0:
-              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=888)  # FTX Spot Buy (Maker)
               isDone=True
           else:
             futFill=bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
             if futFill!=0:
-              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=888)  # FTX Spot Buy (Maker)
               isDone=True
         else:
           speak('Unwinding')
@@ -572,12 +572,12 @@ def cryptoTraderRun(config):
           elif futExch == 'bn':
             futFill = bnRelOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
             if futFill!=0:
-              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=888)  # FTX Spot Sell (Maker)
               isDone = True
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
             if futFill!=0:
-              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=888)  # FTX Spot Sell (Maker)
               isDone = True
         if not isDone:
           status=status-np.sign(status)*2
