@@ -126,13 +126,17 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
-  print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(trade_qty,6))+') ....')
+  if ticker[:3] == 'BTC':
+    qty = round(trade_qty, 3)
+  elif ticker[:3] == 'ETH':
+    qty = round(trade_qty, 2)
+  print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(qty,6))+') ....')
   if side=='BUY':
     limitPrice = ftxGetBid(ftx, ticker)
-    orderId = ftx.create_limit_buy_order(ticker, trade_qty, limitPrice)['info']['id']
+    orderId = ftx.create_limit_buy_order(ticker, qty, limitPrice)['info']['id']
   else:
     limitPrice = ftxGetAsk(ftx, ticker)
-    orderId = ftx.create_limit_sell_order(ticker, trade_qty, limitPrice)['info']['id']
+    orderId = ftx.create_limit_sell_order(ticker, qty, limitPrice)['info']['id']
   nChases=0
   while True:
     if ftxGetRemainingSize(ftx,orderId) == 0:
@@ -144,7 +148,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     if newPrice != limitPrice:
       limitPrice=newPrice
       nChases+=1
-      if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==trade_qty:
+      if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
         ftx.private_delete_orders_order_id({'order_id':orderId})
         if ftxGetFilledSize(ftx,orderId)!=0:
           print('Cancelled order with non-zero quantity executed!')
