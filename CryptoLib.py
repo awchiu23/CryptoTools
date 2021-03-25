@@ -107,7 +107,7 @@ def ftxGetEstBorrow(ftx):
 def ftxGetEstLending(ftx):
   return pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
 
-def ftxRelOrder(side,ftx,ticker,trade_qty):
+def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def ftxGetBid(ftx,ticker):
     return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
@@ -117,6 +117,9 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
+  @retry(wait_fixed=1000)
+  def ftxGetFilledSize(ftx, orderId):
+    return ftx.private_get_orders_order_id({'order_id': orderId})['result']['filledSize']
   @retry(wait_fixed=1000)
   def ftxGetFillPrice(ftx,orderId):
     return ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice']
@@ -130,21 +133,30 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
   else:
     limitPrice = ftxGetAsk(ftx, ticker)
     orderId = ftx.create_limit_sell_order(ticker, trade_qty, limitPrice)['info']['id']
+  nChases=0
   while True:
     if ftxGetRemainingSize(ftx,orderId) == 0:
       break
+    if side=='BUY':
+      newPrice=ftxGetBid(ftx,ticker)
     else:
-      if side=='BUY':
-        newPrice=ftxGetBid(ftx,ticker)
+      newPrice=ftxGetAsk(ftx,ticker)
+    if newPrice != limitPrice:
+      limitPrice=newPrice
+      nChases+=1
+      if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==trade_qty:
+        ftx.private_delete_orders_order_id({'order_id':orderId})
+        if ftxGetFilledSize(ftx,orderId)!=0:
+          print('Cancelled order with non-zero quantity executed!')
+          sys.exit(1)
+        print(getCurrentTime() + ': Cancelled')
+        return 0
       else:
-        newPrice=ftxGetAsk(ftx,ticker)
-      if newPrice != limitPrice:
-        limitPrice=newPrice
         try:
           orderId=ftx.private_post_orders_order_id_modify({'order_id':orderId,'price':limitPrice})['result']['id']
         except:
           break
-      time.sleep(1)
+    time.sleep(1)
   fill=ftxGetFillPrice(ftx,orderId)
   print(getCurrentTime() + ': Last filled at '+str(round(fill,6)))
   return fill
@@ -155,7 +167,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 def bnGetEstFunding(bn, ccy):
   return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
-def bnRelOrder(side,bn,ccy,trade_notional,maxChases=3):
+def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bnGetBid(bn, ticker):
     return float(bn.dapiPublicGetTickerBookTicker({'symbol':ticker})[0]['bidPrice'])
@@ -231,7 +243,7 @@ def bbGetEstFunding1(bb,ccy):
 def bbGetEstFunding2(bb, ccy):
   return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
 
-def bbRelOrder(side,bb,ccy,trade_notional,maxChases=3):
+def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bbGetBid(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
@@ -528,38 +540,49 @@ def cryptoTraderRun(config):
       print(z + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'magenta'))
 
       if abs(status) >= CT_NOBS and isStable:
+        isDone = False
         print()
         if status>0:
           speak('Entering')
           mult = -1
+
           if futExch == 'ftx':
             spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
-            futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
+            if spotFill!=0:
+              futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=888)  # FTX Fut Sell (Maker)
+              isDone=True
           elif futExch == 'bn':
             futFill = bnRelOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
             if futFill!=0:
               spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+              isDone=True
           else:
             futFill=bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
             if futFill!=0:
               spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+              isDone=True
         else:
           speak('Unwinding')
           mult = 1
           if futExch == 'ftx':
             spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-            futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
+            if spotFill != 0:
+              futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=888)  # FTX Fut Buy (Maker)
+              isDone = True
           elif futExch == 'bn':
             futFill = bnRelOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
             if futFill!=0:
               spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+              isDone = True
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
             if futFill!=0:
               spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-        if futFill==0:
-          status=0
+              isDone = True
+        if not isDone:
+          status=status-np.sign(status)
           print()
+          speak('Cancelled')
         else:
           realizedBasisBps, realizedSlippageBps, savedMults = printTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps,savedMults)
           print(getCurrentTime() + ': Done')
