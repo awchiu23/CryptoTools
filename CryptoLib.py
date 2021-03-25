@@ -130,6 +130,10 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     qty = round(trade_qty, 3)
   elif ticker[:3] == 'ETH':
     qty = round(trade_qty, 2)
+  elif ticker[:3] == 'FTT':
+    qty = round(trade_qty,1)
+  else:
+    sys.exit(1)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(qty,6))+') ....')
   if side=='BUY':
     limitPrice = ftxGetBid(ftx, ticker)
