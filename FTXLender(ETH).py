@@ -9,15 +9,14 @@ from retrying import retry
 # Params
 ########
 isRunNow=False   # If true--run once and stop; otherwise loop continuously and run one minute before every reset
-loanRatio=.99    # Percentage of positive ETH balance to lend out
-minRate=0.05     # Minimum rate p.a. to lend out at
+loanRatio=.9     # Percentage of positive ETH balance to lend out
 
 ###########
 # Functions
 ###########
 @retry(wait_fixed=1000)
 def ftxLendETH(ftx,loanSize):
-  return ftx.private_post_spot_margin_offers({'coin':'ETH','size':loanSize,'rate':minRate/365/24})
+  return ftx.private_post_spot_margin_offers({'coin':'ETH','size':loanSize,'rate':1e-6})
 
 ######
 # Main
