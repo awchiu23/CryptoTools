@@ -97,15 +97,15 @@ def cbCCXTInit():
 
 @retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
-  return ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate'] * 24 * 365
+  return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
 @retry(wait_fixed=1000)
 def ftxGetEstBorrow(ftx):
-  return pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+  return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate']) * 24 * 365
 
 @retry(wait_fixed=1000)
 def ftxGetEstLending(ftx):
-  return pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate'] * 24 * 365
+  return float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate']) * 24 * 365
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
