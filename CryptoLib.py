@@ -580,7 +580,7 @@ def cryptoTraderRun(config):
               spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
               isDone = True
         if not isDone:
-          status=status-np.sign(status)
+          status=status-np.sign(status)*2
           print()
           speak('Cancelled')
         else:
