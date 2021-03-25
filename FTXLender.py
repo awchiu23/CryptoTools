@@ -3,12 +3,20 @@ import pandas as pd
 import numpy as np
 import datetime
 import sys
+from retrying import retry
 
 ########
 # Params
 ########
 isRunNow=False  # If true--run once and stop; otherwise loop continuously and run one minute before every reset
 loanRatio=.99   # Percentage of positive USD balance to lend out
+
+###########
+# Functions
+###########
+@retry(wait_fixed=1000)
+def ftxLendUSD(ftx,loanSize):
+  return ftx.private_post_spot_margin_offers({'coin':'USD','size':loanSize,'rate':1e-6})
 
 ######
 # Main
@@ -27,12 +35,12 @@ while True:
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   loanSize = float(np.max([0,round(wallet.loc['USD']['total']*loanRatio)]))
   print(cl.getCurrentTime()+': Modifying loan size to $'+str(loanSize)+' .... ',end='')
-  result=ftx.private_post_spot_margin_offers({'coin':'USD','size':loanSize,'rate':1e-6})
+  result=ftxLendUSD(ftx,loanSize)
   if result['success']:
     print('Success')
   else:
     print('Failed')
-    sys.stop(1)
+    sys.exit(1)
   print()
   if isRunNow:
     break

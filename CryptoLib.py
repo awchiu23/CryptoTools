@@ -48,7 +48,7 @@ CT_CONFIGS_DICT['BB_BTC']=['bb','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT
 CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-100,CT_DEFAULT_SELL_TGT_BPS+5]
+CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-15,CT_DEFAULT_SELL_TGT_BPS+15]
 
 CT_NOBS = 5                    # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
@@ -155,13 +155,16 @@ def ftxRelOrder(side,ftx,ticker,trade_qty):
 def bnGetEstFunding(bn, ccy):
   return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
-def bnRelOrder(side,bn,ccy,trade_notional):
+def bnRelOrder(side,bn,ccy,trade_notional,maxChases=3):
   @retry(wait_fixed=1000)
   def bnGetBid(bn, ticker):
     return float(bn.dapiPublicGetTickerBookTicker({'symbol':ticker})[0]['bidPrice'])
   @retry(wait_fixed=1000)
   def bnGetAsk(bn, ticker):
     return float(bn.dapiPublicGetTickerBookTicker({'symbol': ticker})[0]['askPrice'])
+  @retry(wait_fixed=1000)
+  def bnGetOrder(bn, ticker, orderId):
+    return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
   # Do not use @retry!
   def bnPlaceOrder(bn, ticker, side, qty, limitPrice):
     return bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
@@ -170,14 +173,13 @@ def bnRelOrder(side,bn,ccy,trade_notional):
     try:
       orderStatus=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
       if orderStatus['status']!='CANCELED':
-        sys.stop(1)
+        print('Order cancellation failed!')
+        sys.exit(1)
       return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty'])
     except:
       orderStatus=bnGetOrder(bn, ticker, orderId)
       return orderStatus,0
-  @retry(wait_fixed=1000)
-  def bnGetOrder(bn, ticker, orderId):
-    return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
+
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -194,21 +196,26 @@ def bnRelOrder(side,bn,ccy,trade_notional):
   else:
     limitPrice = bnGetAsk(bn, ticker)
   orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
+  nChases=0
   while True:
     orderStatus = bnGetOrder(bn, ticker, orderId)
     if orderStatus['status']=='FILLED':
       break
+    if side=='BUY':
+      newPrice=bnGetBid(bn,ticker)
     else:
-      if side=='BUY':
-        newPrice=bnGetBid(bn,ticker)
+      newPrice=bnGetAsk(bn,ticker)
+    if newPrice != limitPrice:
+      limitPrice = newPrice
+      nChases+=1
+      orderStatus,leavesQty=bnCancelOrder(bn,ticker,orderId)
+      if nChases>maxChases and leavesQty==qty:
+        print(getCurrentTime() + ': Cancelled')
+        return 0
+      elif leavesQty==0:
+        break
       else:
-        newPrice=bnGetAsk(bn,ticker)
-      if newPrice != limitPrice:
-        limitPrice = newPrice
-        orderStatus,qty=bnCancelOrder(bn,ticker,orderId)
-        if qty==0:
-          break
-        orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
+        orderId=bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
@@ -224,7 +231,7 @@ def bbGetEstFunding1(bb,ccy):
 def bbGetEstFunding2(bb, ccy):
   return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
 
-def bbRelOrder(side,bb,ccy,trade_notional):
+def bbRelOrder(side,bb,ccy,trade_notional,maxChases=3):
   @retry(wait_fixed=1000)
   def bbGetBid(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
@@ -233,7 +240,11 @@ def bbRelOrder(side,bb,ccy,trade_notional):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
-    return bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
+    result=bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
+    if len(result)==0:
+      return 0
+    else:
+      return result[0]
   @retry(wait_fixed=1000)
   def bbGetFillPrice(bb, ticker, orderId):
     df = pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ticker, 'order_id': orderId})['result']['trade_list'])
@@ -252,16 +263,27 @@ def bbRelOrder(side,bb,ccy,trade_notional):
   else:
     limitPrice = bbGetAsk(bb, ticker1)
     orderId = bb.create_limit_sell_order(ticker1, trade_notional, limitPrice)['info']['order_id']
+  nChases=0
   while True:
-    if len(bbGetOrder(bb,ticker2,orderId))==0:
+    orderStatus=bbGetOrder(bb,ticker2,orderId)
+    if orderStatus==0: # If order doesn't exist, it means all executed
       break
+    if side=='BUY':
+      newPrice=bbGetBid(bb,ticker1)
     else:
-      if side=='BUY':
-        newPrice=bbGetBid(bb,ticker1)
+      newPrice=bbGetAsk(bb,ticker1)
+    if newPrice != limitPrice:
+      limitPrice = newPrice
+      nChases+=1
+      orderStatus = bbGetOrder(bb, ticker2, orderId)
+      if nChases>maxChases and orderStatus['cum_exec_qty']==0:
+        if bb.v2_private_post_order_cancel({'symbol': ticker2, 'order_id': orderId})['result']['cum_exec_qty'] > 0:
+          print('Cancelled order with non-zero quantity executed!')
+          sys.exit(1)
+        else:
+          print(getCurrentTime() + ': Cancelled')
+          return 0
       else:
-        newPrice=bbGetAsk(bb,ticker1)
-      if newPrice != limitPrice:
-        limitPrice = newPrice
         try:
           bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
         except:
@@ -515,10 +537,12 @@ def cryptoTraderRun(config):
             futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Sell (Maker)
           elif futExch == 'bn':
             futFill = bnRelOrder('SELL', bn, ccy, trade_notional)  # Binance Fut Sell (Taker)
-            spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+            if futFill!=0:
+              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
           else:
             futFill=bbRelOrder('SELL', bb, ccy, trade_notional)  # Bybit Fut Sell (Maker)
-            spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
+            if futFill!=0:
+              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)  # FTX Spot Buy (Maker)
         else:
           speak('Unwinding')
           mult = 1
@@ -527,15 +551,21 @@ def cryptoTraderRun(config):
             futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty)  # FTX Fut Buy (Maker)
           elif futExch == 'bn':
             futFill = bnRelOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
-            spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+            if futFill!=0:
+              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
           else:
             futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
-            spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
-        realizedBasisBps, realizedSlippageBps, savedMults = printTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps,savedMults)
-        print(getCurrentTime() + ': Done')
-        print()
-        speak('Done')
-        break
+            if futFill!=0:
+              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)  # FTX Spot Sell (Maker)
+        if futFill==0:
+          status=0
+          print()
+        else:
+          realizedBasisBps, realizedSlippageBps, savedMults = printTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps,savedMults)
+          print(getCurrentTime() + ': Done')
+          print()
+          speak('Done')
+          break
       time.sleep(CT_SLEEP)
 
   speak('All done')
