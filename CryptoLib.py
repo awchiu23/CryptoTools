@@ -48,7 +48,7 @@ CT_CONFIGS_DICT['BB_BTC']=['bb','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT
 CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
 CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-5,CT_DEFAULT_SELL_TGT_BPS+5]
+CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-15,CT_DEFAULT_SELL_TGT_BPS+15]
 
 CT_NOBS = 5                    # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
@@ -288,6 +288,8 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
       limitPrice = newPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker2, orderId)
+      if orderStatus == 0:  # If order doesn't exist, it means all executed
+        break
       if nChases>maxChases and orderStatus['cum_exec_qty']==0:
         if bb.v2_private_post_order_cancel({'symbol': ticker2, 'order_id': orderId})['result']['cum_exec_qty'] > 0:
           print('Cancelled order with non-zero quantity executed!')
