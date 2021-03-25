@@ -9,7 +9,7 @@ from retrying import retry
 # Params
 ########
 isRunNow=False   # If true--run once and stop; otherwise loop continuously and run one minute before every reset
-loanRatio=.95    # Percentage of positive ETH balance to lend out
+loanRatio=.99    # Percentage of positive ETH balance to lend out
 minRate=0.05     # Minimum rate p.a. to lend out at
 
 ###########
