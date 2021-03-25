@@ -608,6 +608,10 @@ def cryptoTraderRun(config):
 #####
 # Etc
 #####
+# Cast column of dataframe to float
+def dfSetFloat(df,colName):
+  df[colName] = df[colName].astype(float)
+
 # Get current time
 def getCurrentTime():
   return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')

@@ -116,8 +116,7 @@ def bnInit(bn,spotBTC,spotETH):
   bnBal = pd.DataFrame(bn.dapiPrivate_get_balance())
   bnBal['Ccy']=bnBal['asset']
   bnBal=bnBal.set_index('Ccy').loc[['BTC','ETH']]
-  bnBal['balance']=[float(z) for z in bnBal['balance']]
-  bnBal['crossUnPnl']=[float(z) for z in bnBal['crossUnPnl']]
+  cl.dfSetFloat(bnBal,['balance','crossUnPnl'])
   bnBal['SpotDelta']=bnBal['balance']+bnBal['crossUnPnl']
   #####
   bnPR = pd.DataFrame(bn.dapiPrivate_get_positionrisk())
@@ -125,7 +124,7 @@ def bnInit(bn,spotBTC,spotETH):
   bnPR['Ccy'] = [z[:3] for z in bnPR['symbol']]
   bnPR=bnPR.set_index('Ccy').loc[['BTC','ETH']]
   bnPR['FutDeltaUSD']=bnPR['positionAmt']
-  bnPR['FutDeltaUSD'] = [float(z) for z in bnPR['FutDeltaUSD']]
+  cl.dfSetFloat(bnPR, 'FutDeltaUSD')
   bnPR.loc['BTC', 'FutDeltaUSD'] *= 100
   bnPR.loc['ETH', 'FutDeltaUSD'] *= 10
   bnPR['FutDelta']=bnPR['FutDeltaUSD']
@@ -137,7 +136,8 @@ def bnInit(bn,spotBTC,spotETH):
   bnPayments = bnPayments[['USD_PERP' in z for z in bnPayments['symbol']]]
   bnPayments['Ccy'] = [z[:3] for z in bnPayments['symbol']]
   bnPayments = bnPayments.set_index('Ccy').loc[['BTC', 'ETH']]
-  bnPayments['incomeUSD'] = [float(z) for z in bnPayments['income']]
+  cl.dfSetFloat(bnPayments,'income')
+  bnPayments['incomeUSD'] = bnPayments['income']
   bnPayments.loc['BTC', 'incomeUSD'] *= spotBTC
   bnPayments.loc['ETH', 'incomeUSD'] *= spotETH
   bnPayments['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in bnPayments['time']]
@@ -161,7 +161,7 @@ def bnPrintFunding(bn,bnPR,ccy):
   df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
   df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['fundingTime']]
   df = df.set_index('date')
-  df['fundingRate']=[float(fr) for fr in df['fundingRate']]
+  cl.dfSetFloat(df,'fundingRate')
   df=getOneDay(df)
   oneDayFunding = df['fundingRate'].mean() * 3 * 365
   prevFunding = df['fundingRate'][-1] * 3 * 365
@@ -196,8 +196,8 @@ def bbInit(bb,spotBTC,spotETH):
   bbNotional=bbPL['FutDeltaUSD'].abs().sum()
   #####
   bbPayments=getPayments('BTC').append(getPayments('ETH'))
-  bbPayments['fee_rate'] = [float(fr) for fr in bbPayments['fee_rate']]
-  bbPayments['incomeUSD']=[-float(income) for income in bbPayments['exec_fee']]
+  cl.dfSetFloat(bbPayments,['fee_rate','exec_fee'])
+  bbPayments['incomeUSD']=-bbPayments['exec_fee']
   bbPayments.loc['BTCUSD','incomeUSD']*=spotBTC
   bbPayments.loc['ETHUSD','incomeUSD']*=spotETH
   bbPayments=bbPayments[bbPayments['exec_type']=='Funding']
