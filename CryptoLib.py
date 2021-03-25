@@ -463,7 +463,7 @@ def cryptoTraderRun(config):
         products=[]
         for n1,n2 in zip(realizedBasisBps,savedMults):
           products.append(n1*n2)
-        print(getCurrentTime() + ': Avg realized basis    = ' + str(round(abs(np.sum(products)/np.sum(savedMults)))) + 'bps')
+        print(getCurrentTime() + ': Avg realized basis    = ' + str(round(np.sum(products)/np.sum(savedMults))) + 'bps')
       print(getCurrentTime() + ': Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
     return realizedBasisBps,realizedSlippageBps,savedMults
   #####

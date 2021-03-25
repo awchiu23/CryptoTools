@@ -12,6 +12,9 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 ## CryptoReporter
 - This tool is for monitoring your NAVs and positions.
 
+## CryptoStats
+- This tool provides some historical stats sourced through API data.
+
 ## CryptoTrader
 - This tool is for machine trading on the exchanges.
 - For reference only--use at your own risk!
