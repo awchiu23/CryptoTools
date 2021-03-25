@@ -45,6 +45,7 @@ def ftxInit(ftx):
   ftxInfo = ftx.private_get_account()['result']
   ######
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main'])
+  cl.dfSetFloat(ftxWallet,['usdValue','total'])
   ftxWallet['Ccy']=ftxWallet['coin']
   ftxWallet['SpotDelta']=ftxWallet['total']
   ftxWallet=ftxWallet.set_index('Ccy').loc[['BTC','ETH','FTT','USD']]
@@ -53,6 +54,7 @@ def ftxInit(ftx):
   spotFTT = ftxWallet.loc['FTT', 'usdValue'] / ftxWallet.loc['FTT', 'total']
   ######
   ftxPositions = pd.DataFrame(ftxInfo['positions'])
+  cl.dfSetFloat(ftxPositions, 'size')
   ftxPositions['Ccy'] = [z[:3] for z in ftxPositions['future']]
   ftxPositions=ftxPositions.set_index('Ccy').loc[['BTC','ETH','FTT']]
   ftxPositions['FutDelta']=ftxPositions['size']
@@ -64,6 +66,7 @@ def ftxInit(ftx):
   ftxNotional=ftxPositions.loc[['BTC','ETH','FTT']]['FutDeltaUSD'].abs().sum()
   ######
   ftxPayments = pd.DataFrame(ftx.private_get_funding_payments()['result']).set_index('time')
+  cl.dfSetFloat(ftxPayments, ['payment','rate'])
   ftxPayments.index = pd.to_datetime(ftxPayments.index).tz_localize(None)
   ftxPayments=getOneDay(ftxPayments)
   #####
@@ -74,7 +77,9 @@ def ftxInit(ftx):
   ftxOneDayAnnRet = ftxOneDayIncome * 365 / ftxNotional
   #####
   ftxBorrows = cleanBorrows(ftxPayments,pd.DataFrame(ftx.private_get_spot_margin_borrow_history()['result']).set_index('time'))
+  cl.dfSetFloat(ftxBorrows, 'cost')
   ftxLoans = cleanBorrows(ftxPayments,pd.DataFrame(ftx.private_get_spot_margin_lending_history()['result']).set_index('time'))
+  cl.dfSetFloat(ftxLoans, 'proceeds')
   ftxPrevBorrow = ftxBorrows.loc[tm]['cost']
   ftxPrevLoan = ftxLoans.loc[tm]['proceeds']
   ftxPrevUSDFlows=ftxPrevLoan-ftxPrevBorrow
@@ -84,8 +89,8 @@ def ftxInit(ftx):
   ftxOneDayUSDFlowsAnnRet = ftxOneDayUSDFlows * 365 / absUSD
   #####
   ftxNAV = ftxWallet['usdValue'].sum()
-  ftxMF = ftxInfo['marginFraction']
-  ftxMMReq = ftxInfo['maintenanceMarginRequirement']
+  ftxMF = float(ftxInfo['marginFraction'])
+  ftxMMReq = float(ftxInfo['maintenanceMarginRequirement'])
   #####
   return ftxWallet,ftxPositions,ftxPayments,ftxBorrows, \
          ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \

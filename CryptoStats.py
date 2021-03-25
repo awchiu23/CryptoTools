@@ -35,7 +35,7 @@ cl.printHeader('CryptoStats')
 ftx=cl.ftxCCXTInit()
 bn = cl.bnCCXTInit()
 bb = cl.bbCCXTInit()
-cutoff=datetime.datetime.today() - pd.DateOffset(days=7)
+cutoff=datetime.datetime.now() - pd.DateOffset(days=7)
 
 df=pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit':1000})['result'])
 df.index=[datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in df['time']]
