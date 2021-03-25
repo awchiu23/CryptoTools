@@ -34,6 +34,8 @@ while True:
   ftx=cl.ftxCCXTInit()
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   loanSize = float(np.max([0,round(wallet.loc['USD']['total']*loanRatio)]))
+
+  print(cl.getCurrentTime()+': Estimated USD loan rate: '+str(round(cl.ftxGetEstLending(ftx)*100))+'% p.a.')
   print(cl.getCurrentTime()+': Modifying loan size to $'+str(loanSize)+' .... ',end='')
   result=ftxLendUSD(ftx,loanSize)
   if result['success']:
