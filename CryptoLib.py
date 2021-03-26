@@ -40,7 +40,7 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 ########
 # Params
 ########
-CT_DEFAULT_TGT_BPS=15
+CT_DEFAULT_TGT_BPS=10
 CT_CONFIGS_DICT=dict()
 CT_CONFIGS_DICT['BTC']=[CT_DEFAULT_TGT_BPS]
 CT_CONFIGS_DICT['ETH']=[CT_DEFAULT_TGT_BPS]
@@ -77,10 +77,10 @@ CT_MAX_FTT = 100               # Hard limit
 # Params for Smart Basis Models
 ###############################
 HALF_LIFE_HOURS = 4                     # Half life of exponential decay in hours
-BASE_USD_RATE = 0.25                    # Equilibrium USD rate P.A.
-BASE_FUNDING_RATE_FTX = 0.25            # Equilibrium funding rate P.A.
-BASE_FUNDING_RATE_BN = 0.30             # Equilibrium funding rate P.A.
-BASE_FUNDING_RATE_BB = 0.35             # Equilibrium funding rate P.A.
+BASE_USD_RATE = 0.2                     # Equilibrium USD rate P.A.
+BASE_FUNDING_RATE_FTX = 0.22            # Equilibrium funding rate P.A.
+BASE_FUNDING_RATE_BN = 0.27             # Equilibrium funding rate P.A.
+BASE_FUNDING_RATE_BB = 0.32             # Equilibrium funding rate P.A.
 BASE_BASIS = BASE_FUNDING_RATE_FTX/365  # Equilibrium future basis
 
 #############################################################################################
@@ -160,7 +160,10 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
       limitPrice=newPrice
       nChases+=1
       if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
-        ftx.private_delete_orders_order_id({'order_id':orderId})
+        try:
+          ftx.private_delete_orders_order_id({'order_id':orderId})
+        except:
+          pass
         if ftxGetFilledSize(ftx,orderId)!=0:
           print('Cancelled order with non-zero quantity executed!')
           sys.exit(1)
@@ -327,21 +330,19 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bn,bb,isSkipBN=False,isSkipBB=False):
+def getFundingDict(ftx,bn,bb):
   d=dict()
   d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
   d['ftxEstLending'] = ftxGetEstLending(ftx)
   d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
   d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
   d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
-  if not isSkipBN:
-    d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
-    d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
-  if not isSkipBB:
-    d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
-    d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
-    d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
-    d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
+  d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
+  d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
+  d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
+  d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
+  d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
+  d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
   return d
 
 def getOneDayShortSpotEdge(fundingDict):
@@ -406,7 +407,7 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
-def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=False, isSkipBB=False):
+def getSmartBasisDict(ftx, bn, bb, fundingDict):
   @retry(wait_fixed=1000)
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
@@ -446,19 +447,17 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=False, isSkipBB=False):
   d['ftxETHSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge)
   d['ftxFTTSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge)
   #####
-  if not isSkipBN:
-    bnBookTicker = bnGetBookTicker(bn)
-    d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
-    d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
-    d['bnBTCSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge)
-    d['bnETHSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge)
+  bnBookTicker = bnGetBookTicker(bn)
+  d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
+  d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
+  d['bnBTCSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge)
+  d['bnETHSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge)
   ####
-  if not isSkipBB:
-    bbTickers = bbGetTickers(bb)
-    d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
-    d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
-    d['bbBTCSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
-    d['bbETHSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
+  bbTickers = bbGetTickers(bb)
+  d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
+  d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
+  d['bbBTCSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
+  d['bbETHSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
   return d
 
 #############################################################################################
@@ -584,7 +583,6 @@ def ctRun(ccy):
         prevSmartBasis = []
         chosenLong = ''
         chosenShort = ''
-        time.sleep(CT_SLEEP)
         continue
 
       # Chosen long/short legs
@@ -625,6 +623,7 @@ def ctRun(ccy):
           status=status-np.sign(status)*2
           print()
           speak('Cancelled')
+          continue
         else:
           realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
           print(getCurrentTime() + ': Done')

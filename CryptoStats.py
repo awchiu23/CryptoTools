@@ -2,6 +2,12 @@ import CryptoLib as cl
 import pandas as pd
 import datetime
 import termcolor
+import ccxt
+
+########
+# Params
+########
+isShowAltFundings=False
 
 ###########
 # Functions
@@ -35,6 +41,16 @@ def bbPrintFundingRate(bb,ccy,cutoff):
   print(('Avg Bybit ' + ccy + ' funding rate: ').rjust(40)+ str(round(rate * 100)) + '%')
   return rate
 
+def dbPrintFundingRate(db,ccy,cutoff):
+  start_timestamp = int(datetime.datetime.timestamp(cutoff)*1000)
+  end_timestamp = int((datetime.datetime.timestamp(datetime.datetime.now())) * 1000)
+  df = pd.DataFrame(db.public_get_get_funding_rate_history({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['timestamp']]
+  df = df.set_index('date').sort_index()
+  rate=df['interest_8h'].mean() * 3 * 365
+  print(('Avg Deribit ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
+  return rate
+
 ######
 # Init
 ######
@@ -42,12 +58,12 @@ cl.printHeader('CryptoStats')
 ftx=cl.ftxCCXTInit()
 bn = cl.bnCCXTInit()
 bb = cl.bbCCXTInit()
+if isShowAltFundings:
+  db = ccxt.deribit({'apiKey': 's545TabG', 'secret': 'Ii7kYRE1N9Klu-0fer8-IMJocaz3BNqVsobqGfKSo-M', 'enableRateLimit': True})
 
 cutoff=datetime.datetime.now() - pd.DateOffset(days=7)
 print('Cut-off date: '.rjust(40)+cutoff.strftime('%Y-%m-%d'))
 print()
-
-
 
 ftxBTCFundingRate=ftxPrintFundingRate(ftx,'BTC',cutoff)
 ftxETHFundingRate=ftxPrintFundingRate(ftx,'ETH',cutoff)
@@ -61,6 +77,11 @@ print()
 bbBTCFundingRate=bbPrintFundingRate(bb,'BTC',cutoff)
 bbETHFundingRate=bbPrintFundingRate(bb,'ETH',cutoff)
 print()
+
+if isShowAltFundings:
+  dbPrintFundingRate(db,'BTC',cutoff)
+  dbPrintFundingRate(db,'ETH',cutoff)
+  print()
 
 ftxMixedFundingRate=(ftxBTCFundingRate+ftxETHFundingRate)/2
 bnMixedFundingRate=(bnBTCFundingRate+bnETHFundingRate)/2
@@ -79,4 +100,3 @@ print (('Avg FTX USD rate: ').rjust(40)+termcolor.colored(str(round(df.mean()*10
 print('Avg FTX funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(ftxMixedFundingRate*100))+'%','red'))
 print('Avg Binance funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bnMixedFundingRate*100))+'%','red'))
 print('Avg Bybit funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bbMixedFundingRate*100))+'%','red'))
-
