@@ -106,7 +106,7 @@ def ftxPrintUSDBorrowLending(ftx,ftxWallet):
   estBorrow = cl.ftxGetEstBorrow(ftx)
   estLending = cl.ftxGetEstLending(ftx)
   usdBalance = ftxWallet.loc['USD', 'total']
-  print('FTX USD est borrow/lending: '.rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. ($' + str(round(usdBalance))+')')
+  print('FTX USD est borrow/lending rate: '.rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. ($' + str(round(usdBalance))+')')
 
 def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
   df=ftxPayments[ftxPayments['future']==ccy+'-PERP']
