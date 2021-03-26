@@ -104,8 +104,8 @@ def ftxGetEstBorrow(ftx):
   return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate']) * 24 * 365
 
 @retry(wait_fixed=1000)
-def ftxGetEstLending(ftx):
-  return float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['USD', 'estimate']) * 24 * 365
+def ftxGetEstLending(ftx,ccy='USD'):
+  return float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
