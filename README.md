@@ -17,6 +17,7 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 
 ## CryptoTrader
 - Automated trading of spot and futures.
+- Talk to me if you are interested.
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset.

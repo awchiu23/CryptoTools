@@ -46,6 +46,17 @@ CT_CONFIGS_DICT['BTC']=[CT_DEFAULT_TGT_BPS]
 CT_CONFIGS_DICT['ETH']=[CT_DEFAULT_TGT_BPS]
 CT_CONFIGS_DICT['FTT']=[CT_DEFAULT_TGT_BPS+5]
 
+CT_CONFIGS_DICT['SPOT_BTC_OK']=1
+CT_CONFIGS_DICT['SPOT_ETH_OK']=1
+CT_CONFIGS_DICT['SPOT_FTT_OK']=1
+CT_CONFIGS_DICT['FTX_BTC_OK']=1
+CT_CONFIGS_DICT['FTX_ETH_OK']=1
+CT_CONFIGS_DICT['FTX_FTT_OK']=1
+CT_CONFIGS_DICT['BB_BTC_OK']=1
+CT_CONFIGS_DICT['BB_ETH_OK']=1
+CT_CONFIGS_DICT['BN_BTC_OK']=1
+CT_CONFIGS_DICT['BN_ETH_OK']=1
+
 CT_NOBS = 5                    # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
 CT_SLEEP = 3                   # Delay in seconds between observations
@@ -486,6 +497,15 @@ def ctInit():
   print()
   return ftx,bb,bn,qty_dict,notional_dict
 
+def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
+  if CT_CONFIGS_DICT[exch + '_' + ccy + '_OK'] == 0:
+    d = filterDict(smartBasisDict, 'Basis')
+    d = filterDict(d, exch.lower())
+    d = filterDict(d, ccy)
+    for key in d:
+      del smartBasisDict[key]
+  return smartBasisDict
+
 def ctGetTargetString(tgtBps):
   return termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
 
@@ -526,8 +546,17 @@ def ctRun(ccy):
     while True:
       fundingDict=getFundingDict(ftx, bn, bb)
       smartBasisDict = getSmartBasisDict(ftx, bn, bb, fundingDict)
-      smartBasisDict['spot'+ccy+'SmartBasis']=0
-      smartBasisDict['spot'+ccy+'Basis']=0
+      smartBasisDict['spot' + ccy + 'SmartBasis'] = 0
+      smartBasisDict['spot' + ccy + 'Basis'] = 0
+
+      # Remove disabled instruments
+      for x in ['SPOT','FTX','BN','BB']:
+        for c in ['BTC','ETH']:
+          smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
+      for x in ['SPOT','FTX']:
+        for c in ['FTT']:
+          smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
+
       if chosenLong=='':
         d=filterDict(smartBasisDict,'SmartBasis')
         d=filterDict(d,ccy)
