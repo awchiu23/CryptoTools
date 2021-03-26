@@ -584,12 +584,12 @@ def cryptoTraderRun(config):
               futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=888)
               isDone = True
           elif futExch == 'bn':
-            futFill = bnRelOrder('BUY', bn, ccy, trade_notional)  # Binance Fut Buy (Taker)
+            futFill = bnRelOrder('BUY', bn, ccy, trade_notional)
             if futFill!=0:
               spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=888)
               isDone = True
           else:
-            futFill=bbRelOrder('BUY', bb, ccy, trade_notional)  # Bybit Fut Buy (Maker)
+            futFill=bbRelOrder('BUY', bb, ccy, trade_notional)
             if futFill!=0:
               spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=888)
               isDone = True
@@ -631,6 +631,7 @@ def cryptoTrader2Run(ccy):
     while True:
       fundingDict=getFundingDict(ftx, bn, bb)
       smartBasisDict = getSmartBasisDict(ftx, bn, bb, fundingDict)
+      smartBasisDict['spot'+ccy+'SmartBasis']=0
 
       if chosenLong=='':
         d=filterDict(smartBasisDict,'SmartBasis')
@@ -693,6 +694,19 @@ def cryptoTrader2Run(ccy):
             isCancelled=True
         if 'bn' in chosenShort and not isCancelled:
           shortFill = bnRelOrder('SELL', bn, ccy, trade_notional,maxChases=getMaxChases(completedLegs))
+          if shortFill!=0:
+            completedLegs+=1
+          else:
+            isCancelled=True
+
+        if 'spot' in chosenLong and not isCancelled:
+          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=getMaxChases(completedLegs))
+          if longFill!=0:
+            completedLegs+=1
+          else:
+            isCancelled=True
+        if 'spot' in chosenShort and not isCancelled:
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=getMaxChases(completedLegs))
           if shortFill!=0:
             completedLegs+=1
           else:
