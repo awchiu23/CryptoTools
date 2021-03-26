@@ -308,6 +308,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
       orderStatus = bbGetOrder(bb, ticker2, orderId)
       if orderStatus == 0:  # If order doesn't exist, it means all executed
         break
+      orderStatus = bbGetOrder(bb, ticker2, orderId)
       if nChases>maxChases and orderStatus['cum_exec_qty']==0:
         if bb.v2_private_post_order_cancel({'symbol': ticker2, 'order_id': orderId})['result']['cum_exec_qty'] > 0:
           print('Cancelled order with non-zero quantity executed!')
