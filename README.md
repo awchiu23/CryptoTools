@@ -16,8 +16,10 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 - This tool provides some historical stats sourced through APIs.
 
 ## CryptoTrader
-- This tool is for automated trading on the exchanges.
-- If interested, please talk to me.
+- Automated trading of spot (FTX) vs. futures (FTX, Binance, Bybit).
+
+## CryptoTrader2
+- Automated trading of futures vs. futures (FTX, Binance, Bybit).
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset.
