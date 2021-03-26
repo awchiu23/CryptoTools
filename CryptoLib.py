@@ -644,7 +644,7 @@ def cryptoTrader2Run(ccy):
           status = 0
         else:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
-          z += termcolor.colored((ccy+' smart/raw/basis: '+str(round(smartBasisBps))+'bps').ljust(45),'blue')
+          z += termcolor.colored((ccy+' smart/raw basis: '+str(round(smartBasisBps))+'bps').ljust(45),'blue')
           print(z + termcolor.colored('Target: ' + str(round(sellTgtBps))+'bps', 'magenta'))
           time.sleep(CT_SLEEP)
           continue
