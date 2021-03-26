@@ -40,26 +40,16 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 ########
 # Params
 ########
-CT_DEFAULT_BUY_TGT_BPS = -15
-CT_DEFAULT_SELL_TGT_BPS = 15
-
+CT_DEFAULT_TGT_BPS=5
 CT_CONFIGS_DICT=dict()
-CT_CONFIGS_DICT['FTX_BTC']=['ftx','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BN_BTC']=['bn','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BB_BTC']=['bb','BTC',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_ETH']=['ftx','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BN_ETH']=['bn','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['BB_ETH']=['bb','ETH',CT_DEFAULT_BUY_TGT_BPS,CT_DEFAULT_SELL_TGT_BPS]
-CT_CONFIGS_DICT['FTX_FTT']=['ftx','FTT',CT_DEFAULT_BUY_TGT_BPS-100,CT_DEFAULT_SELL_TGT_BPS+5]
-
-CT2_CONFIGS_DICT=dict()
-CT2_CONFIGS_DICT['BTC']=[CT_DEFAULT_SELL_TGT_BPS]
-CT2_CONFIGS_DICT['ETH']=[CT_DEFAULT_SELL_TGT_BPS]
+CT_CONFIGS_DICT['BTC']=[CT_DEFAULT_TGT_BPS]
+CT_CONFIGS_DICT['ETH']=[CT_DEFAULT_TGT_BPS]
+CT_CONFIGS_DICT['FTT']=[CT_DEFAULT_TGT_BPS+5]
 
 CT_NOBS = 5                    # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
 CT_SLEEP = 3                   # Delay in seconds between observations
-CT_NPROGRAMS = 10              # Number of programs (each program being a pair of trades)
+CT_NPROGRAMS = 30              # Number of programs (each program being a pair of trades)
 
 CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
@@ -465,24 +455,7 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=False, isSkipBB=False):
 ##############
 # CryptoTrader
 ##############
-def cryptoTraderPrintTradeStats(spotFill, futFill, mult, obsBasisBps, realizedBasisBps, realizedSlippageBps, savedMults):
-  b=(futFill/spotFill-1)*10000
-  s= mult * (b - obsBasisBps)
-  print(getCurrentTime() +   ': Realized basis        = ' + str(round(b))+'bps')
-  print(getCurrentTime() +   ': Realized slippage     = ' + str(round(s))+'bps')
-  realizedBasisBps.append(b)
-  realizedSlippageBps.append(s)
-  savedMults.append(mult)
-  if len(realizedBasisBps) > 1:
-    if np.sum(savedMults)!=0:
-      products=[]
-      for n1,n2 in zip(realizedBasisBps,savedMults):
-        products.append(n1*n2)
-      print(getCurrentTime() + ': Avg realized basis    = ' + str(round(np.sum(products)/np.sum(savedMults))) + 'bps')
-    print(getCurrentTime() + ': Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
-  return realizedBasisBps,realizedSlippageBps,savedMults
-
-def cryptoTraderInit(title):
+def ctInit():
   ftx = ftxCCXTInit()
   bn = bnCCXTInit()
   bb = bbCCXTInit()
@@ -507,167 +480,88 @@ def cryptoTraderInit(title):
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
   notional_dict['FTT'] = trade_ftt_notional
-  printHeader(title)
+  printHeader('CryptoTrader')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
   return ftx,bb,bn,qty_dict,notional_dict
 
-def cryptoTraderRun(config):
-  ftx,bb,bn,qty_dict,notional_dict=cryptoTraderInit('CryptoTrader')
-  futExch, ccy, buyTgtBps, sellTgtBps = CT_CONFIGS_DICT[config]
-  if not futExch in ['ftx', 'bn', 'bb']:
-    print('Invalid futExch!')
-    sys.exit(1)
+def ctGetTargetString(tgtBps):
+  return termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
+
+def ctGetMaxChases(completedLegs):
+  if completedLegs == 0:
+    return 0
+  else:
+    return 888
+
+def ctProcessFill(fill, completedLegs, isCancelled):
+  if fill != 0:
+    completedLegs += 1
+  else:
+    isCancelled = True
+  return completedLegs, isCancelled
+
+def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
+  s= -((shortFill/longFill-1)*10000 - obsBasisBps)
+  print(getCurrentTime() +   ': Realized slippage     = ' + str(round(s))+'bps')
+  realizedSlippageBps.append(s)
+  if len(realizedSlippageBps) > 1:
+    print(getCurrentTime() + ': Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps')
+  return realizedSlippageBps
+
+def ctRun(ccy):
+  ftx, bb, bn, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH', 'FTT']:
     print('Invalid ccy!')
     sys.exit(1)
   trade_qty = qty_dict[ccy]
   trade_notional = notional_dict[ccy]
-  #####
-  prevSmartBasis = []
-  realizedBasisBps = []
+  tgtBps=CT_CONFIGS_DICT[ccy][0]
   realizedSlippageBps = []
-  savedMults = []
   for i in range(CT_NPROGRAMS):
-    status = 0
-    while True:
-      fundingDict=getFundingDict(ftx, bn, bb,isSkipBN=futExch!='bn',isSkipBB=futExch!='bb')
-      smartBasisDict= getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipBN=futExch != 'bn', isSkipBB=futExch != 'bb')
-      prefix=futExch+ccy
-      smartBasisBps = smartBasisDict[prefix + 'SmartBasis'] * 10000
-      basisBps      = smartBasisDict[prefix + 'Basis'] * 10000
-      prevSmartBasis.append(smartBasisBps)
-      prevSmartBasis=prevSmartBasis[-CT_NOBS:]
-      isStable=(np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_OBS_ALLOWED_BPS_RANGE
-      z = ('Program ' + str(i + 1) + ':').ljust(20)
-      if smartBasisBps<=buyTgtBps and status<=0:
-        status-=1
-      elif smartBasisBps>=sellTgtBps and status>=0:
-        status+=1
-      else:
-        status=0
-      if status==0:
-        z += '  '
-      else:
-        z += termcolor.colored(str(status).rjust(2), 'red')
-      z += ' '+termcolor.colored((ccy + ' (' + futExch + ') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(45), 'blue')
-      print(z + termcolor.colored('Targets: ' + str(round(buyTgtBps)) +'/' +str(round(sellTgtBps))+'bps', 'magenta'))
-
-      if abs(status) >= CT_NOBS and isStable:
-        isDone = False
-        print()
-        if status>0:
-          speak('Entering')
-          mult = -1
-          if futExch == 'ftx':
-            spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty)
-            if spotFill!=0:
-              futFill=ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=888)
-              isDone=True
-          elif futExch == 'bn':
-            futFill = bnRelOrder('SELL', bn, ccy, trade_notional)
-            if futFill!=0:
-              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=888)
-              isDone=True
-          else:
-            futFill=bbRelOrder('SELL', bb, ccy, trade_notional)
-            if futFill!=0:
-              spotFill=ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=888)
-              isDone=True
-        else:
-          speak('Unwinding')
-          mult = 1
-          if futExch == 'ftx':
-            spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty)
-            if spotFill != 0:
-              futFill=ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=888)
-              isDone = True
-          elif futExch == 'bn':
-            futFill = bnRelOrder('BUY', bn, ccy, trade_notional)
-            if futFill!=0:
-              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=888)
-              isDone = True
-          else:
-            futFill=bbRelOrder('BUY', bb, ccy, trade_notional)
-            if futFill!=0:
-              spotFill=ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=888)
-              isDone = True
-        if not isDone:
-          status=status-np.sign(status)*2
-          print()
-          speak('Cancelled')
-        else:
-          realizedBasisBps, realizedSlippageBps, savedMults = cryptoTraderPrintTradeStats(spotFill, futFill, mult, basisBps, realizedBasisBps, realizedSlippageBps,savedMults)
-          print(getCurrentTime() + ': Done')
-          print()
-          speak('Done')
-          break
-      time.sleep(CT_SLEEP)
-  speak('All done')
-
-def cryptoTrader2Run(ccy):
-  def getMaxChases(completedLegs):
-    if completedLegs == 0:
-      return 0
-    else:
-      return 888
-  #####
-  ftx, bb, bn, qty_dict, notional_dict = cryptoTraderInit('CryptoTrader2')
-  if not ccy in ['BTC', 'ETH']:
-    print('Invalid ccy!')
-    sys.exit(1)
-  trade_qty = qty_dict[ccy]
-  trade_notional = notional_dict[ccy]
-  sellTgtBps=CT2_CONFIGS_DICT[ccy][0]
-  #####
-  prevSmartBasis = []
-  realizedBasisBps = []
-  realizedSlippageBps = []
-  savedMults = []
-  for i in range(CT_NPROGRAMS):
+    prevSmartBasis = []
     chosenLong = ''
     chosenShort = ''
     while True:
       fundingDict=getFundingDict(ftx, bn, bb)
       smartBasisDict = getSmartBasisDict(ftx, bn, bb, fundingDict)
       smartBasisDict['spot'+ccy+'SmartBasis']=0
-
+      smartBasisDict['spot'+ccy+'Basis']=0
       if chosenLong=='':
         d=filterDict(smartBasisDict,'SmartBasis')
         d=filterDict(d,ccy)
         keyMax=max(d.items(), key=operator.itemgetter(1))[0]
         keyMin=min(d.items(), key=operator.itemgetter(1))[0]
         smartBasisBps=(d[keyMax]-d[keyMin])*10000
-        if smartBasisBps>=sellTgtBps:
+        if smartBasisBps>=tgtBps:
           chosenLong=keyMin[:len(keyMin)-13]
           chosenShort=keyMax[:len(keyMax)-13]
           status = 0
         else:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
-          z += termcolor.colored((ccy+' smart/raw basis: '+str(round(smartBasisBps))+'bps').ljust(45),'blue')
-          print(z + termcolor.colored('Target: ' + str(round(sellTgtBps))+'bps', 'magenta'))
+          z += termcolor.colored((ccy+' smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
+          print(z + ctGetTargetString(tgtBps))
           time.sleep(CT_SLEEP)
           continue
-
       smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
       prevSmartBasis=prevSmartBasis[-CT_NOBS:]
       isStable=(np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_OBS_ALLOWED_BPS_RANGE
-
-      if smartBasisBps>=sellTgtBps:
+      if smartBasisBps>=tgtBps:
         status+=1
       else:
+        prevSmartBasis = []
         chosenLong = ''
         chosenShort = ''
         time.sleep(CT_SLEEP)
         continue
 
-      z = ('Program ' + str(i + 1) + ':').ljust(20)
-      z += termcolor.colored(str(status).rjust(2), 'red')
-      z += ' '+termcolor.colored((ccy + ' (' + chosenShort + '/'+chosenLong+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(45), 'blue')
-      print(z + termcolor.colored('Target: ' + str(round(sellTgtBps))+'bps', 'magenta'))
+      # Chosen long/short legs
+      z = ('Program ' + str(i + 1) + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
+      z += termcolor.colored((ccy + ' smart/raw basis (buy ' + chosenLong + '/sell '+chosenShort+'): ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), 'blue')
+      print(z + ctGetTargetString(tgtBps))
 
       if abs(status) >= CT_NOBS and isStable:
         print()
@@ -675,60 +569,35 @@ def cryptoTrader2Run(ccy):
         completedLegs = 0
         isCancelled=False
         if 'bb' in chosenLong and not isCancelled:
-          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=getMaxChases(completedLegs))
-          if longFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
+          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bb' in chosenShort and not isCancelled:
-          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=getMaxChases(completedLegs))
-          if shortFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
+          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bn' in chosenLong and not isCancelled:
-          longFill = bnRelOrder('BUY', bn, ccy, trade_notional,maxChases=getMaxChases(completedLegs))
-          if longFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
+          longFill = bnRelOrder('BUY', bn, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bn' in chosenShort and not isCancelled:
-          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional,maxChases=getMaxChases(completedLegs))
-          if shortFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
-
+          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'spot' in chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=getMaxChases(completedLegs))
-          if longFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
+          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'spot' in chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=getMaxChases(completedLegs))
-          if shortFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'ftx' in chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty,maxChases=getMaxChases(completedLegs))
-          if longFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled=True
+          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'ftx' in chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=getMaxChases(completedLegs))
-          if shortFill!=0:
-            completedLegs+=1
-          else:
-            isCancelled = True
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if isCancelled:
           status=status-np.sign(status)*2
           print()
           speak('Cancelled')
         else:
-          realizedBasisBps, realizedSlippageBps, savedMults = cryptoTraderPrintTradeStats(longFill, shortFill, -1, basisBps, realizedBasisBps, realizedSlippageBps,savedMults)
+          realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
           print(getCurrentTime() + ': Done')
           print()
           speak('Done')
