@@ -23,7 +23,11 @@ def ftxProcessLoan(ftx,ccy,loanRatio):
   if loanRatio>0:
     wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
     loanSize = float(np.max([0, round(wallet.loc[ccy]['total'] * loanRatio)]))
-    print(cl.getCurrentTime() + ': Estimated '+ccy+' loan rate: ' + str(round(cl.ftxGetEstLending(ftx) * 100)) + '% p.a.')
+    if ccy=='USD':
+      estLoanRate=cl.ftxGetEstLending(ftx)
+    else:
+      estLoanRate=cl.ftxGetEstFunding(ftx,ccy)
+    print(cl.getCurrentTime() + ': Estimated '+ccy+' loan rate: ' + str(round(estLoanRate * 100)) + '% p.a.')
     z=str(round(loanSize))
     if ccy=='USD':
       z='$' + z
