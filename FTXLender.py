@@ -4,7 +4,6 @@ import numpy as np
 import datetime
 import sys
 import time
-from retrying import retry
 import termcolor
 
 ########
@@ -18,9 +17,13 @@ ethLoanRatio=.9
 ###########
 # Functions
 ###########
-@retry(wait_fixed=1000)
 def ftxLend(ftx,ccy,loanSize):
   return ftx.private_post_spot_margin_offers({'coin':ccy,'size':loanSize,'rate':1e-6})
+
+def ftxClearLoans(ftx):
+  ftxLend(ftx, 'USD', 0)
+  ftxLend(ftx, 'BTC', 0)
+  ftxLend(ftx, 'ETH', 0)
 
 def ftxProcessLoan(ftx,ftxWallet,ccy,loanRatio):
   loanSize = float(np.max([0, ftxWallet.loc[ccy]['availableWithoutBorrow'] * loanRatio]))
@@ -51,12 +54,10 @@ while True:
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
   ftx=cl.ftxCCXTInit()
 
-  print('Clearing existing loans ....')
-  ftxLend(ftx, 'USD', 0)
-  ftxLend(ftx, 'BTC', 0)
-  ftxLend(ftx, 'ETH', 0)
-  print('Waiting 10 seconds ....')
-  time.sleep(10)
+  print(cl.getCurrentTime() +' Clearing existing loans and sleeping for 5 seconds ....')
+  print()
+  ftxClearLoans(ftx)
+  time.sleep(5)
 
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   ftxProcessLoan(ftx,ftxWallet,'USD',usdLoanRatio)
@@ -65,3 +66,10 @@ while True:
 
   if isRunNow:
     break
+  else:
+    print(cl.getCurrentTime() + ' Sleeping for two minutes ....')
+    print()
+    time.sleep(120)
+    print(cl.getCurrentTime() + ' Clearing existing loans ....')
+    print()
+    ftxClearLoans(ftx)
