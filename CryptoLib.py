@@ -613,7 +613,7 @@ def ctRun(ccy):
       if smartBasisBps>=tgtBps:
         status+=1
       else:
-        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('[Streak ended]'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('*** Streak ended ***'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
         prevSmartBasis = []
         chosenLong = ''
         chosenShort = ''
