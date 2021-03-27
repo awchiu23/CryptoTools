@@ -592,7 +592,7 @@ def ctRun(ccy):
 
       if abs(status) >= CT_NOBS and isStable:
         print()
-        speak('Arbing')
+        speak('Trading')
         completedLegs = 0
         isCancelled=False
         if 'bb' in chosenLong and not isCancelled:
