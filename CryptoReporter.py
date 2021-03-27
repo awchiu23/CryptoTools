@@ -18,11 +18,11 @@ def printIncomes(name,prevIncome,prevAnnRet,oneDayIncome,oneDayAnnRet):
 
 def printFunding(name,df,ccy,oneDayFunding,prevFunding,estFunding,est2Funding=None):
   prefix=name + ' ' + ccy + ' 24h/prev/est'
-  if name=='Bybit':
+  if name=='BB':
     prefix+='1/est2'
   prefix+=' funding rate:'
   suffix = str(round(oneDayFunding * 100)) + '%/' + str(round(prevFunding * 100)) + '%/' + str(round(estFunding * 100)) + '%'
-  if name=='Bybit':
+  if name=='BB':
     suffix+='/' + str(round(est2Funding * 100)) + '%'
   suffix+=' p.a. ($' + str(round(df.loc[ccy, 'FutDeltaUSD'])) + ')'
   print(prefix.rjust(40) + ' ' + suffix)

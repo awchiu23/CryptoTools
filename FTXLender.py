@@ -8,10 +8,11 @@ import termcolor
 ########
 # Params
 ########
-isRunNow=False          # If true--run once and stop; otherwise loop continuously and run one minute before every reset
-usdLendingRatio=.99     # Percentage of USD to lend out
-richerLendingRatio=.99  # Percentage of coin (BTC or ETH) with the richer lending rate to lend out
-cheaperLendingRatio=.5  # Percentage of coin (BTC or ETH) with the cheaper lending rate to lend out
+isRunNow=False           # If true--run once and stop; otherwise loop continuously and run one minute before every reset
+isManageCoins=True       # If true--also manage coins (BTC and ETH)
+
+usdLendingRatio=1        # Percentage of USD to lend out
+extraCushion=0           # Extra cushion in $ to hold from lending when managing coins
 
 ###########
 # Functions
@@ -19,14 +20,8 @@ cheaperLendingRatio=.5  # Percentage of coin (BTC or ETH) with the cheaper lendi
 def ftxLend(ftx,ccy,lendingSize):
   return ftx.private_post_spot_margin_offers({'coin':ccy,'size':lendingSize,'rate':1e-6})
 
-def ftxClearLoans(ftx):
-  ftxLend(ftx, 'USD', 0)
-  ftxLend(ftx, 'BTC', 0)
-  ftxLend(ftx, 'ETH', 0)
-
-def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio,estLending=None):
-  if estLending is None:
-    estLending = cl.ftxGetEstLending(ftx, ccy)
+def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio):
+  estLending = cl.ftxGetEstLending(ftx, ccy)
   lendingSize = float(np.max([0, ftxWallet.loc[ccy]['total'] * lendingRatio]))
   print(cl.getCurrentTime() + ': Estimated '+ccy+' lending rate: ' + termcolor.colored(str(round(estLending * 100,1)) + '% p.a.','red'))
   if ccy=='USD':
@@ -40,6 +35,7 @@ def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio,estLending=None):
 ######
 # Main
 ######
+ftx=cl.ftxCCXTInit()
 cl.printHeader('FTXLender')
 while True:
   if not isRunNow:
@@ -51,29 +47,41 @@ while True:
     tgtTime = now - pd.DateOffset(hours=-hoursShift, minutes=now.minute + 1, seconds=now.second, microseconds=now.microsecond)
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
 
-  ftx=cl.ftxCCXTInit()
   print(cl.getCurrentTime() +': Clearing existing loans and sleeping for 5 seconds ....')
   print()
-  ftxClearLoans(ftx)
+  ftxLend(ftx, 'USD', 0)
+  if isManageCoins:
+    ftxLend(ftx, 'BTC', 0)
+    ftxLend(ftx, 'ETH', 0)
   time.sleep(5)
 
-  ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
-  btcEstLending = cl.ftxGetEstLending(ftx, 'BTC')
-  ethEstLending = cl.ftxGetEstLending(ftx, 'ETH')
-  if btcEstLending > ethEstLending:
-    btcLendingRatio = richerLendingRatio
-    ethLendingRatio = cheaperLendingRatio
-  else:
-    btcLendingRatio = cheaperLendingRatio
-    ethLendingRatio = richerLendingRatio
-  ftxProcessLoan(ftx,ftxWallet,'USD',usdLendingRatio)
-  ftxProcessLoan(ftx,ftxWallet,'BTC',btcLendingRatio,estLending=btcEstLending)
-  ftxProcessLoan(ftx,ftxWallet,'ETH',ethLendingRatio,estLending=ethEstLending)
+  ftxProcessLoan(ftx, ftxWallet, 'USD', usdLendingRatio)
+
+  if isManageCoins:
+    ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
+    spotBTC = ftxWallet.loc['BTC', 'usdValue'] / ftxWallet.loc['BTC', 'total']
+    spotETH = ftxWallet.loc['ETH', 'usdValue'] / ftxWallet.loc['ETH', 'total']
+    #####
+    ftxInfo = ftx.private_get_account()['result']
+    collateralUsed=pd.DataFrame(ftxInfo['positions'])['collateralUsed'].sum()
+    cushion =collateralUsed*5+extraCushion
+    #####
+    if cl.ftxGetEstLending(ftx, 'BTC') > cl.ftxGetEstLending(ftx, 'ETH'):
+      ccyHigh='BTC'
+      ccyLow='ETH'
+    else:
+      ccyHigh='ETH'
+      ccyLow='BTC'
+    usdValueHigh=ftxWallet.loc[ccyHigh,'usdValue']
+    usdValueLow = ftxWallet.loc[ccyLow, 'usdValue']
+    if usdValueLow < cushion:
+      lendRatioHigh = 1 - (cushion - usdValueLow) / usdValueHigh
+      lendRatioLow = 0
+    else:
+      lendRatioHigh = 1
+      lendRatioLow = 1 - cushion / usdValueLow
+    ftxProcessLoan(ftx, ftxWallet, ccyHigh, lendRatioHigh)
+    ftxProcessLoan(ftx, ftxWallet, ccyLow, lendRatioLow)
 
   if isRunNow:
     break
-  #else:
-    #print(cl.getCurrentTime() + ': Sleeping for two minutes ....')
-    #time.sleep(120)
-    #print(cl.getCurrentTime() + ': Clearing existing loans ....')
-    #ftxClearLoans(ftx)
