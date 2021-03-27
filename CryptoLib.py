@@ -523,10 +523,10 @@ def ctProcessFill(fill, completedLegs, isCancelled):
 
 def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   s= -((shortFill/longFill-1)*10000 - obsBasisBps)
-  print(getCurrentTime() +   ': Realized slippage:      ' + termcolor.colored(str(round(s))+'bps','red'))
+  print(getCurrentTime() +   ': '+ termcolor.colored('Realized slippage:      '+str(round(s))+'bps','red'))
   realizedSlippageBps.append(s)
   if len(realizedSlippageBps) > 1:
-    print(getCurrentTime() + ': Avg realized slippage:  ' + termcolor.colored(str(round(np.mean(realizedSlippageBps))) + 'bps','red'))
+    print(getCurrentTime() + ': '+ termcolor.colored('Avg realized slippage:  '+str(round(np.mean(realizedSlippageBps))) + 'bps','red'))
   return realizedSlippageBps
 
 def ctRun(ccy):
