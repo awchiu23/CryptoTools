@@ -92,7 +92,9 @@ def ftxInit(ftx):
   ftxOneDayAnnRet = ftxOneDayIncome * 365 / ftxNotional
   #####
   ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet,ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet=getBorrowsLoans(ftxWallet, ftxPayments, 'USD')
+  ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet = getBorrowsLoans(ftxWallet, ftxPayments, 'BTC')
   ftxPrevETHFlows, ftxPrevETHFlowsAnnRet, ftxOneDayETHFlows, ftxOneDayETHFlowsAnnRet = getBorrowsLoans(ftxWallet, ftxPayments, 'ETH')
+  ftxOneDayBTCFlows *= spotBTC
   ftxOneDayETHFlows*=spotETH
   #####
   ftxNAV = ftxWallet['usdValue'].sum()
@@ -102,6 +104,7 @@ def ftxInit(ftx):
   return ftxWallet,ftxPositions,ftxPayments, \
          ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
          ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet,ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet, \
+         ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet, \
          ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
          ftxNAV,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT
 
@@ -116,10 +119,10 @@ def ftxPrintUSDBorrowLending(ftx,ftxWallet):
   usdBalance = ftxWallet.loc['USD', 'total']
   print('FTX USD est borrow/lending rate: '.rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. ($' + str(round(usdBalance))+')')
 
-def ftxPrintETHLending(ftx,ftxWallet,spotETH):
-  estLending = float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc['ETH', 'estimate']) * 24 * 365
-  ethBalance = ftxWallet.loc['ETH','total']*spotETH
-  print('FTX ETH est lending rate: '.rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(ethBalance)) + ')')
+def ftxPrintCoinLending(ftx,ftxWallet,ccy,spot):
+  estLending = float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
+  coinBalance = ftxWallet.loc[ccy,'total']*spot
+  print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance)) + ')')
 
 def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
   df=ftxPayments[ftxPayments['future']==ccy+'-PERP']
@@ -264,6 +267,7 @@ cb= cl.cbCCXTInit()
 ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
   ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet,ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet, \
+  ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet, \
   ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
   ftxNAV,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT = ftxInit(ftx)
 
@@ -281,7 +285,7 @@ cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 # Aggregation
 #############
 nav=ftxNAV+bnNAV+bbNAV+cbNAV
-oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayETHFlows
+oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
 oneDayIncome+=bnOneDayIncome+bbOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
@@ -321,8 +325,11 @@ print()
 ftxPrintFlowsSummary('USD',ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet)
 ftxPrintUSDBorrowLending(ftx,ftxWallet)
 print()
+ftxPrintFlowsSummary('BTC',ftxOneDayBTCFlows,ftxOneDayBTCFlowsAnnRet,ftxPrevBTCFlows*spotBTC,ftxPrevBTCFlowsAnnRet)
+ftxPrintCoinLending(ftx,ftxWallet,'BTC',spotBTC)
+print()
 ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHFlows*spotETH,ftxPrevETHFlowsAnnRet)
-ftxPrintETHLending(ftx,ftxWallet,spotETH)
+ftxPrintCoinLending(ftx,ftxWallet,'ETH',spotETH)
 print()
 printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
