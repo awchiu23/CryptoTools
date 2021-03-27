@@ -10,7 +10,7 @@ import termcolor
 # Params
 ########
 isRunNow=False  # If true--run once and stop; otherwise loop continuously and run one minute before every reset
-usdLoanRatio=1
+usdLoanRatio=.9
 btcLoanRatio=.9
 ethLoanRatio=.9
 
@@ -26,7 +26,7 @@ def ftxClearLoans(ftx):
   ftxLend(ftx, 'ETH', 0)
 
 def ftxProcessLoan(ftx,ftxWallet,ccy,loanRatio):
-  loanSize = float(np.max([0, ftxWallet.loc[ccy]['availableWithoutBorrow'] * loanRatio]))
+  loanSize = float(np.max([0, ftxWallet.loc[ccy]['total'] * loanRatio]))
   estLoanRate=cl.ftxGetEstLending(ftx,ccy)
   print(cl.getCurrentTime() + ': Estimated '+ccy+' loan rate: ' + termcolor.colored(str(round(estLoanRate * 100,1)) + '% p.a.','red'))
   if ccy=='USD':
@@ -54,7 +54,7 @@ while True:
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
   ftx=cl.ftxCCXTInit()
 
-  print(cl.getCurrentTime() +' Clearing existing loans and sleeping for 5 seconds ....')
+  print(cl.getCurrentTime() +': Clearing existing loans and sleeping for 5 seconds ....')
   print()
   ftxClearLoans(ftx)
   time.sleep(5)
@@ -67,9 +67,7 @@ while True:
   if isRunNow:
     break
   else:
-    print(cl.getCurrentTime() + ' Sleeping for two minutes ....')
-    print()
+    print(cl.getCurrentTime() + ': Sleeping for two minutes ....')
     time.sleep(120)
-    print(cl.getCurrentTime() + ' Clearing existing loans ....')
-    print()
+    print(cl.getCurrentTime() + ': Clearing existing loans ....')
     ftxClearLoans(ftx)

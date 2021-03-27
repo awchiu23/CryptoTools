@@ -59,7 +59,7 @@ CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
 
 # Raise to increase eagerness to buy
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
@@ -613,6 +613,7 @@ def ctRun(ccy):
       if smartBasisBps>=tgtBps:
         status+=1
       else:
+        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('Streak ended!'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
         prevSmartBasis = []
         chosenLong = ''
         chosenShort = ''
