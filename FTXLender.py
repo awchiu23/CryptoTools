@@ -1,6 +1,5 @@
 import CryptoLib as cl
 import pandas as pd
-import numpy as np
 import datetime
 import termcolor
 
@@ -10,8 +9,8 @@ import termcolor
 isRunNow=False           # Run once and stop? Otherwise loop continuously and run one minute before every reset
 isManageCoins=True       # Also manage coins (BTC and ETH) in addition to USD?
 
-usdLendingRatio=1        # Percentage of USD to lend out
-extraCushion=0           # Extra cushion (quoted in $) to bar from lending when managing coins
+usdLendingRatio=.95      # Percentage of USD to lend out
+coinLendingRatio=.95     # Percentage of coins (BTC and ETH) to lend out
 
 ###########
 # Functions
@@ -20,14 +19,18 @@ def ftxLend(ftx,ccy,lendingSize):
   return ftx.private_post_spot_margin_offers({'coin':ccy,'size':lendingSize,'rate':1e-6})
 
 def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio):
-  estLending = cl.ftxGetEstLending(ftx, ccy)
-  lendingSize = float(np.max([0, ftxWallet.loc[ccy]['total'] * lendingRatio]))
-  print(cl.getCurrentTime() + ': Estimated '+ccy+' lending rate: ' + termcolor.colored(str(round(estLending * 100,1)) + '% p.a.','red'))
+  lendable=pd.DataFrame(ftx.private_get_spot_margin_lending_info()['result']).set_index('coin')['lendable'][ccy]
+  lendingSize = max(0,lendable * lendingRatio)
+  if lendable==0:
+    lendingRatio=0
+  else:
+    lendingRatio = max(0,lendingSize/lendable)
+  print(cl.getCurrentTime() + ': Estimated '+ccy+' lending rate: ' + termcolor.colored(str(round(cl.ftxGetEstLending(ftx, ccy) * 100,1)) + '% p.a.','red'))
   if ccy=='USD':
     z='$' + str(round(lendingSize))
   else:
     z=str(round(lendingSize,4))+' coins (~USD$'+str(round(lendingSize*(ftxWallet.loc[ccy,'usdValue'] / ftxWallet.loc[ccy,'total'])))+')'
-  print(cl.getCurrentTime() + ': New '+ccy+' lending size:       '+termcolor.colored(z+' ('+str(round(lendingRatio*100))+'% of balance)','blue'))
+  print(cl.getCurrentTime() + ': New '+ccy+' lending size:       '+termcolor.colored(z+' ('+str(round(lendingRatio*100))+'% of lendable)','blue'))
   ftxLend(ftx, ccy, lendingSize)
   print()
 
@@ -48,28 +51,9 @@ while True:
 
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   ftxProcessLoan(ftx, ftxWallet, 'USD', usdLendingRatio)
-
   if isManageCoins:
-    ftxInfo = ftx.private_get_account()['result']
-    collateralUsed=pd.DataFrame(ftxInfo['positions'])['collateralUsed'].sum()
-    cushion =collateralUsed*5+extraCushion
-    #####
-    if cl.ftxGetEstLending(ftx, 'BTC') > cl.ftxGetEstLending(ftx, 'ETH'):
-      ccyHigh='BTC'
-      ccyLow='ETH'
-    else:
-      ccyHigh='ETH'
-      ccyLow='BTC'
-    usdValueHigh=ftxWallet.loc[ccyHigh,'usdValue']
-    usdValueLow = ftxWallet.loc[ccyLow, 'usdValue']
-    if usdValueLow < cushion:
-      lendRatioHigh = 1 - (cushion - usdValueLow) / usdValueHigh
-      lendRatioLow = 0
-    else:
-      lendRatioHigh = 1
-      lendRatioLow = 1 - cushion / usdValueLow
-    ftxProcessLoan(ftx, ftxWallet, ccyHigh, lendRatioHigh)
-    ftxProcessLoan(ftx, ftxWallet, ccyLow, lendRatioLow)
+    ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio)
+    ftxProcessLoan(ftx, ftxWallet,'ETH', coinLendingRatio)
 
   if isRunNow:
     break
