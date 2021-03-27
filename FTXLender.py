@@ -9,8 +9,8 @@ import termcolor
 # Params
 ########
 isRunNow=False          # If true--run once and stop; otherwise loop continuously and run one minute before every reset
-usdLendingRatio=1       # Percentage of USD to lend out
-richerLendingRatio=1    # Percentage of coin (BTC or ETH) with the richer lending rate to lend out
+usdLendingRatio=.99     # Percentage of USD to lend out
+richerLendingRatio=.99  # Percentage of coin (BTC or ETH) with the richer lending rate to lend out
 cheaperLendingRatio=.5  # Percentage of coin (BTC or ETH) with the cheaper lending rate to lend out
 
 ###########
