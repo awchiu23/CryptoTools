@@ -62,7 +62,7 @@ CT_CONFIGS_DICT['BN_ETH_OK']=1
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-2
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-3
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
@@ -560,7 +560,6 @@ def ctRun(ccy):
   tgtBps=CT_CONFIGS_DICT[ccy][0]
   realizedSlippageBps = []
   for i in range(CT_NPROGRAMS):
-    status=0
     prevSmartBasis = []
     chosenLong = ''
     chosenShort = ''
@@ -593,6 +592,8 @@ def ctRun(ccy):
           chosenLong = ''
           time.sleep(CT_SLEEP)
           continue # to next iteration in While True loop
+        else:
+          status=0
 
       smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
@@ -645,13 +646,12 @@ def ctRun(ccy):
           status=status-np.sign(status)*2
           print()
           speak('Cancelled')
-          continue
+          continue # to next iteration in While True loop
         else:
           realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
           print(getCurrentTime() + ': Done')
           print()
           speak('Done')
-          status=0
           break # Go to next program
       time.sleep(CT_SLEEP)
   speak('All done')
