@@ -59,9 +59,6 @@ while True:
 
   if isManageCoins:
     ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
-    spotBTC = ftxWallet.loc['BTC', 'usdValue'] / ftxWallet.loc['BTC', 'total']
-    spotETH = ftxWallet.loc['ETH', 'usdValue'] / ftxWallet.loc['ETH', 'total']
-    #####
     ftxInfo = ftx.private_get_account()['result']
     collateralUsed=pd.DataFrame(ftxInfo['positions'])['collateralUsed'].sum()
     cushion =collateralUsed*5+extraCushion
