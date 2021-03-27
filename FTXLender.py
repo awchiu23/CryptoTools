@@ -46,10 +46,10 @@ while True:
     tgtTime = now - pd.DateOffset(hours=-hoursShift, minutes=now.minute + 1, seconds=now.second, microseconds=now.microsecond)
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
 
+  ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   ftxProcessLoan(ftx, ftxWallet, 'USD', usdLendingRatio)
 
   if isManageCoins:
-    ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
     ftxInfo = ftx.private_get_account()['result']
     collateralUsed=pd.DataFrame(ftxInfo['positions'])['collateralUsed'].sum()
     cushion =collateralUsed*5+extraCushion
