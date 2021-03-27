@@ -7,11 +7,11 @@ import termcolor
 ########
 # Params
 ########
-isRunNow=False           # If true--run once and stop; otherwise loop continuously and run one minute before every reset
-isManageCoins=True       # If true--also manage coins (BTC and ETH)
+isRunNow=False           # Run once and stop? Otherwise loop continuously and run one minute before every reset
+isManageCoins=True       # Also manage coins (BTC and ETH) in addition to USD?
 
 usdLendingRatio=1        # Percentage of USD to lend out
-extraCushion=0           # Extra cushion in $ to hold from lending when managing coins
+extraCushion=0           # Extra cushion (quoted in $) to bar from lending when managing coins
 
 ###########
 # Functions
