@@ -46,6 +46,7 @@ CT_CONFIGS_DICT['BTC']=[CT_DEFAULT_TGT_BPS]
 CT_CONFIGS_DICT['ETH']=[CT_DEFAULT_TGT_BPS]
 CT_CONFIGS_DICT['FTT']=[CT_DEFAULT_TGT_BPS+5]
 
+# 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=1
 CT_CONFIGS_DICT['SPOT_ETH_OK']=1
 CT_CONFIGS_DICT['SPOT_FTT_OK']=1
@@ -56,6 +57,18 @@ CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
+
+# Raise to increase eagerness to buy
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']=0
+CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 
 CT_NOBS = 5                    # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
@@ -439,25 +452,33 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict):
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
+  ftxBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']) / 10000
+  ftxETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']) / 10000
+  ftxFTTAdj = (CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']) / 10000
+  bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
+  bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
+  bbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']) / 10000
+  bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
+  #####
   d = dict()
   d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
   d['ftxETHBasis'] = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
   d['ftxFTTBasis'] = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
-  d['ftxBTCSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge)
-  d['ftxETHSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge)
-  d['ftxFTTSmartBasis'] = (ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge)
+  d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
+  d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
+  d['ftxFTTSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge + ftxFTTAdj
   #####
   bnBookTicker = bnGetBookTicker(bn)
   d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
   d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
-  d['bnBTCSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge)
-  d['bnETHSmartBasis'] = (bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge)
+  d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
+  d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
   ####
   bbTickers = bbGetTickers(bb)
   d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
   d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
-  d['bbBTCSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge)
-  d['bbETHSmartBasis'] = (bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge)
+  d['bbBTCSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge + bbBTCAdj
+  d['bbETHSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge + bbETHAdj
   return d
 
 #############################################################################################
@@ -562,13 +583,13 @@ def ctRun(ccy):
         keyMax=max(d.items(), key=operator.itemgetter(1))[0]
         keyMin=min(d.items(), key=operator.itemgetter(1))[0]
         smartBasisBps=(d[keyMax]-d[keyMin])*10000
+        chosenLong = keyMin[:len(keyMin) - 13]
+        chosenShort = keyMax[:len(keyMax) - 13]
         if smartBasisBps>=tgtBps:
-          chosenLong=keyMin[:len(keyMin)-13]
-          chosenShort=keyMax[:len(keyMax)-13]
           status = 0
         else:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
-          z += termcolor.colored((ccy+' smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
+          z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
           print(z + ctGetTargetString(tgtBps))
           time.sleep(CT_SLEEP)
           continue
@@ -587,7 +608,7 @@ def ctRun(ccy):
 
       # Chosen long/short legs
       z = ('Program ' + str(i + 1) + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
-      z += termcolor.colored((ccy + ' smart/raw basis (buy ' + chosenLong + '/sell '+chosenShort+'): ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), 'blue')
+      z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), 'blue')
       print(z + ctGetTargetString(tgtBps))
 
       if abs(status) >= CT_NOBS and isStable:

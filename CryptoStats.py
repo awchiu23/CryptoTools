@@ -31,7 +31,8 @@ def bnPrintFundingRate(bn,ccy,cutoff):
   return rate
 
 def bbPrintFundingRate(bb,ccy,cutoff):
-  df=pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'limit': 1000})['result']['trade_list'])
+  start_time = int((datetime.datetime.timestamp(cutoff)) * 1000)
+  df=pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time, 'limit': 1000})['result']['trade_list'])
   df['fee_rate'] = [float(fr) for fr in df['fee_rate']]
   df=df[df['exec_type']=='Funding']
   df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['trade_time_ms']]
