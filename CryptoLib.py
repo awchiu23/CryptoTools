@@ -655,7 +655,7 @@ def ctRun(ccy):
         if isCancelled:
           status=status-np.sign(status)*2
           print()
-          speak('Cancelled')
+          speak('Off')
           continue # to next iteration in While True loop
         else:
           realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
