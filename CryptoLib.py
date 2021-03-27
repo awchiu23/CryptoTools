@@ -625,7 +625,7 @@ def ctRun(ccy):
 
       if abs(status) >= CT_NOBS and isStable:
         print()
-        speak('Trading')
+        speak('Go')
         completedLegs = 0
         isCancelled=False
         if 'bb' in chosenLong and not isCancelled:
@@ -655,7 +655,7 @@ def ctRun(ccy):
         if isCancelled:
           status=status-np.sign(status)*2
           print()
-          speak('Off')
+          speak('Cancelled')
           continue # to next iteration in While True loop
         else:
           realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
