@@ -2,7 +2,6 @@ import CryptoLib as cl
 import pandas as pd
 import numpy as np
 import datetime
-import time
 import termcolor
 
 ########
@@ -46,14 +45,6 @@ while True:
       hoursShift=1
     tgtTime = now - pd.DateOffset(hours=-hoursShift, minutes=now.minute + 1, seconds=now.second, microseconds=now.microsecond)
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
-
-  print(cl.getCurrentTime() +': Clearing existing loans and sleeping for 5 seconds ....')
-  print()
-  ftxLend(ftx, 'USD', 0)
-  if isManageCoins:
-    ftxLend(ftx, 'BTC', 0)
-    ftxLend(ftx, 'ETH', 0)
-  time.sleep(5)
 
   ftxProcessLoan(ftx, ftxWallet, 'USD', usdLendingRatio)
 
