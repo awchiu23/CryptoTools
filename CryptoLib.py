@@ -60,7 +60,7 @@ CT_CONFIGS_DICT['BN_ETH_OK']=1
 
 # Raise to increase eagerness to buy
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
@@ -90,7 +90,7 @@ CT_MAX_FTT = 100               # Hard limit
 # Params for Smart Basis Models
 ###############################
 HALF_LIFE_HOURS = 4                     # Half life of exponential decay in hours
-BASE_USD_RATE = 0.2                     # Equilibrium USD rate P.A.
+BASE_USD_RATE = 0.17                    # Equilibrium USD rate P.A.
 BASE_FUNDING_RATE_FTX = 0.22            # Equilibrium funding rate P.A.
 BASE_FUNDING_RATE_BN = 0.27             # Equilibrium funding rate P.A.
 BASE_FUNDING_RATE_BB = 0.32             # Equilibrium funding rate P.A.
