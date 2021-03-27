@@ -62,7 +62,7 @@ CT_CONFIGS_DICT['BN_ETH_OK']=1
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-2
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
@@ -560,6 +560,7 @@ def ctRun(ccy):
   tgtBps=CT_CONFIGS_DICT[ccy][0]
   realizedSlippageBps = []
   for i in range(CT_NPROGRAMS):
+    status=0
     prevSmartBasis = []
     chosenLong = ''
     chosenShort = ''
@@ -585,14 +586,14 @@ def ctRun(ccy):
         smartBasisBps=(d[keyMax]-d[keyMin])*10000
         chosenLong = keyMin[:len(keyMin) - 13]
         chosenShort = keyMax[:len(keyMax) - 13]
-        if smartBasisBps>=tgtBps:
-          status = 0
-        else:
+        if smartBasisBps<tgtBps:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
           print(z + ctGetTargetString(tgtBps))
+          chosenLong = ''
           time.sleep(CT_SLEEP)
-          continue
+          continue # to next iteration in While True loop
+
       smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
@@ -650,7 +651,8 @@ def ctRun(ccy):
           print(getCurrentTime() + ': Done')
           print()
           speak('Done')
-          break
+          status=0
+          break # Go to next program
       time.sleep(CT_SLEEP)
   speak('All done')
 
