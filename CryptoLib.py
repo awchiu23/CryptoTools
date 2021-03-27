@@ -73,7 +73,7 @@ CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_NOBS = 5                    # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
 CT_SLEEP = 3                   # Delay in seconds between observations
-CT_NPROGRAMS = 30              # Number of programs (each program being a pair of trades)
+CT_NPROGRAMS = 50              # Number of programs (each program being a pair of trades)
 
 CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
