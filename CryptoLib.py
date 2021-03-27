@@ -62,7 +62,7 @@ CT_CONFIGS_DICT['BN_ETH_OK']=1
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-3
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
@@ -420,7 +420,7 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
-def getSmartBasisDict(ftx, bn, bb, fundingDict):
+def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=False):
   @retry(wait_fixed=1000)
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
@@ -452,13 +452,23 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict):
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
-  ftxBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']) / 10000
-  ftxETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']) / 10000
-  ftxFTTAdj = (CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']) / 10000
-  bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
-  bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
-  bbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']) / 10000
-  bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
+
+  if isSkipAdj:
+    ftxBTCAdj=0
+    ftxETHAdj=0
+    ftxFTTAdj=0
+    bnBTCAdj=0
+    bnETHAdj=0
+    bbBTCAdj=0
+    bbETHAdj=0
+  else:
+    ftxBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']) / 10000
+    ftxETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']) / 10000
+    ftxFTTAdj = (CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']) / 10000
+    bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
+    bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
+    bbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']) / 10000
+    bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
   #####
   d = dict()
   d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1

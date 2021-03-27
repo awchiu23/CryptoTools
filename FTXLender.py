@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime
 import sys
+import time
 from retrying import retry
 import termcolor
 
@@ -50,9 +51,12 @@ while True:
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
   ftx=cl.ftxCCXTInit()
 
+  print('Clearing existing loans ....')
   ftxLend(ftx, 'USD', 0)
   ftxLend(ftx, 'BTC', 0)
   ftxLend(ftx, 'ETH', 0)
+  print('Waiting 10 seconds ....')
+  time.sleep(10)
 
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   ftxProcessLoan(ftx,ftxWallet,'USD',usdLoanRatio)
