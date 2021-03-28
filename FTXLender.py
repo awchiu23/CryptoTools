@@ -55,6 +55,7 @@ while True:
     ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio)
     ftxProcessLoan(ftx, ftxWallet,'ETH', coinLendingRatio)
   print(cl.getCurrentTime() + ': New free collateral:        ' + termcolor.colored('$'+str(round(float(ftx.private_get_account()['result']['freeCollateral']))), 'blue'))
+  print()
 
   if isRunNow:
     break
