@@ -21,6 +21,29 @@ def ftxPrintFundingRate(ftx,ccy,cutoff):
   print (('Avg FTX '+ccy+' funding rate: ').rjust(40)+str(round(rate*100))+'%')
   return rate
 
+def ftxPrintBorrowLendingRate(ftx,ccy):
+  def cleanBorrows(df, ccy, cutoff):
+    df2 = df[df['coin'] == ccy].copy()
+    ts = df2.set_index('time')['rate']
+    ts[:] = [float(n) for n in ts]
+    ts.index = [datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in ts.index]
+    ts = ts[ts.index >= cutoff].sort_index()
+    return ts
+  ts=  cleanBorrows(pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000})['result']),ccy,cutoff)
+  ts2 = cleanBorrows(pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000})['result']),ccy,cutoff)
+  df = pd.merge(ts / 1.1, ts2 * 1.1, how='outer', left_index=True, right_index=True).mean(axis=1)
+  df *= (24 * 365)
+  print(('Avg FTX '+ccy+' borrow/lending rate: ').rjust(40) + termcolor.colored(str(round(df.mean() * 100)) + '%', 'red'))
+
+#def ftxPrintCoinRate(ftx,ccy):
+#  ccy='BTC'
+#  ts = pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000})['result']).set_index('time')['rate']
+#  ts[:] = [float(n) for n in ts]
+#  ts.index = [datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in ts.index]
+#  ts = ts[ts.index >= cutoff].sort_index()
+#  ts=ts*24*365
+#  print(('Avg FTX '+ccy+' rate: ').rjust(40) + termcolor.colored(str(round(ts.mean() * 100)) + '%', 'red'))
+
 def bnPrintFundingRate(bn,ccy,cutoff):
   df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
@@ -28,7 +51,7 @@ def bnPrintFundingRate(bn,ccy,cutoff):
   df = df[df.index >= cutoff].sort_index()
   cl.dfSetFloat(df,'fundingRate')
   rate=df['fundingRate'].mean() * 3 * 365
-  print(('Avg Binance ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
+  print(('Avg BB ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
   return rate
 
 def bbPrintFundingRate(bb,ccy,cutoff):
@@ -40,16 +63,17 @@ def bbPrintFundingRate(bb,ccy,cutoff):
   df=df.set_index('date')
   df = df[df.index >= cutoff].sort_index()
   rate=-df['fee_rate'].mean() * 3 * 365
-  print(('Avg Bybit ' + ccy + ' funding rate: ').rjust(40)+ str(round(rate * 100)) + '%')
+  print(('Avg BB ' + ccy + ' funding rate: ').rjust(40)+ str(round(rate * 100)) + '%')
   return rate
 
 def dbPrintFundingRate(db,ccy,cutoff):
   start_timestamp = int(datetime.datetime.timestamp(cutoff)*1000)
   end_timestamp = int((datetime.datetime.timestamp(datetime.datetime.now())) * 1000)
   df = pd.DataFrame(db.public_get_get_funding_rate_history({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])
+  cl.dfSetFloat(df,'interest_1h')
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
   df = df.set_index('date').sort_index()
-  rate=df['interest_8h'].mean() * 3 * 365
+  rate=df['interest_1h'].mean() * 24 * 365
   print(('Avg Deribit ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
   return rate
 
@@ -70,12 +94,8 @@ print()
 ftxBTCFundingRate=ftxPrintFundingRate(ftx,'BTC',cutoff)
 ftxETHFundingRate=ftxPrintFundingRate(ftx,'ETH',cutoff)
 ftxPrintFundingRate(ftx,'FTT',cutoff)
-print()
-
 bnBTCFundingRate=bnPrintFundingRate(bn,'BTC',cutoff)
 bnETHFundingRate=bnPrintFundingRate(bn,'ETH',cutoff)
-print()
-
 bbBTCFundingRate=bbPrintFundingRate(bb,'BTC',cutoff)
 bbETHFundingRate=bbPrintFundingRate(bb,'ETH',cutoff)
 print()
@@ -92,15 +112,10 @@ bbMixedFundingRate=(bbBTCFundingRate+bbETHFundingRate)/2
 print('-' * 100)
 print()
 
-ts=pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit':1000})['result']).set_index('time')['rate']
-ts2=pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit':1000})['result']).set_index('time')['rate']
-ts[:]=[float(n) for n in ts]
-ts2[:]=[float(n) for n in ts2]
-df=pd.merge(ts/1.1,ts2*1.1,how='outer',left_index=True,right_index=True).mean(axis=1)*24*365
-df.index=[datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in df.index]
-df=df[df.index>=cutoff].sort_index()
-print (('Avg FTX USD rate: ').rjust(40)+termcolor.colored(str(round(df.mean()*100))+'%','red'))
-
+ftxPrintBorrowLendingRate(ftx,'USD')
+ftxPrintBorrowLendingRate(ftx,'BTC')
+ftxPrintBorrowLendingRate(ftx,'ETH')
+print()
 print('Avg FTX funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(ftxMixedFundingRate*100))+'%','red'))
-print('Avg Binance funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bnMixedFundingRate*100))+'%','red'))
-print('Avg Bybit funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bbMixedFundingRate*100))+'%','red'))
+print('Avg BB funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bnMixedFundingRate*100))+'%','red'))
+print('Avg BB funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bbMixedFundingRate*100))+'%','red'))

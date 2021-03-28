@@ -43,9 +43,9 @@ def ftxInit(ftx):
   ######
   def getBorrowsLoans(ftxWallet,ftxPayments,ccy):
     tm = ftxPayments.index[-1]
-    borrows = cleanBorrows(ftxPayments, ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history()['result']).set_index('time'))
+    borrows = cleanBorrows(ftxPayments, ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000})['result']).set_index('time'))
     cl.dfSetFloat(borrows, 'cost')
-    loans = cleanBorrows(ftxPayments, ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history()['result']).set_index('time'))
+    loans = cleanBorrows(ftxPayments, ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000})['result']).set_index('time'))
     cl.dfSetFloat(loans, 'proceeds')
     prevBorrow = borrows.loc[tm]['cost']
     prevLoan = loans.loc[tm]['proceeds']
