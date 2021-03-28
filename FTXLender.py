@@ -29,7 +29,7 @@ def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio):
   if ccy=='USD':
     z='$' + str(round(lendingSize))
   else:
-    z=str(round(lendingSize,4))+' coins (~USD$'+str(round(lendingSize*(ftxWallet.loc[ccy,'spot'])))+')'
+    z=str(round(lendingSize,4))+' coins (~$'+str(round(lendingSize*(ftxWallet.loc[ccy,'spot'])))+')'
   print(cl.getCurrentTime() + ': New '+ccy+' lending size:       '+termcolor.colored(z+' ('+str(round(lendingRatio*100))+'% of lendable)','blue'))
   ftxLend(ftx, ccy, lendingSize)
   print()
