@@ -6,11 +6,20 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 - Replace the defaults with your own API keys.
 
 ## CryptoAlerter
-- This tool is for monitoring premium/discounts as well as funding rates.
-- For the purpose of calculating premium/discount%, the spot prices from FTX are used.  This is assuming that you will trade your spot on FTX.
+- This tool is for monitoring smart basis (as well as raw basis) for various futures.
+- Raw basis: premium of future vs. FTX spot
+- Smart basis: similar to above but adjusted for these extra factors:
+	- Spot rates
+	- Basis mean reversion
+	- Accrued funding payments
+	- Future funding payments
 
 ## CryptoReporter
-- This tool is for monitoring your NAVs and positions.
+- This tool is for monitoring your NAVs, positions and deltas across:
+	- FTX
+	- Binance
+	- Bybit
+	- Coinbase
 
 ## CryptoStats
 - This tool provides some historical stats sourced through APIs.
@@ -21,4 +30,4 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset.
-- Current universe: USD, ETH
+- Current universe: USD, BTC, ETH
