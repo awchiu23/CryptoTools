@@ -1,7 +1,6 @@
 import CryptoLib as cl
 import pandas as pd
 import datetime
-import ccxt
 import termcolor
 
 ###########
@@ -161,7 +160,7 @@ def bnInit(bn,spotBTC,spotETH):
   bnPayments['incomeUSD'] = bnPayments['income']
   bnPayments.loc['BTC', 'incomeUSD'] *= spotBTC
   bnPayments.loc['ETH', 'incomeUSD'] *= spotETH
-  bnPayments['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in bnPayments['time']]
+  bnPayments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in bnPayments['time']]
   bnPayments = bnPayments.set_index('date')
   bnPayments = getOneDay(bnPayments)
   #####
@@ -180,7 +179,7 @@ def bnInit(bn,spotBTC,spotETH):
 
 def bnPrintFunding(bn,bnPR,ccy):
   df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['fundingTime']]
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
   df = df.set_index('date')
   cl.dfSetFloat(df,'fundingRate')
   df=getOneDay(df)
@@ -207,6 +206,7 @@ def bbInit(bb,spotBTC,spotETH):
   #####
   bbPL=bb.v2_private_get_position_list()['result']
   bbPL=pd.DataFrame([pos['data'] for pos in bbPL])
+  cl.dfSetFloat(bbPL,'size')
   bbPL['Ccy'] = [z[:3] for z in bbPL['symbol']]
   bbPL=bbPL.set_index('Ccy').loc[['BTC', 'ETH']]
   bbPL['FutDeltaUSD']=bbPL['size']
@@ -222,7 +222,7 @@ def bbInit(bb,spotBTC,spotETH):
   bbPayments.loc['BTCUSD','incomeUSD']*=spotBTC
   bbPayments.loc['ETHUSD','incomeUSD']*=spotETH
   bbPayments=bbPayments[bbPayments['exec_type']=='Funding']
-  bbPayments['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in bbPayments['trade_time_ms']]
+  bbPayments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in bbPayments['trade_time_ms']]
   bbPayments=bbPayments.set_index('date')
   bbPayments = getOneDay(bbPayments)
   #####

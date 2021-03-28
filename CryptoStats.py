@@ -16,13 +16,14 @@ def ftxPrintFundingRate(ftx,ccy,cutoff):
   df=pd.DataFrame(ftx.private_get_funding_payments({'limit':1000,'future':ccy+'-PERP'})['result'])
   df.index = [datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in df['time']]
   df = df[df.index >= cutoff].sort_index()
+  cl.dfSetFloat(df,'rate')
   rate=df['rate'].mean()*24*365
   print (('Avg FTX '+ccy+' funding rate: ').rjust(40)+str(round(rate*100))+'%')
   return rate
 
 def bnPrintFundingRate(bn,ccy,cutoff):
   df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['fundingTime']]
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
   df = df.set_index('date')
   df = df[df.index >= cutoff].sort_index()
   cl.dfSetFloat(df,'fundingRate')
@@ -35,7 +36,7 @@ def bbPrintFundingRate(bb,ccy,cutoff):
   df=pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time, 'limit': 1000})['result']['trade_list'])
   df['fee_rate'] = [float(fr) for fr in df['fee_rate']]
   df=df[df['exec_type']=='Funding']
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['trade_time_ms']]
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['trade_time_ms']]
   df=df.set_index('date')
   df = df[df.index >= cutoff].sort_index()
   rate=-df['fee_rate'].mean() * 3 * 365
@@ -46,7 +47,7 @@ def dbPrintFundingRate(db,ccy,cutoff):
   start_timestamp = int(datetime.datetime.timestamp(cutoff)*1000)
   end_timestamp = int((datetime.datetime.timestamp(datetime.datetime.now())) * 1000)
   df = pd.DataFrame(db.public_get_get_funding_rate_history({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts / 1000)) for ts in df['timestamp']]
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
   df = df.set_index('date').sort_index()
   rate=df['interest_8h'].mean() * 3 * 365
   print(('Avg Deribit ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
@@ -93,6 +94,8 @@ print()
 
 ts=pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit':1000})['result']).set_index('time')['rate']
 ts2=pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit':1000})['result']).set_index('time')['rate']
+ts[:]=[float(n) for n in ts]
+ts2[:]=[float(n) for n in ts2]
 df=pd.merge(ts/1.1,ts2*1.1,how='outer',left_index=True,right_index=True).mean(axis=1)*24*365
 df.index=[datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in df.index]
 df=df[df.index>=cutoff].sort_index()

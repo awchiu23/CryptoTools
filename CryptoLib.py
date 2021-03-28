@@ -272,7 +272,7 @@ def bbGetEstFunding1(bb,ccy):
 
 @retry(wait_fixed=1000)
 def bbGetEstFunding2(bb, ccy):
-  return bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate'] * 3 * 365
+  return float(bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate']) * 3 * 365
 
 def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
@@ -390,7 +390,7 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
   if not hasattr(ftxGetOneDayShortFutEdge, 'emaFTT'):
     ftxGetOneDayShortFutEdge.emaFTT = fundingDict['ftxEstFundingFTT']
   df=ftxFutures.loc[ccy+'-PERP']
-  snapFundingRate=(df['mark'] / df['index'] - 1)*365
+  snapFundingRate=(float(df['mark']) / float(df['index']) - 1)*365
   k=2/(300+1)
   if ccy=='BTC':
     ftxGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaBTC * (1 - k)
@@ -430,7 +430,7 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=False):
     return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
   #####
   def ftxGetMid(ftxMarkets, name):
-    return (ftxMarkets.loc[name,'bid'] + ftxMarkets.loc[name,'ask']) / 2
+    return (float(ftxMarkets.loc[name,'bid']) + float(ftxMarkets.loc[name,'ask'])) / 2
   #####
   @retry(wait_fixed=1000)
   def bnGetBookTicker(bn):
@@ -501,6 +501,7 @@ def ctInit():
   bn = bnCCXTInit()
   bb = bbCCXTInit()
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main'])
+  dfSetFloat(ftxWallet,['usdValue','total'])
   ftxWallet['Ccy'] = ftxWallet['coin']
   ftxWallet['SpotDelta'] = ftxWallet['total']
   ftxWallet = ftxWallet.set_index('Ccy').loc[['BTC', 'ETH', 'FTT', 'USD']]

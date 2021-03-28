@@ -19,7 +19,7 @@ def ftxLend(ftx,ccy,lendingSize):
   return ftx.private_post_spot_margin_offers({'coin':ccy,'size':lendingSize,'rate':1e-6})
 
 def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio):
-  lendable=pd.DataFrame(ftx.private_get_spot_margin_lending_info()['result']).set_index('coin')['lendable'][ccy]
+  lendable=float(pd.DataFrame(ftx.private_get_spot_margin_lending_info()['result']).set_index('coin')['lendable'][ccy])
   lendingSize = max(0,lendable * lendingRatio)
   if lendable==0:
     lendingRatio=0
@@ -50,6 +50,7 @@ while True:
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
 
   ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
+  cl.dfSetFloat(ftxWallet,['usdValue','total'])
   ftxProcessLoan(ftx, ftxWallet, 'USD', usdLendingRatio)
   if isManageCoins:
     ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio)
