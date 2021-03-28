@@ -113,8 +113,8 @@ def ftxPrintFlowsSummary(ccy, oneDayFlows,oneDayFlowsAnnRet,prevFlows,prevFlowsA
   print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
 
 def ftxPrintUSDBorrowLending(ftx,ftxWallet):
-  estBorrow = cl.ftxGetEstBorrow(ftx)
-  estLending = cl.ftxGetEstLending(ftx)
+  estBorrow = cl.ftxGetEstBorrowUSD(ftx)
+  estLending = cl.ftxGetEstLendingUSD(ftx)
   usdBalance = ftxWallet.loc['USD', 'total']
   print('FTX USD est borrow/lending rate: '.rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. ($' + str(round(usdBalance))+')')
 

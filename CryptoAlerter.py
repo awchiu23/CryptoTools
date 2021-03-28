@@ -34,7 +34,7 @@ bb=cl.bbCCXTInit()
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
   smartBasisDict = cl.getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=True)
-  print((str(round(fundingDict['ftxEstBorrow'] * 100)) + '/' + str(round(fundingDict['ftxEstLending'] * 100)) + '%').ljust(11),end='')
+  print((str(round(fundingDict['ftxEstBorrowUSD'] * 100)) + '/' + str(round(fundingDict['ftxEstLendingUSD'] * 100)) + '%').ljust(11),end='')
   process('FTX_BTC', smartBasisDict, 'blue', fundingDict['ftxEstFundingBTC'])
   process('BN_BTC', smartBasisDict, 'blue', fundingDict['bnEstFundingBTC'])
   process('BB_BTC', smartBasisDict, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])

@@ -89,12 +89,13 @@ CT_MAX_FTT = 100               # Hard limit
 ###############################
 # Params for Smart Basis Models
 ###############################
-HALF_LIFE_HOURS = 4                     # Half life of exponential decay in hours
-BASE_USD_RATE = 0.17                    # Equilibrium USD rate P.A.
-BASE_FUNDING_RATE_FTX = 0.22            # Equilibrium funding rate P.A.
-BASE_FUNDING_RATE_BN = 0.27             # Equilibrium funding rate P.A.
-BASE_FUNDING_RATE_BB = 0.32             # Equilibrium funding rate P.A.
-BASE_BASIS = BASE_FUNDING_RATE_FTX/365  # Equilibrium future basis
+HALF_LIFE_HOURS_USD = 8
+HALF_LIFE_HOURS_BASIS = 4
+HALF_LIFE_HOURS_FUNDING = 4
+
+BASE_USD_RATE = 0.25
+BASE_FUNDING_RATE = 0.25
+BASE_BASIS = BASE_FUNDING_RATE/365
 
 #############################################################################################
 
@@ -116,15 +117,22 @@ def cbCCXTInit():
 #############################################################################################
 
 @retry(wait_fixed=1000)
+def ftxGetWallet(ftx):
+  wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
+  dfSetFloat(wallet,wallet.columns)
+  wallet['spot']=wallet['usdValue']/wallet['total']
+  return wallet
+
+@retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
   return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
 @retry(wait_fixed=1000)
-def ftxGetEstBorrow(ftx):
+def ftxGetEstBorrowUSD(ftx):
   return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate']) * 24 * 365
 
 @retry(wait_fixed=1000)
-def ftxGetEstLending(ftx,ccy='USD'):
+def ftxGetEstLendingUSD(ftx, ccy='USD'):
   return float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
@@ -345,8 +353,12 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
 ####################
 def getFundingDict(ftx,bn,bb):
   d=dict()
-  d['ftxEstBorrow'] = ftxGetEstBorrow(ftx)
-  d['ftxEstLending'] = ftxGetEstLending(ftx)
+  d['ftxEstBorrowUSD'] = ftxGetEstBorrowUSD(ftx)
+  d['ftxEstLendingUSD'] = ftxGetEstLendingUSD(ftx)
+  if ftxGetWallet(ftx).loc['USD','total']>=0:
+    d['ftxEstRateUSD'] = d['ftxEstLendingUSD']
+  else:
+    d['ftxEstRateUSD'] = d['ftxEstBorrowUSD']
   d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
   d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
   d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
@@ -359,12 +371,11 @@ def getFundingDict(ftx,bn,bb):
   return d
 
 def getOneDayShortSpotEdge(fundingDict):
-  usdRate=(fundingDict['ftxEstBorrow']+fundingDict['ftxEstLending'])/2
-  return getOneDayDecayedMean(usdRate,BASE_USD_RATE,HALF_LIFE_HOURS)/365
+  return getOneDayDecayedMean(fundingDict['ftxEstRateUSD'], BASE_USD_RATE, HALF_LIFE_HOURS_USD) / 365
 
-def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None):
+def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None):
   # gain on projected basis mtm after 1 day
-  edge=basis-getOneDayDecayedValues(basis,BASE_BASIS,HALF_LIFE_HOURS)[-1]
+  edge=basis-getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1]
 
   # gain on coupon from elapsed time
   edge += estFundingRate / 365 / (24 / hoursInterval) * (getPctElapsed(hoursInterval) ** pctElapsedPower)
@@ -377,7 +388,7 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,baseFundingRate,es
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
-  edge+=getOneDayDecayedMean(snapFundingRate,baseFundingRate,HALF_LIFE_HOURS,nMinutes=nMinutes)/365
+  edge+= getOneDayDecayedMean(snapFundingRate, BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING, nMinutes=nMinutes) / 365
 
   return edge
 
@@ -403,14 +414,14 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
     smoothedSnapFundingRate = ftxGetOneDayShortFutEdge.emaFTT
   else:
     sys.exit(1)
-  return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate,BASE_FUNDING_RATE_FTX,fundingDict['ftxEstFunding' + ccy])
+  return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate, fundingDict['ftxEstFunding' + ccy])
 
 @retry(wait_fixed=1000)
 def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   premIndex=np.mean([float(n) for n in pd.DataFrame(bn.dapiData_get_basis({'pair':ccy+'USD','contractType':'PERPETUAL','period':'5m'}))[-3:]['basisRate']])
   premIndex=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
   snapFundingRate=premIndex*365
-  return getOneDayShortFutEdge(8, basis,snapFundingRate,BASE_FUNDING_RATE_BN, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
+  return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
 @retry(wait_fixed=1000)
 def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
@@ -418,7 +429,7 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   premIndex=np.mean([float(n) for n in pd.DataFrame(bb.v2_public_get_premium_index_kline({'symbol':ccy+'USD','interval':'1','from':start_time})['result'])['close']])
   premIndex = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
   snapFundingRate=premIndex*365
-  return getOneDayShortFutEdge(8, basis, snapFundingRate, BASE_FUNDING_RATE_BB, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
 def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=False):
   @retry(wait_fixed=1000)

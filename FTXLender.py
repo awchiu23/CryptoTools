@@ -25,7 +25,7 @@ def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio):
     lendingRatio=0
   else:
     lendingRatio = max(0,lendingSize/lendable)
-  print(cl.getCurrentTime() + ': Estimated '+ccy+' lending rate: ' + termcolor.colored(str(round(cl.ftxGetEstLending(ftx, ccy) * 100,1)) + '% p.a.','red'))
+  print(cl.getCurrentTime() + ': Estimated ' + ccy +' lending rate: ' + termcolor.colored(str(round(cl.ftxGetEstLendingUSD(ftx, ccy) * 100, 1)) + '% p.a.', 'red'))
   if ccy=='USD':
     z='$' + str(round(lendingSize))
   else:
