@@ -142,19 +142,19 @@ def ftxGetEstLending(ftx, ccy=None):
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def ftxGetBid(ftx,ticker):
-    return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid']
+    return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid'])
   @retry(wait_fixed=1000)
   def ftxGetAsk(ftx,ticker):
-    return ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask']
+    return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask'])
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
-    return ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize']
+    return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
   @retry(wait_fixed=1000)
   def ftxGetFilledSize(ftx, orderId):
-    return ftx.private_get_orders_order_id({'order_id': orderId})['result']['filledSize']
+    return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['filledSize'])
   @retry(wait_fixed=1000)
   def ftxGetFillPrice(ftx,orderId):
-    return ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice']
+    return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice'])
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -185,15 +185,18 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
       limitPrice=newPrice
       nChases+=1
       if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
+        if side == 'BUY':
+          farPrice = limitPrice * .9
+        else:
+          farPrice = limitPrice * 1.1
         try:
-          ftx.private_delete_orders_order_id({'order_id':orderId})
+          orderId = ftx.private_post_orders_order_id_modify({'order_id': orderId, 'price': farPrice})['result']['id']
         except:
-          pass
-        if ftxGetFilledSize(ftx,orderId)!=0:
-          print('Cancelled order with non-zero quantity executed!')
-          sys.exit(1)
-        print(getCurrentTime() + ': Cancelled')
-        return 0
+          break
+        if ftxGetRemainingSize(ftx, orderId) == qty:
+          ftx.private_delete_orders_order_id({'order_id': orderId})
+          print(getCurrentTime() + ': Cancelled')
+          return 0
       else:
         try:
           orderId=ftx.private_post_orders_order_id_modify({'order_id':orderId,'price':limitPrice})['result']['id']
@@ -333,11 +336,18 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
       orderStatus = bbGetOrder(bb, ticker2, orderId)
       if orderStatus == 0:  # If order doesn't exist, it means all executed
         break
-      if nChases>maxChases and orderStatus['cum_exec_qty']==0:
-        if bb.v2_private_post_order_cancel({'symbol': ticker2, 'order_id': orderId})['result']['cum_exec_qty'] > 0:
-          print('Cancelled order with non-zero quantity executed!')
-          sys.exit(1)
+      if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
+        if side == 'BUY':
+          farPrice = round(limitPrice * .95, 2)
         else:
+          farPrice = round(limitPrice * 1.05, 2)
+        try:
+          bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': farPrice})
+        except:
+          break
+        orderStatus = bbGetOrder(bb, ticker2, orderId)
+        if float(orderStatus['cum_exec_qty']) == 0:
+          bb.v2_private_post_order_cancel({'symbol': ticker2, 'order_id': orderId})
           print(getCurrentTime() + ': Cancelled')
           return 0
       else:

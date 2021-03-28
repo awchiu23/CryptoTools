@@ -6,11 +6,11 @@ import termcolor
 ########
 # Params
 ########
-isRunNow=False           # Run once and stop? Otherwise loop continuously and run one minute before every reset
-isManageCoins=True       # Also manage coins (BTC and ETH) in addition to USD?
+isRunNow=False            # Run once and stop? Otherwise loop continuously and run one minute before every reset
+isManageCoins=True        # Also manage coins (BTC and ETH) in addition to USD?
 
-usdLendingRatio=.95      # Percentage of USD to lend out
-coinLendingRatio=.95     # Percentage of coins (BTC and ETH) to lend out
+usdLendingRatio=0.95      # Percentage of USD to lend out
+coinLendingRatio=0.95     # Percentage of coins (BTC and ETH) to lend out
 
 ###########
 # Functions
@@ -54,6 +54,7 @@ while True:
   if isManageCoins:
     ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio)
     ftxProcessLoan(ftx, ftxWallet,'ETH', coinLendingRatio)
+  print(cl.getCurrentTime() + ': New free collateral:        ' + termcolor.colored('$'+str(round(float(ftx.private_get_account()['result']['freeCollateral']))), 'blue'))
 
   if isRunNow:
     break
