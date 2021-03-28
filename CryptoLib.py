@@ -89,11 +89,11 @@ CT_MAX_FTT = 100               # Hard limit
 ###############################
 # Params for Smart Basis Models
 ###############################
-HALF_LIFE_HOURS_USD = 8
+HALF_LIFE_HOURS_SPOT = 8
 HALF_LIFE_HOURS_BASIS = 4
 HALF_LIFE_HOURS_FUNDING = 4
 
-BASE_USD_RATE = 0.25
+BASE_SPOT_RATE = 0.25
 BASE_FUNDING_RATE = 0.25
 BASE_BASIS = BASE_FUNDING_RATE/365
 
@@ -128,12 +128,16 @@ def ftxGetEstFunding(ftx, ccy):
   return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
 @retry(wait_fixed=1000)
-def ftxGetEstBorrowUSD(ftx):
-  return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc['USD', 'estimate']) * 24 * 365
+def ftxGetEstBorrow(ftx, ccy):
+  return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
 
 @retry(wait_fixed=1000)
-def ftxGetEstLendingUSD(ftx, ccy='USD'):
-  return float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
+def ftxGetEstLending(ftx, ccy=None):
+  s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
+  if ccy is None:
+    return s
+  else:
+    return s[ccy]
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
@@ -353,12 +357,16 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
 ####################
 def getFundingDict(ftx,bn,bb):
   d=dict()
-  d['ftxEstBorrowUSD'] = ftxGetEstBorrowUSD(ftx)
-  d['ftxEstLendingUSD'] = ftxGetEstLendingUSD(ftx)
-  if ftxGetWallet(ftx).loc['USD','total']>=0:
-    d['ftxEstRateUSD'] = d['ftxEstLendingUSD']
+  lendingS=ftxGetEstLending(ftx)
+  d['ftxEstBorrowUSD'] = ftxGetEstBorrow(ftx,'USD')
+  d['ftxEstLendingUSD'] = lendingS['USD']
+  if ftxGetWallet(ftx).loc['USD', 'total'] >= 0:
+    d['ftxEstMarginalUSD'] = d['ftxEstLendingUSD']
   else:
-    d['ftxEstRateUSD'] = d['ftxEstBorrowUSD']
+    d['ftxEstMarginalUSD'] = d['ftxEstBorrowUSD']
+  d['ftxEstLendingBTC']=  lendingS['BTC']
+  d['ftxEstLendingETH']=  lendingS['ETH']
+  d['ftxEstSpot']=d['ftxEstMarginalUSD']-(d['ftxEstLendingBTC']+d['ftxEstLendingETH'])/2
   d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
   d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
   d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
@@ -371,7 +379,7 @@ def getFundingDict(ftx,bn,bb):
   return d
 
 def getOneDayShortSpotEdge(fundingDict):
-  return getOneDayDecayedMean(fundingDict['ftxEstRateUSD'], BASE_USD_RATE, HALF_LIFE_HOURS_USD) / 365
+  return getOneDayDecayedMean(fundingDict['ftxEstSpot'], BASE_SPOT_RATE, HALF_LIFE_HOURS_SPOT) / 365
 
 def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None):
   # gain on projected basis mtm after 1 day
@@ -511,14 +519,10 @@ def ctInit():
   ftx = ftxCCXTInit()
   bn = bnCCXTInit()
   bb = bbCCXTInit()
-  ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main'])
-  dfSetFloat(ftxWallet,['usdValue','total'])
-  ftxWallet['Ccy'] = ftxWallet['coin']
-  ftxWallet['SpotDelta'] = ftxWallet['total']
-  ftxWallet = ftxWallet.set_index('Ccy').loc[['BTC', 'ETH', 'FTT', 'USD']]
-  spotBTC = ftxWallet.loc['BTC', 'usdValue'] / ftxWallet.loc['BTC', 'total']
-  spotETH = ftxWallet.loc['ETH', 'usdValue'] / ftxWallet.loc['ETH', 'total']
-  spotFTT = ftxWallet.loc['FTT', 'usdValue'] / ftxWallet.loc['FTT', 'total']
+  ftxWallet=ftxGetWallet(ftx)
+  spotBTC=ftxWallet.loc['BTC','spot']
+  spotETH=ftxWallet.loc['ETH', 'spot']
+  spotFTT=ftxWallet.loc['FTT', 'spot']
   trade_btc = np.min([np.min([CT_TRADE_BTC_NOTIONAL, CT_MAX_NOTIONAL]) / spotBTC, CT_MAX_BTC])
   trade_eth = np.min([np.min([CT_TRADE_ETH_NOTIONAL, CT_MAX_NOTIONAL]) / spotETH, CT_MAX_ETH])
   trade_ftt = np.min([np.min([CT_TRADE_FTT_NOTIONAL, CT_MAX_NOTIONAL]) / spotFTT, CT_MAX_FTT])

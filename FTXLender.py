@@ -25,11 +25,11 @@ def ftxProcessLoan(ftx,ftxWallet,ccy,lendingRatio):
     lendingRatio=0
   else:
     lendingRatio = max(0,lendingSize/lendable)
-  print(cl.getCurrentTime() + ': Estimated ' + ccy +' lending rate: ' + termcolor.colored(str(round(cl.ftxGetEstLendingUSD(ftx, ccy) * 100, 1)) + '% p.a.', 'red'))
+  print(cl.getCurrentTime() + ': Estimated ' + ccy +' lending rate: ' + termcolor.colored(str(round(cl.ftxGetEstLending(ftx, ccy) * 100, 1)) + '% p.a.', 'red'))
   if ccy=='USD':
     z='$' + str(round(lendingSize))
   else:
-    z=str(round(lendingSize,4))+' coins (~USD$'+str(round(lendingSize*(ftxWallet.loc[ccy,'usdValue'] / ftxWallet.loc[ccy,'total'])))+')'
+    z=str(round(lendingSize,4))+' coins (~USD$'+str(round(lendingSize*(ftxWallet.loc[ccy,'spot'])))+')'
   print(cl.getCurrentTime() + ': New '+ccy+' lending size:       '+termcolor.colored(z+' ('+str(round(lendingRatio*100))+'% of lendable)','blue'))
   ftxLend(ftx, ccy, lendingSize)
   print()
@@ -49,8 +49,7 @@ while True:
     tgtTime = now - pd.DateOffset(hours=-hoursShift, minutes=now.minute + 1, seconds=now.second, microseconds=now.microsecond)
     cl.sleepUntil(tgtTime.hour,tgtTime.minute,tgtTime.second)
 
-  ftxWallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
-  cl.dfSetFloat(ftxWallet,['usdValue','total'])
+  ftxWallet=cl.ftxGetWallet(ftx)
   ftxProcessLoan(ftx, ftxWallet, 'USD', usdLendingRatio)
   if isManageCoins:
     ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio)
