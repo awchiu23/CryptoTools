@@ -51,7 +51,7 @@ def bnPrintFundingRate(bn,ccy,cutoff):
   df = df[df.index >= cutoff].sort_index()
   cl.dfSetFloat(df,'fundingRate')
   rate=df['fundingRate'].mean() * 3 * 365
-  print(('Avg BB ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
+  print(('Avg BN ' + ccy + ' funding rate: ').rjust(40) + str(round(rate * 100)) + '%')
   return rate
 
 def bbPrintFundingRate(bb,ccy,cutoff):
@@ -117,5 +117,5 @@ ftxPrintBorrowLendingRate(ftx,'BTC')
 ftxPrintBorrowLendingRate(ftx,'ETH')
 print()
 print('Avg FTX funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(ftxMixedFundingRate*100))+'%','red'))
-print('Avg BB funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bnMixedFundingRate*100))+'%','red'))
+print('Avg BN funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bnMixedFundingRate*100))+'%','red'))
 print('Avg BB funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bbMixedFundingRate*100))+'%','red'))
