@@ -59,8 +59,8 @@ CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
 
 # Raise to increase eagerness to buy
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
@@ -70,7 +70,7 @@ CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 
-CT_NOBS = 5                    # Number of observations through target before triggering
+CT_STREAK = 5                  # Number of observations through target before triggering
 CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
 CT_SLEEP = 3                   # Delay in seconds between observations
 CT_NPROGRAMS = 50              # Number of programs (each program being a pair of trades)
@@ -89,9 +89,9 @@ CT_MAX_FTT = 100               # Hard limit
 ###############################
 # Params for Smart Basis Models
 ###############################
-HALF_LIFE_HOURS_SPOT = 8
-HALF_LIFE_HOURS_BASIS = 4
-HALF_LIFE_HOURS_FUNDING = 4
+HALF_LIFE_HOURS_SPOT = 12
+HALF_LIFE_HOURS_BASIS = 6
+HALF_LIFE_HOURS_FUNDING = 6
 
 BASE_SPOT_RATE = 0.25
 BASE_FUNDING_RATE = 0.25
@@ -481,7 +481,6 @@ def getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=False):
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
   spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
-
   if isSkipAdj:
     ftxBTCAdj=0
     ftxETHAdj=0
@@ -634,7 +633,7 @@ def ctRun(ccy):
       smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
-      prevSmartBasis=prevSmartBasis[-CT_NOBS:]
+      prevSmartBasis= prevSmartBasis[-CT_STREAK:]
       isStable=(np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_OBS_ALLOWED_BPS_RANGE
       if smartBasisBps>=tgtBps:
         status+=1
@@ -650,7 +649,7 @@ def ctRun(ccy):
       z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), 'blue')
       print(z + ctGetTargetString(tgtBps))
 
-      if abs(status) >= CT_NOBS and isStable:
+      if abs(status) >= CT_STREAK and isStable:
         print()
         speak('Go')
         completedLegs = 0
