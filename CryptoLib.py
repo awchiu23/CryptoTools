@@ -59,8 +59,8 @@ CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
 
 # Raise to increase eagerness to buy
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
@@ -123,15 +123,15 @@ def ftxGetWallet(ftx):
   wallet['spot']=wallet['usdValue']/wallet['total']
   return wallet
 
-@retry(wait_fixed=1000)
+##@retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
   return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
-@retry(wait_fixed=1000)
+##@retry(wait_fixed=1000)
 def ftxGetEstBorrow(ftx, ccy):
   return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
 
-@retry(wait_fixed=1000)
+##@retry(wait_fixed=1000)
 def ftxGetEstLending(ftx, ccy=None):
   s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
   if ccy is None:
@@ -140,16 +140,16 @@ def ftxGetEstLending(ftx, ccy=None):
     return s[ccy]
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
-  @retry(wait_fixed=1000)
+  ##@retry(wait_fixed=1000)
   def ftxGetBid(ftx,ticker):
     return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid'])
-  @retry(wait_fixed=1000)
+  ##@retry(wait_fixed=1000)
   def ftxGetAsk(ftx,ticker):
     return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask'])
-  @retry(wait_fixed=1000)
+  ##@retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
-  @retry(wait_fixed=1000)
+  ##@retry(wait_fixed=1000)
   def ftxGetFilledSize(ftx, orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['filledSize'])
   @retry(wait_fixed=1000)
@@ -764,7 +764,9 @@ def sleepUntil(h, m, s):
   time.sleep((future - t).seconds+1)
 
 # Speak text
-@retry(wait_fixed=1000)
-def speak(text):
-  import win32com.client as wincl
-  wincl.Dispatch("SAPI.SpVoice").Speak(text)
+def speak(text):    
+  try:
+    import win32com.client as wincl
+    wincl.Dispatch("SAPI.SpVoice").Speak(text)
+  except:
+    print('Speaking: '+text)
