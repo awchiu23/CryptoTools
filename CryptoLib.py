@@ -71,11 +71,11 @@ CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 
 CT_STREAK = 5                  # Number of observations through target before triggering
-CT_OBS_ALLOWED_BPS_RANGE = 10  # Max number of allowed bps for range of observations
+CT_STREAK_BPS_RANGE = 10       # Max number of allowed bps for range of observations
 CT_SLEEP = 3                   # Delay in seconds between observations
-CT_NPROGRAMS = 50              # Number of programs (each program being a pair of trades)
+CT_NPROGRAMS = 100             # Number of programs (each program being a pair of trades)
 
-CT_TRADE_BTC_NOTIONAL = 3000  # Per trade notional
+CT_TRADE_BTC_NOTIONAL = 3000   # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
 CT_TRADE_FTT_NOTIONAL = 1000   # Per trade notional
 
@@ -634,7 +634,7 @@ def ctRun(ccy):
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
       prevSmartBasis= prevSmartBasis[-CT_STREAK:]
-      isStable=(np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_OBS_ALLOWED_BPS_RANGE
+      isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_STREAK_BPS_RANGE
       if smartBasisBps>=tgtBps:
         status+=1
       else:
