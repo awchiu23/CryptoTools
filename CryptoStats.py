@@ -7,7 +7,7 @@ import ccxt
 ########
 # Params
 ########
-isShowAltFundings=True
+isShowAltFundings=False
 
 ###########
 # Functions
