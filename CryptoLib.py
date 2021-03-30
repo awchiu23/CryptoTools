@@ -130,8 +130,12 @@ def ftxGetEstFunding(ftx, ccy):
   return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
 @retry(wait_fixed=1000)
-def ftxGetEstBorrow(ftx, ccy):
-  return float(pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
+def ftxGetEstBorrow(ftx, ccy=None):
+  s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
+  if ccy is None:
+    return s
+  else:
+    return s[ccy]
 
 @retry(wait_fixed=1000)
 def ftxGetEstLending(ftx, ccy=None):
@@ -368,14 +372,20 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
 # Smart basis models
 ####################
 def getFundingDict(ftx,bn,bb):
+  def getMarginal(ftxWallet,borrowS,lendingS,ccy):
+    if ftxWallet.loc[ccy, 'total'] >= 0:
+      return lendingS[ccy]
+    else:
+      return borrowS[ccy]
+  #####
+  ftxWallet = ftxGetWallet(ftx)
+  borrowS = ftxGetEstBorrow(ftx)
+  lendingS = ftxGetEstLending(ftx)
   d=dict()
-  lendingS=ftxGetEstLending(ftx)
-  d['ftxEstBorrowUSD'] = ftxGetEstBorrow(ftx,'USD')
+  d['ftxEstBorrowUSD'] = borrowS['USD']
   d['ftxEstLendingUSD'] = lendingS['USD']
-  if ftxGetWallet(ftx).loc['USD', 'total'] >= 0:
-    d['ftxEstMarginalUSD'] = d['ftxEstLendingUSD']
-  else:
-    d['ftxEstMarginalUSD'] = d['ftxEstBorrowUSD']
+  d['ftxEstMarginalUSD'] = getMarginal(ftxWallet,borrowS,lendingS,'USD')
+  d['ftxEstMarginalUSDT'] = getMarginal(ftxWallet, borrowS, lendingS, 'USDT')
   d['ftxEstLendingBTC']=  lendingS['BTC']
   d['ftxEstLendingETH']=  lendingS['ETH']
   d['ftxEstSpot']=d['ftxEstMarginalUSD']-(d['ftxEstLendingBTC']+d['ftxEstLendingETH'])/2

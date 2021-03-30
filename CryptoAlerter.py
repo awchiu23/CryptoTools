@@ -23,8 +23,7 @@ def process(config,smartBasisDict,color,funding,funding2=None):
 # Main
 ######
 cl.printHeader('CryptoAlerter')
-print('Column 1:'.ljust(20)+'USD marginal rate / BTC lending rate / ETH lending rate / spot rate')
-print(''.ljust(20)+'Spot rate = USD marginal rate - average(BTC lending rate, ETH lending rate)')
+print('Column 1:'.ljust(20)+'USD marginal rate / USDT marginal rate / Average coin lending rates (BTC, ETH)')
 print('Body:'.ljust(20)+'Smart basis / raw basis (est. funding rate %)')
 print()
 
@@ -35,8 +34,9 @@ bb=cl.bbCCXTInit()
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
   smartBasisDict = cl.getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=True)
-  print((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'%/'+str(round(fundingDict['ftxEstLendingBTC'] * 100)) + '%/'+ \
-         str(round(fundingDict['ftxEstLendingETH'] * 100)) + '%/' + str(round(fundingDict['ftxEstSpot'] * 100)) + '%').ljust(20),end='')
+  avgCoinRate=(fundingDict['ftxEstLendingBTC']+fundingDict['ftxEstLendingETH'])/2
+  print((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'%/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '%/'+ \
+         str(round(avgCoinRate * 100)) + '%').ljust(19),end='')
   process('FTX_BTC', smartBasisDict, 'blue', fundingDict['ftxEstFundingBTC'])
   process('BN_BTC', smartBasisDict, 'blue', fundingDict['bnEstFundingBTC'])
   process('BB_BTC', smartBasisDict, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
