@@ -245,9 +245,12 @@ def bbInit(bb,spotBTC,spotETH):
          bbNAV,bbLiqBTC,bbLiqETH
 
 def bbPrintFunding(bb,bbPL,bbPayments,ccy):
-  df=bbPayments[bbPayments['symbol']==ccy + 'USD']
-  oneDayFunding = df['fee_rate'].abs().mean() * 3 * 365
-  prevFunding = abs(df['fee_rate'][-1]) * 3 * 365
+  df=bbPayments[bbPayments['symbol']==ccy + 'USD'].copy()
+  for i in range(len(df)):
+    if 'Sell' in df.iloc[i]['order_id']:
+      df.loc[df.index[i],'fee_rate']*=-1
+  oneDayFunding = df['fee_rate'].mean() * 3 * 365
+  prevFunding = df['fee_rate'][-1] * 3 * 365
   estFunding1 = cl.bbGetEstFunding1(bb,ccy)
   estFunding2 = cl.bbGetEstFunding2(bb,ccy)
   printFunding('BB', bbPL, ccy, oneDayFunding, prevFunding, estFunding1,estFunding2)
