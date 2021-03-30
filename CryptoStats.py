@@ -23,12 +23,12 @@ def ftxPrintFundingRate(ftx,ccy,cutoff):
   rate=df['rate'].mean()*24*365
 
   print (('Avg FTX '+ccy+' funding rate: ').rjust(40)+str(round(rate*100))+'% '+ getSuffix(df))
-  return rate
+  return rate, df['time']
 
-def ftxPrintBorrowLendingRate(ftx,ccy):
+def ftxPrintBorrowLendingRate(ftx,ftxTimeS,ccy):
   def cleanBorrows(df, ccy, cutoff):
-    df2 = df[df['coin'] == ccy].copy()
-    ts = df2.set_index('time')['rate']
+    df2 = df[df['coin'] == ccy].set_index('time',drop=False).reindex(ftxTimeS).fillna(0).copy()
+    ts=df2['rate']
     ts[:] = [float(n) for n in ts]
     ts.index = [datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in ts.index]
     ts = ts[ts.index >= cutoff].sort_index()
@@ -88,9 +88,9 @@ if isShowAltFundings:
   db = ccxt.deribit({'apiKey': 's545TabG', 'secret': 'Ii7kYRE1N9Klu-0fer8-IMJocaz3BNqVsobqGfKSo-M', 'enableRateLimit': True})
 
 cutoff=datetime.datetime.now() - pd.DateOffset(days=7)
-ftxBTCFundingRate=ftxPrintFundingRate(ftx,'BTC',cutoff)
-ftxETHFundingRate=ftxPrintFundingRate(ftx,'ETH',cutoff)
-ftxPrintFundingRate(ftx,'FTT',cutoff)
+ftxBTCFundingRate,ftxTimeS=ftxPrintFundingRate(ftx,'BTC',cutoff)
+ftxETHFundingRate,_=ftxPrintFundingRate(ftx,'ETH',cutoff)
+ftxFTTFundingRate,_=ftxPrintFundingRate(ftx,'FTT',cutoff)
 bnBTCFundingRate=bnPrintFundingRate(bn,'BTC',cutoff)
 bnETHFundingRate=bnPrintFundingRate(bn,'ETH',cutoff)
 bbBTCFundingRate=bbPrintFundingRate(bb,'BTC',cutoff)
@@ -107,9 +107,9 @@ bbMixedFundingRate=(bbBTCFundingRate+bbETHFundingRate)/2
 print('-' * 100)
 print()
 
-ftxPrintBorrowLendingRate(ftx,'USD')
-ftxPrintBorrowLendingRate(ftx,'BTC')
-ftxPrintBorrowLendingRate(ftx,'ETH')
+ftxPrintBorrowLendingRate(ftx,ftxTimeS,'USD')
+ftxPrintBorrowLendingRate(ftx,ftxTimeS,'BTC')
+ftxPrintBorrowLendingRate(ftx,ftxTimeS,'ETH')
 print()
 print('Avg FTX funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(ftxMixedFundingRate*100))+'%','red'))
 print('Avg BN funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bnMixedFundingRate*100))+'%','red'))
