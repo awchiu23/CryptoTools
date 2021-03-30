@@ -189,7 +189,16 @@ def bnPrintFunding(bn,bnPR,ccy):
 def bbInit(bb,spotBTC,spotETH):
   def getPayments(ccy):
     start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
-    return pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time,'limit':1000})['result']['trade_list']).set_index('symbol',drop=False)
+    n=0
+    df=pd.DataFrame()
+    while True:
+      n+=1
+      tl=bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': start_time, 'limit': 1000, 'page':n})['result']['trade_list']
+      if tl is None:
+        break
+      else:
+        df=df.append(pd.DataFrame(tl))
+    return df.set_index('symbol',drop=False)
   #####
   def getLiq(bbPL,ccy):
     liqPrice = float(bbPL.loc[ccy, 'liq_price'])
