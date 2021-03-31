@@ -60,15 +60,15 @@ CT_CONFIGS_DICT['BB_ETH_OK']=1
 
 # Positive = eager to buy
 # Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-20
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-20
-CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=-20
+CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=-40
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-10
-CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=5
+CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 
 
@@ -408,8 +408,9 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
   edge=basis-getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1]
 
   # gain on coupon from elapsed time
-  edge += estFundingRate / 365 / (24 / hoursInterval) * (getPctElapsed(hoursInterval) ** pctElapsedPower)
-  hoursAccountedFor=getPctElapsed(hoursInterval)*hoursInterval
+  pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
+  edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
+  hoursAccountedFor=hoursInterval*pctElapsed
 
   # gain on coupon from previous reset (bb)
   if not prevFundingRate is None:
