@@ -258,6 +258,39 @@ def bnPrintFunding(bn,bnPR,ccy):
 
 #####
 
+def dbInit(db,spotBTC,spotETH):
+  def getEquity(db,ccy):
+    return float(db.private_get_get_account_summary({'currency': ccy})['result']['equity'])
+  def getFutPos(db,ccy):
+    return float(db.private_get_get_position({'instrument_name': ccy+'-PERPETUAL'})['result']['size'])
+  #####
+  dbSpotDeltaBTC = getEquity(db,'BTC')
+  dbSpotDeltaETH = getEquity(db,'ETH')
+  dbFutures = pd.DataFrame([['BTC', spotBTC, getFutPos(db, 'BTC')], ['ETH', spotETH, getFutPos(db, 'ETH')]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
+  dbFutures['FutDelta'] = dbFutures['FutDeltaUSD'] / dbFutures['Spot']
+  dbNotional = dbFutures['FutDeltaUSD'].abs().sum()
+  #####
+  dbOneDayIncome=0
+  dbOneDayAnnRet = dbOneDayIncome * 365 / dbNotional
+  #####
+  dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
+  return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
+         dbOneDayIncome, dbOneDayAnnRet, \
+         dbNAV
+
+def dbPrintIncomes(oneDayIncome,oneDayAnnRet):
+  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+  print(termcolor.colored(('DB 4pm funding income: ').rjust(41) + z1,'blue'))
+
+def dbPrintFunding(db,dbFutures,ccy):
+  oneDayFunding = cl.dbGetEstFunding(db,ccy,mins=60*24)
+  estFunding=cl.dbGetEstFunding(db,ccy)
+  prefix='DB ' + ccy + ' 24h/est funding rate:'
+  suffix = str(round(oneDayFunding * 100)) + '%/' + str(round(estFunding * 100)) + '% p.a. ($' + str(round(dbFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
+  print(prefix.rjust(40) + ' ' + suffix)
+
+#####
+
 def cbInit(cb,spotBTC,spotETH):
   bal=cb.fetch_balance()
   cbSpotDeltaBTC=bal['BTC']['total']
@@ -272,6 +305,7 @@ ftx=cl.ftxCCXTInit()
 bb = cl.bbCCXTInit()
 bn = cl.bnCCXTInit()
 cb= cl.cbCCXTInit()
+db=cl.dbCCXTInit()
 
 ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
@@ -289,35 +323,42 @@ bnBal, bnPR, bnPayments, \
   bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
   bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
 
+dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
+  dbOneDayIncome, dbOneDayAnnRet, \
+  dbNAV = dbInit(db, spotBTC, spotETH)
+
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
 #############
 # Aggregation
 #############
-nav=ftxNAV+bbNAV+bnNAV+cbNAV
+nav=ftxNAV+bbNAV+bnNAV+dbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
-oneDayIncome+=bbOneDayIncome+bnOneDayIncome
+oneDayIncome+=bbOneDayIncome+bnOneDayIncome+dbOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
 spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
+spotDeltaBTC+=dbSpotDeltaBTC
 spotDeltaBTC+=cbSpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
 futDeltaBTC+=bnPR.loc['BTC','FutDelta']
+futDeltaBTC+=dbFutures.loc['BTC','FutDelta']
 
 spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
 spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
+spotDeltaETH+=dbSpotDeltaETH
 spotDeltaETH+=cbSpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
 futDeltaETH+=bnPR.loc['ETH','FutDelta']
+futDeltaETH+=dbFutures.loc['ETH','FutDelta']
 
 spotDeltaFTT=ftxWallet.loc['FTT','SpotDelta']
-
 futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
 
 ########
@@ -328,6 +369,7 @@ z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
 z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
+z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
@@ -362,6 +404,10 @@ bnPrintFunding(bn,bnPR,'ETH')
 zBTC='never' if bnLiqBTC==0 else str(round(bnLiqBTC*100,1))+'%'
 zETH='never' if bnLiqETH==0 else str(round(bnLiqETH*100,1))+'%'
 print(termcolor.colored('BN liquidation (BTC/ETH): '.rjust(41)+zBTC+'/'+zETH+' (of spot)','red'))
+print()
+dbPrintIncomes(dbOneDayIncome,dbOneDayAnnRet)
+dbPrintFunding(db,dbFutures,'BTC')
+dbPrintFunding(db,dbFutures,'ETH')
 print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)

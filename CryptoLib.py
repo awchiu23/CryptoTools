@@ -23,6 +23,8 @@ API_KEY_BB = sl.jLoad('API_KEY_BB')
 API_SECRET_BB = sl.jLoad('API_SECRET_BB')
 API_KEY_BN = sl.jLoad('API_KEY_BN')
 API_SECRET_BN = sl.jLoad('API_SECRET_BN')
+API_KEY_DB = sl.jLoad('API_KEY_DB')
+API_SECRET_DB = sl.jLoad('API_SECRET_DB')
 API_KEY_CB = sl.jLoad('API_KEY_CB')
 API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 
@@ -32,6 +34,8 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #API_SECRET_BB = ''
 #API_KEY_BN = ''
 #API_SECRET_BN = ''
+#API_KEY_DB = ''
+#API_SECRET_DB = ''
 #API_KEY_CB = ''
 #API_SECRET_CB = ''
 
@@ -112,6 +116,9 @@ def bbCCXTInit():
 
 def bnCCXTInit():
   return  ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True})
+
+def dbCCXTInit():
+  return  ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True})
 
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
@@ -366,6 +373,14 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
   return fill
 
+#####
+
+def dbGetEstFunding(db,ccy,mins=15):
+  now=datetime.datetime.now()
+  start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
+  end_timestamp = int(datetime.datetime.timestamp(now))*1000
+  return float(db.public_get_get_funding_rate_value({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])*(60/mins)*24*365
+
 #############################################################################################
 
 ####################
@@ -543,6 +558,7 @@ def ctInit():
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
+  db = dbCCXTInit()
   ftxWallet=ftxGetWallet(ftx)
   spotBTC=ftxWallet.loc['BTC','spot']
   spotETH=ftxWallet.loc['ETH', 'spot']
@@ -784,7 +800,7 @@ def speak(text):
     import win32com.client as wincl
     speaker = wincl.Dispatch("SAPI.SpVoice")
     speaker.Voice = speaker.getvoices()[1]
-    speaker.Speak('Go')
+    speaker.Speak(text)
   except:
     print('[Speaking: "'+text+'"]')
     print()
