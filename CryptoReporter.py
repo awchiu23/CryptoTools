@@ -261,8 +261,21 @@ def bnPrintFunding(bn,bnPR,ccy):
 def dbInit(db,spotBTC,spotETH):
   def getEquity(db,ccy):
     return float(db.private_get_get_account_summary({'currency': ccy})['result']['equity'])
+  #####
   def getFutPos(db,ccy):
     return float(db.private_get_get_position({'instrument_name': ccy+'-PERPETUAL'})['result']['size'])
+  #####
+  def getOneDayIncome(db,ccy,spot):
+    df= pd.DataFrame(db.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
+    if len(df)>0:
+      cl.dfSetFloat(df, 'funding')
+      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
+      return df['funding'].iloc[-1]*spot
+    else:
+      return 0
+  #####
+  def getLiq(db,ccy):
+    return float(db.private_get_get_account_summary({'currency': ccy})['result']['estimated_liquidation_ratio'])
   #####
   dbSpotDeltaBTC = getEquity(db,'BTC')
   dbSpotDeltaETH = getEquity(db,'ETH')
@@ -270,13 +283,15 @@ def dbInit(db,spotBTC,spotETH):
   dbFutures['FutDelta'] = dbFutures['FutDeltaUSD'] / dbFutures['Spot']
   dbNotional = dbFutures['FutDeltaUSD'].abs().sum()
   #####
-  dbOneDayIncome=0
+  dbOneDayIncome=getOneDayIncome(db,'BTC',spotBTC)+getOneDayIncome(db,'ETH',spotETH)
   dbOneDayAnnRet = dbOneDayIncome * 365 / dbNotional
   #####
   dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
+  dbLiqBTC = getLiq(db,'BTC')
+  dbLiqETH = getLiq(db,'ETH')
   return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
          dbOneDayIncome, dbOneDayAnnRet, \
-         dbNAV
+         dbNAV, dbLiqBTC, dbLiqETH
 
 def dbPrintIncomes(oneDayIncome,oneDayAnnRet):
   z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
@@ -325,7 +340,7 @@ bnBal, bnPR, bnPayments, \
 
 dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   dbOneDayIncome, dbOneDayAnnRet, \
-  dbNAV = dbInit(db, spotBTC, spotETH)
+  dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
@@ -408,6 +423,9 @@ print()
 dbPrintIncomes(dbOneDayIncome,dbOneDayAnnRet)
 dbPrintFunding(db,dbFutures,'BTC')
 dbPrintFunding(db,dbFutures,'ETH')
+zBTC='never' if bnLiqBTC==0 else str(round(dbLiqBTC*100,1))+'%'
+zETH='never' if bnLiqETH==0 else str(round(dbLiqETH*100,1))+'%'
+print(termcolor.colored('DB liquidation (BTC/ETH): '.rjust(41)+zBTC+'/'+zETH+' (of spot)','red'))
 print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)

@@ -48,33 +48,31 @@ CT_DEFAULT_TGT_BPS=15
 CT_CONFIGS_DICT=dict()
 CT_CONFIGS_DICT['BTC']=[CT_DEFAULT_TGT_BPS]
 CT_CONFIGS_DICT['ETH']=[CT_DEFAULT_TGT_BPS]
-CT_CONFIGS_DICT['FTT']=[CT_DEFAULT_TGT_BPS+5]
 
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=1
 CT_CONFIGS_DICT['SPOT_ETH_OK']=1
-CT_CONFIGS_DICT['SPOT_FTT_OK']=1
 CT_CONFIGS_DICT['FTX_BTC_OK']=1
 CT_CONFIGS_DICT['FTX_ETH_OK']=1
-CT_CONFIGS_DICT['FTX_FTT_OK']=1
 CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
+CT_CONFIGS_DICT['DB_BTC_OK']=0
+CT_CONFIGS_DICT['DB_ETH_OK']=0
 
 # Positive = eager to buy
 # Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-20
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-20
-CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS']=-20
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-20
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-20
-
+CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 
 CT_STREAK = 5                  # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10       # Max number of allowed bps for range of observations
@@ -83,12 +81,10 @@ CT_NPROGRAMS = 100             # Number of programs (each program being a pair o
 
 CT_TRADE_BTC_NOTIONAL = 3000   # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
-CT_TRADE_FTT_NOTIONAL = 1000   # Per trade notional
 
 CT_MAX_NOTIONAL = 50000        # Hard limit
 CT_MAX_BTC = 0.5               # Hard limit
 CT_MAX_ETH = 10                # Hard limit
-CT_MAX_FTT = 100               # Hard limit
 
 #############################################################################################
 
@@ -175,8 +171,6 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     qty = round(trade_qty, 3)
   elif ticker[:3] == 'ETH':
     qty = round(trade_qty, 2)
-  elif ticker[:3] == 'FTT':
-    qty = round(trade_qty,1)
   else:
     sys.exit(1)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(qty,6))+') ....')
@@ -386,7 +380,7 @@ def dbGetEstFunding(db,ccy,mins=15):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn):
+def getFundingDict(ftx,bb,bn,db):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -406,13 +400,14 @@ def getFundingDict(ftx,bb,bn):
   d['ftxEstSpot']=d['ftxEstMarginalUSD']-(d['ftxEstLendingBTC']+d['ftxEstLendingETH'])/2
   d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
   d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
-  d['ftxEstFundingFTT'] = ftxGetEstFunding(ftx, 'FTT')
   d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
   d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
   d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
   d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
   d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
   d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
+  d['dbEstFundingBTC'] = dbGetEstFunding(db, 'BTC')
+  d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')
   return d
 
 def getOneDayShortSpotEdge(fundingDict):
@@ -444,8 +439,6 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
     ftxGetOneDayShortFutEdge.emaBTC = fundingDict['ftxEstFundingBTC']
   if not hasattr(ftxGetOneDayShortFutEdge, 'emaETH'):
     ftxGetOneDayShortFutEdge.emaETH = fundingDict['ftxEstFundingETH']
-  if not hasattr(ftxGetOneDayShortFutEdge, 'emaFTT'):
-    ftxGetOneDayShortFutEdge.emaFTT = fundingDict['ftxEstFundingFTT']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(float(df['mark']) / float(df['index']) - 1)*365
   k=2/(300+1)
@@ -455,9 +448,6 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
   elif ccy=='ETH':
     ftxGetOneDayShortFutEdge.emaETH = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaETH * (1 - k)
     smoothedSnapFundingRate = ftxGetOneDayShortFutEdge.emaETH
-  elif ccy=='FTT':
-    ftxGetOneDayShortFutEdge.emaFTT = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaFTT * (1 - k)
-    smoothedSnapFundingRate = ftxGetOneDayShortFutEdge.emaFTT
   else:
     sys.exit(1)
   return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate, fundingDict['ftxEstFunding' + ccy])
@@ -479,7 +469,13 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
-def getSmartBasisDict(ftx, bb, bn, fundingDict, isSkipAdj=False):
+@retry(wait_fixed=1000)
+def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
+  edge = basis - getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1] # basis
+  edge += getOneDayDecayedMean(fundingDict['dbEstFunding' + ccy], BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING) / 365 # funding
+  return edge
+
+def getSmartBasisDict(ftx, bb, bn, db, fundingDict, isSkipAdj=False):
   @retry(wait_fixed=1000)
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
@@ -505,36 +501,40 @@ def getSmartBasisDict(ftx, bb, bn, fundingDict, isSkipAdj=False):
   def bnGetMid(bnBookTicker, ccy):
     return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
   #####
+  @retry(wait_fixed=1000)
+  def dbGetMid(db,ccy):
+    d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
+    return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
+  #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   ftxMarkets = ftxGetMarkets(ftx)
   ftxFutures = ftxGetFutures(ftx)
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
-  spotFTT = ftxGetMid(ftxMarkets, 'FTT/USD')
   if isSkipAdj:
     ftxBTCAdj=0
     ftxETHAdj=0
-    ftxFTTAdj=0
     bnBTCAdj=0
     bnETHAdj=0
     bbBTCAdj=0
     bbETHAdj=0
+    dbBTCAdj=0
+    dbETHAdj=0
   else:
     ftxBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']) / 10000
     ftxETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']) / 10000
-    ftxFTTAdj = (CT_CONFIGS_DICT['SPOT_FTT_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_FTT_ADJ_BPS']) / 10000
     bbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']) / 10000
     bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
     bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
     bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
+    dbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']) / 10000
+    dbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']) / 10000
   #####
   d = dict()
   d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
   d['ftxETHBasis'] = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
-  d['ftxFTTBasis'] = ftxGetMid(ftxMarkets, 'FTT-PERP') / spotFTT - 1
   d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
   d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
-  d['ftxFTTSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'FTT', d['ftxFTTBasis']) - oneDayShortSpotEdge + ftxFTTAdj
   #####
   bbTickers = bbGetTickers(bb)
   d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
@@ -547,6 +547,11 @@ def getSmartBasisDict(ftx, bb, bn, fundingDict, isSkipAdj=False):
   d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
   d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
   d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
+  ###
+  d['dbBTCBasis'] = dbGetMid(db, 'BTC') / spotBTC - 1
+  d['dbETHBasis'] = dbGetMid(db, 'ETH') / spotETH - 1
+  d['dbBTCSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'BTC', d['dbBTCBasis']) - oneDayShortSpotEdge + dbBTCAdj
+  d['dbETHSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'ETH', d['dbETHBasis']) - oneDayShortSpotEdge + dbETHAdj
   return d
 
 #############################################################################################
@@ -562,26 +567,21 @@ def ctInit():
   ftxWallet=ftxGetWallet(ftx)
   spotBTC=ftxWallet.loc['BTC','spot']
   spotETH=ftxWallet.loc['ETH', 'spot']
-  spotFTT=ftxWallet.loc['FTT', 'spot']
   trade_btc = np.min([np.min([CT_TRADE_BTC_NOTIONAL, CT_MAX_NOTIONAL]) / spotBTC, CT_MAX_BTC])
   trade_eth = np.min([np.min([CT_TRADE_ETH_NOTIONAL, CT_MAX_NOTIONAL]) / spotETH, CT_MAX_ETH])
-  trade_ftt = np.min([np.min([CT_TRADE_FTT_NOTIONAL, CT_MAX_NOTIONAL]) / spotFTT, CT_MAX_FTT])
   trade_btc_notional = trade_btc * spotBTC
   trade_eth_notional = trade_eth * spotETH
-  trade_ftt_notional = trade_ftt * spotFTT
   qty_dict = dict()
   qty_dict['BTC'] = trade_btc
   qty_dict['ETH'] = trade_eth
-  qty_dict['FTT'] = trade_ftt
   notional_dict = dict()
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
-  notional_dict['FTT'] = trade_ftt_notional
   printHeader('CryptoTrader')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
-  return ftx,bb,bn,qty_dict,notional_dict
+  return ftx,bb,bn,db,qty_dict,notional_dict
 
 def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
   if CT_CONFIGS_DICT[exch + '_' + ccy + '_OK'] == 0:
@@ -617,8 +617,8 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy):
-  ftx, bb, bn, qty_dict, notional_dict = ctInit()
-  if not ccy in ['BTC', 'ETH', 'FTT']:
+  ftx, bb, bn, db, qty_dict, notional_dict = ctInit()
+  if not ccy in ['BTC', 'ETH']:
     print('Invalid ccy!')
     sys.exit(1)
   trade_qty = qty_dict[ccy]
@@ -630,17 +630,14 @@ def ctRun(ccy):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, fundingDict)
+      fundingDict=getFundingDict(ftx, bb, bn, db)
+      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, fundingDict)
       smartBasisDict['spot' + ccy + 'SmartBasis'] = 0
       smartBasisDict['spot' + ccy + 'Basis'] = 0
 
       # Remove disabled instruments
-      for x in ['SPOT','FTX','BB','BN']:
+      for x in ['SPOT','FTX','BB','BN','DB']:
         for c in ['BTC','ETH']:
-          smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
-      for x in ['SPOT','FTX']:
-        for c in ['FTT']:
           smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
 
       if chosenLong=='':
