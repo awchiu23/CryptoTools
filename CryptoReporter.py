@@ -200,6 +200,32 @@ def bbPrintFunding(bb,bbPL,bbPayments,ccy):
 
 #####
 
+def bgInit(bg,spotBTC,spotETH):
+  def bgGetFutPos(bg,ccy):
+    df = pd.DataFrame(bg.swap_get_position_singleposition({'symbol': ccy.lower() + 'usd'})['holding'])
+    return float(df[df['side'] == 'long']['position']) - float(df[df['side'] == 'short']['position'])
+  #####
+  bgAc=pd.DataFrame(bg.swap_get_account_accounts()).set_index('symbol')
+  cl.dfSetFloat(bgAc,'equity')
+  bgSpotDeltaBTC = bgAc.loc['btcusd','equity']
+  bgSpotDeltaETH = bgAc.loc['ethusd','equity']
+  #####
+  bgFutDeltaBTC=bgGetFutPos(bg,'BTC')/spotBTC
+  bgFutDeltaETH=bgGetFutPos(bg,'ETH')/spotETH
+  bgNotional = abs(bgFutDeltaBTC)+abs(bgFutDeltaETH)
+  #####
+  bgPrevIncome = 0
+  bgPrevAnnRet = bgPrevIncome * 3 * 365 / bgNotional
+  bgOneDayIncome = 0
+  bgOneDayAnnRet = bgOneDayIncome * 365 / bgNotional
+  #####
+  bgNAV = bgSpotDeltaBTC * spotBTC + bgSpotDeltaETH * spotETH
+  return bgSpotDeltaBTC, bgSpotDeltaETH, bgFutDeltaBTC, bgFutDeltaETH, \
+         bgPrevIncome, bgPrevAnnRet, bgOneDayIncome, bgOneDayAnnRet, \
+         bgNAV
+
+#####
+
 def bnInit(bn,spotBTC,spotETH):
   bnBal = pd.DataFrame(bn.dapiPrivate_get_balance())
   cl.dfSetFloat(bnBal, ['balance', 'crossUnPnl'])
@@ -270,6 +296,7 @@ def cbInit(cb,spotBTC,spotETH):
 ######
 ftx=cl.ftxCCXTInit()
 bb = cl.bbCCXTInit()
+bg = cl.bgCCXTInit()
 bn = cl.bnCCXTInit()
 cb= cl.cbCCXTInit()
 
@@ -285,6 +312,10 @@ bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
   bbPrevIncome, bbPrevAnnRet, bbOneDayIncome, bbOneDayAnnRet, \
   bbNAV, bbLiqBTC, bbLiqETH = bbInit(bb, spotBTC, spotETH)
 
+bgSpotDeltaBTC, bgSpotDeltaETH, bgFutDeltaBTC, bgFutDeltaETH, \
+  bgPrevIncome, bgPrevAnnRet, bgOneDayIncome, bgOneDayAnnRet, \
+  bgNAV = bgInit(bg, spotBTC, spotETH)
+
 bnBal, bnPR, bnPayments, \
   bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
   bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
@@ -294,26 +325,30 @@ cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 #############
 # Aggregation
 #############
-nav=ftxNAV+bbNAV+bnNAV+cbNAV
+nav=ftxNAV+bbNAV+bgNAV+bnNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
-oneDayIncome+=bbOneDayIncome+bnOneDayIncome
+oneDayIncome+=bbOneDayIncome+bgOneDayIncome+bnOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
+spotDeltaBTC+=bgSpotDeltaBTC
 spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
 spotDeltaBTC+=cbSpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
+futDeltaBTC+=bgFutDeltaBTC
 futDeltaBTC+=bnPR.loc['BTC','FutDelta']
 
 spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
+spotDeltaETH+=bgSpotDeltaETH
 spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
 spotDeltaETH+=cbSpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
+futDeltaETH+=bgFutDeltaETH
 futDeltaETH+=bnPR.loc['ETH','FutDelta']
 
 spotDeltaFTT=ftxWallet.loc['FTT','SpotDelta']
@@ -327,6 +362,7 @@ cl.printHeader('CryptoReporter - '+cl.getCurrentTime())
 z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
+z+=' / BG: $' + str(round(bgNAV/1000)) + 'K'
 z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
@@ -355,6 +391,8 @@ printIncomes('BB',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
 bbPrintFunding(bb,bbPL,bbPayments,'BTC')
 bbPrintFunding(bb,bbPL,bbPayments,'ETH')
 print(termcolor.colored('BB liquidation (BTC/ETH): '.rjust(41)+str(round(bbLiqBTC*100,1))+'%/'+str(round(bbLiqETH*100,1))+'% (of spot)','red'))
+print()
+printIncomes('BG',bgPrevIncome,bgPrevAnnRet,bgOneDayIncome,bgOneDayAnnRet)
 print()
 printIncomes('BN',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
 bnPrintFunding(bn,bnPR,'BTC')
