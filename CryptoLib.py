@@ -58,8 +58,8 @@ CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
-CT_CONFIGS_DICT['DB_BTC_OK']=0
-CT_CONFIGS_DICT['DB_ETH_OK']=0
+CT_CONFIGS_DICT['DB_BTC_OK']=1
+CT_CONFIGS_DICT['DB_ETH_OK']=1
 
 # Positive = eager to buy
 # Negative = eager to sell
@@ -70,7 +70,7 @@ CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-20
-CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-20
+CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 
@@ -374,6 +374,62 @@ def dbGetEstFunding(db,ccy,mins=15):
   start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
   end_timestamp = int(datetime.datetime.timestamp(now))*1000
   return float(db.public_get_get_funding_rate_value({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])*(60/mins)*24*365
+
+def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
+  @retry(wait_fixed=1000)
+  def dbGetBid(db, ticker):
+    d = db.public_get_ticker({'instrument_name': ticker})['result']
+    return float(d['best_bid_price'])
+  @retry(wait_fixed=1000)
+  def dbGetAsk(db, ticker):
+    d = db.public_get_ticker({'instrument_name': ticker})['result']
+    return float(d['best_ask_price'])
+  @retry(wait_fixed=1000)
+  def dbGetOrder(db,orderId):
+    return db.private_get_get_order_state({'order_id': orderId})['result']
+  #####
+  if side != 'BUY' and side != 'SELL':
+    sys.exit(1)
+  if ccy=='BTC':
+    trade_notional=round(trade_notional,-1)
+  ticker = ccy + '-PERPETUAL'
+  print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
+  if side=='BUY':
+    limitPrice = dbGetBid(db, ticker)
+    orderId=db.private_get_buy({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
+  else:
+    limitPrice = dbGetAsk(db, ticker)
+    orderId=db.private_get_sell({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
+  nChases=0
+  while True:
+    if dbGetOrder(db, orderId)['order_state']=='filled':
+      break
+    if side=='BUY':
+      newPrice=dbGetBid(db,ticker)
+    else:
+      newPrice=dbGetAsk(db,ticker)
+    if newPrice != limitPrice:
+      limitPrice = newPrice
+      nChases+=1
+      orderStatus = dbGetOrder(db, orderId)
+      if orderStatus['order_state'] == 'filled':
+        break
+      if nChases>maxChases and float(orderStatus['filled_amount'])==0:
+        if side == 'BUY':
+          farPrice = round(limitPrice * .95, 2)
+        else:
+          farPrice = round(limitPrice * 1.05, 2)
+        db.private_get_edit({'order_id':orderId,'amount':trade_notional,'price':farPrice})
+        if float(dbGetOrder(db, orderId)['filled_amount'])==0:
+          db.private_get_cancel({'order_id': orderId})
+          print(getCurrentTime() + ': Cancelled')
+          return 0
+      else:
+        db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
+    time.sleep(1)
+  fill=float(dbGetOrder(db, orderId)['average_price'])
+  print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
+  return fill
 
 #############################################################################################
 
@@ -682,6 +738,12 @@ def ctRun(ccy):
         speak('Go')
         completedLegs = 0
         isCancelled=False
+        if 'db' in chosenLong and not isCancelled:
+          longFill = dbRelOrder('BUY', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'db' in chosenShort and not isCancelled:
+          shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bb' in chosenLong and not isCancelled:
           longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
