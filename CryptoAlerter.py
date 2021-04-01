@@ -10,12 +10,12 @@ def process(config,smartBasisDict,color,funding,funding2=None):
   prefix=tmp[0].lower()+tmp[1]
   smartBasisBps = smartBasisDict[prefix+'SmartBasis'] * 10000
   basisBps = smartBasisDict[prefix + 'Basis'] * 10000
-  z=config+': ' + str(round(smartBasisBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))+'%'
+  z=tmp[0]+': ' + str(round(smartBasisBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))+'%'
   if funding2 is None:
-    n=27
+    n=23
   else:
     z=z+'/'+str(round(funding2*100))+'%'
-    n=31
+    n=27
   z+=')'
   print(termcolor.colored(z.ljust(n), color), end='')
 
@@ -23,8 +23,8 @@ def process(config,smartBasisDict,color,funding,funding2=None):
 # Main
 ######
 cl.printHeader('CryptoAlerter')
-print('Column 1:'.ljust(19)+'USD marginal rate / USDT marginal rate / Average coin lending rates (BTC, ETH)')
-print('Body:'.ljust(19)+'Smart basis / raw basis (est. funding rate %)')
+print('Column 1:'.ljust(24)+'USD marginal rate / USDT marginal rate / Average coin lending rates (BTC, ETH)')
+print('Body:'.ljust(24)+'Smart basis / raw basis (est. funding rate %); Sections: BTC, ETH, FTT')
 print()
 
 ftx=cl.ftxCCXTInit()
@@ -34,9 +34,10 @@ bb=cl.bbCCXTInit()
 while True:
   fundingDict = cl.getFundingDict(ftx,bn,bb)
   smartBasisDict = cl.getSmartBasisDict(ftx, bn, bb, fundingDict, isSkipAdj=True)
+  print(cl.getCurrentTime().ljust(24),end='')
   avgCoinRate=(fundingDict['ftxEstLendingBTC']+fundingDict['ftxEstLendingETH'])/2
-  print((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'%/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '%/'+ \
-         str(round(avgCoinRate * 100)) + '%').ljust(19),end='')
+  print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'%/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '%/'+ \
+         str(round(avgCoinRate * 100)) + '%').ljust(18),'red'),end='')
   process('FTX_BTC', smartBasisDict, 'blue', fundingDict['ftxEstFundingBTC'])
   process('BN_BTC', smartBasisDict, 'blue', fundingDict['bnEstFundingBTC'])
   process('BB_BTC', smartBasisDict, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
