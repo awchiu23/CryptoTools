@@ -72,7 +72,7 @@ CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-0
 
 CT_STREAK = 5                  # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10       # Max number of allowed bps for range of observations
