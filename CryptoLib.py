@@ -782,7 +782,9 @@ def sleepUntil(h, m, s):
 def speak(text):
   try:
     import win32com.client as wincl
-    wincl.Dispatch("SAPI.SpVoice").Speak(text)
+    speaker = wincl.Dispatch("SAPI.SpVoice")
+    speaker.Voice = speaker.getvoices()[1]
+    speaker.Speak('Go')
   except:
     print('[Speaking: "'+text+'"]')
     print()
