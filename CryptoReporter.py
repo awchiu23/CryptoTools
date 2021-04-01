@@ -129,64 +129,6 @@ def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
 
 #####
 
-def bnInit(bn,spotBTC,spotETH):
-  bnBal = pd.DataFrame(bn.dapiPrivate_get_balance())
-  cl.dfSetFloat(bnBal, ['balance', 'crossUnPnl'])
-  bnBal['Ccy']=bnBal['asset']
-  bnBal=bnBal.set_index('Ccy').loc[['BTC','ETH']]
-  bnBal['SpotDelta']=bnBal['balance']+bnBal['crossUnPnl']
-  #####
-  bnPR = pd.DataFrame(bn.dapiPrivate_get_positionrisk())
-  cl.dfSetFloat(bnPR, 'positionAmt')
-  bnPR = bnPR[['USD_PERP' in z for z in bnPR['symbol']]]
-  bnPR['Ccy'] = [z[:3] for z in bnPR['symbol']]
-  bnPR=bnPR.set_index('Ccy').loc[['BTC','ETH']]
-  bnPR['FutDeltaUSD']=bnPR['positionAmt']
-  bnPR.loc['BTC', 'FutDeltaUSD'] *= 100
-  bnPR.loc['ETH', 'FutDeltaUSD'] *= 10
-  bnPR['FutDelta']=bnPR['FutDeltaUSD']
-  bnPR.loc['BTC','FutDelta']/=spotBTC
-  bnPR.loc['ETH','FutDelta']/=spotETH
-  bnNotional=bnPR['FutDeltaUSD'].abs().sum()
-  #####
-  bnPayments = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE'}))
-  cl.dfSetFloat(bnPayments, 'income')
-  bnPayments = bnPayments[['USD_PERP' in z for z in bnPayments['symbol']]]
-  bnPayments['Ccy'] = [z[:3] for z in bnPayments['symbol']]
-  bnPayments = bnPayments.set_index('Ccy').loc[['BTC', 'ETH']]
-  bnPayments['incomeUSD'] = bnPayments['income']
-  bnPayments.loc['BTC', 'incomeUSD'] *= spotBTC
-  bnPayments.loc['ETH', 'incomeUSD'] *= spotETH
-  bnPayments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in bnPayments['time']]
-  bnPayments = bnPayments.set_index('date')
-  bnPayments = getOneDay(bnPayments)
-  #####
-  bnPrevIncome = bnPayments.loc[bnPayments.index[-1]]['incomeUSD'].sum()
-  bnPrevAnnRet = bnPrevIncome * 3 * 365 / bnNotional
-  bnOneDayIncome = bnPayments['incomeUSD'].sum()
-  bnOneDayAnnRet = bnOneDayIncome * 365 / bnNotional
-  #####
-  bnNAV = bnBal.loc['BTC','SpotDelta'] * spotBTC +  bnBal.loc['ETH', 'SpotDelta'] * spotETH
-  bnLiqBTC=float(bnPR.loc['BTC', 'liquidationPrice']) / float(bnPR.loc['BTC', 'markPrice'])
-  bnLiqETH=float(bnPR.loc['ETH', 'liquidationPrice']) / float(bnPR.loc['ETH', 'markPrice'])
-  #####
-  return bnBal, bnPR, bnPayments, \
-         bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
-         bnNAV, bnLiqBTC, bnLiqETH
-
-def bnPrintFunding(bn,bnPR,ccy):
-  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
-  cl.dfSetFloat(df, 'fundingRate')
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-  df = df.set_index('date')
-  df=getOneDay(df)
-  oneDayFunding = df['fundingRate'].mean() * 3 * 365
-  prevFunding = df['fundingRate'][-1] * 3 * 365
-  estFunding=cl.bnGetEstFunding(bn,ccy)
-  printFunding('BN', bnPR, ccy, oneDayFunding, prevFunding, estFunding)
-
-#####
-
 def bbInit(bb,spotBTC,spotETH):
   def getPayments(ccy):
     start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
@@ -258,6 +200,64 @@ def bbPrintFunding(bb,bbPL,bbPayments,ccy):
 
 #####
 
+def bnInit(bn,spotBTC,spotETH):
+  bnBal = pd.DataFrame(bn.dapiPrivate_get_balance())
+  cl.dfSetFloat(bnBal, ['balance', 'crossUnPnl'])
+  bnBal['Ccy']=bnBal['asset']
+  bnBal=bnBal.set_index('Ccy').loc[['BTC','ETH']]
+  bnBal['SpotDelta']=bnBal['balance']+bnBal['crossUnPnl']
+  #####
+  bnPR = pd.DataFrame(bn.dapiPrivate_get_positionrisk())
+  cl.dfSetFloat(bnPR, 'positionAmt')
+  bnPR = bnPR[['USD_PERP' in z for z in bnPR['symbol']]]
+  bnPR['Ccy'] = [z[:3] for z in bnPR['symbol']]
+  bnPR=bnPR.set_index('Ccy').loc[['BTC','ETH']]
+  bnPR['FutDeltaUSD']=bnPR['positionAmt']
+  bnPR.loc['BTC', 'FutDeltaUSD'] *= 100
+  bnPR.loc['ETH', 'FutDeltaUSD'] *= 10
+  bnPR['FutDelta']=bnPR['FutDeltaUSD']
+  bnPR.loc['BTC','FutDelta']/=spotBTC
+  bnPR.loc['ETH','FutDelta']/=spotETH
+  bnNotional=bnPR['FutDeltaUSD'].abs().sum()
+  #####
+  bnPayments = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE'}))
+  cl.dfSetFloat(bnPayments, 'income')
+  bnPayments = bnPayments[['USD_PERP' in z for z in bnPayments['symbol']]]
+  bnPayments['Ccy'] = [z[:3] for z in bnPayments['symbol']]
+  bnPayments = bnPayments.set_index('Ccy').loc[['BTC', 'ETH']]
+  bnPayments['incomeUSD'] = bnPayments['income']
+  bnPayments.loc['BTC', 'incomeUSD'] *= spotBTC
+  bnPayments.loc['ETH', 'incomeUSD'] *= spotETH
+  bnPayments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in bnPayments['time']]
+  bnPayments = bnPayments.set_index('date')
+  bnPayments = getOneDay(bnPayments)
+  #####
+  bnPrevIncome = bnPayments.loc[bnPayments.index[-1]]['incomeUSD'].sum()
+  bnPrevAnnRet = bnPrevIncome * 3 * 365 / bnNotional
+  bnOneDayIncome = bnPayments['incomeUSD'].sum()
+  bnOneDayAnnRet = bnOneDayIncome * 365 / bnNotional
+  #####
+  bnNAV = bnBal.loc['BTC','SpotDelta'] * spotBTC +  bnBal.loc['ETH', 'SpotDelta'] * spotETH
+  bnLiqBTC=float(bnPR.loc['BTC', 'liquidationPrice']) / float(bnPR.loc['BTC', 'markPrice'])
+  bnLiqETH=float(bnPR.loc['ETH', 'liquidationPrice']) / float(bnPR.loc['ETH', 'markPrice'])
+  #####
+  return bnBal, bnPR, bnPayments, \
+         bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
+         bnNAV, bnLiqBTC, bnLiqETH
+
+def bnPrintFunding(bn,bnPR,ccy):
+  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
+  cl.dfSetFloat(df, 'fundingRate')
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
+  df = df.set_index('date')
+  df=getOneDay(df)
+  oneDayFunding = df['fundingRate'].mean() * 3 * 365
+  prevFunding = df['fundingRate'][-1] * 3 * 365
+  estFunding=cl.bnGetEstFunding(bn,ccy)
+  printFunding('BN', bnPR, ccy, oneDayFunding, prevFunding, estFunding)
+
+#####
+
 def cbInit(cb,spotBTC,spotETH):
   bal=cb.fetch_balance()
   cbSpotDeltaBTC=bal['BTC']['total']
@@ -269,8 +269,8 @@ def cbInit(cb,spotBTC,spotETH):
 # Init
 ######
 ftx=cl.ftxCCXTInit()
-bn = cl.bnCCXTInit()
 bb = cl.bbCCXTInit()
+bn = cl.bnCCXTInit()
 cb= cl.cbCCXTInit()
 
 ftxWallet,ftxPositions,ftxPayments, \
@@ -281,40 +281,40 @@ ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
   ftxNAV,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT = ftxInit(ftx)
 
-bnBal, bnPR, bnPayments, \
-  bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
-  bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
-
 bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
   bbPrevIncome, bbPrevAnnRet, bbOneDayIncome, bbOneDayAnnRet, \
   bbNAV, bbLiqBTC, bbLiqETH = bbInit(bb, spotBTC, spotETH)
+
+bnBal, bnPR, bnPayments, \
+  bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
+  bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
 #############
 # Aggregation
 #############
-nav=ftxNAV+bnNAV+bbNAV+cbNAV
+nav=ftxNAV+bbNAV+bnNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
-oneDayIncome+=bnOneDayIncome+bbOneDayIncome
+oneDayIncome+=bbOneDayIncome+bnOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
-spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
+spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
 spotDeltaBTC+=cbSpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
-futDeltaBTC+=bnPR.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
+futDeltaBTC+=bnPR.loc['BTC','FutDelta']
 
 spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
-spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
+spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
 spotDeltaETH+=cbSpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
-futDeltaETH+=bnPR.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
+futDeltaETH+=bnPR.loc['ETH','FutDelta']
 
 spotDeltaFTT=ftxWallet.loc['FTT','SpotDelta']
 
@@ -326,8 +326,8 @@ futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
 cl.printHeader('CryptoReporter - '+cl.getCurrentTime())
 z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
-z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
+z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
@@ -351,17 +351,17 @@ ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'FTT')
 print(termcolor.colored('FTX margin: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
 print()
+printIncomes('BB',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
+bbPrintFunding(bb,bbPL,bbPayments,'BTC')
+bbPrintFunding(bb,bbPL,bbPayments,'ETH')
+print(termcolor.colored('BB liquidation (BTC/ETH): '.rjust(41)+str(round(bbLiqBTC*100,1))+'%/'+str(round(bbLiqETH*100,1))+'% (of spot)','red'))
+print()
 printIncomes('BN',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
 bnPrintFunding(bn,bnPR,'BTC')
 bnPrintFunding(bn,bnPR,'ETH')
 zBTC='never' if bnLiqBTC==0 else str(round(bnLiqBTC*100,1))+'%'
 zETH='never' if bnLiqETH==0 else str(round(bnLiqETH*100,1))+'%'
 print(termcolor.colored('BN liquidation (BTC/ETH): '.rjust(41)+zBTC+'/'+zETH+' (of spot)','red'))
-print()
-printIncomes('BB',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
-bbPrintFunding(bb,bbPL,bbPayments,'BTC')
-bbPrintFunding(bb,bbPL,bbPayments,'ETH')
-print(termcolor.colored('BB liquidation (BTC/ETH): '.rjust(41)+str(round(bbLiqBTC*100,1))+'%/'+str(round(bbLiqETH*100,1))+'% (of spot)','red'))
 print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
