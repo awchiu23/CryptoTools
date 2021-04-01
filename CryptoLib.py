@@ -21,9 +21,6 @@ API_KEY_FTX = sl.jLoad('API_KEY_FTX')
 API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
 API_KEY_BB = sl.jLoad('API_KEY_BB')
 API_SECRET_BB = sl.jLoad('API_SECRET_BB')
-API_KEY_BG = sl.jLoad('API_KEY_BG')
-API_SECRET_BG = sl.jLoad('API_SECRET_BG')
-API_PASSWORD_BG = sl.jLoad('API_PASSWORD_BG')
 API_KEY_BN = sl.jLoad('API_KEY_BN')
 API_SECRET_BN = sl.jLoad('API_SECRET_BN')
 API_KEY_CB = sl.jLoad('API_KEY_CB')
@@ -33,9 +30,6 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #API_SECRET_FTX = ''
 #API_KEY_BB = ''
 #API_SECRET_BB = ''
-#API_KEY_BG = ''
-#API_SECRET_BG = ''
-#API_PASSWORD_BG = ''
 #API_KEY_BN = ''
 #API_SECRET_BN = ''
 #API_KEY_CB = ''
@@ -115,9 +109,6 @@ def ftxCCXTInit():
 
 def bbCCXTInit():
   return ccxt.bybit({'apiKey': API_KEY_BB, 'secret': API_SECRET_BB, 'enableRateLimit': True})
-
-def bgCCXTInit():
-  return  ccxt.bitget({'apiKey': API_KEY_BG, 'secret': API_SECRET_BG, 'password': API_PASSWORD_BG, 'enableRateLimit': True})
 
 def bnCCXTInit():
   return  ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True})
