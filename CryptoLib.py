@@ -449,7 +449,9 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
 
 @retry(wait_fixed=1000)
 def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
-  premIndex=np.mean([float(n) for n in pd.DataFrame(bn.dapiData_get_basis({'pair':ccy+'USD','contractType':'PERPETUAL','period':'5m'}))[-3:]['basisRate']])
+  df=pd.DataFrame(bn.dapiData_get_basis({'pair': ccy + 'USD', 'contractType': 'PERPETUAL', 'period': '1m'}))[-15:]
+  dfSetFloat(df,['basis','indexPrice'])
+  premIndex=(df['basis'] / df['indexPrice']).mean()
   premIndex=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
   snapFundingRate=premIndex*365
   return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
