@@ -63,16 +63,16 @@ CT_CONFIGS_DICT['DB_ETH_OK']=1
 
 # Positive = eager to buy
 # Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-20
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-20
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-10
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-10
-CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-0
+CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
+CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-10
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-5
 
 CT_STREAK = 5                  # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10       # Max number of allowed bps for range of observations
@@ -369,6 +369,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
 
 #####
 
+@retry(wait_fixed=1000)
 def dbGetEstFunding(db,ccy,mins=15):
   now=datetime.datetime.now()
   start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
@@ -425,7 +426,10 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
           print(getCurrentTime() + ': Cancelled')
           return 0
       else:
-        db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
+        try:
+          db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
+        except:
+          break
     time.sleep(1)
   fill=float(dbGetOrder(db, orderId)['average_price'])
   print(getCurrentTime() + ': Total filled at ' + str(round(fill, 6)))
@@ -769,7 +773,7 @@ def ctRun(ccy):
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if isCancelled:
-          status=status-np.sign(status)*2
+          status=(min(abs(status),CT_STREAK)-2)*np.sign(status)
           print()
           speak('Cancelled')
           continue # to next iteration in While True loop
