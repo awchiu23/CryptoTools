@@ -266,9 +266,6 @@ def bnPrintFunding(bn,bnPR,ccy):
 #####
 
 def dbInit(db,spotBTC,spotETH):
-  def getEquity(db,ccy):
-    return float(db.private_get_get_account_summary({'currency': ccy})['result']['equity'])
-  #####
   def getFutPos(db,ccy):
     return float(db.private_get_get_position({'instrument_name': ccy+'-PERPETUAL'})['result']['size'])
   #####
@@ -282,11 +279,10 @@ def dbInit(db,spotBTC,spotETH):
     else:
       return 0
   #####
-  def getLiq(db,ccy):
-    return float(db.private_get_get_account_summary({'currency': ccy})['result']['estimated_liquidation_ratio'])
-  #####
-  dbSpotDeltaBTC = getEquity(db,'BTC')
-  dbSpotDeltaETH = getEquity(db,'ETH')
+  dbASBTC = db.private_get_get_account_summary({'currency': 'BTC'})['result']
+  dbASETH = db.private_get_get_account_summary({'currency': 'ETH'})['result']
+  dbSpotDeltaBTC = float(dbASBTC['equity'])
+  dbSpotDeltaETH = float(dbASETH['equity'])
   dbFutures = pd.DataFrame([['BTC', spotBTC, getFutPos(db, 'BTC')], ['ETH', spotETH, getFutPos(db, 'ETH')]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
   dbFutures['FutDelta'] = dbFutures['FutDeltaUSD'] / dbFutures['Spot']
   dbNotional = dbFutures['FutDeltaUSD'].abs().sum()
@@ -295,11 +291,29 @@ def dbInit(db,spotBTC,spotETH):
   dbOneDayAnnRet = dbOneDayIncome * 365 / dbNotional
   #####
   dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
-  dbLiqBTC = getLiq(db,'BTC')
-  dbLiqETH = getLiq(db,'ETH')
+  #####
+  dbIsPM=dbASBTC['portfolio_margining_enabled']
+  dbLiqBTC=None
+  dbLiqETH=None
+  dbMFBTC=None
+  dbMFETH=None
+  if dbIsPM:
+    try:
+      dbMFBTC = float(dbASBTC['margin_balance']) / float(dbASBTC['maintenance_margin'])
+    except:
+      dbMFBTC = 0
+    try:
+      dbMFETH=float(dbASETH['margin_balance']) / float(dbASETH['maintenance_margin'])
+    except:
+      dbMFETH=0
+  else:
+    dbLiqBTC=float(dbASBTC['estimated_liquidation_ratio'])
+    dbLiqETH=float(dbASETH['estimated_liquidation_ratio'])
+  #####
   return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
          dbOneDayIncome, dbOneDayAnnRet, \
-         dbNAV, dbLiqBTC, dbLiqETH
+         dbNAV, \
+         dbIsPM, dbLiqBTC, dbLiqETH,dbMFBTC,dbMFETH
 
 def dbPrintIncomes(oneDayIncome,oneDayAnnRet):
   z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
@@ -348,7 +362,8 @@ bnBal, bnPR, bnPayments, \
 
 dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   dbOneDayIncome, dbOneDayAnnRet, \
-  dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
+  dbNAV, \
+  dbIsPM, dbLiqBTC, dbLiqETH,dbMFBTC,dbMFETH = dbInit(db, spotBTC, spotETH)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
@@ -415,7 +430,7 @@ ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'FTT')
 printLiq('FTX',ftxLiqBTC,ftxLiqETH)
-print(termcolor.colored('FTX margin: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
+print(termcolor.colored('FTX margin fraction: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
 print()
 printIncomes('BB',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
 bbPrintFunding(bb,bbPL,bbPayments,'BTC')
@@ -430,7 +445,12 @@ print()
 dbPrintIncomes(dbOneDayIncome,dbOneDayAnnRet)
 dbPrintFunding(db,dbFutures,'BTC')
 dbPrintFunding(db,dbFutures,'ETH')
-printLiq('DB',dbLiqBTC,dbLiqETH)
+if dbIsPM:
+  zBTC='never' if dbMFBTC==0 else str(round(dbMFBTC, 2))
+  zETH='never' if dbMFETH==0 else str(round(dbMFETH, 2))
+  print(termcolor.colored('DB margin fraction (BTC/ETH): '.rjust(41) +zBTC + '/' + zETH+' (vs. 1 limit)','red'))
+else:
+  printLiq('DB',dbLiqBTC,dbLiqETH)
 print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
