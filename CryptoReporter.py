@@ -270,6 +270,7 @@ def dbInit(db,spotBTC,spotETH):
     if len(df)>0:
       cl.dfSetFloat(df, 'funding')
       df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
+      df=df.set_index('date').sort_index()
       return df['funding'].iloc[-1]*spot
     else:
       return 0
