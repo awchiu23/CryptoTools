@@ -25,7 +25,7 @@ def ftxPrintFundingRate(ftx,ccy,cutoff):
 
 def ftxPrintBorrowLendingRate(ftx,ftxTimeS,ccy):
   def cleanBorrows(df, ccy, cutoff):
-    df2 = df[df['coin'] == ccy].set_index('time',drop=False).reindex(ftxTimeS).fillna(0).copy()
+    df2 = df[df['coin'] == ccy].set_index('time',drop=False).reindex(ftxTimeS).copy()
     ts=df2['rate']
     ts[:] = [float(n) for n in ts]
     ts.index = [datetime.datetime.strptime(z[:10], '%Y-%m-%d') for z in ts.index]
@@ -39,11 +39,21 @@ def ftxPrintBorrowLendingRate(ftx,ftxTimeS,ccy):
     z='borrow/lending'
   else:
     z='lending'
-  print(('Avg FTX '+ccy+' '+z+' rate: ').rjust(40) + termcolor.colored(str(round(df.mean() * 100)) + '% ' + getSuffix(df), 'red'))
+  print(('Avg FTX '+ccy+' '+z+' rate: ').rjust(40) + termcolor.colored(str(round(df.mean() * 100)) + '%', 'red'))
 
 def bbPrintFundingRate(bb,ccy,cutoff):
-  start_time = int((datetime.datetime.timestamp(cutoff)) * 1000)
-  df=pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ccy + 'USD','start_time':start_time, 'limit': 1000})['result']['trade_list'])
+  def getPayments(ccy,start_time):
+    n=0
+    df=pd.DataFrame()
+    while True:
+      n+=1
+      tl=bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': start_time, 'limit': 1000, 'page':n})['result']['trade_list']
+      if tl is None:
+        break
+      else:
+        df=df.append(pd.DataFrame(tl))
+    return df.set_index('symbol',drop=False)
+  df=getPayments(ccy,int((datetime.datetime.timestamp(cutoff)) * 1000))
   cl.dfSetFloat(df,'fee_rate')
   df=df[df['exec_type']=='Funding']
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['trade_time_ms']]
@@ -73,7 +83,6 @@ bn = cl.bnCCXTInit()
 cutoff=datetime.datetime.now() - pd.DateOffset(days=7)
 ftxBTCFundingRate,ftxTimeS=ftxPrintFundingRate(ftx,'BTC',cutoff)
 ftxETHFundingRate,_=ftxPrintFundingRate(ftx,'ETH',cutoff)
-ftxFTTFundingRate,_=ftxPrintFundingRate(ftx,'FTT',cutoff)
 bbBTCFundingRate=bbPrintFundingRate(bb,'BTC',cutoff)
 bbETHFundingRate=bbPrintFundingRate(bb,'ETH',cutoff)
 bnBTCFundingRate=bnPrintFundingRate(bn,'BTC',cutoff)
@@ -87,8 +96,6 @@ print('-' * 100)
 print()
 
 ftxPrintBorrowLendingRate(ftx,ftxTimeS,'USD')
-#ftxPrintBorrowLendingRate(ftx,ftxTimeS,'BTC')
-#ftxPrintBorrowLendingRate(ftx,ftxTimeS,'ETH')
 print()
 print('Avg FTX funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(ftxMixedFundingRate*100))+'%','red'))
 print('Avg BB funding rate (BTC&ETH): '.rjust(40)+termcolor.colored(str(round(bbMixedFundingRate*100))+'%','red'))
