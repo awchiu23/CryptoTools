@@ -103,6 +103,7 @@ def ftxInit(ftx):
   ftxMMReq = float(ftxInfo['maintenanceMarginRequirement'])
   ftxLiqBTC = float(ftxPositions.loc['BTC','estimatedLiquidationPrice'])/spotBTC
   ftxLiqETH = float(ftxPositions.loc['ETH', 'estimatedLiquidationPrice'])/spotETH
+  ftxFreeCollateral = float(ftxInfo['freeCollateral'])
   #####
   return ftxWallet,ftxPositions,ftxPayments, \
          ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
@@ -110,7 +111,8 @@ def ftxInit(ftx):
          ftxPrevUSDTFlows, ftxPrevUSDTFlowsAnnRet, ftxOneDayUSDTFlows, ftxOneDayUSDTFlowsAnnRet, \
          ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet, \
          ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
-         ftxNAV,ftxLiqBTC,ftxLiqETH,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT
+         ftxNAV,ftxLiqBTC,ftxLiqETH,ftxMF,ftxMMReq,ftxFreeCollateral, \
+         spotBTC,spotETH,spotFTT
 
 def ftxPrintFlowsSummary(ccy, oneDayFlows,oneDayFlowsAnnRet,prevFlows,prevFlowsAnnRet):
   z1 = '$' + str(round(oneDayFlows)) + ' (' + str(round(oneDayFlowsAnnRet * 100)) + '% p.a.)'
@@ -350,7 +352,8 @@ ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevUSDTFlows, ftxPrevUSDTFlowsAnnRet, ftxOneDayUSDTFlows, ftxOneDayUSDTFlowsAnnRet, \
   ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet, \
   ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
-  ftxNAV,ftxLiqBTC,ftxLiqETH,ftxMF,ftxMMReq,spotBTC,spotETH,spotFTT = ftxInit(ftx)
+  ftxNAV, ftxLiqBTC, ftxLiqETH, ftxMF, ftxMMReq, ftxFreeCollateral, \
+  spotBTC, spotETH, spotFTT = ftxInit(ftx)
 
 bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
   bbPrevIncome, bbPrevAnnRet, bbOneDayIncome, bbOneDayAnnRet, \
@@ -431,6 +434,7 @@ ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'FTT')
 printLiq('FTX',ftxLiqBTC,ftxLiqETH)
 print(termcolor.colored('FTX margin fraction: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
+print(termcolor.colored('FTX free collateral: $'.rjust(42)+str(round(ftxFreeCollateral)),'red'))
 print()
 printIncomes('BB',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
 bbPrintFunding(bb,bbPL,bbPayments,'BTC')
