@@ -41,13 +41,13 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 
 #############################################################################################
 
-########
-# Params
-########
-CT_DEFAULT_TGT_BPS=15
+#########################
+# Params for CryptoTrader
+#########################
 CT_CONFIGS_DICT=dict()
-CT_CONFIGS_DICT['BTC']=[CT_DEFAULT_TGT_BPS]
-CT_CONFIGS_DICT['ETH']=[CT_DEFAULT_TGT_BPS]
+CT_DEFAULT_TGT_BPS=15
+CT_CONFIGS_DICT['BTC_TGT_BPS']=CT_DEFAULT_TGT_BPS
+CT_CONFIGS_DICT['ETH_TGT_BPS']=CT_DEFAULT_TGT_BPS
 
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=1
@@ -69,7 +69,7 @@ CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=10
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-15
+CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-10
@@ -683,7 +683,7 @@ def ctRun(ccy):
     sys.exit(1)
   trade_qty = qty_dict[ccy]
   trade_notional = notional_dict[ccy]
-  tgtBps=CT_CONFIGS_DICT[ccy][0]
+  tgtBps=CT_CONFIGS_DICT[ccy+'_TGT_BPS']
   realizedSlippageBps = []
   for i in range(CT_NPROGRAMS):
     prevSmartBasis = []
