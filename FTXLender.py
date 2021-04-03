@@ -61,7 +61,6 @@ while True:
   if isManageCoins:
     ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio, minRate)
     ftxProcessLoan(ftx, ftxWallet,'ETH', coinLendingRatio, minRate)
-  print(cl.getCurrentTime() + ': New free collateral: ' + termcolor.colored('$'+str(round(float(ftx.private_get_account()['result']['freeCollateral']))), 'blue'))
   print()
 
   if isRunNow:
