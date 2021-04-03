@@ -61,7 +61,6 @@ while True:
   if isManageCoins:
     ftxProcessLoan(ftx, ftxWallet,'BTC', coinLendingRatio, minRate)
     ftxProcessLoan(ftx, ftxWallet,'ETH', coinLendingRatio, minRate)
-  print()
 
   if isRunNow:
     break
