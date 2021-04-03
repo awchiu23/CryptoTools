@@ -730,9 +730,9 @@ def ctRun(ccy):
         status+=1
       else:
         if isPaused:
-          z='*************** Streak ended ***************'
+          z = '******** Paused on high spot rates *********'
         else:
-          z='******** Paused on high spot rates *********'
+          z = '*************** Streak ended ***************'
         print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored(z.ljust(65), 'blue') + ctGetTargetString(tgtBps))
         prevSmartBasis = []
         chosenLong = ''
