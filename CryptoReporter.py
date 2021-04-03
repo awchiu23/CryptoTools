@@ -415,13 +415,10 @@ z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
 print()
-isShowUSDT = round(ftxWallet.loc['USDT', 'usdValue'])!=0
 ftxPrintFlowsSummary('USD',ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet)
-if isShowUSDT:
-  ftxPrintFlowsSummary('USDT',ftxOneDayUSDTFlows,ftxOneDayUSDTFlowsAnnRet,ftxPrevUSDTFlows,ftxPrevUSDTFlowsAnnRet)
+ftxPrintFlowsSummary('USDT',ftxOneDayUSDTFlows,ftxOneDayUSDTFlowsAnnRet,ftxPrevUSDTFlows,ftxPrevUSDTFlowsAnnRet)
 ftxPrintBorrowLending(ftx,ftxWallet,'USD')
-if isShowUSDT:
-  ftxPrintBorrowLending(ftx,ftxWallet,'USDT')
+ftxPrintBorrowLending(ftx,ftxWallet,'USDT')
 print()
 ftxPrintFlowsSummary('BTC',ftxOneDayBTCFlows,ftxOneDayBTCFlowsAnnRet,ftxPrevBTCFlows*spotBTC,ftxPrevBTCFlowsAnnRet)
 ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHFlows*spotETH,ftxPrevETHFlowsAnnRet)
