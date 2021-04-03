@@ -74,17 +74,18 @@ CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-10
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-10
 
-CT_STREAK = 5                  # Number of observations through target before triggering
-CT_STREAK_BPS_RANGE = 10       # Max number of allowed bps for range of observations
-CT_SLEEP = 3                   # Delay in seconds between observations
-CT_NPROGRAMS = 100             # Number of programs (each program being a pair of trades)
+CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading paused when spot rates >= 100%?
+CT_STREAK = 5                        # Number of observations through target before triggering
+CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of observations
+CT_SLEEP = 3                         # Delay in seconds between observations
+CT_NPROGRAMS = 100                   # Number of programs (each program being a pair of trades)
 
-CT_TRADE_BTC_NOTIONAL = 3000   # Per trade notional
-CT_TRADE_ETH_NOTIONAL = 3000   # Per trade notional
+CT_TRADE_BTC_NOTIONAL = 3000         # Per trade notional
+CT_TRADE_ETH_NOTIONAL = 3000         # Per trade notional
 
-CT_MAX_NOTIONAL = 50000        # Hard limit
-CT_MAX_BTC = 0.5               # Hard limit
-CT_MAX_ETH = 10                # Hard limit
+CT_MAX_NOTIONAL = 50000              # Hard limit
+CT_MAX_BTC = 0.5                     # Hard limit
+CT_MAX_ETH = 10                      # Hard limit
 
 #############################################################################################
 
@@ -723,7 +724,8 @@ def ctRun(ccy):
       prevSmartBasis.append(smartBasisBps)
       prevSmartBasis= prevSmartBasis[-CT_STREAK:]
       isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_STREAK_BPS_RANGE
-      if smartBasisBps>=tgtBps:
+      
+      if smartBasisBps>=tgtBps and not (CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD']>=1):
         status+=1
       else:
         print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
