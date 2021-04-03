@@ -15,11 +15,17 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 	- Future funding payments
 
 ## CryptoReporter
-- This tool is for monitoring your NAVs, positions and deltas across:
+- This tool is for monitoring your NAVs, positions and risks across:
 	- FTX
-	- Binance
 	- Bybit
+	- Binance
+	- Deribit
 	- Coinbase
+- For this tool to work without modification, you will need to set up accounts in all of the above and have the following prepared:
+	- A position in BTC and ETH in all accounts except Coinbase.
+	- A position in FTT and USDT in FTX.
+	- APIs for all accounts.
+	- Time for at least one funding payment to have been paid.
 
 ## CryptoStats
 - This tool provides some historical stats sourced through APIs.
@@ -30,4 +36,4 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset.
-- Current universe: USD, BTC, ETH
+- Universe: USD, BTC, ETH
