@@ -450,8 +450,8 @@ dbPrintIncomes(dbOneDayIncome,dbOneDayAnnRet)
 dbPrintFunding(db,dbFutures,'BTC')
 dbPrintFunding(db,dbFutures,'ETH')
 if dbIsPM:
-  zBTC='never' if dbMFBTC==0 else str(round(dbMFBTC, 2))
-  zETH='never' if dbMFETH==0 else str(round(dbMFETH, 2))
+  zBTC='never' if dbMFBTC==0 else str(round(dbMFBTC, 1))
+  zETH='never' if dbMFETH==0 else str(round(dbMFETH, 1))
   print(termcolor.colored('DB margin fraction (BTC/ETH): '.rjust(41) +zBTC + '/' + zETH+' (vs. 1 limit)','red'))
 else:
   printLiq('DB',dbLiqBTC,dbLiqETH)
