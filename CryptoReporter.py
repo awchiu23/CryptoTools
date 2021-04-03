@@ -281,6 +281,11 @@ def dbInit(db,spotBTC,spotETH):
     else:
       return 0
   #####
+  def getLiq(dbAS,dbFutures,ccy):
+    totalDelta = float(dbAS['equity']) + dbFutures.loc[ccy,'FutDelta']
+    cushion=float(dbAS['margin_balance']) - float(dbAS['maintenance_margin'])
+    return 1-cushion/totalDelta
+  #####
   dbASBTC = db.private_get_get_account_summary({'currency': 'BTC'})['result']
   dbASETH = db.private_get_get_account_summary({'currency': 'ETH'})['result']
   dbSpotDeltaBTC = float(dbASBTC['equity'])
@@ -294,28 +299,16 @@ def dbInit(db,spotBTC,spotETH):
   #####
   dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
   #####
-  dbIsPM=dbASBTC['portfolio_margining_enabled']
-  dbLiqBTC=None
-  dbLiqETH=None
-  dbMFBTC=None
-  dbMFETH=None
-  if dbIsPM:
-    try:
-      dbMFBTC = float(dbASBTC['margin_balance']) / float(dbASBTC['maintenance_margin'])
-    except:
-      dbMFBTC = 0
-    try:
-      dbMFETH=float(dbASETH['margin_balance']) / float(dbASETH['maintenance_margin'])
-    except:
-      dbMFETH=0
+  if dbASBTC['portfolio_margining_enabled']:
+    dbLiqBTC=getLiq(dbASBTC,dbFutures,'BTC')
+    dbLiqETH=getLiq(dbASETH, dbFutures, 'ETH')
   else:
     dbLiqBTC=float(dbASBTC['estimated_liquidation_ratio'])
     dbLiqETH=float(dbASETH['estimated_liquidation_ratio'])
   #####
   return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
          dbOneDayIncome, dbOneDayAnnRet, \
-         dbNAV, \
-         dbIsPM, dbLiqBTC, dbLiqETH,dbMFBTC,dbMFETH
+         dbNAV, dbLiqBTC, dbLiqETH
 
 def dbPrintIncomes(oneDayIncome,oneDayAnnRet):
   z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
@@ -365,8 +358,7 @@ bnBal, bnPR, bnPayments, \
 
 dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   dbOneDayIncome, dbOneDayAnnRet, \
-  dbNAV, \
-  dbIsPM, dbLiqBTC, dbLiqETH,dbMFBTC,dbMFETH = dbInit(db, spotBTC, spotETH)
+  dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
@@ -446,12 +438,7 @@ print()
 dbPrintIncomes(dbOneDayIncome,dbOneDayAnnRet)
 dbPrintFunding(db,dbFutures,'BTC')
 dbPrintFunding(db,dbFutures,'ETH')
-if dbIsPM:
-  zBTC='never' if dbMFBTC==0 else str(round(dbMFBTC, 1))
-  zETH='never' if dbMFETH==0 else str(round(dbMFETH, 1))
-  print(termcolor.colored('DB margin fraction (BTC/ETH): '.rjust(41) +zBTC + '/' + zETH+' (vs. 1 limit)','red'))
-else:
-  printLiq('DB',dbLiqBTC,dbLiqETH)
+printLiq('DB',dbLiqBTC,dbLiqETH)
 print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)

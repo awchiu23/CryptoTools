@@ -56,19 +56,19 @@ CT_CONFIGS_DICT['FTX_BTC_OK']=1
 CT_CONFIGS_DICT['FTX_ETH_OK']=1
 CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
-CT_CONFIGS_DICT['BN_BTC_OK']=1
-CT_CONFIGS_DICT['BN_ETH_OK']=1
+CT_CONFIGS_DICT['BN_BTC_OK']=0 #******
+CT_CONFIGS_DICT['BN_ETH_OK']=0 #******
 CT_CONFIGS_DICT['DB_BTC_OK']=1
-CT_CONFIGS_DICT['DB_ETH_OK']=1
+CT_CONFIGS_DICT['DB_ETH_OK']=0 #******
 
 # Positive = eager to buy
 # Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-20
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-20
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-25
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-25
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=10
-CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-15
+CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=15
+CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=15
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-15
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-15
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-15
@@ -96,8 +96,8 @@ HALF_LIFE_HOURS_SPOT = 12
 HALF_LIFE_HOURS_BASIS = 6
 HALF_LIFE_HOURS_FUNDING = 6
 
-BASE_SPOT_RATE = 0.25
-BASE_FUNDING_RATE = 0.25
+BASE_SPOT_RATE = 0.3
+BASE_FUNDING_RATE = 0.3
 BASE_BASIS = BASE_FUNDING_RATE/365
 
 #############################################################################################
@@ -701,6 +701,12 @@ def ctRun(ccy):
         for c in ['BTC','ETH']:
           smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
 
+      # Check whether paused on high spot rate
+      if CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1:
+        print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('******** Paused on high spot rates *********'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+        time.sleep(CT_SLEEP)
+        continue # to next iteration in While True loop
+
       if chosenLong=='':
         d=filterDict(smartBasisDict,'SmartBasis')
         d=filterDict(d,ccy)
@@ -725,15 +731,10 @@ def ctRun(ccy):
       prevSmartBasis= prevSmartBasis[-CT_STREAK:]
       isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_STREAK_BPS_RANGE
 
-      isPaused=CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1
-      if smartBasisBps>=tgtBps and not isPaused:
+      if smartBasisBps>=tgtBps:
         status+=1
       else:
-        if isPaused:
-          z = '******** Paused on high spot rates *********'
-        else:
-          z = '*************** Streak ended ***************'
-        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored(z.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
         prevSmartBasis = []
         chosenLong = ''
         chosenShort = ''
