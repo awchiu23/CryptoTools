@@ -101,8 +101,10 @@ def ftxInit(ftx):
   ftxNAV = ftxWallet['usdValue'].sum()
   ftxMF = float(ftxInfo['marginFraction'])
   ftxMMReq = float(ftxInfo['maintenanceMarginRequirement'])
-  ftxLiqBTC = float(ftxPositions.loc['BTC','estimatedLiquidationPrice'])/spotBTC
-  ftxLiqETH = float(ftxPositions.loc['ETH', 'estimatedLiquidationPrice'])/spotETH
+  ftxTotalPositionNotional = ftxNAV / ftxMF
+  ftxCushion = (ftxMF - ftxMMReq) * ftxTotalPositionNotional
+  ftxTotalDelta = ftxWallet.loc[['BTC', 'ETH', 'FTT'], 'usdValue'].sum() + ftxPositions['FutDeltaUSD'].sum()
+  ftxLiq = 1-ftxCushion/ftxTotalDelta
   ftxFreeCollateral = float(ftxInfo['freeCollateral'])
   #####
   return ftxWallet,ftxPositions,ftxPayments, \
@@ -111,7 +113,7 @@ def ftxInit(ftx):
          ftxPrevUSDTFlows, ftxPrevUSDTFlowsAnnRet, ftxOneDayUSDTFlows, ftxOneDayUSDTFlowsAnnRet, \
          ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet, \
          ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
-         ftxNAV,ftxLiqBTC,ftxLiqETH,ftxMF,ftxMMReq,ftxFreeCollateral, \
+         ftxNAV,ftxLiq,ftxMF,ftxMMReq,ftxFreeCollateral, \
          spotBTC,spotETH,spotFTT
 
 def ftxPrintFlowsSummary(ccy, oneDayFlows,oneDayFlowsAnnRet,prevFlows,prevFlowsAnnRet):
@@ -345,7 +347,7 @@ ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevUSDTFlows, ftxPrevUSDTFlowsAnnRet, ftxOneDayUSDTFlows, ftxOneDayUSDTFlowsAnnRet, \
   ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet, \
   ftxPrevETHFlows,ftxPrevETHFlowsAnnRet,ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet, \
-  ftxNAV, ftxLiqBTC, ftxLiqETH, ftxMF, ftxMMReq, ftxFreeCollateral, \
+  ftxNAV, ftxLiq, ftxMF, ftxMMReq, ftxFreeCollateral, \
   spotBTC, spotETH, spotFTT = ftxInit(ftx)
 
 bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
@@ -421,7 +423,8 @@ printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'FTT')
-printLiq('FTX',ftxLiqBTC,ftxLiqETH)
+z = 'never' if ftxLiq > 10 else str(round(ftxLiq * 100, 1)) + '%'
+print(termcolor.colored('FTX liquidation (parallel shock): '.rjust(41) + z + ' (of spot)', 'red'))
 print(termcolor.colored('FTX margin fraction: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
 print(termcolor.colored('FTX free collateral: $'.rjust(42)+str(round(ftxFreeCollateral)),'red'))
 print()
