@@ -724,11 +724,16 @@ def ctRun(ccy):
       prevSmartBasis.append(smartBasisBps)
       prevSmartBasis= prevSmartBasis[-CT_STREAK:]
       isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_STREAK_BPS_RANGE
-      
-      if smartBasisBps>=tgtBps and not (CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD']>=1):
+
+      isPaused=CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1
+      if smartBasisBps>=tgtBps and not isPaused:
         status+=1
       else:
-        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+        if isPaused:
+          z='*************** Streak ended ***************'
+        else:
+          z='******** Paused on high spot rates *********'
+        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored(z.ljust(65), 'blue') + ctGetTargetString(tgtBps))
         prevSmartBasis = []
         chosenLong = ''
         chosenShort = ''
