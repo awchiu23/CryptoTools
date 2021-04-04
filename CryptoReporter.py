@@ -27,8 +27,8 @@ def printFunding(name,df,ccy,oneDayFunding,prevFunding,estFunding,est2Funding=No
   print(prefix.rjust(40) + ' ' + suffix)
 
 def printLiq(name,liqBTC,liqETH):
-  zBTC = 'never' if liqBTC == 0 else str(round(liqBTC * 100, 1)) + '%'
-  zETH = 'never' if liqETH == 0 else str(round(liqETH * 100, 1)) + '%'
+  zBTC = 'never' if liqBTC == 0 else str(round(liqBTC * 100)) + '%'
+  zETH = 'never' if liqETH == 0 else str(round(liqETH * 100)) + '%'
   print(termcolor.colored((name+' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red'))
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
@@ -121,10 +121,13 @@ def ftxPrintFlowsSummary(ccy, oneDayFlows,oneDayFlowsAnnRet,prevFlows,prevFlowsA
   z2 = '$' + str(round(prevFlows)) + ' (' + str(round(prevFlowsAnnRet * 100)) + '% p.a.)'
   print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
 
-def ftxPrintBorrowLending(ftx,ftxWallet,ccy):
+def ftxPrintBorrowLending(ftx,ftxWallet,nav,ccy):
   estBorrow = cl.ftxGetEstBorrow(ftx,ccy)
   estLending = cl.ftxGetEstLending(ftx,ccy)
-  print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. ($' + str(round(ftxWallet.loc[ccy, 'usdValue']))+')')
+  n = ftxWallet.loc[ccy, 'usdValue']
+  z1 = '($' + str(round(n))+')'
+  z2 = '(' + str(round(n/nav*100))+'%)'
+  print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+ z1+' '+z2)
 
 def ftxPrintCoinLending(ftx,ftxWallet,ccy):
   estLending = float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
@@ -411,8 +414,8 @@ print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+
 print()
 ftxPrintFlowsSummary('USD',ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet,ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet)
 ftxPrintFlowsSummary('USDT',ftxOneDayUSDTFlows,ftxOneDayUSDTFlowsAnnRet,ftxPrevUSDTFlows,ftxPrevUSDTFlowsAnnRet)
-ftxPrintBorrowLending(ftx,ftxWallet,'USD')
-ftxPrintBorrowLending(ftx,ftxWallet,'USDT')
+ftxPrintBorrowLending(ftx,ftxWallet,nav,'USD')
+ftxPrintBorrowLending(ftx,ftxWallet,nav,'USDT')
 print()
 ftxPrintFlowsSummary('BTC',ftxOneDayBTCFlows,ftxOneDayBTCFlowsAnnRet,ftxPrevBTCFlows*spotBTC,ftxPrevBTCFlowsAnnRet)
 ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHFlows*spotETH,ftxPrevETHFlowsAnnRet)
@@ -423,7 +426,7 @@ printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'FTT')
-z = 'never' if ftxLiq > 10 else str(round(ftxLiq * 100, 1)) + '%'
+z = 'never' if ftxLiq > 10 else str(round(ftxLiq * 100)) + '%'
 print(termcolor.colored('FTX liquidation (parallel shock): '.rjust(41) + z + ' (of spot)', 'red'))
 print(termcolor.colored('FTX margin fraction: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
 print(termcolor.colored('FTX free collateral: $'.rjust(42)+str(round(ftxFreeCollateral)),'red'))
