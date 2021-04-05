@@ -63,10 +63,10 @@ CT_CONFIGS_DICT['DB_ETH_OK']=1
 
 # Positive = eager to buy
 # Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-15
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-10
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=5
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-10
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=5
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-15
@@ -517,8 +517,8 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
 def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
   premIndex=np.mean([float(n) for n in pd.DataFrame(bb.v2_public_get_premium_index_kline({'symbol':ccy+'USD','interval':'1','from':start_time})['result'])['close']])
-  premIndex = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
-  snapFundingRate=premIndex*365
+  premIndexClamped  = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
+  snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
 @retry(wait_fixed=1000)
@@ -526,8 +526,8 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   df=pd.DataFrame(bn.dapiData_get_basis({'pair': ccy + 'USD', 'contractType': 'PERPETUAL', 'period': '1m'}))[-15:]
   dfSetFloat(df,['basis','indexPrice'])
   premIndex=(df['basis'] / df['indexPrice']).mean()
-  premIndex=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
-  snapFundingRate=premIndex*365
+  premIndexClamped=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
+  snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
 @retry(wait_fixed=1000)
