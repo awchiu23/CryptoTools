@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 import sys
 import time
+import pytz
 import operator
 import termcolor
 import ccxt
@@ -72,7 +73,7 @@ CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-15
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-15
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-15
-CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-15
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-20
 
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering

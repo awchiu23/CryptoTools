@@ -6,10 +6,6 @@ import termcolor
 ###########
 # Functions
 ###########
-def getOneDay(df):
-  df2=df.sort_index()
-  return df2[df2.index > (df2.index[-1] - pd.DateOffset(days=1))]
-
 def printIncomes(name,prevIncome,prevAnnRet,oneDayIncome,oneDayAnnRet):
   z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
   z2='$' + str(round(prevIncome)) + ' (' + str(round(prevAnnRet * 100)) + '% p.a.)'
@@ -36,24 +32,31 @@ def printDeltas(ccy,spot,spotDelta,futDelta):
   print((ccy+' spot/fut/net delta: ').rjust(41)+str(round(spotDelta,2))+'/'+str(round(futDelta,2))+'/'+str(round(netDelta,2)) + \
     ' ($' + str(round(spotDelta * spot)) + '/$' + str(round(futDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
 
-#####
+####################################################################################################
 
 def ftxInit(ftx):
-  def cleanBorrows(ftxPayments,ccy, df):
-    df2 = df.copy()
-    df2=df2[df2['coin']==ccy]
-    df2.index = pd.to_datetime(df2.index).tz_localize(None)
-    df2 = df2.sort_index()
-    return df2.reindex(ftxPayments.index.unique()).fillna(0).copy()
+  def getYest():
+    return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
   ######
-  def getBorrowsLoans(ftxWallet,ftxPayments,ccy):
-    tm = ftxPayments.index[-1]
-    borrows = cleanBorrows(ftxPayments, ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000})['result']).set_index('time'))
+  def cleanBorrows(ccy, df):
+    dummy = pd.DataFrame([[0,0,0,0,0,0]], columns=['time','coin', 'size', 'rate', 'cost', 'proceeds'])
+    if len(df)==0:
+      return dummy
+    df2 = df.copy()
+    df2 = df2[df2['coin'] == ccy]
+    if len(df2)==0:
+      return dummy
+    df2=df2.set_index('time').sort_index()
+    return df2
+  ######
+  def getBorrowsLoans(ftxWallet,ccy):
+    start_time=getYest()
+    borrows = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000,'start_time':start_time})['result']))
+    loans = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000, 'start_time': start_time})['result']))
     cl.dfSetFloat(borrows, 'cost')
-    loans = cleanBorrows(ftxPayments, ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000})['result']).set_index('time'))
     cl.dfSetFloat(loans, 'proceeds')
-    prevBorrow = borrows.loc[tm]['cost']
-    prevLoan = loans.loc[tm]['proceeds']
+    prevBorrow = borrows.iloc[-1]['cost']
+    prevLoan = loans.iloc[-1]['proceeds']
     prevFlows = prevLoan - prevBorrow
     absBalance = abs(ftxWallet.loc[ccy, 'total'])
     prevFlowsAnnRet = prevFlows * 24 * 365 / absBalance
@@ -79,22 +82,22 @@ def ftxInit(ftx):
   ftxPositions.loc['BTC', 'FutDeltaUSD'] *= spotBTC
   ftxPositions.loc['ETH', 'FutDeltaUSD'] *= spotETH
   ftxPositions.loc['FTT', 'FutDeltaUSD'] *= spotFTT
-  ftxNotional=ftxPositions.loc[['BTC','ETH','FTT']]['FutDeltaUSD'].abs().sum()
+  ftxNotional=ftxPositions['FutDeltaUSD'].abs().sum()
   ######
-  ftxPayments = pd.DataFrame(ftx.private_get_funding_payments()['result']).set_index('time')
+  ftxPayments = pd.DataFrame(ftx.private_get_funding_payments({'limit':1000,'start_time':getYest()})['result'])
+  ftxPayments = ftxPayments.set_index('future',drop=False).loc[['BTC-PERP','ETH-PERP','FTT-PERP']].set_index('time')
   cl.dfSetFloat(ftxPayments, ['payment','rate'])
-  ftxPayments.index = pd.to_datetime(ftxPayments.index).tz_localize(None)
-  ftxPayments=getOneDay(ftxPayments)
+  ftxPayments=ftxPayments.sort_index()
   #####
   ftxPrevIncome = -ftxPayments.loc[ftxPayments.index[-1]]['payment'].sum()
   ftxPrevAnnRet = ftxPrevIncome * 24 * 365 / ftxNotional
   ftxOneDayIncome = -ftxPayments['payment'].sum()
   ftxOneDayAnnRet = ftxOneDayIncome * 365 / ftxNotional
   #####
-  ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet,ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet=getBorrowsLoans(ftxWallet, ftxPayments, 'USD')
-  ftxPrevUSDTFlows,ftxPrevUSDTFlowsAnnRet,ftxOneDayUSDTFlows,ftxOneDayUSDTFlowsAnnRet=getBorrowsLoans(ftxWallet, ftxPayments, 'USDT')
-  ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet = getBorrowsLoans(ftxWallet, ftxPayments, 'BTC')
-  ftxPrevETHFlows, ftxPrevETHFlowsAnnRet, ftxOneDayETHFlows, ftxOneDayETHFlowsAnnRet = getBorrowsLoans(ftxWallet, ftxPayments, 'ETH')
+  ftxPrevUSDFlows,ftxPrevUSDFlowsAnnRet,ftxOneDayUSDFlows,ftxOneDayUSDFlowsAnnRet=getBorrowsLoans(ftxWallet,  'USD')
+  ftxPrevUSDTFlows,ftxPrevUSDTFlowsAnnRet,ftxOneDayUSDTFlows,ftxOneDayUSDTFlowsAnnRet=getBorrowsLoans(ftxWallet, 'USDT')
+  ftxPrevBTCFlows, ftxPrevBTCFlowsAnnRet, ftxOneDayBTCFlows, ftxOneDayBTCFlowsAnnRet = getBorrowsLoans(ftxWallet, 'BTC')
+  ftxPrevETHFlows, ftxPrevETHFlowsAnnRet, ftxOneDayETHFlows, ftxOneDayETHFlowsAnnRet = getBorrowsLoans(ftxWallet, 'ETH')
   ftxOneDayBTCFlows *= spotBTC
   ftxOneDayETHFlows*=spotETH
   #####
@@ -103,7 +106,7 @@ def ftxInit(ftx):
   ftxMMReq = float(ftxInfo['maintenanceMarginRequirement'])
   ftxTotalPositionNotional = ftxNAV / ftxMF
   ftxCushion = (ftxMF - ftxMMReq) * ftxTotalPositionNotional
-  ftxTotalDelta = ftxWallet.loc[['BTC', 'ETH', 'FTT'], 'usdValue'].sum() + ftxPositions['FutDeltaUSD'].sum()
+  ftxTotalDelta = ftxWallet.loc[['BTC','ETH', 'FTT'], 'usdValue'].sum() + ftxPositions['FutDeltaUSD'].sum()
   ftxLiq = 1-ftxCushion/ftxTotalDelta
   ftxFreeCollateral = float(ftxInfo['freeCollateral'])
   #####
@@ -141,16 +144,18 @@ def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
   estFunding = cl.ftxGetEstFunding(ftx,ccy)
   printFunding('FTX',ftxPositions,ccy,oneDayFunding,prevFunding,estFunding)
 
-#####
+####################################################################################################
+
+def bbbnGetYest():
+  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
 
 def bbInit(bb,spotBTC,spotETH):
   def getPayments(ccy):
-    start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
     n=0
     df=pd.DataFrame()
     while True:
       n+=1
-      tl=bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': start_time, 'limit': 1000, 'page':n})['result']['trade_list']
+      tl=bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': bbbnGetYest(), 'limit': 1000, 'page':n})['result']['trade_list']
       if tl is None:
         break
       else:
@@ -170,7 +175,7 @@ def bbInit(bb,spotBTC,spotETH):
   bbPL=pd.DataFrame([pos['data'] for pos in bbPL])
   cl.dfSetFloat(bbPL,'size')
   bbPL['Ccy'] = [z[:3] for z in bbPL['symbol']]
-  bbPL=bbPL.set_index('Ccy').loc[['BTC', 'ETH']]
+  bbPL=bbPL.set_index('Ccy').loc[['BTC','ETH']]
   bbPL['FutDeltaUSD']=bbPL['size']
   bbPL.loc[bbPL['side'] == 'Sell', 'FutDeltaUSD'] *= -1
   bbPL['FutDelta']=bbPL['FutDeltaUSD']
@@ -186,7 +191,6 @@ def bbInit(bb,spotBTC,spotETH):
   bbPayments=bbPayments[bbPayments['exec_type']=='Funding']
   bbPayments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in bbPayments['trade_time_ms']]
   bbPayments=bbPayments.set_index('date')
-  bbPayments = getOneDay(bbPayments)
   #####
   bbPrevIncome = bbPayments.loc[bbPayments.index[-1]]['incomeUSD'].sum()
   bbPrevAnnRet = bbPrevIncome * 3 * 365 / bbNotional
@@ -212,7 +216,7 @@ def bbPrintFunding(bb,bbPL,bbPayments,ccy):
   estFunding2 = cl.bbGetEstFunding2(bb,ccy)
   printFunding('BB', bbPL, ccy, oneDayFunding, prevFunding, estFunding1,estFunding2)
 
-#####
+####################################################################################################
 
 def bnInit(bn,spotBTC,spotETH):
   bnBal = pd.DataFrame(bn.dapiPrivate_get_balance())
@@ -234,17 +238,16 @@ def bnInit(bn,spotBTC,spotETH):
   bnPR.loc['ETH','FutDelta']/=spotETH
   bnNotional=bnPR['FutDeltaUSD'].abs().sum()
   #####
-  bnPayments = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE'}))
+  bnPayments = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE','startTime':bbbnGetYest()}))
   cl.dfSetFloat(bnPayments, 'income')
   bnPayments = bnPayments[['USD_PERP' in z for z in bnPayments['symbol']]]
   bnPayments['Ccy'] = [z[:3] for z in bnPayments['symbol']]
-  bnPayments = bnPayments.set_index('Ccy').loc[['BTC', 'ETH']]
+  bnPayments = bnPayments.set_index('Ccy').loc[['BTC','ETH']]
   bnPayments['incomeUSD'] = bnPayments['income']
   bnPayments.loc['BTC', 'incomeUSD'] *= spotBTC
   bnPayments.loc['ETH', 'incomeUSD'] *= spotETH
   bnPayments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in bnPayments['time']]
   bnPayments = bnPayments.set_index('date')
-  bnPayments = getOneDay(bnPayments)
   #####
   bnPrevIncome = bnPayments.loc[bnPayments.index[-1]]['incomeUSD'].sum()
   bnPrevAnnRet = bnPrevIncome * 3 * 365 / bnNotional
@@ -260,23 +263,22 @@ def bnInit(bn,spotBTC,spotETH):
          bnNAV, bnLiqBTC, bnLiqETH
 
 def bnPrintFunding(bn,bnPR,ccy):
-  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP'}))
+  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP','startTime':bbbnGetYest()}))
   cl.dfSetFloat(df, 'fundingRate')
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-  df = df.set_index('date')
-  df=getOneDay(df)
+  df = df.set_index('date').sort_index()
   oneDayFunding = df['fundingRate'].mean() * 3 * 365
   prevFunding = df['fundingRate'][-1] * 3 * 365
   estFunding=cl.bnGetEstFunding(bn,ccy)
   printFunding('BN', bnPR, ccy, oneDayFunding, prevFunding, estFunding)
 
-#####
+####################################################################################################
 
 def dbInit(db,spotBTC,spotETH):
   def getFutPos(db,ccy):
     return float(db.private_get_get_position({'instrument_name': ccy+'-PERPETUAL'})['result']['size'])
   #####
-  def getOneDayIncome(db,ccy,spot):
+  def get4pmIncome(db,ccy,spot):
     df= pd.DataFrame(db.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
     if len(df)>0:
       cl.dfSetFloat(df, 'funding')
@@ -299,8 +301,8 @@ def dbInit(db,spotBTC,spotETH):
   dbFutures['FutDelta'] = dbFutures['FutDeltaUSD'] / dbFutures['Spot']
   dbNotional = dbFutures['FutDeltaUSD'].abs().sum()
   #####
-  dbOneDayIncome=getOneDayIncome(db,'BTC',spotBTC)+getOneDayIncome(db,'ETH',spotETH)
-  dbOneDayAnnRet = dbOneDayIncome * 365 / dbNotional
+  db4pmIncome=get4pmIncome(db,'BTC',spotBTC)+get4pmIncome(db,'ETH',spotETH)
+  db4pmAnnRet = db4pmIncome * 365 / dbNotional
   #####
   dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
   #####
@@ -312,11 +314,11 @@ def dbInit(db,spotBTC,spotETH):
     dbLiqETH=float(dbASETH['estimated_liquidation_ratio'])
   #####
   return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
-         dbOneDayIncome, dbOneDayAnnRet, \
+         db4pmIncome, db4pmAnnRet, \
          dbNAV, dbLiqBTC, dbLiqETH
 
-def dbPrintIncomes(oneDayIncome,oneDayAnnRet):
-  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+def dbPrintIncomes(_4pmIncome,_4pmAnnRet):
+  z1='$' + str(round(_4pmIncome)) + ' (' + str(round(_4pmAnnRet * 100)) + '% p.a.)'
   print(termcolor.colored(('DB 4pm funding income: ').rjust(41) + z1,'blue'))
 
 def dbPrintFunding(db,dbFutures,ccy):
@@ -362,7 +364,7 @@ bnBal, bnPR, bnPayments, \
   bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
 
 dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
-  dbOneDayIncome, dbOneDayAnnRet, \
+  db4pmIncome, db4pmAnnRet, \
   dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
@@ -372,7 +374,7 @@ cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 #############
 nav=ftxNAV+bbNAV+bnNAV+dbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
-oneDayIncome+=bbOneDayIncome+bnOneDayIncome+dbOneDayIncome
+oneDayIncome+=bbOneDayIncome+bnOneDayIncome+db4pmIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
@@ -441,7 +443,7 @@ bnPrintFunding(bn,bnPR,'BTC')
 bnPrintFunding(bn,bnPR,'ETH')
 printLiq('BN',bnLiqBTC,bnLiqETH)
 print()
-dbPrintIncomes(dbOneDayIncome,dbOneDayAnnRet)
+dbPrintIncomes(db4pmIncome,db4pmAnnRet)
 dbPrintFunding(db,dbFutures,'BTC')
 dbPrintFunding(db,dbFutures,'ETH')
 printLiq('DB',dbLiqBTC,dbLiqETH)
