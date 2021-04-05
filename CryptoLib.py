@@ -58,7 +58,7 @@ CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
-CT_CONFIGS_DICT['DB_BTC_OK']=1
+CT_CONFIGS_DICT['DB_BTC_OK']=0 ######
 CT_CONFIGS_DICT['DB_ETH_OK']=1
 
 # Positive = eager to buy
@@ -421,7 +421,10 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
           farPrice = round(limitPrice * .95, 2)
         else:
           farPrice = round(limitPrice * 1.05, 2)
-        db.private_get_edit({'order_id':orderId,'amount':trade_notional,'price':farPrice})
+        try:
+          db.private_get_edit({'order_id':orderId,'amount':trade_notional,'price':farPrice})
+        except:
+          break
         if float(dbGetOrder(db, orderId)['filled_amount'])==0:
           db.private_get_cancel({'order_id': orderId})
           print(getCurrentTime() + ': Cancelled')
