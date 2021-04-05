@@ -27,8 +27,8 @@ def printFunding(name,df,ccy,oneDayFunding,prevFunding,estFunding,est2Funding=No
   print(prefix.rjust(40) + ' ' + suffix)
 
 def printLiq(name,liqBTC,liqETH):
-  zBTC = 'never' if liqBTC == 0 else str(round(liqBTC * 100)) + '%'
-  zETH = 'never' if liqETH == 0 else str(round(liqETH * 100)) + '%'
+  zBTC = 'never' if (liqBTC <= 0 or liqBTC >= 10) else str(round(liqBTC * 100)) + '%'
+  zETH = 'never' if (liqETH <= 0 or liqETH >= 10) else str(round(liqETH * 100)) + '%'
   print(termcolor.colored((name+' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red'))
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
