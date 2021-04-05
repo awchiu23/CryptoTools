@@ -6,7 +6,6 @@ import numpy as np
 import datetime
 import sys
 import time
-import pytz
 import operator
 import termcolor
 import ccxt
