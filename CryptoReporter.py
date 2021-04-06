@@ -330,15 +330,17 @@ def dbPrintFunding(db,dbFutures,ccy):
 
 #####
 
-def krInit(kr,spotBTC,spotETH):
-  bal=kr.fetch_balance()
-  krSpotDeltaBTC=bal['BTC']['total']
-  try:
-    krSpotDeltaETH=bal['ETH']['total']
-  except:
-    krSpotDeltaETH=0
-  krNAV=krSpotDeltaBTC*spotBTC+krSpotDeltaETH*spotETH
-  return krSpotDeltaBTC,krSpotDeltaETH,krNAV
+# Currently only works with BTC
+def krInit(kr):
+  krSpotDeltaBTC=kr.fetch_balance()['BTC']['total']
+  krPositions = kr.fetch_positions()
+  keys = list(krPositions.keys())
+  for key in keys:
+    d = krPositions[key]
+    if d['pair'] == 'XXBTZUSD':
+      krSpotDeltaBTC += float(d['vol'])
+  krNAV = float(kr.private_post_tradebalance()['result']['e'])
+  return krSpotDeltaBTC,krNAV
 
 #####
 
@@ -381,7 +383,7 @@ dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   db4pmIncome, db4pmAnnRet, \
   dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
-krSpotDeltaBTC,krSpotDeltaETH,krNAV=krInit(kr,spotBTC,spotETH)
+krSpotDeltaBTC,krNAV=krInit(kr)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
@@ -408,7 +410,6 @@ spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
 spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
 spotDeltaETH+=dbSpotDeltaETH
-spotDeltaETH+=krSpotDeltaETH
 spotDeltaETH+=cbSpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
