@@ -25,6 +25,8 @@ API_KEY_BN = sl.jLoad('API_KEY_BN')
 API_SECRET_BN = sl.jLoad('API_SECRET_BN')
 API_KEY_DB = sl.jLoad('API_KEY_DB')
 API_SECRET_DB = sl.jLoad('API_SECRET_DB')
+API_KEY_KR = sl.jLoad('API_KEY_KR')
+API_SECRET_KR = sl.jLoad('API_SECRET_KR')
 API_KEY_CB = sl.jLoad('API_KEY_CB')
 API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 
@@ -58,17 +60,17 @@ CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
-CT_CONFIGS_DICT['DB_BTC_OK']=0 ######
+CT_CONFIGS_DICT['DB_BTC_OK']=1
 CT_CONFIGS_DICT['DB_ETH_OK']=1
 
 # Positive = eager to buy
 # Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-10
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-15
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-15
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=10
-CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=5
+CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=10
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-15
@@ -116,6 +118,9 @@ def bnCCXTInit():
 
 def dbCCXTInit():
   return  ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True})
+
+def krCCXTInit():
+  return ccxt.kraken({'apiKey': API_KEY_KR, 'secret': API_SECRET_KR, 'enableRateLimit': True})
 
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})

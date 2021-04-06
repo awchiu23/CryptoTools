@@ -330,6 +330,18 @@ def dbPrintFunding(db,dbFutures,ccy):
 
 #####
 
+def krInit(kr,spotBTC,spotETH):
+  bal=kr.fetch_balance()
+  krSpotDeltaBTC=bal['BTC']['total']
+  try:
+    krSpotDeltaETH=bal['ETH']['total']
+  except:
+    krSpotDeltaETH=0
+  krNAV=krSpotDeltaBTC*spotBTC+krSpotDeltaETH*spotETH
+  return krSpotDeltaBTC,krSpotDeltaETH,krNAV
+
+#####
+
 def cbInit(cb,spotBTC,spotETH):
   bal=cb.fetch_balance()
   cbSpotDeltaBTC=bal['BTC']['total']
@@ -340,10 +352,12 @@ def cbInit(cb,spotBTC,spotETH):
 ######
 # Init
 ######
+cl.printHeader('CryptoReporter - '+cl.getCurrentTime())
 ftx=cl.ftxCCXTInit()
 bb = cl.bbCCXTInit()
 bn = cl.bnCCXTInit()
 db=cl.dbCCXTInit()
+kr=cl.krCCXTInit()
 cb= cl.cbCCXTInit()
 
 ftxWallet,ftxPositions,ftxPayments, \
@@ -367,12 +381,14 @@ dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   db4pmIncome, db4pmAnnRet, \
   dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
+krSpotDeltaBTC,krSpotDeltaETH,krNAV=krInit(kr,spotBTC,spotETH)
+
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
 #############
 # Aggregation
 #############
-nav=ftxNAV+bbNAV+bnNAV+dbNAV+cbNAV
+nav=ftxNAV+bbNAV+bnNAV+dbNAV+krNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
 oneDayIncome+=bbOneDayIncome+bnOneDayIncome+db4pmIncome
 
@@ -380,6 +396,7 @@ spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
 spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
 spotDeltaBTC+=dbSpotDeltaBTC
+spotDeltaBTC+=krSpotDeltaBTC
 spotDeltaBTC+=cbSpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
@@ -391,6 +408,7 @@ spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
 spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
 spotDeltaETH+=dbSpotDeltaETH
+spotDeltaETH+=krSpotDeltaETH
 spotDeltaETH+=cbSpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
@@ -404,12 +422,12 @@ futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
 ########
 # Output
 ########
-cl.printHeader('CryptoReporter - '+cl.getCurrentTime())
 z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
 z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
 z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
+z+=' / KR: $' + str(round(krNAV/1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
