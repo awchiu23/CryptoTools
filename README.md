@@ -20,9 +20,11 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 	- Bybit
 	- Binance
 	- Deribit
+	- Kraken
 	- Coinbase
 - For this tool to work without modification, you will need to set up accounts in all of the above and have the following prepared:
-	- A position in BTC and ETH in all accounts except Coinbase.
+	- A position in BTC and ETH in all accounts except Kraken and Coinbase.
+	- For Kraken, a position in BTC + a margined spot position in BTC.  
 	- A position in FTT and USDT in FTX.
 	- APIs for all accounts.
 	- Time for at least one funding payment to have been paid.
