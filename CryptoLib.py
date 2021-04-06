@@ -38,6 +38,8 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #API_SECRET_BN = ''
 #API_KEY_DB = ''
 #API_SECRET_DB = ''
+#API_KEY_KR = ''
+#API_SECRET_KR = ''
 #API_KEY_CB = ''
 #API_SECRET_CB = ''
 
