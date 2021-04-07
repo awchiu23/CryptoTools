@@ -7,6 +7,9 @@ import sys
 ###########
 # Functions
 ###########
+def getYest():
+  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
+
 def printIncomes(name,prevIncome,prevAnnRet,oneDayIncome,oneDayAnnRet):
   z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
   z2='$' + str(round(prevIncome)) + ' (' + str(round(prevAnnRet * 100)) + '% p.a.)'
@@ -35,10 +38,7 @@ def printDeltas(ccy,spot,spotDelta,futDelta):
 
 ####################################################################################################
 
-def ftxkrGetYest():
-  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
-
-def ftxInit(ftx):    
+def ftxInit(ftx):
   def cleanBorrows(ccy, df):
     dummy = pd.DataFrame([[0,0,0,0,0,0]], columns=['time','coin', 'size', 'rate', 'cost', 'proceeds'])
     if len(df)==0:
@@ -51,7 +51,7 @@ def ftxInit(ftx):
     return df2
   ######
   def getBorrowsLoans(ftxWallet,ccy):
-    start_time=ftxkrGetYest()
+    start_time=getYest()
     borrows = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000,'start_time':start_time})['result']))
     loans = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000, 'start_time': start_time})['result']))
     cl.dfSetFloat(borrows, 'cost')
@@ -85,7 +85,7 @@ def ftxInit(ftx):
   ftxPositions.loc['FTT', 'FutDeltaUSD'] *= spotFTT
   ftxNotional=ftxPositions['FutDeltaUSD'].abs().sum()
   ######
-  ftxPayments = pd.DataFrame(ftx.private_get_funding_payments({'limit':1000,'start_time':ftxkrGetYest()})['result'])
+  ftxPayments = pd.DataFrame(ftx.private_get_funding_payments({'limit':1000,'start_time':getYest()})['result'])
   ftxPayments = ftxPayments.set_index('future',drop=False).loc[['BTC-PERP','ETH-PERP','FTT-PERP']].set_index('time')
   cl.dfSetFloat(ftxPayments, ['payment','rate'])
   ftxPayments=ftxPayments.sort_index()
@@ -147,16 +147,13 @@ def ftxPrintFunding(ftx,ftxPositions,ftxPayments,ccy):
 
 ####################################################################################################
 
-def bbbnGetYest():
-  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))) * 1000)
-
 def bbInit(bb,spotBTC,spotETH):
   def getPayments(ccy):
     n=0
     df=pd.DataFrame()
     while True:
       n+=1
-      tl=bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': bbbnGetYest(), 'limit': 1000, 'page':n})['result']['trade_list']
+      tl=bb.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': getYest()*1000, 'limit': 1000, 'page':n})['result']['trade_list']
       if tl is None:
         break
       else:
@@ -239,7 +236,7 @@ def bnInit(bn,spotBTC,spotETH):
   bnPR.loc['ETH','FutDelta']/=spotETH
   bnNotional=bnPR['FutDeltaUSD'].abs().sum()
   #####
-  bnPayments = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE','startTime':bbbnGetYest()}))
+  bnPayments = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE','startTime':getYest()*1000}))
   cl.dfSetFloat(bnPayments, 'income')
   bnPayments = bnPayments[['USD_PERP' in z for z in bnPayments['symbol']]]
   bnPayments['Ccy'] = [z[:3] for z in bnPayments['symbol']]
@@ -264,7 +261,7 @@ def bnInit(bn,spotBTC,spotETH):
          bnNAV, bnLiqBTC, bnLiqETH
 
 def bnPrintFunding(bn,bnPR,ccy):
-  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP','startTime':bbbnGetYest()}))
+  df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP','startTime':getYest()*1000}))
   cl.dfSetFloat(df, 'fundingRate')
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
   df = df.set_index('date').sort_index()
@@ -342,7 +339,7 @@ def krInit(kr,spotBTC):
   krMarginDeltaUSD = krMarginDelta * spotBTC
   krNotional = krPositions['vol'].abs().sum() * spotBTC
   #####
-  krLedgers = pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': ftxkrGetYest()})['result']['ledger']).transpose()
+  krLedgers = pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': getYest()})['result']['ledger']).transpose()
   cl.dfSetFloat(krLedgers,['time','fee'])
   krLedgers['feeUSD'] = krLedgers['fee'] * spotBTC
   krLedgers['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in krLedgers['time']]

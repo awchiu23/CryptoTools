@@ -182,12 +182,11 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   else:
     sys.exit(1)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(round(qty,6))+') ....')
-  if side=='BUY':
+  if side == 'BUY':
     limitPrice = ftxGetBid(ftx, ticker)
-    orderId = ftx.create_limit_buy_order(ticker, qty, limitPrice)['info']['id']
   else:
     limitPrice = ftxGetAsk(ftx, ticker)
-    orderId = ftx.create_limit_sell_order(ticker, qty, limitPrice)['info']['id']
+  orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
   nChases=0
   while True:
     if ftxGetRemainingSize(ftx,orderId) == 0:
