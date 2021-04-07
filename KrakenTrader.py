@@ -23,4 +23,4 @@ if isHedgeWithFTX:
     oppSide='BUY'
   else:
     sys.exit(1)
-fill=cl.ftxRelOrder(oppSide,ftx,'BTC',trade_btc,maxChases=888)
+fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
