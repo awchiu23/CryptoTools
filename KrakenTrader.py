@@ -3,7 +3,7 @@ import numpy as np
 import sys
 
 side='BUY'
-trade_btc_notional=5000 # In USD
+trade_btc_notional=3000 # In USD
 isHedgeWithFTX=True
 
 ######
