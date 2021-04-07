@@ -7,7 +7,7 @@ import sys
 ########
 # Params
 ########
-IS_VETERAN = False  # Set to False to use only FTX, BB and CB
+IS_VETERAN = True  # Set to False to use only FTX, BB and CB
 
 ###########
 # Functions
