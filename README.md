@@ -23,11 +23,11 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 	- Kraken
 	- Coinbase
 - For this tool to work without modification, you will need to set up accounts in all of the above and have the following prepared:
-	- A position in BTC and ETH in all accounts except Kraken and Coinbase.
-	- For Kraken, a position in BTC + a margined spot position in BTC.  
-	- A position in FTT and USDT in FTX.
-	- APIs for all accounts.
-	- Time for at least one funding payment to have been paid.
+	- For all accounts except Kraken and Coinbase: positions in BTC and ETH perps
+	- For Kraken: a position in BTC spot and a position in BTC margined spot  
+	- For FTX: positions in BTC, ETH and FTT spots; a position in FTT perp
+	- For all accounts: APIs set up
+	- Time for at least one funding payment to have been paid
 
 ## CryptoStats
 - This tool provides some historical stats sourced through APIs.
@@ -39,3 +39,6 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset.
 - Universe: USD, BTC, ETH
+
+## KrakenTrader
+- Execution tool for Kraken to trade BTC margined spot

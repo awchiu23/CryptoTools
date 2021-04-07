@@ -333,11 +333,13 @@ def krInit(kr,spotBTC):
   krPositions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
   if len(krPositions.loc['XXBTZUSD'])!=len(krPositions): # Allow BTC only
     sys.exit(1)
-  cl.dfSetFloat(krPositions, 'vol')    
-  krMarginDelta = krPositions['vol'].sum()
+  cl.dfSetFloat(krPositions, ['vol','vol_closed','time'])
+  krPositions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in krPositions['time']]
+  krPositions['vol_net']=krPositions['vol']-krPositions['vol_closed']
+  krMarginDelta = krPositions['vol_net'].sum()
   krSpotDeltaBTC+=krMarginDelta
   krMarginDeltaUSD = krMarginDelta * spotBTC
-  krNotional = krPositions['vol'].abs().sum() * spotBTC
+  krNotional = krPositions['vol_net'].abs().sum() * spotBTC
   #####
   krLedgers = pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': getYest()})['result']['ledger']).transpose()
   cl.dfSetFloat(krLedgers,['time','fee'])
