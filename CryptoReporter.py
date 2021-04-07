@@ -337,16 +337,18 @@ def krInit(kr,spotBTC):
   if len(krPositions.loc['XXBTZUSD'])!=len(krPositions): # Allow BTC only
     sys.exit(1)
   cl.dfSetFloat(krPositions, 'vol')    
-  krMarginDeltaBTC = krPositions['vol'].sum() 
-  krSpotDeltaBTC+=krMarginDeltaBTC
-  krNotional = krPositions['vol'].abs().sum()
+  krMarginDelta = krPositions['vol'].sum()
+  krSpotDeltaBTC+=krMarginDelta
+  krMarginDeltaUSD = krMarginDelta * spotBTC
+  krNotional = krPositions['vol'].abs().sum() * spotBTC
   #####
   krLedgers = pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': ftxkrGetYest()})['result']['ledger']).transpose()
-  cl.dfSetFloat(krLedgers,['time','fee'])  
+  cl.dfSetFloat(krLedgers,['time','fee'])
+  krLedgers['feeUSD'] = krLedgers['fee'] * spotBTC
   krLedgers['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in krLedgers['time']]
   krLedgers=krLedgers.set_index('date').sort_index()
   #####  
-  krOneDayIncome = -krLedgers['fee'].sum()
+  krOneDayIncome = -krLedgers['feeUSD'].sum()
   krOneDayAnnRet = krOneDayIncome * 365 / krNotional
   #####    
   krTradeBal = kr.private_post_tradebalance()['result']
@@ -355,7 +357,7 @@ def krInit(kr,spotBTC):
   krFreeMargin=float(krTradeBal['mf'])
   krLiq = 1 - krFreeMargin / (krSpotDeltaBTC*spotBTC)
   #####
-  return krSpotDeltaBTC, krMarginDeltaBTC, \
+  return krSpotDeltaBTC, krMarginDeltaUSD, \
          krOneDayIncome, krOneDayAnnRet, \
          krNAV,krLiq
 
@@ -363,9 +365,9 @@ def krPrintIncomes(oneDayIncome,oneDayAnnRet):
   z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
   print(termcolor.colored(('KR 24h rollover fees: ').rjust(41) + z1,'blue'))
   
-def krPrintBorrow(marginDeltaBTC,oneDayAnnRet, nav):
-  z1 = '($' + str(round(marginDeltaBTC))+')'
-  z2 = '(' + str(round(marginDeltaBTC/nav*100))+'%)'
+def krPrintBorrow(marginDeltaUSD,oneDayAnnRet, nav):
+  z1 = '($' + str(round(-marginDeltaUSD))+')'
+  z2 = '(' + str(round(-marginDeltaUSD/nav*100))+'%)'
   print(('KR USD est borrow rate: ').rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. '+ z1+' '+z2)
 
 ####################################################################################################
@@ -411,7 +413,7 @@ dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   db4pmIncome, db4pmAnnRet, \
   dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
-krSpotDeltaBTC, krMarginDeltaBTC, \
+krSpotDeltaBTC, krMarginDeltaUSD, \
   krOneDayIncome, krOneDayAnnRet, \
   krNAV,krLiq = krInit(kr,spotBTC)
 
@@ -504,7 +506,7 @@ print()
 #####
 z = 'never' if (krLiq <=0 or krLiq > 10) else str(round(krLiq * 100)) + '%'
 krPrintIncomes(krOneDayIncome,krOneDayAnnRet)
-krPrintBorrow(krMarginDeltaBTC,krOneDayAnnRet,nav)
+krPrintBorrow(krMarginDeltaUSD,krOneDayAnnRet,nav)
 print(termcolor.colored('KR liquidation (parallel shock): '.rjust(41) + z + ' (of spot)', 'red'))
 print()
 #####
