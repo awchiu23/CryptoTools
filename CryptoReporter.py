@@ -2,6 +2,7 @@ import CryptoLib as cl
 import pandas as pd
 import datetime
 import termcolor
+import sys
 
 ###########
 # Functions
@@ -34,10 +35,10 @@ def printDeltas(ccy,spot,spotDelta,futDelta):
 
 ####################################################################################################
 
-def ftxInit(ftx):
-  def getYest():
-    return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
-  ######
+def ftxkrGetYest():
+  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
+
+def ftxInit(ftx):    
   def cleanBorrows(ccy, df):
     dummy = pd.DataFrame([[0,0,0,0,0,0]], columns=['time','coin', 'size', 'rate', 'cost', 'proceeds'])
     if len(df)==0:
@@ -50,7 +51,7 @@ def ftxInit(ftx):
     return df2
   ######
   def getBorrowsLoans(ftxWallet,ccy):
-    start_time=getYest()
+    start_time=ftxkrGetYest()
     borrows = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000,'start_time':start_time})['result']))
     loans = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000, 'start_time': start_time})['result']))
     cl.dfSetFloat(borrows, 'cost')
@@ -84,7 +85,7 @@ def ftxInit(ftx):
   ftxPositions.loc['FTT', 'FutDeltaUSD'] *= spotFTT
   ftxNotional=ftxPositions['FutDeltaUSD'].abs().sum()
   ######
-  ftxPayments = pd.DataFrame(ftx.private_get_funding_payments({'limit':1000,'start_time':getYest()})['result'])
+  ftxPayments = pd.DataFrame(ftx.private_get_funding_payments({'limit':1000,'start_time':ftxkrGetYest()})['result'])
   ftxPayments = ftxPayments.set_index('future',drop=False).loc[['BTC-PERP','ETH-PERP','FTT-PERP']].set_index('time')
   cl.dfSetFloat(ftxPayments, ['payment','rate'])
   ftxPayments=ftxPayments.sort_index()
@@ -328,21 +329,46 @@ def dbPrintFunding(db,dbFutures,ccy):
   suffix = str(round(oneDayFunding * 100)) + '%/' + str(round(estFunding * 100)) + '% p.a. ($' + str(round(dbFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
   print(prefix.rjust(40) + ' ' + suffix)
 
-#####
+####################################################################################################
 
-# Currently only works with BTC
-def krInit(kr):
-  krSpotDeltaBTC=kr.fetch_balance()['BTC']['total']
-  krPositions = kr.fetch_positions()
-  keys = list(krPositions.keys())
-  for key in keys:
-    d = krPositions[key]
-    if d['pair'] == 'XXBTZUSD':
-      krSpotDeltaBTC += float(d['vol'])
-  krNAV = float(kr.private_post_tradebalance()['result']['e'])
-  return krSpotDeltaBTC,krNAV
+def krInit(kr,spotBTC):
+  krSpotDeltaBTC=float(kr.private_post_balance()['result']['XXBT'])
+  krPositions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
+  if len(krPositions.loc['XXBTZUSD'])!=len(krPositions): # Allow BTC only
+    sys.exit(1)
+  cl.dfSetFloat(krPositions, 'vol')    
+  krMarginDeltaBTC = krPositions['vol'].sum() 
+  krSpotDeltaBTC+=krMarginDeltaBTC
+  krNotional = krPositions['vol'].abs().sum()
+  #####
+  krLedgers = pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': ftxkrGetYest()})['result']['ledger']).transpose()
+  cl.dfSetFloat(krLedgers,['time','fee'])  
+  krLedgers['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in krLedgers['time']]
+  krLedgers=krLedgers.set_index('date').sort_index()
+  #####  
+  krOneDayIncome = -krLedgers['fee'].sum()
+  krOneDayAnnRet = krOneDayIncome * 365 / krNotional
+  #####    
+  krTradeBal = kr.private_post_tradebalance()['result']
+  krNAV=float(krTradeBal['e'])
+  #####
+  krFreeMargin=float(krTradeBal['mf'])
+  krLiq = 1 - krFreeMargin / (krSpotDeltaBTC*spotBTC)
+  #####
+  return krSpotDeltaBTC, krMarginDeltaBTC, \
+         krOneDayIncome, krOneDayAnnRet, \
+         krNAV,krLiq
 
-#####
+def krPrintIncomes(oneDayIncome,oneDayAnnRet):
+  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+  print(termcolor.colored(('KR 24h rollover fees: ').rjust(41) + z1,'blue'))
+  
+def krPrintBorrow(marginDeltaBTC,oneDayAnnRet, nav):
+  z1 = '($' + str(round(marginDeltaBTC))+')'
+  z2 = '(' + str(round(marginDeltaBTC/nav*100))+'%)'
+  print(('KR USD est borrow rate: ').rjust(41) + str(round(oneDayAnnRet * 100)) + '% p.a. '+ z1+' '+z2)
+
+####################################################################################################
 
 def cbInit(cb,spotBTC,spotETH):
   bal=cb.fetch_balance()
@@ -350,6 +376,8 @@ def cbInit(cb,spotBTC,spotETH):
   cbSpotDeltaETH=bal['ETH']['total']
   cbNAV=cbSpotDeltaBTC*spotBTC+cbSpotDeltaETH*spotETH
   return cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV
+
+####################################################################################################
 
 ######
 # Init
@@ -383,7 +411,9 @@ dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
   db4pmIncome, db4pmAnnRet, \
   dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
-krSpotDeltaBTC,krNAV=krInit(kr)
+krSpotDeltaBTC, krMarginDeltaBTC, \
+  krOneDayIncome, krOneDayAnnRet, \
+  krNAV,krLiq = krInit(kr,spotBTC)
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
@@ -392,7 +422,7 @@ cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 #############
 nav=ftxNAV+bbNAV+bnNAV+dbNAV+krNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows
-oneDayIncome+=bbOneDayIncome+bnOneDayIncome+db4pmIncome
+oneDayIncome+=bbOneDayIncome+bnOneDayIncome+db4pmIncome+krOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
@@ -443,6 +473,7 @@ ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHF
 ftxPrintCoinLending(ftx,ftxWallet,'BTC')
 ftxPrintCoinLending(ftx,ftxWallet,'ETH')
 print()
+#####
 printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'ETH')
@@ -452,21 +483,31 @@ print(termcolor.colored('FTX liquidation (parallel shock): '.rjust(41) + z + ' (
 print(termcolor.colored('FTX margin fraction: '.rjust(41)+str(round(ftxMF*100,1))+'% (vs. '+str(round(ftxMMReq*100,1))+'% limit)','red'))
 print(termcolor.colored('FTX free collateral: $'.rjust(42)+str(round(ftxFreeCollateral)),'red'))
 print()
+#####
 printIncomes('BB',bbPrevIncome,bbPrevAnnRet,bbOneDayIncome,bbOneDayAnnRet)
 bbPrintFunding(bb,bbPL,bbPayments,'BTC')
 bbPrintFunding(bb,bbPL,bbPayments,'ETH')
 printLiq('BB',bbLiqBTC,bbLiqETH)
 print()
+#####
 printIncomes('BN',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
 bnPrintFunding(bn,bnPR,'BTC')
 bnPrintFunding(bn,bnPR,'ETH')
 printLiq('BN',bnLiqBTC,bnLiqETH)
 print()
+#####
 dbPrintIncomes(db4pmIncome,db4pmAnnRet)
 dbPrintFunding(db,dbFutures,'BTC')
 dbPrintFunding(db,dbFutures,'ETH')
 printLiq('DB',dbLiqBTC,dbLiqETH)
 print()
+#####
+z = 'never' if (krLiq <=0 or krLiq > 10) else str(round(krLiq * 100)) + '%'
+krPrintIncomes(krOneDayIncome,krOneDayAnnRet)
+krPrintBorrow(krMarginDeltaBTC,krOneDayAnnRet,nav)
+print(termcolor.colored('KR liquidation (parallel shock): '.rjust(41) + z + ' (of spot)', 'red'))
+print()
+#####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
 printDeltas('FTT',spotFTT,spotDeltaFTT,futDeltaFTT)
