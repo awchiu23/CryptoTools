@@ -67,9 +67,9 @@ CT_CONFIGS_DICT['DB_ETH_OK']=0
 
 # Positive = eager to buy
 # Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-10
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=5
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-5
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-5
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=5
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=5
@@ -122,7 +122,7 @@ def dbCCXTInit():
   return  ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True})
 
 def krCCXTInit():
-  return ccxt.kraken({'apiKey': API_KEY_KR, 'secret': API_SECRET_KR, 'enableRateLimit': True})
+  return ccxt.kraken({'apiKey': API_KEY_KR, 'secret': API_SECRET_KR, 'enableRateLimit': False})
 
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
