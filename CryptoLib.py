@@ -481,7 +481,7 @@ def krRelOrder(side,kr,ccy,trade_qty,maxChases=0):
   else:
     limitPrice = krGetAsk(kr, pair)
     z='Offering'
-  print(getCurrentTime() + ': ' + z + ' at ' + str(limitPrice) + ' ....')
+  print(getCurrentTime() + ': ' + z + ' at ' + str(limitPrice) + ' (qty='+str(round(qty,6))+') ....')
   orderId=krPlaceOrder(kr, pair, side, qty, limitPrice)
   nChases=0
   while True:
@@ -506,7 +506,7 @@ def krRelOrder(side,kr,ccy,trade_qty,maxChases=0):
       else:
         if side == 'BUY':
           z = 'Bidding' if side=='BUY' else 'Offering'
-          print(getCurrentTime() + ': '+z+' at ' + str(limitPrice) + ' ....')
+          print(getCurrentTime() + ': '+z+' at ' + str(limitPrice) + ' (qty='+str(round(leavesQty,6))+') ....')
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice)
     time.sleep(1)
   orderStatus=krGetOrderStatus(kr,orderId)
