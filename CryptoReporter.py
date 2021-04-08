@@ -135,7 +135,7 @@ def ftxPrintBorrowLending(ftx,ftxWallet,nav,ccy):
   estLending = cl.ftxGetEstLending(ftx,ccy)
   n = ftxWallet.loc[ccy, 'usdValue']
   z1 = '($' + str(round(n))+')'
-  z2 = '(' + str(round(n/nav*100))+'%)'
+  z2 = '(' + str(round(n/nav*100))+'% of NAV)'
   print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+ z1+' '+z2)
 
 def ftxPrintCoinLending(ftx,ftxWallet,ccy):
@@ -383,7 +383,7 @@ def krPrintIncomes(oneDayIncome,oneDayAnnRet):
   
 def krPrintBorrow(marginDeltaUSD,oneDayAnnRet, nav):
   z1 = '($' + str(round(-marginDeltaUSD))+')'
-  z2 = '(' + str(round(-marginDeltaUSD/nav*100))+'%)'
+  z2 = '(' + str(round(-marginDeltaUSD/nav*100))+'% of NAV)'
   print(('KR USD est borrow rate: ').rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. '+ z1+' '+z2)
 
 ####################################################################################################
