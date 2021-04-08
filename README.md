@@ -1,14 +1,15 @@
 # CryptoTools
-I created these tools for my own crypto arbitrage trading activities.  Enjoy!
+I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## CryptoLib
-- Library for all other tools.
-- Replace the defaults with your own API keys.
+- Library for all other tools
+- Replace the defaults with your own API keys
+- Set parameters for CryptoTrader
 
 ## CryptoAlerter
-- This tool is for monitoring smart basis (as well as raw basis) for various futures.
+- This tool is for monitoring smart basis (as well as raw basis) of various futures
 - Raw basis: premium of future vs. FTX spot
-- Smart basis: similar to above but adjusted for these extra factors:
+- Smart basis: same but adjusted for these extras:
 	- Spot rates
 	- Basis mean reversion
 	- Accrued funding payments
@@ -28,16 +29,17 @@ I created these tools for my own crypto arbitrage trading activities.  Enjoy!
 	- For FTX: positions in BTC, ETH and FTT spots; a position in FTT perp
 	- For all accounts: APIs set up
 	- Time for at least one funding payment to have been paid
+- For a simplified version, there is an **IS_VETERAN** flag that you can set to False.  Once set, the universe becomes FTX, Bybit and Coinbase only.
 
 ## CryptoStats
-- This tool provides some historical stats sourced through APIs.
+- This tool provides some historical stats sourced through APIs
 
 ## CryptoTrader
-- Automated trading of spot and futures.
-- Talk to me if you are interested.
+- Automated trading of spot and futures
+- Whatsapp me if interested
 
 ## FTXLender
-- This tools runs on a loop and automatically modifies your loan sizes one minute before every reset.
+- This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
 - Universe: USD, BTC, ETH
 
 ## KrakenTrader
