@@ -8,7 +8,7 @@ import sys
 side='BUY'          # 'BUY', 'SELL'
 targetUSD=3000
 hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'kf', 'none'
-nPrograms=10
+nPrograms=30
 
 ######
 # Init
