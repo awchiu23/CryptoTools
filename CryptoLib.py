@@ -9,6 +9,7 @@ import time
 import operator
 import termcolor
 import ccxt
+import apophis
 from retrying import retry
 
 #############################################################################################
@@ -25,6 +26,8 @@ API_KEY_BN = sl.jLoad('API_KEY_BN')
 API_SECRET_BN = sl.jLoad('API_SECRET_BN')
 API_KEY_DB = sl.jLoad('API_KEY_DB')
 API_SECRET_DB = sl.jLoad('API_SECRET_DB')
+API_KEY_KF = sl.jLoad('API_KEY_KF')
+API_SECRET_KF = sl.jLoad('API_SECRET_KF')
 API_KEY_KR = sl.jLoad('API_KEY_KR')
 API_SECRET_KR = sl.jLoad('API_SECRET_KR')
 API_KEY_CB = sl.jLoad('API_KEY_CB')
@@ -38,6 +41,8 @@ API_SECRET_CB = sl.jLoad('API_SECRET_CB')
 #API_SECRET_BN = ''
 #API_KEY_DB = ''
 #API_SECRET_DB = ''
+#API_KEY_KF = ''
+#API_SECRET_KF = ''
 #API_KEY_KR = ''
 #API_SECRET_KR = ''
 #API_KEY_CB = ''
@@ -64,6 +69,8 @@ CT_CONFIGS_DICT['BN_BTC_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
 CT_CONFIGS_DICT['DB_BTC_OK']=1
 CT_CONFIGS_DICT['DB_ETH_OK']=1
+CT_CONFIGS_DICT['KF_BTC_OK']=0
+CT_CONFIGS_DICT['KF_ETH_OK']=0
 
 # Positive = eager to buy
 # Negative = eager to sell
@@ -73,10 +80,12 @@ CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-10
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-5
-CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-10
+CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-10
+CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-10
+CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=-10
+CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=-10
 
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering
@@ -120,6 +129,9 @@ def bnCCXTInit():
 
 def dbCCXTInit():
   return  ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True})
+
+def kfInit():
+  return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
 def krCCXTInit():
   return ccxt.kraken({'apiKey': API_KEY_KR, 'secret': API_SECRET_KR, 'enableRateLimit': False})
@@ -256,6 +268,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
     sys.exit(1)
   ticker1=ccy+'/USD'
   ticker2=ccy+'USD'
+  trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
   if side=='BUY':
     limitPrice = bbGetBid(bb, ticker1)
@@ -339,9 +352,9 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   ticker=ccy+'USD_PERP'
   print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if ccy=='BTC':
-    qty=int(trade_notional/100)
+    qty=round(trade_notional/100)
   elif ccy=='ETH':
-    qty=int(trade_notional/10)
+    qty=round(trade_notional/10)
   else:
     sys.exit(1)
   if side == 'BUY':
@@ -400,6 +413,8 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
     sys.exit(1)
   if ccy=='BTC':
     trade_notional=round(trade_notional,-1)
+  else:
+    trade_notional=round(trade_notional)
   ticker = ccy + '-PERPETUAL'
   print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if side=='BUY':
@@ -442,6 +457,106 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
           break
     time.sleep(1)
   fill=float(dbGetOrder(db, orderId)['average_price'])
+  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  return fill
+
+#############################################################################################
+
+def kfCcyToSymbol(ccy):
+  if ccy=='BTC':
+    return 'pi_xbtusd'
+  elif ccy=='ETH':
+    return 'pi_ethusd'
+  else:
+    sys.exit(1)
+
+#@retry(wait_fixed=1000)
+def kfGetTickers(kf):
+  return pd.DataFrame(kf.query('tickers')['tickers']).set_index('symbol')
+
+#@retry(wait_fixed=1000)
+def kfGetEstFunding1(kf,ccy,kfTickers=None):
+  if kfTickers is None:
+    kfTickers=kfGetTickers(kf)
+  symbol=kfCcyToSymbol(ccy)
+  return kfTickers.loc[symbol,'fundingRate']*kfTickers.loc[symbol,'markPrice']*24*365
+
+#@retry(wait_fixed=1000)
+def kfGetEstFunding2(kf, ccy,kfTickers=None):
+  if kfTickers is None:
+    kfTickers = kfGetTickers(kf)
+  symbol = kfCcyToSymbol(ccy)
+  return kfTickers.loc[symbol, 'fundingRatePrediction']*kfTickers.loc[symbol,'markPrice']*24*365
+
+def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
+  # Do not use @retry
+  def kfGetBid(kf, symbol):
+    return kfGetTickers(kf).loc[symbol,'bid']
+  # Do not use @retry
+  def kfGetAsk(kf, symbol):
+    return kfGetTickers(kf).loc[symbol,'ask']
+  @retry(wait_fixed=1000)
+  def kfGetOrderStatus(kf, orderId):
+    l = kf.query('openorders')['openOrders']
+    if len(l)==0:
+      return None
+    else:
+      return pd.DataFrame(l).set_index('order_id').loc[orderId]
+  # Do not use @retry
+  def kfGetFillPrice(kf, orderId):
+    df=pd.DataFrame(kf.query('fills')['fills']).set_index('order_id').loc[orderId]
+    if isinstance(df, pd.Series):
+      return df['price']
+    else:
+      df['value']=df['size']*df['price']
+      return df['value'].sum()/df['size'].sum()
+  #####
+  if side != 'BUY' and side != 'SELL':
+    sys.exit(1)
+  symbol=kfCcyToSymbol(ccy)
+  trade_notional = round(trade_notional)
+  print(getCurrentTime() + ': Sending KF ' + side + ' order of ' + symbol + ' (notional=$' + str(round(trade_notional)) + ') ....')
+  if side == 'BUY':
+    limitPrice = kfGetBid(kf, symbol)
+  else:
+    limitPrice = kfGetAsk(kf, symbol)
+  orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
+  nChases=0
+  while True:
+    orderStatus=kfGetOrderStatus(kf,orderId)
+    if orderStatus is None:  # If order doesn't exist, it means all executed
+      break
+    if side=='BUY':
+      newPrice=kfGetBid(kf,symbol)
+    else:
+      newPrice=kfGetAsk(kf,symbol)
+    if newPrice != limitPrice:
+      limitPrice=newPrice
+      nChases+=1
+      orderStatus = kfGetOrderStatus(kf, orderId)
+      if orderStatus is None:  # If order doesn't exist, it means all executed
+        break
+      if nChases>maxChases and float(orderStatus['filledSize'])==0:
+        if side == 'BUY':
+          farPrice = round(limitPrice * .98,2)
+        else:
+          farPrice = round(limitPrice * 1.02,2)
+        try:
+          kf.query('editorder',{'orderId':orderId,'limitPrice':farPrice})
+        except:
+          break
+        orderStatus = kfGetOrderStatus(kf, orderId)
+        if float(orderStatus['filledSize']) == 0:
+          kf.query('cancelorder',{'order_id':orderId})
+          print(getCurrentTime() + ': Cancelled')
+          return 0
+      else:
+        try:
+          kf.query('editorder', {'orderId': orderId, 'limitPrice': limitPrice})
+        except:
+          break
+    time.sleep(1)
+  fill = kfGetFillPrice(kf, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
 
@@ -519,7 +634,7 @@ def krRelOrder(side,kr,ccy,trade_qty,maxChases=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,db):
+def getFundingDict(ftx,bb,bn,db,kf):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -547,12 +662,18 @@ def getFundingDict(ftx,bb,bn,db):
   d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
   d['dbEstFundingBTC'] = dbGetEstFunding(db, 'BTC')
   d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')
+  d['kfEstFunding1BTC'] = kfGetEstFunding1(kf, 'BTC')
+  d['kfEstFunding1ETH'] = kfGetEstFunding1(kf, 'ETH')
+  d['kfEstFunding2BTC'] = kfGetEstFunding2(kf, 'BTC')
+  d['kfEstFunding2ETH'] = kfGetEstFunding2(kf, 'ETH')
   return d
+
+#############################################################################################
 
 def getOneDayShortSpotEdge(fundingDict):
   return getOneDayDecayedMean(fundingDict['ftxEstSpot'], BASE_SPOT_RATE, HALF_LIFE_HOURS_SPOT) / 365
 
-def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None):
+def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None,isKF=False):
   # gain on projected basis mtm after 1 day
   edge=basis-getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1]
 
@@ -561,14 +682,17 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
   edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
   hoursAccountedFor=hoursInterval*pctElapsed
 
-  # gain on coupon from previous reset (bb)
+  # gain on coupon from previous reset
   if not prevFundingRate is None:
-    edge+=prevFundingRate/365/(24/hoursInterval)
-    hoursAccountedFor+=hoursInterval
+    pctCaptured=1
+    if isKF: # Special mod for kf
+      pctCaptured-=getPctElapsed(hoursInterval)
+    edge+=prevFundingRate/365/(24/hoursInterval)*pctCaptured
+    hoursAccountedFor+=hoursInterval*pctCaptured
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
-  edge+= getOneDayDecayedMean(snapFundingRate, BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING, nMinutes=nMinutes) / 365
+  edge+= getOneDayDecayedMean(snapFundingRate, BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING, nMinutes=nMinutes) / 365 * (nMinutes/1440)
 
   return edge
 
@@ -580,7 +704,7 @@ def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
     ftxGetOneDayShortFutEdge.emaETH = fundingDict['ftxEstFundingETH']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(float(df['mark']) / float(df['index']) - 1)*365
-  k=2/(300+1)
+  k=2/(60 * 15 / CT_SLEEP + 1)
   if ccy=='BTC':
     ftxGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaBTC * (1 - k)
     smoothedSnapFundingRate=ftxGetOneDayShortFutEdge.emaBTC
@@ -614,7 +738,36 @@ def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
   edge += getOneDayDecayedMean(fundingDict['dbEstFunding' + ccy], BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING) / 365 # funding
   return edge
 
-def getSmartBasisDict(ftx, bb, bn, db, fundingDict, isSkipAdj=False):
+#@retry(wait_fixed=1000)
+def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
+  if not hasattr(kfGetOneDayShortFutEdge,'emaBTC'):
+    kfGetOneDayShortFutEdge.emaBTC = fundingDict['kfEstFunding2BTC']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaETH'):
+    kfGetOneDayShortFutEdge.emaETH = fundingDict['kfEstFunding2ETH']
+  symbol=kfCcyToSymbol(ccy)
+  if ccy=='BTC':
+    indexSymbol='in_xbtusd'
+  elif ccy=='ETH':
+    indexSymbol='in_ethusd'
+  else:
+    sys.exit(1)
+  mid=(kfTickers.loc[symbol,'bid']+kfTickers.loc[symbol,'ask'])/2
+  premIndexClipped=np.clip(mid/kfTickers.loc[indexSymbol,'last']-1,-0.008,0.008)
+  snapFundingRate=premIndexClipped*365*3
+  k=2/(60 * 15 / CT_SLEEP + 1)
+  if ccy=='BTC':
+    kfGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + kfGetOneDayShortFutEdge.emaBTC * (1 - k)
+    smoothedSnapFundingRate=kfGetOneDayShortFutEdge.emaBTC
+  elif ccy=='ETH':
+    kfGetOneDayShortFutEdge.emaETH = snapFundingRate * k + kfGetOneDayShortFutEdge.emaETH * (1 - k)
+    smoothedSnapFundingRate = kfGetOneDayShortFutEdge.emaETH
+  else:
+    sys.exit(1)
+  return getOneDayShortFutEdge(6,basis,smoothedSnapFundingRate,fundingDict['kfEstFunding2'+ccy],prevFundingRate=fundingDict['kfEstFunding1'+ccy],isKF=True)
+
+#############################################################################################
+
+def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   @retry(wait_fixed=1000)
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
@@ -659,6 +812,8 @@ def getSmartBasisDict(ftx, bb, bn, db, fundingDict, isSkipAdj=False):
     bbETHAdj=0
     dbBTCAdj=0
     dbETHAdj=0
+    kfBTCAdj=0
+    kfETHAdj=0
   else:
     ftxBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']) / 10000
     ftxETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']) / 10000
@@ -668,6 +823,8 @@ def getSmartBasisDict(ftx, bb, bn, db, fundingDict, isSkipAdj=False):
     bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
     dbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']) / 10000
     dbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']) / 10000
+    kfBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']) / 10000
+    kfETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']) / 10000            
   #####
   d = dict()
   d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
@@ -691,6 +848,12 @@ def getSmartBasisDict(ftx, bb, bn, db, fundingDict, isSkipAdj=False):
   d['dbETHBasis'] = dbGetMid(db, 'ETH') / spotETH - 1
   d['dbBTCSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'BTC', d['dbBTCBasis']) - oneDayShortSpotEdge + dbBTCAdj
   d['dbETHSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'ETH', d['dbETHBasis']) - oneDayShortSpotEdge + dbETHAdj
+  ###
+  kfTickers=kfGetTickers(kf)
+  d['kfBTCBasis']=(kfTickers.loc['pi_xbtusd','bid']+kfTickers.loc['pi_xbtusd','ask'])/2/spotBTC - 1
+  d['kfETHBasis'] = (kfTickers.loc['pi_ethusd', 'bid'] + kfTickers.loc['pi_ethusd', 'ask']) / 2 / spotETH - 1
+  d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
+  d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
   return d
 
 #############################################################################################
@@ -703,6 +866,7 @@ def ctInit():
   bb = bbCCXTInit()
   bn = bnCCXTInit()
   db = dbCCXTInit()
+  kf = kfInit()
   ftxWallet=ftxGetWallet(ftx)
   spotBTC=ftxWallet.loc['BTC','spot']
   spotETH=ftxWallet.loc['ETH', 'spot']
@@ -720,7 +884,7 @@ def ctInit():
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
-  return ftx,bb,bn,db,qty_dict,notional_dict
+  return ftx,bb,bn,db,kf,qty_dict,notional_dict
 
 def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
   if CT_CONFIGS_DICT[exch + '_' + ccy + '_OK'] == 0:
@@ -756,7 +920,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy):
-  ftx, bb, bn, db, qty_dict, notional_dict = ctInit()
+  ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH']:
     print('Invalid ccy!')
     sys.exit(1)
@@ -769,13 +933,13 @@ def ctRun(ccy):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, db)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, fundingDict)
+      fundingDict=getFundingDict(ftx, bb, bn, db, kf)
+      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict)
       smartBasisDict['spot' + ccy + 'SmartBasis'] = 0
       smartBasisDict['spot' + ccy + 'Basis'] = 0
 
       # Remove disabled instruments
-      for x in ['SPOT','FTX','BB','BN','DB']:
+      for x in ['SPOT','FTX','BB','BN','DB','KF']:
         for c in ['BTC','ETH']:
           smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
 
@@ -828,6 +992,12 @@ def ctRun(ccy):
         speak('Go')
         completedLegs = 0
         isCancelled=False
+        if 'kf' in chosenLong and not isCancelled:
+          longFill = kfRelOrder('BUY', kf, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
+        if 'kf' in chosenShort and not isCancelled:
+          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' in chosenLong and not isCancelled:
           longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)

@@ -7,7 +7,8 @@ import sys
 ########
 # Params
 ########
-IS_VETERAN = True  # Set to False to use only FTX, BB and CB
+IS_ADVANCED = True              # Set to False to use only FTX, BB and CB
+IS_SHOW_COIN_LENDING = False    # Set to True to see lendings in coins
 
 ###########
 # Functions
@@ -333,7 +334,44 @@ def dbPrintFunding(db,dbFutures,ccy):
 
 ####################################################################################################
 
-def krInit(kr,spotBTC):
+def kfInit(kf,spotBTC,spotETH):
+  kfAccounts = kf.query('accounts')['accounts']
+  kfSpotDeltaBTC=kfAccounts['fi_xbtusd']['auxiliary']['pv']+kfAccounts['cash']['balances']['xbt']
+  kfSpotDeltaETH=kfAccounts['fi_ethusd']['auxiliary']['pv']+kfAccounts['cash']['balances']['eth']
+  kfFutures = pd.DataFrame([['BTC', spotBTC, kfAccounts['fi_xbtusd']['balances']['pi_xbtusd']], \
+                            ['ETH', spotETH, kfAccounts['fi_ethusd']['balances']['pi_ethusd']]], \
+                           columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
+  kfFutures['FutDelta'] = kfFutures['FutDeltaUSD'] / kfFutures['Spot']
+  kfNotional=kfFutures['FutDeltaUSD'].abs().sum()
+  #####
+  kfTickers=cl.kfGetTickers(kf)  
+  kfOneDayIncome=-kfFutures.loc['BTC','FutDeltaUSD']*cl.kfGetEstFunding1(kf,'BTC',kfTickers)/365
+  kfOneDayIncome-=kfFutures.loc['ETH','FutDeltaUSD']*cl.kfGetEstFunding1(kf,'ETH',kfTickers)/365
+  kfOneDayAnnRet = kfOneDayIncome * 365 / kfNotional
+  #####
+  kfNAV = kfSpotDeltaBTC * spotBTC + kfSpotDeltaETH * spotETH
+  kfLiqBTC = kfAccounts['fi_xbtusd']['triggerEstimates']['im']
+  kfLiqETH = kfAccounts['fi_ethusd']['triggerEstimates']['im']
+  #####
+  return kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, \
+         kfOneDayIncome, kfOneDayAnnRet, \
+         kfNAV, kfLiqBTC, kfLiqETH
+
+def kfPrintIncomes(oneDayIncome,oneDayAnnRet):
+  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+  print(termcolor.colored(('KF 24h funding income: ').rjust(41) + z1,'blue'))
+
+def kfPrintFunding(kf,kfFutures,ccy):
+  kfTickers=cl.kfGetTickers(kf)
+  estFunding1=cl.kfGetEstFunding1(kf,ccy,kfTickers)
+  estFunding2 = cl.kfGetEstFunding2(kf, ccy, kfTickers)
+  prefix='KF ' + ccy + ' est1/est2 funding rate:'
+  suffix = str(round(estFunding1 * 100)) + '/'+str(round(estFunding2 * 100))+'% p.a. ($' + str(round(kfFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
+  print(prefix.rjust(40) + ' ' + suffix)
+
+####################################################################################################
+
+def krInit(kr, spotBTC):
   def krGetLedgers(kr, spotBTC):
     yest = getYest()
     n = 0
@@ -351,40 +389,45 @@ def krInit(kr,spotBTC):
     ledgers['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in ledgers['time']]
     return ledgers.set_index('date').sort_index()
   #####
-  krSpotDeltaBTC=float(kr.private_post_balance()['result']['XXBT'])
+  krBalance=kr.private_post_balance()['result']
+  krSpotDeltaBTC = float(krBalance['XXBT'])
+  krSpotDeltaETH = float(krBalance['XETH'])
+  #####
   krPositions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
-  if len(krPositions.loc['XXBTZUSD'])!=len(krPositions): # Allow BTC only
+  if 'XXETHUSD' in krPositions.index:
+    print('Cannot handle ETH margined spots in Kraken!')
     sys.exit(1)
-  cl.dfSetFloat(krPositions, ['vol','vol_closed','time'])
+  krPositions=krPositions.loc['XXBTZUSD'] # From this point onwards only handle BTC
+  cl.dfSetFloat(krPositions, ['vol', 'vol_closed', 'time'])
   krPositions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in krPositions['time']]
-  krPositions['vol_net']=krPositions['vol']-krPositions['vol_closed']
+  krPositions['vol_net'] = krPositions['vol']- krPositions['vol_closed']
   krMarginDelta = krPositions['vol_net'].sum()
   krSpotDeltaBTC+=krMarginDelta
   krMarginDeltaUSD = krMarginDelta * spotBTC
   krNotional = krPositions['vol_net'].abs().sum() * spotBTC
   #####
-  krLedgers = krGetLedgers(kr,spotBTC)
+  krLedgers = krGetLedgers(kr, spotBTC)
   krOneDayIncome = -krLedgers['feeUSD'].sum()
   krOneDayAnnRet = krOneDayIncome * 365 / krNotional
-  #####    
+  #####
   krTradeBal = kr.private_post_tradebalance()['result']
-  krNAV=float(krTradeBal['e'])
+  krNAV = float(krTradeBal['e'])
   #####
-  krFreeMargin=float(krTradeBal['mf'])
-  krLiq = 1 - krFreeMargin / (krSpotDeltaBTC*spotBTC)
+  krFreeMargin = float(krTradeBal['mf'])
+  krLiqBTC = 1 - krFreeMargin / (krSpotDeltaBTC * spotBTC)
   #####
-  return krSpotDeltaBTC, krMarginDeltaUSD, \
+  return krSpotDeltaBTC, krSpotDeltaETH, krMarginDeltaUSD, \
          krOneDayIncome, krOneDayAnnRet, \
-         krNAV,krLiq
+         krNAV, krLiqBTC
 
-def krPrintIncomes(oneDayIncome,oneDayAnnRet):
-  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
-  print(termcolor.colored(('KR 24h rollover fees: ').rjust(41) + z1,'blue'))
-  
-def krPrintBorrow(marginDeltaUSD,oneDayAnnRet, nav):
-  z1 = '($' + str(round(-marginDeltaUSD))+')'
-  z2 = '(' + str(round(-marginDeltaUSD/nav*100))+'% of NAV)'
-  print(('KR USD est borrow rate: ').rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. '+ z1+' '+z2)
+def krPrintIncomes(oneDayIncome, oneDayAnnRet):
+  z1 = '$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+  print(termcolor.colored('KR 24h rollover fees: '.rjust(41) + z1, 'blue'))
+
+def krPrintBorrow(marginDeltaUSD, oneDayAnnRet, nav):
+  z1 = '($' + str(round(-marginDeltaUSD)) + ')'
+  z2 = '(' + str(round(-marginDeltaUSD / nav * 100)) + '% of NAV)'
+  print('KR USD est borrow rate: '.rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. ' + z1 + ' ' + z2)
 
 ####################################################################################################
 
@@ -420,9 +463,10 @@ bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
-if IS_VETERAN:
+if IS_ADVANCED:
   bn = cl.bnCCXTInit()
   db = cl.dbCCXTInit()
+  kf = cl.kfInit()
   kr = cl.krCCXTInit()
 
   bnBal, bnPR, bnPayments, \
@@ -433,45 +477,54 @@ if IS_VETERAN:
     db4pmIncome, db4pmAnnRet, \
     dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
-  krSpotDeltaBTC, krMarginDeltaUSD, \
+  kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, \
+    kfOneDayIncome, kfOneDayAnnRet, \
+    kfNAV, kfLiqBTC, kfLiqETH = kfInit(kf,spotBTC,spotETH)
+
+  krSpotDeltaBTC, krSpotDeltaETH, krMarginDeltaUSD, \
     krOneDayIncome, krOneDayAnnRet, \
-    krNAV,krLiq = krInit(kr,spotBTC)
+    krNAV, krLiqBTC = krInit(kr, spotBTC)
 
 #############
 # Aggregation
 #############
 nav=ftxNAV+bbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows+bbOneDayIncome
-if IS_VETERAN:
-  nav+=bnNAV+dbNAV+krNAV
-  oneDayIncome += bnOneDayIncome + db4pmIncome + krOneDayIncome
+if IS_ADVANCED:
+  nav+=bnNAV+dbNAV+kfNAV+krNAV
+  oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + krOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
 spotDeltaBTC+=cbSpotDeltaBTC
-if IS_VETERAN:
+if IS_ADVANCED:
   spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
   spotDeltaBTC+=dbSpotDeltaBTC
+  spotDeltaBTC += kfSpotDeltaBTC
   spotDeltaBTC+=krSpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
-if IS_VETERAN:
+if IS_ADVANCED:
   futDeltaBTC+=bnPR.loc['BTC','FutDelta']
   futDeltaBTC+=dbFutures.loc['BTC','FutDelta']
+  futDeltaBTC+=kfFutures.loc['BTC', 'FutDelta']
 
 spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
 spotDeltaETH+=cbSpotDeltaETH
-if IS_VETERAN:
+if IS_ADVANCED:
   spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
   spotDeltaETH+=dbSpotDeltaETH
+  spotDeltaETH+=kfSpotDeltaETH
+  spotDeltaETH+=krSpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
-if IS_VETERAN:
+if IS_ADVANCED:
   futDeltaETH+=bnPR.loc['ETH','FutDelta']
   futDeltaETH+=dbFutures.loc['ETH','FutDelta']
+  futDeltaETH+=kfFutures.loc['ETH', 'FutDelta']
 
 spotDeltaFTT=ftxWallet.loc['FTT','SpotDelta']
 futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
@@ -482,9 +535,10 @@ futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
 z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
-if IS_VETERAN:
+if IS_ADVANCED:
   z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
   z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
+  z += ' / KF: $' + str(round(kfNAV / 1000)) + 'K'
   z+=' / KR: $' + str(round(krNAV/1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
@@ -495,11 +549,13 @@ ftxPrintFlowsSummary('USDT',ftxOneDayUSDTFlows,ftxOneDayUSDTFlowsAnnRet,ftxPrevU
 ftxPrintBorrowLending(ftx,ftxWallet,nav,'USD')
 ftxPrintBorrowLending(ftx,ftxWallet,nav,'USDT')
 print()
-ftxPrintFlowsSummary('BTC',ftxOneDayBTCFlows,ftxOneDayBTCFlowsAnnRet,ftxPrevBTCFlows*spotBTC,ftxPrevBTCFlowsAnnRet)
-ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHFlows*spotETH,ftxPrevETHFlowsAnnRet)
-ftxPrintCoinLending(ftx,ftxWallet,'BTC')
-ftxPrintCoinLending(ftx,ftxWallet,'ETH')
-print()
+#####
+if IS_SHOW_COIN_LENDING:
+  ftxPrintFlowsSummary('BTC',ftxOneDayBTCFlows,ftxOneDayBTCFlowsAnnRet,ftxPrevBTCFlows*spotBTC,ftxPrevBTCFlowsAnnRet)
+  ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHFlows*spotETH,ftxPrevETHFlowsAnnRet)
+  ftxPrintCoinLending(ftx,ftxWallet,'BTC')
+  ftxPrintCoinLending(ftx,ftxWallet,'ETH')
+  print()
 #####
 printIncomes('FTX',ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet)
 ftxPrintFunding(ftx,ftxPositions,ftxPayments,'BTC')
@@ -517,7 +573,7 @@ bbPrintFunding(bb,bbPL,bbPayments,'ETH')
 printLiq('BB',bbLiqBTC,bbLiqETH)
 print()
 #####
-if IS_VETERAN:
+if IS_ADVANCED:
   printIncomes('BN',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
   bnPrintFunding(bn,bnPR,'BTC')
   bnPrintFunding(bn,bnPR,'ETH')
@@ -530,11 +586,18 @@ if IS_VETERAN:
   printLiq('DB',dbLiqBTC,dbLiqETH)
   print()
   #####
-  z = 'never' if (krLiq <=0 or krLiq > 10) else str(round(krLiq * 100)) + '%'
+  kfPrintIncomes(kfOneDayIncome,kfOneDayAnnRet)
+  kfPrintFunding(kf, kfFutures, 'BTC')
+  kfPrintFunding(kf, kfFutures, 'ETH')
+  printLiq('KF', kfLiqBTC, kfLiqETH)
+  print()
+  #####
   krPrintIncomes(krOneDayIncome,krOneDayAnnRet)
   krPrintBorrow(krMarginDeltaUSD,krOneDayAnnRet,nav)
-  print(termcolor.colored('KR liquidation (parallel shock): '.rjust(41) + z + ' (of spot)', 'red'))
+  z = 'never' if (krLiqBTC <= 0 or krLiqBTC > 10) else str(round(krLiqBTC * 100)) + '%'
+  print(termcolor.colored('KR liquidation (BTC): '.rjust(41) + z + ' (of spot)', 'red'))
   print()
+  #####
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
