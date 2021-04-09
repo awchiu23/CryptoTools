@@ -35,7 +35,7 @@ cl.printHeader('KrakenTrader')
 print('Note that this tool only handles BTC ....')
 
 for n in range(nPrograms):
-  cl.printHeader('KrakenTrader Program '+str(n+1))
+  cl.printHeader('Program '+str(n+1))
   fill=cl.krRelOrder(side,kr,'BTC',trade_btc,maxChases=888)
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
