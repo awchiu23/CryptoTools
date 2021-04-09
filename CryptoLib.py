@@ -743,21 +743,13 @@ def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
   return edge
 
 #@retry(wait_fixed=1000)
-def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
+def kfGetOneDayShortFutEdge(fundingDict, ccy, basis):
   if not hasattr(kfGetOneDayShortFutEdge,'emaBTC'):
     kfGetOneDayShortFutEdge.emaBTC = fundingDict['kfEstFunding2BTC']
   if not hasattr(kfGetOneDayShortFutEdge, 'emaETH'):
     kfGetOneDayShortFutEdge.emaETH = fundingDict['kfEstFunding2ETH']
-  symbol=kfCcyToSymbol(ccy)
-  if ccy=='BTC':
-    indexSymbol='in_xbtusd'
-  elif ccy=='ETH':
-    indexSymbol='in_ethusd'
-  else:
-    sys.exit(1)
-  mid=(kfTickers.loc[symbol,'bid']+kfTickers.loc[symbol,'ask'])/2
-  premIndexClipped=np.clip(mid/kfTickers.loc[indexSymbol,'last']-1,-0.008,0.008)
-  snapFundingRate=premIndexClipped*365*3
+  snapFundingRate = fundingDict['kfEstFunding2'+ccy]
+  estFundingRate = (fundingDict['kfEstFunding1'+ccy]+fundingDict['kfEstFunding2'+ccy])/2
   k=2/(60 * 15 / CT_SLEEP + 1)
   if ccy=='BTC':
     kfGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + kfGetOneDayShortFutEdge.emaBTC * (1 - k)
@@ -767,7 +759,7 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
     smoothedSnapFundingRate = kfGetOneDayShortFutEdge.emaETH
   else:
     sys.exit(1)
-  return getOneDayShortFutEdge(6,basis,smoothedSnapFundingRate,fundingDict['kfEstFunding2'+ccy],prevFundingRate=fundingDict['kfEstFunding1'+ccy],isKF=True)
+  return getOneDayShortFutEdge(4,basis,smoothedSnapFundingRate,estFundingRate,prevFundingRate=fundingDict['kfEstFunding1'+ccy],isKF=True)
 
 #############################################################################################
 
@@ -856,8 +848,8 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   kfTickers=kfGetTickers(kf)
   d['kfBTCBasis']=(kfTickers.loc['pi_xbtusd','bid']+kfTickers.loc['pi_xbtusd','ask'])/2/spotBTC - 1
   d['kfETHBasis'] = (kfTickers.loc['pi_ethusd', 'bid'] + kfTickers.loc['pi_ethusd', 'ask']) / 2 / spotETH - 1
-  d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
-  d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
+  d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
+  d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
   return d
 
 #############################################################################################
