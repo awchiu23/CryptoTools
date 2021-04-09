@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import termcolor
 import sys
+import time
 
 ########
 # Params
@@ -373,11 +374,18 @@ def kfPrintFunding(kf,kfFutures,ccy):
 ####################################################################################################
 
 def krInit(kr, spotBTC):
-  def krGetLedgers(kr, spotBTC):
+  def getLedgersRaw(kr,start,ofs):
+    while True:
+      try:
+        return pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': start, 'ofs': ofs})['result']['ledger'])
+      except:
+        print('Cooling off for Kraken API ....')
+        time.sleep(10)
+  def getBTCLedgers(kr, spotBTC):
     yest = getYest()
     n = 0
     while True:
-      df = pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': yest, 'ofs': n})['result']['ledger']).transpose()
+      df = getLedgersRaw(kr,yest,n).transpose()
       if len(df) == 0:
         break
       if n == 0:
@@ -410,7 +418,7 @@ def krInit(kr, spotBTC):
   if IS_FAST:
     krOneDayIncome=-krMarginDeltaUSD*0.0001*6
   else:
-    krLedgers = krGetLedgers(kr, spotBTC)
+    krLedgers = getBTCLedgers(kr, spotBTC)
     krOneDayIncome = -krLedgers['feeUSD'].sum()
   krOneDayAnnRet = krOneDayIncome * 365 / krNotional
   #####
