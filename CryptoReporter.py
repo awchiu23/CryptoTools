@@ -350,8 +350,8 @@ def kfInit(kf,spotBTC,spotETH):
   kfOneDayAnnRet = kfOneDayIncome * 365 / kfNotional
   #####
   kfNAV = kfSpotDeltaBTC * spotBTC + kfSpotDeltaETH * spotETH
-  kfLiqBTC = kfAccounts['fi_xbtusd']['triggerEstimates']['im']
-  kfLiqETH = kfAccounts['fi_ethusd']['triggerEstimates']['im']
+  kfLiqBTC = kfAccounts['fi_xbtusd']['triggerEstimates']['im']/spotBTC
+  kfLiqETH = kfAccounts['fi_ethusd']['triggerEstimates']['im']/spotETH
   #####
   return kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, \
          kfOneDayIncome, kfOneDayAnnRet, \
