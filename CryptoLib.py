@@ -992,18 +992,18 @@ def ctRun(ccy):
         speak('Go')
         completedLegs = 0
         isCancelled=False
-        if 'kf' in chosenLong and not isCancelled:
-          longFill = kfRelOrder('BUY', kf, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
-          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
-        if 'kf' in chosenShort and not isCancelled:
-          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
-          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' in chosenLong and not isCancelled:
           longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bb' in chosenShort and not isCancelled:
           shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
+        if 'kf' in chosenLong and not isCancelled:
+          longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'kf' in chosenShort and not isCancelled:
+          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'db' in chosenLong and not isCancelled:
           longFill = dbRelOrder('BUY', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
