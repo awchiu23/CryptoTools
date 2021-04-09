@@ -501,7 +501,11 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
     if len(l)==0:
       return None
     else:
-      return pd.DataFrame(l).set_index('order_id').loc[orderId]
+      df= pd.DataFrame(l).set_index('order_id')
+      if orderId in df.index:
+        return df.loc[orderId]
+      else:
+        return None
   # Do not use @retry
   def kfGetFillPrice(kf, orderId):
     df=pd.DataFrame(kf.query('fills')['fills']).set_index('order_id').loc[orderId]
