@@ -21,19 +21,19 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 	- Bybit
 	- Binance
 	- Deribit
+    - Kraken Futures
 	- Kraken
 	- Coinbase
-- For this tool to work without modification, you will need to set up accounts in all of the above and have the following prepared:
-	- For all accounts except Kraken and Coinbase: positions in BTC and ETH perps
-	- For Kraken main: a position in BTC spot and a position in BTC margined spot
-    - For Kraken futures: positions in BTC and ETH perps 
-	- For FTX: positions in BTC, ETH and FTT spots; a position in FTT perp
-	- For all accounts: APIs set up
-	- Time for at least one funding payment to have been paid
+- For this tool to work without modification, you will need to prepare all of the following:
+    - FTX: BTC/ETH/FTT spots; BTC/ETH/FTT perps
+    - Bybit: BTC/ETH collaterals and inverse perps
+    - Binance: BTC/ETH collaterals and Coin-M perps
+    - Deribit: BTC/ETH collaterals and inverse perps
+    - Kraken Futures: BTC/ETH collaterals and inverse perps
+    - Kraken: BTC spot and BTC margined spot
+	- Coinbase: empty is ok
+	- For all accounts you will also need to set up APIs
 - For a simplified version, there is an **IS_ADVANCED** flag that you can set to False.  Once set, the universe becomes FTX, Bybit and Coinbase only.
-
-## CryptoStats
-- This tool provides some historical stats sourced through APIs
 
 ## CryptoTrader
 - Automated trading of spot and futures
@@ -45,6 +45,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
+- Work hedge off other exchanges
 
 ## apophis.py
 - Required library for accessing Kraken futures
