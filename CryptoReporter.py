@@ -366,7 +366,7 @@ def kfPrintFunding(kf,kfFutures,ccy):
   estFunding1=cl.kfGetEstFunding1(kf,ccy,kfTickers)
   estFunding2 = cl.kfGetEstFunding2(kf, ccy, kfTickers)
   prefix='KF ' + ccy + ' est1/est2 funding rate:'
-  suffix = str(round(estFunding1 * 100)) + '/'+str(round(estFunding2 * 100))+'% p.a. ($' + str(round(kfFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
+  suffix = str(round(estFunding1 * 100)) + '%/'+str(round(estFunding2 * 100))+'% p.a. ($' + str(round(kfFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
   print(prefix.rjust(40) + ' ' + suffix)
 
 ####################################################################################################

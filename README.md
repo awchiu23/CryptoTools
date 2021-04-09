@@ -45,3 +45,6 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
+
+## apophis.py
+- Required library for accessing Kraken futures
