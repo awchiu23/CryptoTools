@@ -7,7 +7,7 @@ import sys
 ########
 side='BUY'          # 'BUY', 'SELL'
 targetUSD=3000
-hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'kf', 'none'
+hedgeExchange='bb'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 nPrograms=30
 
 ######
@@ -21,6 +21,7 @@ else:
   sys.exit(1)
 ftx = cl.ftxCCXTInit()
 bb = cl.bbCCXTInit()
+bn = cl.bnCCXTInit()
 kf=cl.kfInit()
 kr=cl.krCCXTInit()
 ftxWallet=cl.ftxGetWallet(ftx)
@@ -41,6 +42,8 @@ for n in range(nPrograms):
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
   elif hedgeExchange=='bb':
     fill=cl.bbRelOrder(oppSide, bb, 'BTC', trade_btc_notional, maxChases=888)
+  elif hedgeExchange=='bn':
+    fill=cl.bnRelOrder(oppSide, bn, 'BTC', trade_btc_notional, maxChases=888)
   elif hedgeExchange=='kf':
     fill=cl.kfRelOrder(oppSide, kf, 'BTC', trade_btc_notional, maxChases=888)
 

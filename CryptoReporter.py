@@ -7,8 +7,9 @@ import sys
 ########
 # Params
 ########
-IS_ADVANCED = True              # Set to False to use only FTX, BB and CB
-IS_SHOW_COIN_LENDING = False    # Set to True to see lendings in coins
+IS_ADVANCED = True              # Set False to use only FTX, BB and CB
+IS_SHOW_COIN_LENDING = False    # Set True to see lendings in coins
+IS_FAST = True                  # Set True to use shortcuts to speed up calc times
 
 ###########
 # Functions
@@ -406,8 +407,11 @@ def krInit(kr, spotBTC):
   krMarginDeltaUSD = krMarginDelta * spotBTC
   krNotional = krPositions['vol_net'].abs().sum() * spotBTC
   #####
-  krLedgers = krGetLedgers(kr, spotBTC)
-  krOneDayIncome = -krLedgers['feeUSD'].sum()
+  if IS_FAST:
+    krOneDayIncome=-krMarginDeltaUSD*0.0001*6
+  else:
+    krLedgers = krGetLedgers(kr, spotBTC)
+    krOneDayIncome = -krLedgers['feeUSD'].sum()
   krOneDayAnnRet = krOneDayIncome * 365 / krNotional
   #####
   krTradeBal = kr.private_post_tradebalance()['result']
