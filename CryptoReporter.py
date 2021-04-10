@@ -436,14 +436,14 @@ def krPrintIncomes(oneDayIncome, oneDayAnnRet, oneDayIncome2=None, oneDayAnnRet2
     z += ' / $' + str(round(oneDayIncome2)) + ' (' + str(round(oneDayAnnRet2 * 100)) + '% p.a.)'
   print(termcolor.colored((prefix+' 24h rollover fees: ').rjust(41) + z, 'blue'))
 
-def krPrintBorrow(marginDeltaUSD, nav):
+def krPrintBorrow(marginDeltaUSD, nav, prefix='KR'):
   z1 = '($' + str(round(-marginDeltaUSD)) + ')'
   z2 = '(' + str(round(-marginDeltaUSD / nav * 100)) + '% of NAV)'
-  print('KR USD/USDT est borrow rate: '.rjust(41) + '22% p.a. ' + z1 + ' ' + z2)
+  print((prefix+' USD/USDT est borrow rate: ').rjust(41) + '22% p.a. ' + z1 + ' ' + z2)
 
-def krPrintLiq(liqBTC):
+def krPrintLiq(liqBTC,prefix='KR'):
   z = 'never' if (liqBTC <= 0 or liqBTC > 10) else str(round(liqBTC * 100)) + '%'
-  print(termcolor.colored('KR liquidation (BTC): '.rjust(41) + z + ' (of spot)', 'red'))
+  print(termcolor.colored((prefix+' liquidation (BTC): ').rjust(41) + z + ' (of spot)', 'red'))
 
 ####################################################################################################
 
@@ -626,9 +626,9 @@ if CR_IS_ADVANCED:
   if CR_IS_SECOND_KRAKEN_ACCOUNT:
     krPrintIncomes(krOneDayIncome, krOneDayAnnRet,kr2OneDayIncome,kr2OneDayAnnRet)
     krPrintBorrow(krMarginDeltaUSD, nav)
-    krPrintBorrow(kr2MarginDeltaUSD, nav)
+    krPrintBorrow(kr2MarginDeltaUSD, nav,'KR2')
     krPrintLiq(krLiqBTC)
-    krPrintLiq(kr2LiqBTC)
+    krPrintLiq(kr2LiqBTC,'KR2')
   else:
     krPrintIncomes(krOneDayIncome, krOneDayAnnRet)
     krPrintBorrow(krMarginDeltaUSD, nav)
