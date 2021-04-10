@@ -433,7 +433,7 @@ def krPrintIncomes(oneDayIncome, oneDayAnnRet):
 def krPrintBorrow(marginDeltaUSD, oneDayAnnRet, nav):
   z1 = '($' + str(round(-marginDeltaUSD)) + ')'
   z2 = '(' + str(round(-marginDeltaUSD / nav * 100)) + '% of NAV)'
-  print('KR USD est borrow rate: '.rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. ' + z1 + ' ' + z2)
+  print('KR USD/USDT est borrow rate: '.rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. ' + z1 + ' ' + z2)
 
 ####################################################################################################
 
