@@ -34,6 +34,9 @@ def kfInit():
 def krCCXTInit():
   return ccxt.kraken({'apiKey': API_KEY_KR, 'secret': API_SECRET_KR, 'enableRateLimit': False})
 
+def kr2CCXTInit():
+  return ccxt.kraken({'apiKey': API_KEY_KR2, 'secret': API_SECRET_KR2, 'enableRateLimit': False})
+
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
 
@@ -470,75 +473,6 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
     if fill!=0:
       break
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
-
-#############################################################################################
-
-def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
-  @retry(wait_fixed=1000)
-  def krGetBid(kr, pair):
-    return float(kr.public_get_ticker({'pair': pair})['result'][pair]['b'][0])
-  @retry(wait_fixed=1000)
-  def krGetAsk(kr, pair):
-    return float(kr.public_get_ticker({'pair': pair})['result'][pair]['a'][0])
-  # Do not use @retry!
-  def krPlaceOrder(kr, pair, side, qty, limitPrice, lev):
-    return kr.private_post_addorder({'pair': pair, 'type': side.lower(), 'ordertype': 'limit', 'price': limitPrice, 'volume': qty, 'leverage': 5})['result']['txid'][0]
-  # Do not use @retry!
-  def krCancelOrder(kr, orderId):
-    try:
-      kr.private_post_cancelorder({'txid': orderId})
-    except:
-      pass
-  @retry(wait_fixed=1000)
-  def krGetOrderStatus(kr, orderId):
-    return kr.private_post_queryorders({'txid': orderId})['result'][orderId]
-  #####
-  if pair!='XXBTZUSD':
-    print('Invalid Kraken pair detected!')
-    sys.exit(1)
-  #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
-  qty = round(trade_qty, 3)
-  print(getCurrentTime()+': Sending KR '+side+' order of '+pair+' (qty='+str(round(qty,6))+') ....')
-  if side == 'BUY':
-    limitPrice = krGetBid(kr, pair)
-    z='Bidding'
-  else:
-    limitPrice = krGetAsk(kr, pair)
-    z='Offering'
-  print(getCurrentTime() + ': ' + z + ' at ' + str(limitPrice) + ' (qty='+str(round(qty,6))+') ....')
-  orderId=krPlaceOrder(kr, pair, side, qty, limitPrice)
-  nChases=0
-  while True:
-    orderStatus=krGetOrderStatus(kr,orderId)
-    if orderStatus['status'] == 'closed':
-      break
-    if side=='BUY':
-      newPrice=krGetBid(kr,pair)
-    else:
-      newPrice=krGetAsk(kr,pair)
-    if newPrice != limitPrice:
-      limitPrice=newPrice
-      nChases+=1
-      krCancelOrder(kr, orderId)
-      orderStatus = krGetOrderStatus(kr, orderId)
-      leavesQty=float(orderStatus['vol'])-float(orderStatus['vol_exec'])
-      if nChases>maxChases and leavesQty==qty:
-        print(getCurrentTime() + ': Cancelled')
-        return 0
-      elif leavesQty==0:
-        break
-      else:
-        if side == 'BUY':
-          z = 'Bidding' if side=='BUY' else 'Offering'
-          print(getCurrentTime() + ': '+z+' at ' + str(limitPrice) + ' (qty='+str(round(leavesQty,6))+') ....')
-        orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice)
-    time.sleep(1)
-  orderStatus=krGetOrderStatus(kr,orderId)
-  fill=float(orderStatus['price'])
-  print(getCurrentTime() + ': Filled at '+str(round(fill,6)))
   return fill
 
 #############################################################################################

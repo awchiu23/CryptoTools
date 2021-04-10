@@ -395,7 +395,10 @@ def krInit(kr, spotBTC):
   #####
   krBalance=kr.private_post_balance()['result']
   krSpotDeltaBTC = float(krBalance['XXBT'])
-  krSpotDeltaETH = float(krBalance['XETH'])
+  try:
+    krSpotDeltaETH = float(krBalance['XETH'])
+  except:
+    krSpotDeltaETH = 0
   #####
   krPositions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
   if not all([z == 'XXBTZUSD' for z in krPositions.index]):
@@ -429,10 +432,14 @@ def krPrintIncomes(oneDayIncome, oneDayAnnRet):
   z1 = '$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
   print(termcolor.colored('KR 24h rollover fees: '.rjust(41) + z1, 'blue'))
 
-def krPrintBorrow(marginDeltaUSD, oneDayAnnRet, nav):
+def krPrintBorrow(marginDeltaUSD, nav):
   z1 = '($' + str(round(-marginDeltaUSD)) + ')'
   z2 = '(' + str(round(-marginDeltaUSD / nav * 100)) + '% of NAV)'
-  print('KR USD/USDT est borrow rate: '.rjust(41) + str(round(-oneDayAnnRet * 100)) + '% p.a. ' + z1 + ' ' + z2)
+  print('KR USD/USDT est borrow rate: '.rjust(41) + '22% p.a. ' + z1 + ' ' + z2)
+
+def krPrintLiq(liqBTC):
+  z = 'never' if (liqBTC <= 0 or liqBTC > 10) else str(round(liqBTC * 100)) + '%'
+  print(termcolor.colored('KR liquidation (BTC): '.rjust(41) + z + ' (of spot)', 'red'))
 
 ####################################################################################################
 
@@ -473,6 +480,8 @@ if CR_IS_ADVANCED:
   db = cl.dbCCXTInit()
   kf = cl.kfInit()
   kr = cl.krCCXTInit()
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    kr2 = cl.kr2CCXTInit()
 
   bnBal, bnPR, bnPayments, \
     bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
@@ -490,6 +499,11 @@ if CR_IS_ADVANCED:
     krOneDayIncome, krOneDayAnnRet, \
     krNAV, krLiqBTC = krInit(kr, spotBTC)
 
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    kr2SpotDeltaBTC, kr2SpotDeltaETH, kr2MarginDeltaUSD, \
+      kr2OneDayIncome, kr2OneDayAnnRet, \
+      kr2NAV, kr2LiqBTC = krInit(kr2, spotBTC)
+
 #############
 # Aggregation
 #############
@@ -498,6 +512,8 @@ oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFl
 if CR_IS_ADVANCED:
   nav+=bnNAV+dbNAV+kfNAV+krNAV
   oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + krOneDayIncome
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    nav+=kr2NAV
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
@@ -507,6 +523,8 @@ if CR_IS_ADVANCED:
   spotDeltaBTC+=dbSpotDeltaBTC
   spotDeltaBTC += kfSpotDeltaBTC
   spotDeltaBTC+=krSpotDeltaBTC
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    spotDeltaBTC+=kr2SpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
@@ -523,6 +541,8 @@ if CR_IS_ADVANCED:
   spotDeltaETH+=dbSpotDeltaETH
   spotDeltaETH+=kfSpotDeltaETH
   spotDeltaETH+=krSpotDeltaETH
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    spotDeltaETH += kr2SpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
@@ -545,6 +565,8 @@ if CR_IS_ADVANCED:
   z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
   z += ' / KF: $' + str(round(kfNAV / 1000)) + 'K'
   z+=' / KR: $' + str(round(krNAV/1000)) + 'K'
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    z += ' / KR2: $' + str(round(kr2NAV / 1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
@@ -598,11 +620,15 @@ if CR_IS_ADVANCED:
   print()
   #####
   krPrintIncomes(krOneDayIncome,krOneDayAnnRet)
-  krPrintBorrow(krMarginDeltaUSD,krOneDayAnnRet,nav)
-  z = 'never' if (krLiqBTC <= 0 or krLiqBTC > 10) else str(round(krLiqBTC * 100)) + '%'
-  print(termcolor.colored('KR liquidation (BTC): '.rjust(41) + z + ' (of spot)', 'red'))
+  krPrintBorrow(krMarginDeltaUSD,nav)
+  krPrintLiq(krLiqBTC)
   print()
   #####
+  if CR_IS_SECOND_KRAKEN_ACCOUNT:
+    krPrintIncomes(kr2OneDayIncome, kr2OneDayAnnRet)
+    krPrintBorrow(kr2MarginDeltaUSD, nav)
+    krPrintLiq(kr2LiqBTC)
+    print()
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)

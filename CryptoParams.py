@@ -19,6 +19,8 @@ API_KEY_KF = ''
 API_SECRET_KF = ''
 API_KEY_KR = ''
 API_SECRET_KR = ''
+API_KEY_KR2 = ''
+API_SECRET_KR2 = ''
 API_KEY_CB = ''
 API_SECRET_CB = ''
 
@@ -36,16 +38,16 @@ CT_CONFIGS_DICT['ETH_TGT_BPS']=CT_DEFAULT_TGT_BPS
 CT_CONFIGS_DICT['SPOT_BTC_OK']=0
 CT_CONFIGS_DICT['FTX_BTC_OK']=0
 CT_CONFIGS_DICT['BB_BTC_OK']=0
-CT_CONFIGS_DICT['BN_BTC_OK']=0
-CT_CONFIGS_DICT['DB_BTC_OK']=0
+CT_CONFIGS_DICT['BN_BTC_OK']=1
+CT_CONFIGS_DICT['DB_BTC_OK']=1
 CT_CONFIGS_DICT['KF_BTC_OK']=1
 
-CT_CONFIGS_DICT['SPOT_ETH_OK']=1
-CT_CONFIGS_DICT['FTX_ETH_OK']=1
+CT_CONFIGS_DICT['SPOT_ETH_OK']=0
+CT_CONFIGS_DICT['FTX_ETH_OK']=0
 CT_CONFIGS_DICT['BB_ETH_OK']=0
-CT_CONFIGS_DICT['BN_ETH_OK']=0
-CT_CONFIGS_DICT['DB_ETH_OK']=0
-CT_CONFIGS_DICT['KF_ETH_OK']=0
+CT_CONFIGS_DICT['BN_ETH_OK']=1
+CT_CONFIGS_DICT['DB_ETH_OK']=1
+CT_CONFIGS_DICT['KF_ETH_OK']=1
 
 # Positive = eager to buy
 # Negative = eager to sell
@@ -94,9 +96,10 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 #################
 # Crypto Reporter
 #################
-CR_IS_ADVANCED = True              # Set False to use only FTX, BB and CB
-CR_IS_SHOW_COIN_LENDING = False    # Set True to see lendings in coins
-CR_IS_FAST = True                  # Set True to use shortcuts to speed up calc times
+CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
+CR_IS_FAST = True                    # Set True to use shortcuts to speed up calc times
+CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
+CR_IS_SECOND_KRAKEN_ACCOUNT = True   # Set False to use only one Kraken account
 
 #############################################################################################
 
