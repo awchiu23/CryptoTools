@@ -36,8 +36,8 @@ CT_CONFIGS_DICT['ETH_TGT_BPS']=CT_DEFAULT_TGT_BPS
 CT_CONFIGS_DICT['SPOT_BTC_OK']=0
 CT_CONFIGS_DICT['FTX_BTC_OK']=0
 CT_CONFIGS_DICT['BB_BTC_OK']=0
-CT_CONFIGS_DICT['BN_BTC_OK']=1
-CT_CONFIGS_DICT['DB_BTC_OK']=1
+CT_CONFIGS_DICT['BN_BTC_OK']=0
+CT_CONFIGS_DICT['DB_BTC_OK']=0
 CT_CONFIGS_DICT['KF_BTC_OK']=1
 
 CT_CONFIGS_DICT['SPOT_ETH_OK']=1
@@ -56,14 +56,14 @@ CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
 
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-10
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
-CT_IS_HIGH_SPOT_RATE_PAUSE = False    # Trading paused when spot rates >= 100%?
+CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of observations
 CT_SLEEP = 3                         # Delay in seconds between observations

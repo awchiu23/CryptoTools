@@ -388,7 +388,8 @@ def krInit(kr, spotBTC):
         ledgers = ledgers.append(df)
       n += 50
     cl.dfSetFloat(ledgers, ['time', 'fee'])
-    ledgers['feeUSD'] = ledgers['fee'] * spotBTC
+    ledgers['feeUSD'] = ledgers['fee']
+    ledgers.loc[ledgers['asset']=='XXBT','feeUSD']*=spotBTC
     ledgers['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in ledgers['time']]
     return ledgers.set_index('date').sort_index()
   #####

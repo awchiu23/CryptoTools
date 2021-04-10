@@ -855,11 +855,10 @@ def ctRun(ccy):
         for c in ['BTC','ETH']:
           smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
 
-      # Check whether paused on high spot rate
+      # Remove spots on high spot rate
       if CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1:
-        print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('******** Paused on high spot rates *********'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
-        time.sleep(CT_SLEEP)
-        continue # to next iteration in While True loop
+        for key in filterDict(smartBasisDict, 'spot'):
+          del smartBasisDict[key]
 
       if chosenLong=='':
         d=filterDict(smartBasisDict,'SmartBasis')
@@ -869,6 +868,11 @@ def ctRun(ccy):
         smartBasisBps=(d[keyMax]-d[keyMin])*10000
         chosenLong = keyMin[:len(keyMin) - 13]
         chosenShort = keyMax[:len(keyMax) - 13]
+        if chosenLong==chosenShort:
+          print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+          chosenLong=''
+          time.sleep(CT_SLEEP)
+          continue  # to next iteration in While True loop
         if smartBasisBps<tgtBps:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
