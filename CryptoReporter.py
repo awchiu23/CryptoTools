@@ -397,9 +397,8 @@ def krInit(kr, spotBTC):
   krSpotDeltaBTC = float(krBalance['XXBT'])
   krSpotDeltaETH = float(krBalance['XETH'])
   #####
-  validPairs=['XXBTZUSD','XBTUSDT']
   krPositions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
-  if not all([z in validPairs for z in krPositions.index]):
+  if not all([z == 'XXBTZUSD' for z in krPositions.index]):
     print('Invalid Kraken pair detected!')
     sys.exit(1)
   cl.dfSetFloat(krPositions, ['vol', 'vol_closed', 'time'])

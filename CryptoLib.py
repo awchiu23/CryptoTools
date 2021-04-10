@@ -495,7 +495,7 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
     return kr.private_post_queryorders({'txid': orderId})['result'][orderId]
   #####
   if pair!='XXBTZUSD':
-    print('krRelOrder can only handle XXBTZUSD at the moment!')
+    print('Invalid Kraken pair detected!')
     sys.exit(1)
   #####
   if side != 'BUY' and side != 'SELL':
