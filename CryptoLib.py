@@ -59,7 +59,7 @@ CT_CONFIGS_DICT['BTC_TGT_BPS']=CT_DEFAULT_TGT_BPS
 CT_CONFIGS_DICT['ETH_TGT_BPS']=CT_DEFAULT_TGT_BPS
 
 # 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_BTC_OK']=0
+CT_CONFIGS_DICT['SPOT_BTC_OK']=1
 CT_CONFIGS_DICT['SPOT_ETH_OK']=1
 CT_CONFIGS_DICT['FTX_BTC_OK']=1
 CT_CONFIGS_DICT['FTX_ETH_OK']=1
@@ -77,10 +77,10 @@ CT_CONFIGS_DICT['KF_ETH_OK']=1
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-5
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-5
+CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-5
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
@@ -742,8 +742,7 @@ def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
   edge += getOneDayDecayedMean(fundingDict['dbEstFunding' + ccy], BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING) / 365 # funding
   return edge
 
-
-# @retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   if not hasattr(kfGetOneDayShortFutEdge, 'emaBTC'):
     kfGetOneDayShortFutEdge.emaBTC = fundingDict['kfEstFunding2BTC']
