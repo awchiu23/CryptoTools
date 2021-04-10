@@ -45,7 +45,7 @@ while True:
   print(getCurrentTimeCondensed().ljust(10),end='')
   avgCoinRate=(fundingDict['ftxEstLendingBTC']+fundingDict['ftxEstLendingETH'])/2
   print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '/'+ \
-         str(round(avgCoinRate * 100))).ljust(12),'red'),end='')
+    str(round(avgCoinRate * 100))).ljust(12),'red'),end='')
   process('FTX_BTC', smartBasisDict, 'blue', fundingDict['ftxEstFundingBTC'])
   process('BB_BTC', smartBasisDict, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
   process('BN_BTC', smartBasisDict, 'blue', fundingDict['bnEstFundingBTC'])

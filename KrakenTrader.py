@@ -7,9 +7,9 @@ import os
 # Params
 ########
 nPrograms=30
-side='BUY'          # 'BUY', 'SELL'
+side='BUY'
 targetUSD=3000
-hedgeExchange='bb'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ######
 # Init

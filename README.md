@@ -1,10 +1,17 @@
 # CryptoTools
 I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
+---
+
 ## CryptoLib
 - Library for all other tools
-- Replace the defaults with your own API keys
-- Set parameters for CryptoTrader
+
+## CryptoParams
+- Params for all other tools (e.g., API infos)
+
+## apophis.py
+- Library for accessing Kraken futures
+---
 
 ## CryptoAlerter
 - This tool is for monitoring smart basis (as well as raw basis) of various futures
@@ -46,6 +53,3 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
 - Work hedge off other exchanges
-
-## apophis.py
-- Required library for accessing Kraken futures
