@@ -9,8 +9,7 @@ import os
 nPrograms=10
 side='BUY'
 targetUSD=3000
-pair='XBTUSDT'           # 'XXBTZUSD', 'XBTUSDT'; don't use other instruments here
-hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='none'     # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ######
 # Init
@@ -48,7 +47,7 @@ cl.printHeader('KrakenTrader')
 
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
-  fill=cl.krRelOrder(side,kr,pair,trade_btc,maxChases=888)
+  fill=cl.krRelOrder(side,kr,'XX',trade_btc,maxChases=888)
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
   elif hedgeExchange=='bb':
