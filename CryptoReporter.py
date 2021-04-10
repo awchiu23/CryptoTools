@@ -428,9 +428,13 @@ def krInit(kr, spotBTC):
          krOneDayIncome, krOneDayAnnRet, \
          krNAV, krLiqBTC
 
-def krPrintIncomes(oneDayIncome, oneDayAnnRet):
-  z1 = '$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
-  print(termcolor.colored('KR 24h rollover fees: '.rjust(41) + z1, 'blue'))
+def krPrintIncomes(oneDayIncome, oneDayAnnRet, oneDayIncome2=None, oneDayAnnRet2=None):
+  prefix='KR'
+  z = '$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
+  if not oneDayIncome2 is None:
+    prefix+='/KR2'
+    z += ' / $' + str(round(oneDayIncome2)) + ' (' + str(round(oneDayAnnRet2 * 100)) + '% p.a.)'
+  print(termcolor.colored((prefix+' 24h rollover fees: ').rjust(41) + z, 'blue'))
 
 def krPrintBorrow(marginDeltaUSD, nav):
   z1 = '($' + str(round(-marginDeltaUSD)) + ')'
@@ -619,16 +623,17 @@ if CR_IS_ADVANCED:
   printLiq('KF', kfLiqBTC, kfLiqETH)
   print()
   #####
-  krPrintIncomes(krOneDayIncome,krOneDayAnnRet)
-  krPrintBorrow(krMarginDeltaUSD,nav)
-  krPrintLiq(krLiqBTC)
-  print()
-  #####
   if CR_IS_SECOND_KRAKEN_ACCOUNT:
-    krPrintIncomes(kr2OneDayIncome, kr2OneDayAnnRet)
+    krPrintIncomes(krOneDayIncome, krOneDayAnnRet,kr2OneDayIncome,kr2OneDayAnnRet)
+    krPrintBorrow(krMarginDeltaUSD, nav)
     krPrintBorrow(kr2MarginDeltaUSD, nav)
+    krPrintLiq(krLiqBTC)
     krPrintLiq(kr2LiqBTC)
-    print()
+  else:
+    krPrintIncomes(krOneDayIncome, krOneDayAnnRet)
+    krPrintBorrow(krMarginDeltaUSD, nav)
+    krPrintLiq(krLiqBTC)
+  print()
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
