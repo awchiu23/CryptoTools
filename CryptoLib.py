@@ -524,7 +524,7 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
       newPrice=round(krGetBid(kr,pair)+0.1,1)
     else:
       newPrice=round(krGetAsk(kr,pair)-0.1,1)
-    if abs(newPrice - limitPrice)>0.1:
+    if newPrice != limitPrice:
       limitPrice=newPrice
       nChases+=1
       krCancelOrder(kr, orderId)
