@@ -25,9 +25,8 @@ bb = cl.bbCCXTInit()
 bn = cl.bnCCXTInit()
 kf=cl.kfInit()
 if os.environ.get('USERNAME')=='Simon':
-  import SimonLib as sl
   import ccxt
-  kr=ccxt.kraken({'apiKey': sl.jLoad('API_KEY_KR2'), 'secret': sl.jLoad('API_SECRET_KR2'), 'enableRateLimit': False})
+  kr=ccxt.kraken({'apiKey': cl.API_KEY_KR2, 'secret': cl.API_SECRET_KR2, 'enableRateLimit': False})
 else:
   kr=cl.krCCXTInit()
 ftxWallet=cl.ftxGetWallet(ftx)

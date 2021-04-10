@@ -1,6 +1,7 @@
 ################
 # Crypto Library
 ################
+from CryptoParams import *
 import pandas as pd
 import numpy as np
 import datetime
@@ -11,7 +12,6 @@ import termcolor
 import ccxt
 import apophis
 from retrying import retry
-from CryptoParams import *
 
 ###########
 # Functions

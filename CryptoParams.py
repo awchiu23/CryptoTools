@@ -89,6 +89,15 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 
 #############################################################################################
 
+#################
+# Crypto Reporter
+#################
+CR_IS_ADVANCED = True              # Set False to use only FTX, BB and CB
+CR_IS_SHOW_COIN_LENDING = False    # Set True to see lendings in coins
+CR_IS_FAST = True                  # Set True to use shortcuts to speed up calc times
+
+#############################################################################################
+
 ####################################
 # Simon's section -- can leave alone
 ####################################

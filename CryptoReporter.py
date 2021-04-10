@@ -1,16 +1,10 @@
+from CryptoParams import *
 import CryptoLib as cl
 import pandas as pd
 import datetime
 import termcolor
 import sys
 import time
-
-########
-# Params
-########
-IS_ADVANCED = True              # Set False to use only FTX, BB and CB
-IS_SHOW_COIN_LENDING = False    # Set True to see lendings in coins
-IS_FAST = True                  # Set True to use shortcuts to speed up calc times
 
 ###########
 # Functions
@@ -415,7 +409,7 @@ def krInit(kr, spotBTC):
   krMarginDeltaUSD = krMarginDelta * spotBTC
   krNotional = krPositions['vol_net'].abs().sum() * spotBTC
   #####
-  if IS_FAST:
+  if CR_IS_FAST:
     krOneDayIncome=-krMarginDeltaUSD*0.0001*6
   else:
     krLedgers = getBTCLedgers(kr, spotBTC)
@@ -475,7 +469,7 @@ bbSpotDeltaBTC, bbSpotDeltaETH, bbPL, bbPayments, \
 
 cbSpotDeltaBTC,cbSpotDeltaETH,cbNAV=cbInit(cb,spotBTC,spotETH)
 
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   bn = cl.bnCCXTInit()
   db = cl.dbCCXTInit()
   kf = cl.kfInit()
@@ -502,14 +496,14 @@ if IS_ADVANCED:
 #############
 nav=ftxNAV+bbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows+bbOneDayIncome
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   nav+=bnNAV+dbNAV+kfNAV+krNAV
   oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + krOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
 spotDeltaBTC+=cbSpotDeltaBTC
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
   spotDeltaBTC+=dbSpotDeltaBTC
   spotDeltaBTC += kfSpotDeltaBTC
@@ -517,7 +511,7 @@ if IS_ADVANCED:
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   futDeltaBTC+=bnPR.loc['BTC','FutDelta']
   futDeltaBTC+=dbFutures.loc['BTC','FutDelta']
   futDeltaBTC+=kfFutures.loc['BTC', 'FutDelta']
@@ -525,7 +519,7 @@ if IS_ADVANCED:
 spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
 spotDeltaETH+=bbSpotDeltaETH
 spotDeltaETH+=cbSpotDeltaETH
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
   spotDeltaETH+=dbSpotDeltaETH
   spotDeltaETH+=kfSpotDeltaETH
@@ -533,7 +527,7 @@ if IS_ADVANCED:
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   futDeltaETH+=bnPR.loc['ETH','FutDelta']
   futDeltaETH+=dbFutures.loc['ETH','FutDelta']
   futDeltaETH+=kfFutures.loc['ETH', 'FutDelta']
@@ -547,7 +541,7 @@ futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
 z='NAV: $'.rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
   z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
   z += ' / KF: $' + str(round(kfNAV / 1000)) + 'K'
@@ -562,7 +556,7 @@ ftxPrintBorrowLending(ftx,ftxWallet,nav,'USD')
 ftxPrintBorrowLending(ftx,ftxWallet,nav,'USDT')
 print()
 #####
-if IS_SHOW_COIN_LENDING:
+if CR_IS_SHOW_COIN_LENDING:
   ftxPrintFlowsSummary('BTC',ftxOneDayBTCFlows,ftxOneDayBTCFlowsAnnRet,ftxPrevBTCFlows*spotBTC,ftxPrevBTCFlowsAnnRet)
   ftxPrintFlowsSummary('ETH',ftxOneDayETHFlows,ftxOneDayETHFlowsAnnRet,ftxPrevETHFlows*spotETH,ftxPrevETHFlowsAnnRet)
   ftxPrintCoinLending(ftx,ftxWallet,'BTC')
@@ -585,7 +579,7 @@ bbPrintFunding(bb,bbPL,bbPayments,'ETH')
 printLiq('BB',bbLiqBTC,bbLiqETH)
 print()
 #####
-if IS_ADVANCED:
+if CR_IS_ADVANCED:
   printIncomes('BN',bnPrevIncome,bnPrevAnnRet,bnOneDayIncome,bnOneDayAnnRet)
   bnPrintFunding(bn,bnPR,'BTC')
   bnPrintFunding(bn,bnPR,'ETH')
