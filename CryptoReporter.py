@@ -397,11 +397,11 @@ def krInit(kr, spotBTC):
   krSpotDeltaBTC = float(krBalance['XXBT'])
   krSpotDeltaETH = float(krBalance['XETH'])
   #####
+  validPairs=['XXBTZUSD','XBTUSDT']
   krPositions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
-  if 'XXETHUSD' in krPositions.index:
-    print('Cannot handle ETH margined spots in Kraken!')
+  if not all([z in validPairs for z in krPositions.index]):
+    print('Invalid Kraken pair detected!')
     sys.exit(1)
-  krPositions=krPositions.loc['XXBTZUSD'] # From this point onwards only handle BTC
   cl.dfSetFloat(krPositions, ['vol', 'vol_closed', 'time'])
   krPositions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in krPositions['time']]
   krPositions['vol_net'] = krPositions['vol']- krPositions['vol_closed']
