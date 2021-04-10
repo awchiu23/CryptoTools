@@ -1,4 +1,5 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
+# Mod: "editorder" added
 
 """Low level client for Kraken and Kraken Future."""
 import base64

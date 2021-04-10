@@ -354,7 +354,10 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
         except:
           break
     time.sleep(1)
-  fill=float(dbGetOrder(db, orderId)['average_price'])
+  for n in range(3): # Try up to 3 times
+    fill=float(dbGetOrder(db, orderId)['average_price'])
+    if fill!=0:
+      break
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
 
@@ -458,7 +461,14 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
         except:
           break
     time.sleep(1)
-  fill = kfGetFillPrice(kf, orderId)
+  fill=0
+  for n in range(3): # Try up to 3 times
+    try:
+      fill=float(kfGetFillPrice(kf, orderId)['average_price'])
+    except:
+      continue
+    if fill!=0:
+      break
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
 

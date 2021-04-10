@@ -412,8 +412,7 @@ def krInit(kr, spotBTC):
   if CR_IS_FAST:
     krOneDayIncome=-krMarginDeltaUSD*0.0001*6
   else:
-    krLedgers = getBTCLedgers(kr, spotBTC)
-    krOneDayIncome = -krLedgers['feeUSD'].sum()
+    krOneDayIncome = -getBTCLedgers(kr, spotBTC)['feeUSD'].sum()
   krOneDayAnnRet = krOneDayIncome * 365 / krNotional
   #####
   krTradeBal = kr.private_post_tradebalance()['result']
