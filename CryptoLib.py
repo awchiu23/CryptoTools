@@ -371,18 +371,18 @@ def kfCcyToSymbol(ccy):
   else:
     sys.exit(1)
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetTickers(kf):
   return pd.DataFrame(kf.query('tickers')['tickers']).set_index('symbol')
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetEstFunding1(kf,ccy,kfTickers=None):
   if kfTickers is None:
     kfTickers=kfGetTickers(kf)
   symbol=kfCcyToSymbol(ccy)
   return kfTickers.loc[symbol,'fundingRate']*kfTickers.loc[symbol,'markPrice']*24*365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetEstFunding2(kf, ccy,kfTickers=None):
   if kfTickers is None:
     kfTickers = kfGetTickers(kf)
