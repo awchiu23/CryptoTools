@@ -8,6 +8,9 @@ import sys
 ###########
 # Functions
 ###########
+def get_EXTERNAL_EUR_NAV(spotEUR):
+  return (spotEUR-EXTERNAL_EUR_REF)*EXTERNAL_EUR_DELTA
+
 def getYest():
   return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
 
@@ -38,9 +41,9 @@ def printDeltas(ccy,spot,spotDelta,futDelta):
     ' ($' + str(round(spotDelta * spot)) + '/$' + str(round(futDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
 
 def printEURDeltas(spot,spotDelta):
-  netDelta=spotDelta+EXTERNAL_EUR
-  print(('EUR ext/impl/net delta: ').rjust(41) + str(round(EXTERNAL_EUR)) + '/' + str(round(spotDelta)) + '/' + str(round(netDelta)) + \
-    ' ($' + str(round(EXTERNAL_EUR * spot)) + '/$' + str(round(spotDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
+  netDelta=spotDelta+EXTERNAL_EUR_DELTA
+  print(('EUR ext/impl/net delta: ').rjust(41) + str(round(EXTERNAL_EUR_DELTA)) + '/' + str(round(spotDelta)) + '/' + str(round(netDelta)) + \
+    ' ($' + str(round(EXTERNAL_EUR_DELTA * spot)) + '/$' + str(round(spotDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
 
 ####################################################################################################
 
@@ -496,7 +499,7 @@ if CR_IS_ADVANCED:
 nav=ftxNAV+bbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows+bbOneDayIncome
 if CR_IS_ADVANCED:
-  nav+=bnNAV+dbNAV+kfNAV+krNAV+kr2NAV
+  nav+=bnNAV+dbNAV+kfNAV+krNAV+kr2NAV+get_EXTERNAL_EUR_NAV(spotEUR)
   oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + krOneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
