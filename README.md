@@ -21,16 +21,16 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 	- Basis mean reversion
 	- Accrued funding payments
 	- Future funding payments
-- To get this to work, you will first need API keys set up properly in CryptoParams for the following: FTX, Bybit, Binance, Deribit, and Kraken Futures.
+- To get this to work, you will first need API keys set up properly in CryptoParams for the following: FTX, Bybit, Binance, Deribit, and Kraken Futures
 
 ## CryptoReporter
-- This tool is for monitoring NAVs, positions and risks across multiple exchanges.
-- Please set **CR_IS_ADVANCED** to FALSE in CryptoParams.  The tool will then work across FTX, Bybit and Coinbase.
-- For more advanced users, please speak with me directly.
+- This tool is for monitoring NAVs, positions and risks across multiple exchanges
+- Please set **CR_IS_ADVANCED** to **False** in CryptoParams.  The tool will then work across FTX, Bybit and Coinbase
+- For more advanced users, please speak with me directly
   
 ## CryptoTrader
 - Automated trading of spot and futures
-- If interested, please speak with me directly.
+- If interested, please speak with me directly
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset

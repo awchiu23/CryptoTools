@@ -4,7 +4,6 @@ import pandas as pd
 import datetime
 import termcolor
 import sys
-import time
 
 ###########
 # Functions
@@ -35,12 +34,12 @@ def printLiq(name,liqBTC,liqETH):
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
   netDelta=spotDelta+futDelta
-  print((ccy+' spot/fut/net delta: ').rjust(41)+str(round(spotDelta,2))+'/'+str(round(futDelta,2))+'/'+str(round(netDelta,2)) + \
+  print((ccy+' spot/fut/net delta: ').rjust(41)+str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1)) + \
     ' ($' + str(round(spotDelta * spot)) + '/$' + str(round(futDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
 
 def printEURDeltas(spot,spotDelta):
   netDelta=spotDelta+EXTERNAL_EUR
-  print(('EUR external/implicit/net delta: ').rjust(41) + str(round(EXTERNAL_EUR)) + '/' + str(round(spotDelta)) + '/' + str(round(netDelta)) + \
+  print(('EUR ext/impl/net delta: ').rjust(41) + str(round(EXTERNAL_EUR)) + '/' + str(round(spotDelta)) + '/' + str(round(netDelta)) + \
     ' ($' + str(round(EXTERNAL_EUR * spot)) + '/$' + str(round(spotDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
 
 ####################################################################################################
@@ -443,7 +442,7 @@ def cbInit(cb,spotBTC,spotETH):
 ######
 # Init
 ######
-cl.printHeader('CryptoReporter - '+cl.getCurrentTime())
+cl.printHeader('CryptoReporter')
 ftx=cl.ftxCCXTInit()
 bb = cl.bbCCXTInit()
 cb= cl.cbCCXTInit()
@@ -540,7 +539,7 @@ futDeltaFTT=ftxPositions.loc['FTT','FutDelta']
 ########
 # Output
 ########
-z='NAV: $'.rjust(42)+str(round(nav))
+z=('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
 if CR_IS_ADVANCED:
