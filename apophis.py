@@ -1,5 +1,6 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
 # Mod: "editorder" added
+# Mod: "get_account_log" added
 
 """Low level client for Kraken and Kraken Future."""
 import base64
@@ -284,3 +285,22 @@ class Apophis:
             headers = {"APIKey": self.api_key, "Nonce": nonce, "Authent": signature}
 
         return headers
+
+    def get_account_log(self, filename):
+        data = {}
+        endpoint = '/api/history/v2/accountlogcsv'
+        url = 'https://api.futures.kraken.com' + endpoint
+        session_call = self.session.get
+        params = {"params": data}
+
+        self.lock.acquire()  # nonce call must be sequential
+        headers = self._sign_message(data, endpoint)
+        params["headers"] = headers
+
+        with session_call(url, timeout=self.timeout, **params) as self.response:
+            self.lock.release()
+
+            if self.response.status_code == 200:
+                fd = open(filename, 'wb')
+                fd.write(self.response.content)
+                fd.close()
