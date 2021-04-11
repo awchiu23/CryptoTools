@@ -798,19 +798,19 @@ def ctRun(ccy):
         for key in filterDict(smartBasisDict, 'spot'):
           del smartBasisDict[key]
 
+      d = filterDict(smartBasisDict, 'SmartBasis')
+      d = filterDict(d, ccy)
+      if len(d.keys())<2:
+        print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+        chosenLong = ''
+        time.sleep(CT_SLEEP)
+        continue  # to next iteration in While True loop
       if chosenLong=='':
-        d=filterDict(smartBasisDict,'SmartBasis')
-        d=filterDict(d,ccy)
         keyMax=max(d.items(), key=operator.itemgetter(1))[0]
         keyMin=min(d.items(), key=operator.itemgetter(1))[0]
         smartBasisBps=(d[keyMax]-d[keyMin])*10000
         chosenLong = keyMin[:len(keyMin) - 13]
         chosenShort = keyMax[:len(keyMax) - 13]
-        if chosenLong==chosenShort:
-          print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
-          chosenLong=''
-          time.sleep(CT_SLEEP)
-          continue  # to next iteration in While True loop
         if smartBasisBps<tgtBps:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
