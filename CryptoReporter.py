@@ -500,7 +500,7 @@ nav=ftxNAV+bbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows+bbOneDayIncome
 if CR_IS_ADVANCED:
   nav+=bnNAV+dbNAV+kfNAV+krNAV+kr2NAV+get_EXTERNAL_EUR_NAV(spotEUR)
-  oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + krOneDayIncome
+  oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + krOneDayIncome + kr2OneDayIncome
 
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
