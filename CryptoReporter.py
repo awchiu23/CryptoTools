@@ -439,7 +439,7 @@ def krPrintIncomes(oneDayIncome, oneDayAnnRet, oneDayIncome2=None, oneDayAnnRet2
 def krPrintBorrow(marginDeltaUSD, nav, prefix='KR'):
   z1 = '($' + str(round(-marginDeltaUSD)) + ')'
   z2 = '(' + str(round(-marginDeltaUSD / nav * 100)) + '% of NAV)'
-  print((prefix+' USD/USDT est borrow rate: ').rjust(41) + '22% p.a. ' + z1 + ' ' + z2)
+  print((prefix+' USD est borrow rate: ').rjust(41) + '22% p.a. ' + z1 + ' ' + z2)
 
 def krPrintLiq(liqBTC,prefix='KR'):
   z = 'never' if (liqBTC <= 0 or liqBTC > 10) else str(round(liqBTC * 100)) + '%'
