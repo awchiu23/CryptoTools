@@ -2,11 +2,9 @@
 # Crypto Params
 ###############
 
-#############################################################################################
-
-######
-# APIs
-######
+############################
+# APIs and External Balances
+############################
 API_KEY_FTX = ''
 API_SECRET_FTX = ''
 API_KEY_BB = ''
@@ -23,6 +21,7 @@ API_KEY_KR2 = ''
 API_SECRET_KR2 = ''
 API_KEY_CB = ''
 API_SECRET_CB = ''
+EXTERNAL_EUR = 0
 
 #############################################################################################
 
@@ -36,18 +35,18 @@ CT_CONFIGS_DICT['ETH_TGT_BPS']=CT_DEFAULT_TGT_BPS
 
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=1
-CT_CONFIGS_DICT['FTX_BTC_OK']=1
+CT_CONFIGS_DICT['FTX_BTC_OK']=0
 CT_CONFIGS_DICT['BB_BTC_OK']=1
-CT_CONFIGS_DICT['BN_BTC_OK']=1
-CT_CONFIGS_DICT['DB_BTC_OK']=1
-CT_CONFIGS_DICT['KF_BTC_OK']=1
+CT_CONFIGS_DICT['BN_BTC_OK']=0
+CT_CONFIGS_DICT['DB_BTC_OK']=0
+CT_CONFIGS_DICT['KF_BTC_OK']=0
 
 CT_CONFIGS_DICT['SPOT_ETH_OK']=0
 CT_CONFIGS_DICT['FTX_ETH_OK']=0
-CT_CONFIGS_DICT['BB_ETH_OK']=1
+CT_CONFIGS_DICT['BB_ETH_OK']=0
 CT_CONFIGS_DICT['BN_ETH_OK']=0
 CT_CONFIGS_DICT['DB_ETH_OK']=0
-CT_CONFIGS_DICT['KF_ETH_OK']=1
+CT_CONFIGS_DICT['KF_ETH_OK']=0
 
 # Positive = eager to buy
 # Negative = eager to sell
@@ -60,7 +59,7 @@ CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
 
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=10
+CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
@@ -97,9 +96,7 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 # Crypto Reporter
 #################
 CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
-CR_IS_FAST = True                    # Set True to use shortcuts to speed up calc times
 CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
-CR_IS_SECOND_KRAKEN_ACCOUNT = True   # Set False to use only one Kraken account
 
 #############################################################################################
 
@@ -125,3 +122,4 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR2 = sl.jLoad('API_SECRET_KR2')
   API_KEY_CB = sl.jLoad('API_KEY_CB')
   API_SECRET_CB = sl.jLoad('API_SECRET_CB')
+  EXTERNAL_EUR = sl.jLoad('EXTERNAL_EUR')

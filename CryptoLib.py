@@ -751,10 +751,14 @@ def ctGetMaxChases(completedLegs):
     return 888
 
 def ctProcessFill(fill, completedLegs, isCancelled):
-  if fill != 0:
-    completedLegs += 1
+  if fill==0:
+    if completedLegs==0:
+      isCancelled=True
+    else:
+      print('Abnormal termination on leg 2 cancellation!')
+      sys.exit(1)
   else:
-    isCancelled = True
+    completedLegs+=1
   return completedLegs, isCancelled
 
 def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
@@ -879,7 +883,7 @@ def ctRun(ccy):
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if isCancelled:
-          status=(min(abs(status),CT_STREAK)-1)*np.sign(status)
+          status=(min(abs(status),CT_STREAK)-2)*np.sign(status)
           print()
           speak('Cancelled')
           continue # to next iteration in While True loop

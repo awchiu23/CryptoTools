@@ -7,17 +7,18 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=10
+nPrograms=1
 targetUSD=3000
 
 account=2                # 1 for KR, 2 for KR2
 side='BUY'               # 'BUY', 'SELL'
-hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
+hedgeExchange='none'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
 # Functions
 ###########
-def krRelOrder(side,kr,trade_qty,maxChases=0):
+def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def krGetBid(kr, pair):
     return float(kr.public_get_ticker({'pair': pair})['result'][pair]['b'][0])
@@ -36,8 +37,6 @@ def krRelOrder(side,kr,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def krGetOrderStatus(kr, orderId):
     return kr.private_post_queryorders({'txid': orderId})['result'][orderId]
-  #####
-  pair='XXBTZUSD' # Only allowed pair at the moment
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -110,7 +109,7 @@ cl.printHeader('KrakenTrader')
 
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
-  fill=krRelOrder(side,kr,trade_btc,maxChases=888)
+  fill=krRelOrder(side,kr,pair,trade_btc,maxChases=888)
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
   elif hedgeExchange=='bb':

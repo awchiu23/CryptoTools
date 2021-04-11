@@ -7,7 +7,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Library for all other tools
 
 ## CryptoParams
-- Params for all other tools (e.g., API infos)
+- Params for all other tools (e.g., API keys)
 
 ## apophis.py
 - Library for accessing Kraken futures
@@ -21,30 +21,16 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 	- Basis mean reversion
 	- Accrued funding payments
 	- Future funding payments
+- To get this to work, you will first need API keys set up properly in CryptoParams for the following: FTX, Bybit, Binance, Deribit, and Kraken Futures.
 
 ## CryptoReporter
-- This tool is for monitoring your NAVs, positions and risks across:
-	- FTX
-	- Bybit
-	- Binance
-	- Deribit
-    - Kraken Futures
-	- Kraken
-	- Coinbase
-- For this tool to work without modification, you will need to prepare all of the following:
-    - FTX: BTC/ETH/FTT spots; BTC/ETH/FTT perps
-    - Bybit: BTC/ETH collaterals and inverse perps
-    - Binance: BTC/ETH collaterals and Coin-M perps
-    - Deribit: BTC/ETH collaterals and inverse perps
-    - Kraken Futures: BTC/ETH collaterals and inverse perps
-    - Kraken: BTC spot and BTC margined spot
-	- Coinbase: empty is ok
-	- For all accounts you will also need to set up APIs
-- For a simplified version, there is an **IS_ADVANCED** flag that you can set to False.  Once set, the universe becomes FTX, Bybit and Coinbase only.
-
+- This tool is for monitoring NAVs, positions and risks across multiple exchanges.
+- Please set **CR_IS_ADVANCED** to FALSE in CryptoParams.  The tool will then work across FTX, Bybit and Coinbase.
+- For more advanced users, please speak with me directly.
+  
 ## CryptoTrader
 - Automated trading of spot and futures
-- Whatsapp me if interested
+- If interested, please speak with me directly.
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
@@ -52,4 +38,4 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
-- Work hedge off other exchanges
+- Has ability to work hedges off other exchanges
