@@ -286,7 +286,7 @@ class Apophis:
 
         return headers
 
-    def get_account_log(self, filename):
+    def get_account_log(self, filename): # <--- Andrew added this method
         data = {}
         endpoint = '/api/history/v2/accountlogcsv'
         url = 'https://api.futures.kraken.com' + endpoint
