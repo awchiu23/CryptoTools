@@ -879,7 +879,7 @@ def ctRun(ccy):
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if isCancelled:
-          status=(min(abs(status),CT_STREAK)-2)*np.sign(status)
+          status=(min(abs(status),CT_STREAK)-1)*np.sign(status)
           print()
           speak('Cancelled')
           continue # to next iteration in While True loop
