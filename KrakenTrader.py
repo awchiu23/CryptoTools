@@ -7,17 +7,28 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=1
+nPrograms=30
 targetUSD=3000
 
-account=2                # 1 for KR, 2 for KR2
+account=1                # 1 for KR, 2 for KR2
 side='BUY'               # 'BUY', 'SELL'
 pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='none'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='kf'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+
+##########
+# Controls
+##########
+SPOT_EUR_CAP = 1.1       # Hard limit
+SPOT_EUR_FLOOR = 1.3     # Hard limit
 
 ###########
 # Functions
 ###########
+def krGetSpotEUR(kr):
+  spot_xxbtzeur = float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+  spot_xxbtzusd = float(kr.public_get_ticker({'pair': 'XXBTZUSD'})['result']['XXBTZUSD']['c'][0])
+  return spot_xxbtzusd / spot_xxbtzeur
+
 def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def krGetBid(kr, pair):
@@ -75,7 +86,7 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
           z = 'Bidding' if side=='BUY' else 'Offering'
           print(cl.getCurrentTime() + ': '+z+' at ' + str(limitPrice) + ' (qty='+str(round(leavesQty,6))+') ....')
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice)
-    time.sleep(3)
+    time.sleep(1)
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
   print(cl.getCurrentTime() + ': Filled at '+str(round(fill,6)))
@@ -86,21 +97,28 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
 ######
 if account==1:
   kr = cl.krCCXTInit()
+  fx=1
 elif account==2:
   kr = cl.kr2CCXTInit()
 else:
   sys.exit(1)
+if pair=='XXBTZEUR':
+  fx=np.clip(krGetSpotEUR(kr),SPOT_EUR_CAP,SPOT_EUR_FLOOR) # Extra error checking
+else:
+  fx=1
+
+ftx = cl.ftxCCXTInit()
+ftxWallet=cl.ftxGetWallet(ftx)
+spotBTC=ftxWallet.loc['BTC','spot']
+trade_btc = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotBTC, cl.CT_MAX_BTC])
+trade_btc_notional = trade_btc * spotBTC
+
 if side == 'BUY':
   oppSide = 'SELL'
 elif side == 'SELL':
   oppSide = 'BUY'
 else:
   sys.exit(1)
-ftx = cl.ftxCCXTInit()
-ftxWallet=cl.ftxGetWallet(ftx)
-spotBTC=ftxWallet.loc['BTC','spot']
-trade_btc = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotBTC, cl.CT_MAX_BTC])
-trade_btc_notional = trade_btc * spotBTC
 
 ######
 # Main
@@ -109,7 +127,7 @@ cl.printHeader('KrakenTrader')
 
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
-  fill=krRelOrder(side,kr,pair,trade_btc,maxChases=888)
+  fill=krRelOrder(side,kr,pair,trade_btc/fx,maxChases=888)
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
   elif hedgeExchange=='bb':
