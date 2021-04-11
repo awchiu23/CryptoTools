@@ -467,7 +467,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
   fill=0
   for n in range(3): # Try up to 3 times
     try:
-      fill=float(kfGetFillPrice(kf, orderId)['average_price'])
+      fill=kfGetFillPrice(kf, orderId)
     except:
       continue
     if fill!=0:
