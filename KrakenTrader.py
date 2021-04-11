@@ -7,7 +7,7 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=1
+nPrograms=10
 targetUSD=3000
 
 account=2                # 1 for KR, 2 for KR2
