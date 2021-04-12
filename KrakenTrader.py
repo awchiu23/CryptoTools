@@ -7,19 +7,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=10
-targetUSD=3000
+nPrograms=5
+targetUSD=5000
 
 account=1                # 1 for KR, 2 for KR2
 side='BUY'               # 'BUY', 'SELL'
 pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
-
-##########
-# Controls
-##########
-SPOT_EUR_CAP = 1.1       # Hard limit
-SPOT_EUR_FLOOR = 1.3     # Hard limit
+hedgeExchange='none'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
 # Functions
@@ -106,10 +100,6 @@ elif account==2:
   kr = cl.kr2CCXTInit()
 else:
   sys.exit(1)
-if pair=='XXBTZEUR':
-  fx=np.clip(krGetSpotEUR(kr),SPOT_EUR_CAP,SPOT_EUR_FLOOR) # Extra error checking
-else:
-  fx=1
 
 ftx = cl.ftxCCXTInit()
 ftxWallet=cl.ftxGetWallet(ftx)
@@ -131,7 +121,7 @@ cl.printHeader('KrakenTrader')
 
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
-  fill=krRelOrder(side,kr,pair,trade_btc/fx,maxChases=888)
+  fill=krRelOrder(side,kr,pair,trade_btc,maxChases=888)
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
   elif hedgeExchange=='bb':
