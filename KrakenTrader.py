@@ -7,12 +7,12 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=3
+nPrograms=10
 targetUSD=5000
 
 account=1                # 1 for KR, 2 for KR2
 side='BUY'               # 'BUY', 'SELL'
-pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
+pair='XXBTZUSD'          # 'XXBTZUSD', 'XXBTZEUR'
 hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
