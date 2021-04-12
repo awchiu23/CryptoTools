@@ -70,12 +70,12 @@ API_PRIVATE_POST = {
     # Futures
     "transfer",
     "sendorder",
-    "editorder", # <--- Simon added this line
     "cancelorder",
     "cancelallorders",
     "cancelallordersafter",
     "batchorder",
     "withdrawal",
+    "editorder",  # <--- Simon added this line
 }
 API_METHODS = API_PUBLIC | API_PRIVATE_GET | API_PRIVATE_POST
 

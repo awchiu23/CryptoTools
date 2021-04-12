@@ -7,13 +7,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=30
+nPrograms=10
 targetUSD=3000
 
 account=1                # 1 for KR, 2 for KR2
 side='BUY'               # 'BUY', 'SELL'
 pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='kf'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ##########
 # Controls
@@ -59,7 +59,7 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
   else:
     limitPrice = krGetAsk(kr, pair)
     z='Offering'
-  print(cl.getCurrentTime() + ': ' + z + ' at ' + str(limitPrice) + ' (qty='+str(round(qty,6))+') ....')
+  print(cl.getCurrentTime() + ': ' + z + ' at ' + str(limitPrice) + ' (qty='+str(round(qty,6))+') ',end='')
   orderId=krPlaceOrder(kr, pair, side, qty, limitPrice)
   nChases=0
   while True:
@@ -70,7 +70,7 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
       newPrice=krGetBid(kr,pair)
     else:
       newPrice=krGetAsk(kr,pair)
-    if newPrice != limitPrice:
+    if newPrice != limitPrice or orderStatus['status'] == 'canceled':
       limitPrice=newPrice
       nChases+=1
       krCancelOrder(kr, orderId)
@@ -83,10 +83,14 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
         break
       else:
         if side == 'BUY':
+          print()
           z = 'Bidding' if side=='BUY' else 'Offering'
-          print(cl.getCurrentTime() + ': '+z+' at ' + str(limitPrice) + ' (qty='+str(round(leavesQty,6))+') ....')
+          print(cl.getCurrentTime() + ': '+z+' at ' + str(limitPrice) + ' (qty='+str(round(leavesQty,6))+') ',end='')
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice)
+    else:
+      print('.',end='')
     time.sleep(1)
+  print()
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
   print(cl.getCurrentTime() + ': Filled at '+str(round(fill,6)))
@@ -139,5 +143,6 @@ for n in range(nPrograms):
   elif hedgeExchange=='kf':
     kf = cl.kfInit()
     fill=cl.kfRelOrder(oppSide, kf, 'BTC', trade_btc_notional, maxChases=888)
+  time.sleep(3)
 
 cl.speak('KrakenTrader has completed')
