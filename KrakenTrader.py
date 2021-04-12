@@ -7,13 +7,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=5
+nPrograms=3
 targetUSD=5000
 
 account=1                # 1 for KR, 2 for KR2
 side='BUY'               # 'BUY', 'SELL'
 pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='none'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
 # Functions
