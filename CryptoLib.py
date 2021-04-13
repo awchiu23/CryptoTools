@@ -411,6 +411,15 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
       else:
         return None
   # Do not use @retry
+  def kfGetFilledSize(orderStatus):
+    fs=orderStatus['filledSize']
+    try:
+      return float(fs)
+    except:
+      print('Abnormal termination!')
+      print('filledSize = '+fs)
+      sys.exit(1)
+  # Do not use @retry
   def kfGetFillPrice(kf, orderId):
     df=pd.DataFrame(kf.query('fills')['fills']).set_index('order_id').loc[orderId]
     if isinstance(df, pd.Series):
@@ -444,7 +453,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
       orderStatus = kfGetOrderStatus(kf, orderId)
       if orderStatus is None:  # If order doesn't exist, it means all executed
         break
-      if nChases>maxChases and float(orderStatus['filledSize'])==0:
+      if nChases>maxChases and kfGetFilledSize(orderStatus)==0:
         if side == 'BUY':
           farPrice = round(limitPrice * .98,2)
         else:
@@ -454,7 +463,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
         except:
           break
         orderStatus = kfGetOrderStatus(kf, orderId)
-        if float(orderStatus['filledSize']) == 0:
+        if kfGetFilledSize(orderStatus) == 0:
           kf.query('cancelorder',{'order_id':orderId})
           print(getCurrentTime() + ': Cancelled')
           return 0
