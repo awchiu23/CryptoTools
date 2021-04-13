@@ -21,11 +21,11 @@ def printIncomes(name,prevIncome,prevAnnRet,oneDayIncome,oneDayAnnRet):
 
 def printFunding(name,df,ccy,oneDayFunding,prevFunding,estFunding,est2Funding=None):
   prefix=name + ' ' + ccy + ' 24h/prev/est'
-  if name=='BB':
+  if name in ['BB','KF']:
     prefix+='1/est2'
   prefix+=' funding rate:'
   suffix = str(round(oneDayFunding * 100)) + '%/' + str(round(prevFunding * 100)) + '%/' + str(round(estFunding * 100)) + '%'
-  if name=='BB':
+  if name in ['BB','KF']:
     suffix+='/' + str(round(est2Funding * 100)) + '%'
   suffix+=' p.a. ($' + str(round(df.loc[ccy, 'FutDeltaUSD'])) + ')'
   print(prefix.rjust(40) + ' ' + suffix)
@@ -338,6 +338,24 @@ def dbPrintFunding(db,dbFutures,ccy):
 ####################################################################################################
 
 def kfInit(kf,spotBTC,spotETH):
+  def getLog(kf, kfFutures):
+    ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
+    kf.get_account_log(ffn)
+    df = pd.read_csv(ffn, index_col=0, parse_dates=True)
+    df = df[df['type'] == 'funding rate change'].set_index('symbol')
+    df.loc['xbt', 'Ccy'] = 'BTC'
+    df.loc['eth', 'Ccy'] = 'ETH'
+    df.loc['xbt', 'Spot'] = kfFutures.loc['BTC', 'Spot']
+    df.loc['eth', 'Spot'] = kfFutures.loc['ETH', 'Spot']
+    df.loc['xbt', 'FutDeltaUSD'] = kfFutures.loc['BTC', 'FutDeltaUSD']
+    df.loc['eth', 'FutDeltaUSD'] = kfFutures.loc['ETH', 'FutDeltaUSD']
+    df['date'] = [datetime.datetime.strptime(z, '%Y-%m-%d %H:%M:%S') for z in df['dateTime']]
+    df['date'] += pd.DateOffset(hours=8)  # Convert from UTC to HK Time
+    df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)]
+    df['fundingRate'] = df['funding rate'] * df['Spot'] * 24 * 365
+    df['fundingUSD'] = -df['fundingRate'] * df['FutDeltaUSD'] / 365 / 6
+    return df.set_index('date').sort_index()
+  #####
   kfAccounts = kf.query('accounts')['accounts']
   kfSpotDeltaBTC=kfAccounts['fi_xbtusd']['auxiliary']['pv']+kfAccounts['cash']['balances']['xbt']
   kfSpotDeltaETH=kfAccounts['fi_ethusd']['auxiliary']['pv']+kfAccounts['cash']['balances']['eth']
@@ -347,30 +365,28 @@ def kfInit(kf,spotBTC,spotETH):
   kfFutures['FutDelta'] = kfFutures['FutDeltaUSD'] / kfFutures['Spot']
   kfNotional=kfFutures['FutDeltaUSD'].abs().sum()
   #####
-  kfTickers=cl.kfGetTickers(kf)  
-  kfOneDayIncome=-kfFutures.loc['BTC','FutDeltaUSD']*cl.kfGetEstFunding1(kf,'BTC',kfTickers)/365
-  kfOneDayIncome-=kfFutures.loc['ETH','FutDeltaUSD']*cl.kfGetEstFunding1(kf,'ETH',kfTickers)/365
+  kfLog=getLog(kf,kfFutures)
+  kfPrevIncome = kfLog.loc[kfLog.index[-1]]['fundingUSD'].sum()
+  kfPrevAnnRet = kfPrevIncome * 6 * 365 / kfNotional
+  kfOneDayIncome = kfLog['fundingUSD'].sum()
   kfOneDayAnnRet = kfOneDayIncome * 365 / kfNotional
   #####
   kfNAV = kfSpotDeltaBTC * spotBTC + kfSpotDeltaETH * spotETH
   kfLiqBTC = kfAccounts['fi_xbtusd']['triggerEstimates']['im']/spotBTC
   kfLiqETH = kfAccounts['fi_ethusd']['triggerEstimates']['im']/spotETH
   #####
-  return kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, \
-         kfOneDayIncome, kfOneDayAnnRet, \
+  return kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, kfLog, \
+         kfPrevIncome, kfPrevAnnRet, kfOneDayIncome, kfOneDayAnnRet, \
          kfNAV, kfLiqBTC, kfLiqETH
 
-def kfPrintIncomes(oneDayIncome,oneDayAnnRet):
-  z1='$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)'
-  print(termcolor.colored(('KF 24h funding income: ').rjust(41) + z1,'blue'))
-
-def kfPrintFunding(kf,kfFutures,ccy):
-  kfTickers=cl.kfGetTickers(kf)
-  estFunding1=cl.kfGetEstFunding1(kf,ccy,kfTickers)
+def kfPrintFunding(kf,kfFutures,kfLog,ccy):
+  df = kfLog[kfLog['Ccy'] == ccy].copy()
+  oneDayFunding = df['fundingRate'].mean()
+  prevFunding = df['fundingRate'][-1]
+  kfTickers = cl.kfGetTickers(kf)
+  estFunding1 = cl.kfGetEstFunding1(kf, ccy, kfTickers)
   estFunding2 = cl.kfGetEstFunding2(kf, ccy, kfTickers)
-  prefix='KF ' + ccy + ' est1/est2 funding rate:'
-  suffix = str(round(estFunding1 * 100)) + '%/'+str(round(estFunding2 * 100))+'% p.a. ($' + str(round(kfFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
-  print(prefix.rjust(40) + ' ' + suffix)
+  printFunding('KF', kfFutures, ccy, oneDayFunding, prevFunding, estFunding1, estFunding2)
 
 ####################################################################################################
 
@@ -480,8 +496,8 @@ if CR_IS_ADVANCED:
     db4pmIncome, db4pmAnnRet, \
     dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
 
-  kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, \
-    kfOneDayIncome, kfOneDayAnnRet, \
+  kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, kfLog, \
+    kfPrevIncome, kfPrevAnnRet, kfOneDayIncome, kfOneDayAnnRet, \
     kfNAV, kfLiqBTC, kfLiqETH = kfInit(kf,spotBTC,spotETH)
 
   krSpotDeltaBTC, krSpotDeltaETH, krSpotDeltaEUR, krBTCMarginDeltaUSD, \
@@ -597,9 +613,9 @@ if CR_IS_ADVANCED:
   printLiq('DB',dbLiqBTC,dbLiqETH)
   print()
   #####
-  kfPrintIncomes(kfOneDayIncome,kfOneDayAnnRet)
-  kfPrintFunding(kf, kfFutures, 'BTC')
-  kfPrintFunding(kf, kfFutures, 'ETH')
+  printIncomes('KF', kfPrevIncome, kfPrevAnnRet, kfOneDayIncome, kfOneDayAnnRet)
+  kfPrintFunding(kf, kfFutures, kfLog, 'BTC')
+  kfPrintFunding(kf, kfFutures, kfLog, 'ETH')
   printLiq('KF', kfLiqBTC, kfLiqETH)
   print()
   #####
