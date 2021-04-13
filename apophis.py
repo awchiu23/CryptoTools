@@ -1,5 +1,6 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
 # Mod: "editorder" added
+# Mod: Futures URI replaced
 # Mod: "get_account_log" added
 
 """Low level client for Kraken and Kraken Future."""
@@ -107,7 +108,8 @@ class Apophis:
 
         self.future = future
         if self.future:
-            self.uri = "https://futures.kraken.com/derivatives"
+            #self.uri = "https://futures.kraken.com/derivatives"
+            self.uri = "https://api.futures.kraken.com/derivatives" # <--- Simon replaced this line
             self.apiversion = "/api/v3/"
         else:
             self.uri = "https://api.kraken.com"
