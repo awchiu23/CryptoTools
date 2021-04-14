@@ -784,6 +784,13 @@ def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
       del smartBasisDict[key]
   return smartBasisDict
 
+def ctStreakEnded(i, tgtBps):
+  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+  prevSmartBasis = []
+  chosenLong = ''
+  chosenShort = ''
+  return prevSmartBasis, chosenLong, chosenShort
+
 def ctGetTargetString(tgtBps):
   return termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
 
@@ -890,7 +897,11 @@ def ctRun(ccy):
           status=0
 
       # Maintenance
-      smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
+      try:
+        smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
+      except:
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps)
+        continue # to next iteration in While True Loop
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
       prevSmartBasis= prevSmartBasis[-CT_STREAK:]
@@ -900,11 +911,8 @@ def ctRun(ccy):
       if smartBasisBps>=tgtBps:
         status+=1
       else:
-        print(('Program ' + str(i + 1) + ':').ljust(23)+ termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
-        prevSmartBasis = []
-        chosenLong = ''
-        chosenShort = ''
-        continue
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps)
+        continue # to next iteration in While True Loop
 
       # Chosen long/short legs
       z = ('Program ' + str(i + 1) + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
