@@ -7,12 +7,12 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=10
+nPrograms=1
 targetUSD=5000
 
-account=1                # 1 for KR, 2 for KR2
+account=3                # 1 for KR, 2 for KR2, 3 for KR3
 side='BUY'               # 'BUY', 'SELL'
-pair='XXBTZUSD'          # 'XXBTZUSD', 'XXBTZEUR'
+pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
 hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
@@ -95,9 +95,10 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
 ######
 if account==1:
   kr = cl.krCCXTInit()
-  fx=1
 elif account==2:
   kr = cl.kr2CCXTInit()
+elif account==3:
+  kr = cl.kr3CCXTInit()
 else:
   sys.exit(1)
 

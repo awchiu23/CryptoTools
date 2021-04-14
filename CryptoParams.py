@@ -19,6 +19,8 @@ API_KEY_KR = ''
 API_SECRET_KR = ''
 API_KEY_KR2 = ''
 API_SECRET_KR2 = ''
+API_KEY_KR3 = ''
+API_SECRET_KR3 = ''
 API_KEY_CB = ''
 API_SECRET_CB = ''
 EXTERNAL_EUR_DELTA = 0
@@ -100,6 +102,7 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 #################
 CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
 CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
+CR_IS_KR3 = True                     # Set False to disable third Kraken account
 
 #############################################################################################
 
@@ -123,6 +126,8 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR = sl.jLoad('API_SECRET_KR')
   API_KEY_KR2 = sl.jLoad('API_KEY_KR2')
   API_SECRET_KR2 = sl.jLoad('API_SECRET_KR2')
+  API_KEY_KR3 = sl.jLoad('API_KEY_KR3')
+  API_SECRET_KR3 = sl.jLoad('API_SECRET_KR3')
   API_KEY_CB = sl.jLoad('API_KEY_CB')
   API_SECRET_CB = sl.jLoad('API_SECRET_CB')
   EXTERNAL_EUR_DELTA = sl.jLoad('EXTERNAL_EUR_DELTA')

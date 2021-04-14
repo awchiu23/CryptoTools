@@ -37,6 +37,9 @@ def krCCXTInit():
 def kr2CCXTInit():
   return ccxt.kraken({'apiKey': API_KEY_KR2, 'secret': API_SECRET_KR2, 'enableRateLimit': False})
 
+def kr3CCXTInit():
+  return ccxt.kraken({'apiKey': API_KEY_KR3, 'secret': API_SECRET_KR3, 'enableRateLimit': False})
+
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
 
