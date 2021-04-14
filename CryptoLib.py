@@ -784,15 +784,21 @@ def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
       del smartBasisDict[key]
   return smartBasisDict
 
+def ctGetTargetString(tgtBps):
+  return termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
+
+def ctTooFewCandidates(i, tgtBps):
+  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+  chosenLong = ''
+  time.sleep(CT_SLEEP)
+  return chosenLong
+
 def ctStreakEnded(i, tgtBps):
   print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
   prevSmartBasis = []
   chosenLong = ''
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
-
-def ctGetTargetString(tgtBps):
-  return termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
@@ -848,12 +854,13 @@ def ctRun(ccy):
         for key in filterDict(smartBasisDict, 'spot'):
           del smartBasisDict[key]
 
+      # Filter dictionary
       d = filterDict(smartBasisDict, 'SmartBasis')
       d = filterDict(d, ccy)
+
+      # Check for too few candidates
       if len(d.keys())<2:
-        print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
-        chosenLong = ''
-        time.sleep(CT_SLEEP)
+        chosenLong = ctTooFewCandidates(i, tgtBps)
         continue  # to next iteration in While True loop
 
       # If pair not lock-in yet
@@ -884,6 +891,11 @@ def ctRun(ccy):
             del d[chosenLong+ccy+'SmartBasis']
           else:
             break
+
+        # Check for too few candidates again
+        if len(d.keys()) < 2:
+          chosenLong = ctTooFewCandidates(i, tgtBps)
+          continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:
