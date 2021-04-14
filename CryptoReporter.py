@@ -292,11 +292,6 @@ def dbInit(db,spotBTC,spotETH):
     else:
       return 0
   #####
-  def getLiq(dbAS,dbFutures,ccy):
-    totalDelta = float(dbAS['equity']) + dbFutures.loc[ccy,'FutDelta']
-    cushion=float(dbAS['margin_balance']) - float(dbAS['maintenance_margin'])
-    return 1-cushion/totalDelta
-  #####
   dbASBTC = db.private_get_get_account_summary({'currency': 'BTC'})['result']
   dbASETH = db.private_get_get_account_summary({'currency': 'ETH'})['result']
   dbSpotDeltaBTC = float(dbASBTC['equity'])
@@ -309,13 +304,8 @@ def dbInit(db,spotBTC,spotETH):
   db4pmAnnRet = db4pmIncome * 365 / dbNotional
   #####
   dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
-  #####
-  if dbASBTC['portfolio_margining_enabled']:
-    dbLiqBTC=getLiq(dbASBTC,dbFutures,'BTC')
-    dbLiqETH=getLiq(dbASETH, dbFutures, 'ETH')
-  else:
-    dbLiqBTC=float(dbASBTC['estimated_liquidation_ratio'])
-    dbLiqETH=float(dbASETH['estimated_liquidation_ratio'])
+  dbLiqBTC=float(dbASBTC['estimated_liquidation_ratio'])
+  dbLiqETH=float(dbASETH['estimated_liquidation_ratio'])
   #####
   return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
          db4pmIncome, db4pmAnnRet, \
