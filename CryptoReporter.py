@@ -459,6 +459,7 @@ def cbInit(cb,spotBTC,spotETH):
 ######
 # Init
 ######
+print()
 ftx=cl.ftxCCXTInit()
 ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
