@@ -50,6 +50,15 @@ def ftxGetWallet(ftx):
   return wallet
 
 @retry(wait_fixed=1000)
+def ftxGetFutPos(ftx,ccy):
+  df = pd.DataFrame(ftx.private_get_account()['result']['positions']).set_index('future')
+  s=df.loc[ccy+'-PERP']
+  pos=float(s['size'])
+  if s['side']=='sell':
+    pos*=-1
+  return pos
+
+@retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
   return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
@@ -137,6 +146,16 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
 #####
 
 @retry(wait_fixed=1000)
+def bbGetFutPos(bb,ccy):
+  df = bb.v2_private_get_position_list()['result']
+  df = pd.DataFrame([pos['data'] for pos in df]).set_index('symbol')
+  s=df.loc[ccy+'USD']
+  pos = float(s['size'])
+  if s['side'] == 'Sell':
+    pos *= -1
+  return pos
+
+@retry(wait_fixed=1000)
 def bbGetEstFunding1(bb,ccy):
   return float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
 
@@ -219,6 +238,10 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
 #####
 
 @retry(wait_fixed=1000)
+def bnGetFutPos(bn,ccy):
+  return float(pd.DataFrame(bn.dapiPrivate_get_positionrisk()).set_index('symbol').loc[ccy + 'USD_PERP']['positionAmt'])
+
+@retry(wait_fixed=1000)
 def bnGetEstFunding(bn, ccy):
   return float(pd.DataFrame(bn.dapiPublic_get_premiumindex({'symbol': ccy+'USD_PERP'}))['lastFundingRate']) * 3 * 365
 
@@ -291,6 +314,10 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
 #####
 
 @retry(wait_fixed=1000)
+def dbGetFutPos(db,ccy):
+  return float(db.private_get_get_position({'instrument_name': ccy + '-PERPETUAL'})['result']['size'])
+
+@retry(wait_fixed=1000)
 def dbGetEstFunding(db,ccy,mins=15):
   now=datetime.datetime.now()
   start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
@@ -361,6 +388,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
     fill=float(dbGetOrder(db, orderId)['average_price'])
     if fill!=0:
       break
+    time.sleep(1)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
 
@@ -373,6 +401,12 @@ def kfCcyToSymbol(ccy):
     return 'pi_ethusd'
   else:
     sys.exit(1)
+
+@retry(wait_fixed=1000)
+def kfGetFutPos(kf,ccy):
+  piSymbol=kfCcyToSymbol(ccy)
+  fiSymbol='f'+piSymbol[1:]
+  return kf.query('accounts')['accounts'][fiSymbol]['balances'][piSymbol]
 
 @retry(wait_fixed=1000)
 def kfGetTickers(kf):
@@ -764,7 +798,8 @@ def ctProcessFill(fill, completedLegs, isCancelled):
     if completedLegs==0:
       isCancelled=True
     else:
-      print('Abnormal termination on leg 2 cancellation!')
+      print('Abnormal termination!')
+      print('Leg '+str(completedLegs+1)+ ' cancelled when it should not have been')
       sys.exit(1)
   else:
     completedLegs+=1
@@ -798,11 +833,10 @@ def ctRun(ccy):
       smartBasisDict['spot' + ccy + 'Basis'] = 0
 
       # Remove disabled instruments
-      for x in ['SPOT','FTX','BB','BN','DB','KF']:
-        for c in ['BTC','ETH']:
-          smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict, x,c)
+      for exch in ['SPOT','FTX','BB','BN','DB','KF']:
+        smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict,exch,ccy)
 
-      # Remove spots on high spot rate
+      # Remove spots when high spot rate
       if CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1:
         for key in filterDict(smartBasisDict, 'spot'):
           del smartBasisDict[key]
@@ -814,12 +848,37 @@ def ctRun(ccy):
         chosenLong = ''
         time.sleep(CT_SLEEP)
         continue  # to next iteration in While True loop
+
+      # If pair not lock-in yet
       if chosenLong=='':
-        keyMax=max(d.items(), key=operator.itemgetter(1))[0]
-        keyMin=min(d.items(), key=operator.itemgetter(1))[0]
-        smartBasisBps=(d[keyMax]-d[keyMin])*10000
-        chosenLong = keyMin[:len(keyMin) - 13]
-        chosenShort = keyMax[:len(keyMax) - 13]
+
+        # Pick pair to trade
+        while True:
+          keyMax=max(d.items(), key=operator.itemgetter(1))[0]
+          keyMin=min(d.items(), key=operator.itemgetter(1))[0]
+          smartBasisBps=(d[keyMax]-d[keyMin])*10000
+          chosenLong = keyMin[:len(keyMin) - 13]
+          chosenShort = keyMax[:len(keyMax) - 13]
+          if not CT_IS_NO_FUT_BUYS_WHEN_LONG:
+            break
+          if chosenLong=='ftx':
+            pos=ftxGetFutPos(ftx,ccy)
+          elif chosenLong=='bb':
+            pos=bbGetFutPos(bb,ccy)
+          elif chosenLong=='bn':
+            pos=bnGetFutPos(bn,ccy)
+          elif chosenLong=='db':
+            pos=dbGetFutPos(db,ccy)
+          elif chosenLong=='kf':
+            pos=kfGetFutPos(kf,ccy)
+          else:
+            break
+          if pos>=0:
+            del d[chosenLong+ccy+'SmartBasis']
+          else:
+            break
+
+        # If target not reached yet ....
         if smartBasisBps<tgtBps:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
@@ -830,12 +889,14 @@ def ctRun(ccy):
         else:
           status=0
 
+      # Maintenance
       smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
       prevSmartBasis= prevSmartBasis[-CT_STREAK:]
       isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_STREAK_BPS_RANGE
 
+      # If target reached ....
       if smartBasisBps>=tgtBps:
         status+=1
       else:

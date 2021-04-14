@@ -282,9 +282,6 @@ def bnPrintFunding(bn,bnPR,ccy):
 ####################################################################################################
 
 def dbInit(db,spotBTC,spotETH):
-  def getFutPos(db,ccy):
-    return float(db.private_get_get_position({'instrument_name': ccy+'-PERPETUAL'})['result']['size'])
-  #####
   def get4pmIncome(db,ccy,spot):
     df= pd.DataFrame(db.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
     if len(df)>0:
@@ -304,7 +301,7 @@ def dbInit(db,spotBTC,spotETH):
   dbASETH = db.private_get_get_account_summary({'currency': 'ETH'})['result']
   dbSpotDeltaBTC = float(dbASBTC['equity'])
   dbSpotDeltaETH = float(dbASETH['equity'])
-  dbFutures = pd.DataFrame([['BTC', spotBTC, getFutPos(db, 'BTC')], ['ETH', spotETH, getFutPos(db, 'ETH')]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
+  dbFutures = pd.DataFrame([['BTC', spotBTC, cl.dbGetFutPos(db, 'BTC')], ['ETH', spotETH, cl.dbGetFutPos(db, 'ETH')]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
   dbFutures['FutDelta'] = dbFutures['FutDeltaUSD'] / dbFutures['Spot']
   dbNotional = dbFutures['FutDeltaUSD'].abs().sum()
   #####
