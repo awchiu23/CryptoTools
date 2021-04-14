@@ -7,12 +7,12 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=1
+nPrograms=3
 targetUSD=5000
 
 account=3                # 1 for KR, 2 for KR2, 3 for KR3
 side='BUY'               # 'BUY', 'SELL'
-pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
+pair='XXBTZUSD'          # 'XXBTZUSD', 'XXBTZEUR'
 hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
@@ -83,7 +83,7 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice)
     else:
       print('.',end='')
-    time.sleep(1)
+    time.sleep(3)
   print()
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
