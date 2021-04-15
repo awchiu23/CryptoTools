@@ -281,49 +281,6 @@ def bnPrintFunding(bn,bnPR,ccy):
 
 ####################################################################################################
 
-def dbInit(db,spotBTC,spotETH):
-  def get4pmIncome(db,ccy,spot):
-    df= pd.DataFrame(db.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
-    if len(df)>0:
-      cl.dfSetFloat(df, 'funding')
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
-      df=df.set_index('date').sort_index()
-      return df['funding'].iloc[-1]*spot
-    else:
-      return 0
-  #####
-  dbASBTC = db.private_get_get_account_summary({'currency': 'BTC'})['result']
-  dbASETH = db.private_get_get_account_summary({'currency': 'ETH'})['result']
-  dbSpotDeltaBTC = float(dbASBTC['equity'])
-  dbSpotDeltaETH = float(dbASETH['equity'])
-  dbFutures = pd.DataFrame([['BTC', spotBTC, cl.dbGetFutPos(db, 'BTC')], ['ETH', spotETH, cl.dbGetFutPos(db, 'ETH')]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
-  dbFutures['FutDelta'] = dbFutures['FutDeltaUSD'] / dbFutures['Spot']
-  dbNotional = dbFutures['FutDeltaUSD'].abs().sum()
-  #####
-  db4pmIncome=get4pmIncome(db,'BTC',spotBTC)+get4pmIncome(db,'ETH',spotETH)
-  db4pmAnnRet = db4pmIncome * 365 / dbNotional
-  #####
-  dbNAV = dbSpotDeltaBTC * spotBTC + dbSpotDeltaETH * spotETH
-  dbLiqBTC=float(dbASBTC['estimated_liquidation_ratio'])
-  dbLiqETH=float(dbASETH['estimated_liquidation_ratio'])
-  #####
-  return dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
-         db4pmIncome, db4pmAnnRet, \
-         dbNAV, dbLiqBTC, dbLiqETH
-
-def dbPrintIncomes(_4pmIncome,_4pmAnnRet):
-  z1='$' + str(round(_4pmIncome)) + ' (' + str(round(_4pmAnnRet * 100)) + '% p.a.)'
-  print(termcolor.colored(('DB 4pm funding income: ').rjust(41) + z1,'blue'))
-
-def dbPrintFunding(db,dbFutures,ccy):
-  oneDayFunding = cl.dbGetEstFunding(db,ccy,mins=60*24)
-  estFunding=cl.dbGetEstFunding(db,ccy)
-  prefix='DB ' + ccy + ' 24h/est funding rate:'
-  suffix = str(round(oneDayFunding * 100)) + '%/' + str(round(estFunding * 100)) + '% p.a. ($' + str(round(dbFutures.loc[ccy, 'FutDeltaUSD'])) + ')'
-  print(prefix.rjust(40) + ' ' + suffix)
-
-####################################################################################################
-
 def kfInit(kf,spotBTC,spotETH):
   def getLog(kf, kfFutures):
     ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
@@ -459,7 +416,7 @@ def cbInit(cb,spotBTC,spotETH):
 ######
 # Init
 ######
-print()
+cl.printHeader('CryptoReporter')
 ftx=cl.ftxCCXTInit()
 ftxWallet,ftxPositions,ftxPayments, \
   ftxPrevIncome,ftxPrevAnnRet,ftxOneDayIncome,ftxOneDayAnnRet, \
@@ -486,11 +443,6 @@ if CR_IS_ADVANCED:
   bnPrevIncome, bnPrevAnnRet, bnOneDayIncome, bnOneDayAnnRet, \
   bnNAV, bnLiqBTC, bnLiqETH = bnInit(bn, spotBTC, spotETH)
 
-  db = cl.dbCCXTInit()
-  dbSpotDeltaBTC, dbSpotDeltaETH, dbFutures, \
-  db4pmIncome, db4pmAnnRet, \
-  dbNAV, dbLiqBTC, dbLiqETH = dbInit(db, spotBTC, spotETH)
-
   kf = cl.kfInit()
   kfSpotDeltaBTC, kfSpotDeltaETH, kfFutures, kfLog, \
   kfPrevIncome, kfPrevAnnRet, kfOneDayIncome, kfOneDayAnnRet, \
@@ -516,8 +468,8 @@ if CR_IS_ADVANCED and CR_N_KR_ACCOUNTS>=3:
 nav=ftxNAV+bbNAV+cbNAV
 oneDayIncome=ftxOneDayIncome+ftxOneDayUSDFlows+ftxOneDayUSDTFlows+ftxOneDayBTCFlows+ftxOneDayETHFlows+bbOneDayIncome
 if CR_IS_ADVANCED:
-  nav+=bnNAV+dbNAV+kfNAV+kr1NAV+kr2NAV+get_EXTERNAL_EUR_NAV(spotEUR)
-  oneDayIncome += bnOneDayIncome + db4pmIncome + kfOneDayIncome + kr1OneDayIncome + kr2OneDayIncome
+  nav+=bnNAV+kfNAV+kr1NAV+kr2NAV+get_EXTERNAL_EUR_NAV(spotEUR)
+  oneDayIncome += bnOneDayIncome + kfOneDayIncome + kr1OneDayIncome + kr2OneDayIncome
   if CR_N_KR_ACCOUNTS>=3:
     nav+=kr3NAV
     oneDayIncome+=kr3OneDayIncome
@@ -527,7 +479,6 @@ spotDeltaBTC+=bbSpotDeltaBTC
 spotDeltaBTC+=cbSpotDeltaBTC
 if CR_IS_ADVANCED:
   spotDeltaBTC+=bnBal.loc['BTC','SpotDelta']
-  spotDeltaBTC+=dbSpotDeltaBTC
   spotDeltaBTC += kfSpotDeltaBTC
   spotDeltaBTC+=kr1SpotDeltaBTC
   spotDeltaBTC+=kr2SpotDeltaBTC
@@ -537,7 +488,6 @@ futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
 if CR_IS_ADVANCED:
   futDeltaBTC+=bnPR.loc['BTC','FutDelta']
-  futDeltaBTC+=dbFutures.loc['BTC','FutDelta']
   futDeltaBTC+=kfFutures.loc['BTC', 'FutDelta']
 
 spotDeltaETH=ftxWallet.loc['ETH','SpotDelta']
@@ -545,7 +495,6 @@ spotDeltaETH+=bbSpotDeltaETH
 spotDeltaETH+=cbSpotDeltaETH
 if CR_IS_ADVANCED:
   spotDeltaETH+=bnBal.loc['ETH','SpotDelta']
-  spotDeltaETH+=dbSpotDeltaETH
   spotDeltaETH+=kfSpotDeltaETH
   spotDeltaETH+=kr1SpotDeltaETH
   spotDeltaETH += kr2SpotDeltaETH
@@ -555,7 +504,6 @@ futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
 if CR_IS_ADVANCED:
   futDeltaETH+=bnPR.loc['ETH','FutDelta']
-  futDeltaETH+=dbFutures.loc['ETH','FutDelta']
   futDeltaETH+=kfFutures.loc['ETH', 'FutDelta']
 
 spotDeltaFTT=ftxWallet.loc['FTT','SpotDelta']
@@ -569,7 +517,6 @@ z+=' (FTX: $' + str(round(ftxNAV/1000)) + 'K'
 z+=' / BB: $' + str(round(bbNAV/1000)) + 'K'
 if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
-  z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
   z += ' / KF: $' + str(round(kfNAV / 1000)) + 'K'
   z+=' / KR1: $' + str(round(kr1NAV/1000)) + 'K'
   z += ' / KR2: $' + str(round(kr2NAV / 1000)) + 'K'
@@ -612,12 +559,6 @@ if CR_IS_ADVANCED:
   bnPrintFunding(bn,bnPR,'BTC')
   bnPrintFunding(bn,bnPR,'ETH')
   printLiq('BN',bnLiqBTC,bnLiqETH)
-  print()
-  #####
-  dbPrintIncomes(db4pmIncome,db4pmAnnRet)
-  dbPrintFunding(db,dbFutures,'BTC')
-  dbPrintFunding(db,dbFutures,'ETH')
-  printLiq('DB',dbLiqBTC,dbLiqETH)
   print()
   #####
   printIncomes('KF', kfPrevIncome, kfPrevAnnRet, kfOneDayIncome, kfOneDayAnnRet)

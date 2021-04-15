@@ -25,9 +25,6 @@ def bbCCXTInit():
 def bnCCXTInit():
   return  ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True})
 
-def dbCCXTInit():
-  return  ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True})
-
 def kfInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
@@ -305,87 +302,6 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
         orderId=bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
-
-#####
-
-@retry(wait_fixed=1000)
-def dbGetFutPos(db,ccy):
-  return float(db.private_get_get_position({'instrument_name': ccy + '-PERPETUAL'})['result']['size'])
-
-@retry(wait_fixed=1000)
-def dbGetEstFunding(db,ccy,mins=15):
-  now=datetime.datetime.now()
-  start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
-  end_timestamp = int(datetime.datetime.timestamp(now))*1000
-  return float(db.public_get_get_funding_rate_value({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])*(60/mins)*24*365
-
-def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
-  @retry(wait_fixed=1000)
-  def dbGetBid(db, ticker):
-    d = db.public_get_ticker({'instrument_name': ticker})['result']
-    return float(d['best_bid_price'])
-  @retry(wait_fixed=1000)
-  def dbGetAsk(db, ticker):
-    d = db.public_get_ticker({'instrument_name': ticker})['result']
-    return float(d['best_ask_price'])
-  @retry(wait_fixed=1000)
-  def dbGetOrder(db,orderId):
-    return db.private_get_get_order_state({'order_id': orderId})['result']
-  #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
-  if ccy=='BTC':
-    trade_notional=round(trade_notional,-1)
-  else:
-    trade_notional=round(trade_notional)
-  ticker = ccy + '-PERPETUAL'
-  print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
-  if side=='BUY':
-    limitPrice = dbGetBid(db, ticker)
-    orderId=db.private_get_buy({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
-  else:
-    limitPrice = dbGetAsk(db, ticker)
-    orderId=db.private_get_sell({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
-  nChases=0
-  while True:
-    if dbGetOrder(db, orderId)['order_state']=='filled':
-      break
-    if side=='BUY':
-      newPrice=dbGetBid(db,ticker)
-    else:
-      newPrice=dbGetAsk(db,ticker)
-    if newPrice != limitPrice:
-      limitPrice = newPrice
-      nChases+=1
-      orderStatus = dbGetOrder(db, orderId)
-      if orderStatus['order_state'] == 'filled':
-        break
-      if nChases>maxChases and float(orderStatus['filled_amount'])==0:
-        if side == 'BUY':
-          farPrice = round(limitPrice * .95, 2)
-        else:
-          farPrice = round(limitPrice * 1.05, 2)
-        try:
-          db.private_get_edit({'order_id':orderId,'amount':trade_notional,'price':farPrice})
-        except:
-          break
-        if float(dbGetOrder(db, orderId)['filled_amount'])==0:
-          db.private_get_cancel({'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
-          return 0
-      else:
-        try:
-          db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
-        except:
-          break
-    time.sleep(1)
-  for n in range(3): # Try up to 3 times
-    fill=float(dbGetOrder(db, orderId)['average_price'])
-    if fill!=0:
-      break
-    time.sleep(1)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
 
