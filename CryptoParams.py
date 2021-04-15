@@ -15,8 +15,8 @@ API_KEY_DB = ''
 API_SECRET_DB = ''
 API_KEY_KF = ''
 API_SECRET_KF = ''
-API_KEY_KR = ''
-API_SECRET_KR = ''
+API_KEY_KR1 = ''
+API_SECRET_KR1 = ''
 API_KEY_KR2 = ''
 API_SECRET_KR2 = ''
 API_KEY_KR3 = ''
@@ -37,19 +37,19 @@ CT_CONFIGS_DICT['BTC_TGT_BPS']=CT_DEFAULT_TGT_BPS
 CT_CONFIGS_DICT['ETH_TGT_BPS']=CT_DEFAULT_TGT_BPS
 
 # BTC --- 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_BTC_OK']=0
-CT_CONFIGS_DICT['FTX_BTC_OK']=0
-CT_CONFIGS_DICT['BB_BTC_OK']=1
-CT_CONFIGS_DICT['BN_BTC_OK']=1
-CT_CONFIGS_DICT['DB_BTC_OK']=1
-CT_CONFIGS_DICT['KF_BTC_OK']=1
+CT_CONFIGS_DICT['SPOT_BTC_OK']=1
+CT_CONFIGS_DICT['FTX_BTC_OK']=1
+CT_CONFIGS_DICT['BB_BTC_OK']=0
+CT_CONFIGS_DICT['BN_BTC_OK']=0
+CT_CONFIGS_DICT['DB_BTC_OK']=0
+CT_CONFIGS_DICT['KF_BTC_OK']=0
 
 # BTC --- Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-5
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-20
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=5
-CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=-5
-CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=-5
+CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
 
 # ETH --- 0=Disabled; 1=Enabled
@@ -62,10 +62,10 @@ CT_CONFIGS_DICT['KF_ETH_OK']=0
 
 # ETH --- Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-5
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=10
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=5
-CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
-CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-5
+CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
@@ -102,7 +102,7 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 #################
 CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
 CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
-CR_IS_KR3 = True                     # Set False to disable third Kraken account
+CR_N_KR_ACCOUNTS = 3                 # Number of Kraken accounts -- 2 or 3 only
 
 #############################################################################################
 
@@ -122,8 +122,8 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
-  API_KEY_KR = sl.jLoad('API_KEY_KR')
-  API_SECRET_KR = sl.jLoad('API_SECRET_KR')
+  API_KEY_KR1 = sl.jLoad('API_KEY_KR1')
+  API_SECRET_KR1 = sl.jLoad('API_SECRET_KR1')
   API_KEY_KR2 = sl.jLoad('API_KEY_KR2')
   API_SECRET_KR2 = sl.jLoad('API_SECRET_KR2')
   API_KEY_KR3 = sl.jLoad('API_KEY_KR3')

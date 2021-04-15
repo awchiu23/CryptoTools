@@ -10,9 +10,9 @@ from retrying import retry
 nPrograms=3
 targetUSD=5000
 
-account=3                # 1 for KR, 2 for KR2, 3 for KR3
+account=3                # which Kraken account to use
 side='BUY'               # 'BUY', 'SELL'
-pair='XXBTZUSD'          # 'XXBTZUSD', 'XXBTZEUR'
+pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
 hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
@@ -93,20 +93,12 @@ def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
 ######
 # Init
 ######
-if account==1:
-  kr = cl.krCCXTInit()
-elif account==2:
-  kr = cl.kr2CCXTInit()
-elif account==3:
-  kr = cl.kr3CCXTInit()
-else:
-  sys.exit(1)
-
 ftx = cl.ftxCCXTInit()
 ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC=ftxWallet.loc['BTC','spot']
 trade_btc = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotBTC, cl.CT_MAX_BTC])
 trade_btc_notional = trade_btc * spotBTC
+kr = cl.krCCXTInit(account)
 
 if side == 'BUY':
   oppSide = 'SELL'

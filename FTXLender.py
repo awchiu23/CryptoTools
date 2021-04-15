@@ -10,8 +10,8 @@ isRunNow=False            # Run once and stop? Otherwise loop continuously and r
 isManageCoins=True        # Also manage coins (BTC and ETH) in addition to USD?
 
 minRate=0.05              # Minimum rate for all loans
-usdLendingRatio=0.90      # Percentage of USD to lend out
-coinLendingRatio=0.90     # Percentage of coins (BTC and ETH) to lend out
+usdLendingRatio=0.5       # Percentage of USD to lend out
+coinLendingRatio=0.5      # Percentage of coins (BTC and ETH) to lend out
 
 ###########
 # Functions

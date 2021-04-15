@@ -31,14 +31,8 @@ def dbCCXTInit():
 def kfInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
-def krCCXTInit():
-  return ccxt.kraken({'apiKey': API_KEY_KR, 'secret': API_SECRET_KR, 'enableRateLimit': False})
-
-def kr2CCXTInit():
-  return ccxt.kraken({'apiKey': API_KEY_KR2, 'secret': API_SECRET_KR2, 'enableRateLimit': False})
-
-def kr3CCXTInit():
-  return ccxt.kraken({'apiKey': API_KEY_KR3, 'secret': API_SECRET_KR3, 'enableRateLimit': False})
+def krCCXTInit(n=1):
+  return ccxt.kraken({'apiKey': globals()['API_KEY_KR'+str(n)], 'secret': globals()['API_SECRET_KR'+str(n)], 'enableRateLimit': False})
 
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
