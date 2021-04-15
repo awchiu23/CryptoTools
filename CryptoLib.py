@@ -436,7 +436,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,db,kf):
+def getFundingDict(ftx,bb,bn,kf):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -462,8 +462,6 @@ def getFundingDict(ftx,bb,bn,db,kf):
   d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
   d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
   d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
-  d['dbEstFundingBTC'] = dbGetEstFunding(db, 'BTC')
-  d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')
   d['kfEstFunding1BTC'] = kfGetEstFunding1(kf, 'BTC')
   d['kfEstFunding1ETH'] = kfGetEstFunding1(kf, 'ETH')
   d['kfEstFunding2BTC'] = kfGetEstFunding2(kf, 'BTC')
@@ -535,12 +533,6 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
 @retry(wait_fixed=1000)
-def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
-  edge = basis - getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1] # basis
-  edge += getOneDayDecayedMean(fundingDict['dbEstFunding' + ccy], BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING) / 365 # funding
-  return edge
-
-@retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   if not hasattr(kfGetOneDayShortFutEdge, 'emaBTC'):
     kfGetOneDayShortFutEdge.emaBTC = fundingDict['kfEstFunding2BTC']
@@ -569,7 +561,7 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
 
 #############################################################################################
 
-def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
+def getSmartBasisDict(ftx, bb, bn, kf, fundingDict, isSkipAdj=False):
   @retry(wait_fixed=1000)
   def ftxGetMarkets(ftx):
     return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
@@ -595,11 +587,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   def bnGetMid(bnBookTicker, ccy):
     return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
   #####
-  @retry(wait_fixed=1000)
-  def dbGetMid(db,ccy):
-    d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
-    return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
-  #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   ftxMarkets = ftxGetMarkets(ftx)
   ftxFutures = ftxGetFutures(ftx)
@@ -612,8 +599,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
     bnETHAdj=0
     bbBTCAdj=0
     bbETHAdj=0
-    dbBTCAdj=0
-    dbETHAdj=0
     kfBTCAdj=0
     kfETHAdj=0
   else:
@@ -623,8 +608,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
     bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
     bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
     bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
-    dbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']) / 10000
-    dbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']) / 10000
     kfBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']) / 10000
     kfETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']) / 10000            
   #####
@@ -646,11 +629,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
   d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
   ###
-  d['dbBTCBasis'] = dbGetMid(db, 'BTC') / spotBTC - 1
-  d['dbETHBasis'] = dbGetMid(db, 'ETH') / spotETH - 1
-  d['dbBTCSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'BTC', d['dbBTCBasis']) - oneDayShortSpotEdge + dbBTCAdj
-  d['dbETHSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'ETH', d['dbETHBasis']) - oneDayShortSpotEdge + dbETHAdj
-  ###
   kfTickers=kfGetTickers(kf)
   d['kfBTCBasis']=(kfTickers.loc['pi_xbtusd','bid']+kfTickers.loc['pi_xbtusd','ask'])/2/spotBTC - 1
   d['kfETHBasis'] = (kfTickers.loc['pi_ethusd', 'bid'] + kfTickers.loc['pi_ethusd', 'ask']) / 2 / spotETH - 1
@@ -667,7 +645,6 @@ def ctInit():
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
-  db = dbCCXTInit()
   kf = kfInit()
   ftxWallet=ftxGetWallet(ftx)
   spotBTC=ftxWallet.loc['BTC','spot']
@@ -686,7 +663,7 @@ def ctInit():
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
-  return ftx,bb,bn,db,kf,qty_dict,notional_dict
+  return ftx,bb,bn,kf,qty_dict,notional_dict
 
 def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
   if CT_CONFIGS_DICT[exch + '_' + ccy + '_OK'] == 0:
@@ -740,7 +717,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy):
-  ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
+  ftx, bb, bn, kf, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH']:
     print('Invalid ccy!')
     sys.exit(1)
@@ -753,13 +730,13 @@ def ctRun(ccy):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, db, kf)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict)
+      fundingDict=getFundingDict(ftx, bb, bn, kf)
+      smartBasisDict = getSmartBasisDict(ftx, bb, bn, kf, fundingDict)
       smartBasisDict['spot' + ccy + 'SmartBasis'] = 0
       smartBasisDict['spot' + ccy + 'Basis'] = 0
 
       # Remove disabled instruments
-      for exch in ['SPOT','FTX','BB','BN','DB','KF']:
+      for exch in ['SPOT','FTX','BB','BN','KF']:
         smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict,exch,ccy)
 
       # Remove spots when high spot rate
@@ -794,8 +771,6 @@ def ctRun(ccy):
             pos=bbGetFutPos(bb,ccy)
           elif chosenLong=='bn':
             pos=bnGetFutPos(bn,ccy)
-          elif chosenLong=='db':
-            pos=dbGetFutPos(db,ccy)
           elif chosenLong=='kf':
             pos=kfGetFutPos(kf,ccy)
           else:
@@ -866,12 +841,6 @@ def ctRun(ccy):
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kf' in chosenShort and not isCancelled:
           shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'db' in chosenLong and not isCancelled:
-          longFill = dbRelOrder('BUY', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'db' in chosenShort and not isCancelled:
-          shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
