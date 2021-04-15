@@ -166,11 +166,11 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
-    result=bb.v2_private_get_order({'symbol': ticker, 'orderid': orderId})['result']
+    result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
     if len(result)==0:
       return 0
     else:
-      return result[0]
+      return result
   @retry(wait_fixed=1000)
   def bbGetFillPrice(bb, ticker, orderId):
     df = pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ticker, 'order_id': orderId})['result']['trade_list'])
