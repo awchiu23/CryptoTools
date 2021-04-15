@@ -40,7 +40,8 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Universe: USD, BTC, ETH
 
 ## Kraken24HBorrowCalc
-- This tool calculates 24H borrow
+- This tool calculates 24H borrow $ of Kraken accounts
+- Can be used to check against CryptoReporter's numbers, which are based on estimation
 
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
