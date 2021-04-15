@@ -462,6 +462,12 @@ if CR_IS_ADVANCED and CR_N_KR_ACCOUNTS>=3:
     kr3OneDayIncome, kr3OneDayAnnRet, \
     kr3NAV, kr3LiqBTC, _ = krInit(kr3, spotBTC)
 
+if CR_IS_ADVANCED and CR_N_KR_ACCOUNTS>=4:
+  kr4 = cl.krCCXTInit(4)
+  kr4SpotDeltaBTC, kr4SpotDeltaETH, kr4SpotDeltaEUR, kr4BTCMarginDeltaUSD, \
+    kr4OneDayIncome, kr4OneDayAnnRet, \
+    kr4NAV, kr4LiqBTC, _ = krInit(kr4, spotBTC)
+
 #############
 # Aggregation
 #############
@@ -473,7 +479,9 @@ if CR_IS_ADVANCED:
   if CR_N_KR_ACCOUNTS>=3:
     nav+=kr3NAV
     oneDayIncome+=kr3OneDayIncome
-
+  if CR_N_KR_ACCOUNTS>=4:
+    nav+=kr4NAV
+    oneDayIncome+=kr4OneDayIncome
 spotDeltaBTC=ftxWallet.loc['BTC','SpotDelta']
 spotDeltaBTC+=bbSpotDeltaBTC
 spotDeltaBTC+=cbSpotDeltaBTC
@@ -483,6 +491,7 @@ if CR_IS_ADVANCED:
   spotDeltaBTC+=kr1SpotDeltaBTC
   spotDeltaBTC+=kr2SpotDeltaBTC
   if CR_N_KR_ACCOUNTS>=3: spotDeltaBTC += kr3SpotDeltaBTC
+  if CR_N_KR_ACCOUNTS>=4: spotDeltaBTC += kr4SpotDeltaBTC
 
 futDeltaBTC=ftxPositions.loc['BTC','FutDelta']
 futDeltaBTC+=bbPL.loc['BTC','FutDelta']
@@ -499,6 +508,7 @@ if CR_IS_ADVANCED:
   spotDeltaETH+=kr1SpotDeltaETH
   spotDeltaETH += kr2SpotDeltaETH
   if CR_N_KR_ACCOUNTS>=3: spotDeltaETH += kr3SpotDeltaETH
+  if CR_N_KR_ACCOUNTS>=4: spotDeltaETH += kr4SpotDeltaETH
 
 futDeltaETH=ftxPositions.loc['ETH','FutDelta']
 futDeltaETH+=bbPL.loc['ETH','FutDelta']
@@ -521,6 +531,7 @@ if CR_IS_ADVANCED:
   z+=' / KR1: $' + str(round(kr1NAV/1000)) + 'K'
   z += ' / KR2: $' + str(round(kr2NAV / 1000)) + 'K'
   if CR_N_KR_ACCOUNTS>=3: z += ' / KR3: $' + str(round(kr3NAV / 1000)) + 'K'
+  if CR_N_KR_ACCOUNTS>=4: z += ' / KR4: $' + str(round(kr4NAV / 1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
@@ -586,4 +597,5 @@ printDeltas('FTT',spotFTT,spotDeltaFTT,futDeltaFTT)
 if CR_IS_ADVANCED:
   spotDeltaEUR=kr1SpotDeltaEUR + kr2SpotDeltaEUR
   if CR_N_KR_ACCOUNTS>=3: spotDeltaEUR+= kr3SpotDeltaEUR
+  if CR_N_KR_ACCOUNTS>=4: spotDeltaEUR+= kr4SpotDeltaEUR
   printEURDeltas(spotEUR,spotDeltaEUR)

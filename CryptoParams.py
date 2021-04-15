@@ -19,6 +19,8 @@ API_KEY_KR2 = ''
 API_SECRET_KR2 = ''
 API_KEY_KR3 = ''
 API_SECRET_KR3 = ''
+API_KEY_KR4 = ''
+API_SECRET_KR4 = ''
 API_KEY_CB = ''
 API_SECRET_CB = ''
 EXTERNAL_EUR_DELTA = 0
@@ -39,7 +41,7 @@ CT_CONFIGS_DICT['SPOT_BTC_OK']=0
 CT_CONFIGS_DICT['FTX_BTC_OK']=0
 CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=1
-CT_CONFIGS_DICT['KF_BTC_OK']=1
+CT_CONFIGS_DICT['KF_BTC_OK']=0
 
 # BTC --- Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-5
@@ -53,7 +55,7 @@ CT_CONFIGS_DICT['SPOT_ETH_OK']=0
 CT_CONFIGS_DICT['FTX_ETH_OK']=0
 CT_CONFIGS_DICT['BB_ETH_OK']=1
 CT_CONFIGS_DICT['BN_ETH_OK']=1
-CT_CONFIGS_DICT['KF_ETH_OK']=1
+CT_CONFIGS_DICT['KF_ETH_OK']=0
 
 # ETH --- Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-5
@@ -96,7 +98,7 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 #################
 CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
 CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
-CR_N_KR_ACCOUNTS = 3                 # Number of Kraken accounts -- 2 or 3 only
+CR_N_KR_ACCOUNTS = 4                 # Number of Kraken accounts -- 2, 3 or 4 only
 
 #############################################################################################
 
@@ -120,6 +122,8 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR2 = sl.jLoad('API_SECRET_KR2')
   API_KEY_KR3 = sl.jLoad('API_KEY_KR3')
   API_SECRET_KR3 = sl.jLoad('API_SECRET_KR3')
+  API_KEY_KR4 = sl.jLoad('API_KEY_KR4')
+  API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   API_KEY_CB = sl.jLoad('API_KEY_CB')
   API_SECRET_CB = sl.jLoad('API_SECRET_CB')
   EXTERNAL_EUR_DELTA = sl.jLoad('EXTERNAL_EUR_DELTA')
