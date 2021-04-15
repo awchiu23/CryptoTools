@@ -571,7 +571,7 @@ if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnNAV/1000)) + 'K'
   z+=' / DB: $' + str(round(dbNAV/1000)) + 'K'
   z += ' / KF: $' + str(round(kfNAV / 1000)) + 'K'
-  z+=' / KR: $' + str(round(kr1NAV/1000)) + 'K'
+  z+=' / KR1: $' + str(round(kr1NAV/1000)) + 'K'
   z += ' / KR2: $' + str(round(kr2NAV / 1000)) + 'K'
   if CR_N_KR_ACCOUNTS>=3: z += ' / KR3: $' + str(round(kr3NAV / 1000)) + 'K'
 z+=' / CB: $' + str(round(cbNAV/1000)) + 'K)'
