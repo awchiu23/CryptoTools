@@ -1,6 +1,6 @@
-#############
-# KR24HBorrow
-#############
+#################
+# KR24HBorrowCalc
+#################
 from CryptoParams import *
 import CryptoLib as cl
 import pandas as pd
@@ -42,7 +42,7 @@ def getLedgers(kr, spotBTC, spotEUR):
 ######
 # Init
 ######
-cl.printHeader('Kraken24HBorrow')
+cl.printHeader('Kraken24HBorrowCalc')
 ftx = cl.ftxCCXTInit()
 ftxWallet = cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC', 'spot']
