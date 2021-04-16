@@ -15,7 +15,6 @@ def getLedgersRaw(kr,start,ofs):
     try:
       return pd.DataFrame(kr.private_post_ledgers({'type': 'rollover', 'start': start, 'ofs': ofs})['result']['ledger'])
     except:
-      print('.',end='')
       time.sleep(10)
 
 def getLedgers(kr, spotBTC, spotEUR):
@@ -54,9 +53,9 @@ spot_xxbtzeur = float(krs[0].public_get_ticker({'pair': 'XXBTZEUR'})['result']['
 spot_xxbtzusd = float(krs[0].public_get_ticker({'pair': 'XXBTZUSD'})['result']['XXBTZUSD']['c'][0])
 spotEUR = spot_xxbtzusd / spot_xxbtzeur
 
+print('Please wait ....')
 n=0
 for krChosen in krs:
   n+=1
   ledgers=getLedgers(krChosen,spotBTC,spotEUR)
-  print()
   print('KR'+str(n)+' 24h borrow: $'+str(round(ledgers['feeUSD'].sum())))

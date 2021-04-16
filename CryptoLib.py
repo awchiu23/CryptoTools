@@ -359,12 +359,11 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
         return None
   # Do not use @retry
   def kfGetFilledSize(orderStatus):
-    fs=orderStatus['filledSize']
     try:
-      return float(fs)
+      return float(orderStatus['filledSize'])
     except:
-      print('Abnormal termination!')
-      print('filledSize = '+fs)
+      print('Abnormal termination on reading filledSize!')
+      print(orderStatus)
       sys.exit(1)
   # Do not use @retry
   def kfGetFillPrice(kf, orderId):
@@ -534,10 +533,14 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
 
 @retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaBTC'):
-    kfGetOneDayShortFutEdge.emaBTC = fundingDict['kfEstFunding2BTC']
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaETH'):
-    kfGetOneDayShortFutEdge.emaETH = fundingDict['kfEstFunding2ETH']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2BTC'):
+    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaSnapBTC'):
+    kfGetOneDayShortFutEdge.emaSnapBTC = fundingDict['kfEstFunding2BTC']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2ETH'):
+    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaSnapETH'):
+    kfGetOneDayShortFutEdge.emaSnapETH = fundingDict['kfEstFunding2ETH']
   symbol = kfCcyToSymbol(ccy)
   if ccy == 'BTC':
     indexSymbol = 'in_xbtusd'
@@ -548,16 +551,21 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   mid = (kfTickers.loc[symbol, 'bid'] + kfTickers.loc[symbol, 'ask']) / 2
   premIndexClipped = np.clip(mid / kfTickers.loc[indexSymbol, 'last'] - 1, -0.008, 0.008)
   snapFundingRate = premIndexClipped * 365 * 3
-  k = 2 / (60 * 15 / CT_SLEEP + 1)
+  k1 = 2 / (60 * 1 / CT_SLEEP + 1)
+  k15 = 2 / (60 * 15 / CT_SLEEP + 1)
   if ccy == 'BTC':
-    kfGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + kfGetOneDayShortFutEdge.emaBTC * (1 - k)
-    smoothedSnapFundingRate = kfGetOneDayShortFutEdge.emaBTC
+    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC'] * k1 + kfGetOneDayShortFutEdge.emaEst2BTC * (1 - k1)
+    smoothedEst2Rate = kfGetOneDayShortFutEdge.emaEst2BTC
+    kfGetOneDayShortFutEdge.emaSnapBTC = snapFundingRate * k15 + kfGetOneDayShortFutEdge.emaSnapBTC * (1 - k15)
+    smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapBTC
   elif ccy == 'ETH':
-    kfGetOneDayShortFutEdge.emaETH = snapFundingRate * k + kfGetOneDayShortFutEdge.emaETH * (1 - k)
-    smoothedSnapFundingRate = kfGetOneDayShortFutEdge.emaETH
+    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH'] * k1 + kfGetOneDayShortFutEdge.emaEst2ETH * (1 - k1)
+    smoothedEst2Rate = kfGetOneDayShortFutEdge.emaEst2ETH
+    kfGetOneDayShortFutEdge.emaSnapETH = snapFundingRate * k15 + kfGetOneDayShortFutEdge.emaSnapETH * (1 - k15)
+    smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapETH
   else:
     sys.exit(1)
-  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, fundingDict['kfEstFunding2' + ccy], prevFundingRate=fundingDict['kfEstFunding1' + ccy], isKF=True)
+  return getOneDayShortFutEdge(4, basis, smoothedSnapRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1' + ccy], isKF=True)
 
 #############################################################################################
 
