@@ -551,17 +551,16 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   mid = (kfTickers.loc[symbol, 'bid'] + kfTickers.loc[symbol, 'ask']) / 2
   premIndexClipped = np.clip(mid / kfTickers.loc[indexSymbol, 'last'] - 1, -0.008, 0.008)
   snapFundingRate = premIndexClipped * 365 * 3
-  k1 = 2 / (60 * 1 / CT_SLEEP + 1)
-  k15 = 2 / (60 * 15 / CT_SLEEP + 1)
+  k = 2 / (60 * 15 / CT_SLEEP + 1)
   if ccy == 'BTC':
-    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC'] * k1 + kfGetOneDayShortFutEdge.emaEst2BTC * (1 - k1)
+    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC'] * k + kfGetOneDayShortFutEdge.emaEst2BTC * (1 - k)
     smoothedEst2Rate = kfGetOneDayShortFutEdge.emaEst2BTC
-    kfGetOneDayShortFutEdge.emaSnapBTC = snapFundingRate * k15 + kfGetOneDayShortFutEdge.emaSnapBTC * (1 - k15)
+    kfGetOneDayShortFutEdge.emaSnapBTC = snapFundingRate * k + kfGetOneDayShortFutEdge.emaSnapBTC * (1 - k)
     smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapBTC
   elif ccy == 'ETH':
-    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH'] * k1 + kfGetOneDayShortFutEdge.emaEst2ETH * (1 - k1)
+    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH'] * k + kfGetOneDayShortFutEdge.emaEst2ETH * (1 - k)
     smoothedEst2Rate = kfGetOneDayShortFutEdge.emaEst2ETH
-    kfGetOneDayShortFutEdge.emaSnapETH = snapFundingRate * k15 + kfGetOneDayShortFutEdge.emaSnapETH * (1 - k15)
+    kfGetOneDayShortFutEdge.emaSnapETH = snapFundingRate * k + kfGetOneDayShortFutEdge.emaSnapETH * (1 - k)
     smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapETH
   else:
     sys.exit(1)
