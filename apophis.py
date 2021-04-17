@@ -1,6 +1,7 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
+# Mod: imported CryptoParams
 # Mod: "editorder" added
-# Mod: Futures URI replaced
+# Mod: Futures URI replaced if CR_IS_ADVANCED
 # Mod: "get_account_log" added
 
 """Low level client for Kraken and Kraken Future."""
@@ -18,6 +19,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
+from CryptoParams import * # <--- Simon added this line
 
 version = "1.0"
 
@@ -108,8 +110,15 @@ class Apophis:
 
         self.future = future
         if self.future:
-            #self.uri = "https://futures.kraken.com/derivatives"
-            self.uri = "https://api.futures.kraken.com/derivatives" # <--- Simon replaced this line
+
+            ###################################
+            # <--- Simon replaced this block
+            if CR_IS_ADVANCED:
+                self.uri = "https://api.futures.kraken.com/derivatives"
+            else:
+                self.uri = "https://futures.kraken.com/derivatives"
+            ###################################
+
             self.apiversion = "/api/v3/"
         else:
             self.uri = "https://api.kraken.com"
