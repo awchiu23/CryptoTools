@@ -112,7 +112,7 @@ class Apophis:
         if self.future:
 
             ###################################
-            # <--- Simon replaced this block
+            # Simon replaced this block
             if IS_IP_WHITELIST:
                 self.uri = "https://api.futures.kraken.com/derivatives"
             else:
