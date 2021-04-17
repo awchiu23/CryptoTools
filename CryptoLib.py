@@ -196,6 +196,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
   else:
     refPrice = bbGetAsk(bb, ticker1)
     orderId = bb.create_limit_sell_order(ticker1, trade_notional, bbGetLimitPrice(side,distanceToBestBps,refPrice))['info']['order_id']
+  refTime = time.time()
   nChases=0
   while True:    
     orderStatus=bbGetOrder(bb,ticker2,orderId)
@@ -204,7 +205,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
       newPrice=bbGetBid(bb,ticker1)
     else:
       newPrice=bbGetAsk(bb,ticker1)
-    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice):
+    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice) or ((time.time()-refTime)>30):
       refPrice = newPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker2, orderId)
@@ -224,6 +225,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
           print(getCurrentTime() + ': Cancelled')
           return 0
       else:
+        refTime=time.time()
         try:
           bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': bbGetLimitPrice(side,distanceToBestBps,refPrice)})
         except:
