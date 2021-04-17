@@ -313,10 +313,17 @@ def kfInit(kf,spotBTC,spotETH):
   futures['FutDelta'] = futures['FutDeltaUSD'] / futures['Spot']
   notional=futures['FutDeltaUSD'].abs().sum()
   #####
-  log=getLog(kf,futures)
-  prevIncome = log.loc[log.index[-1]]['fundingUSD'].sum()
+  if IS_IP_WHITELIST:
+    log=getLog(kf,futures)
+    prevIncome = log.loc[log.index[-1]]['fundingUSD'].sum()
+    oneDayIncome = log['fundingUSD'].sum()
+  else:
+    log=None
+    tickers = cl.kfGetTickers(kf)
+    oneDayIncome = -futures.loc['BTC', 'FutDeltaUSD'] * cl.kfGetEstFunding1(kf, 'BTC', tickers) / 365
+    oneDayIncome -= futures.loc['ETH', 'FutDeltaUSD'] * cl.kfGetEstFunding1(kf, 'ETH', tickers) / 365
+    prevIncome = oneDayIncome/6
   prevAnnRet = prevIncome * 6 * 365 / notional
-  oneDayIncome = log['fundingUSD'].sum()
   oneDayAnnRet = oneDayIncome * 365 / notional
   #####
   nav = spotDeltaBTC * spotBTC + spotDeltaETH * spotETH
@@ -327,14 +334,18 @@ def kfInit(kf,spotBTC,spotETH):
          prevIncome, prevAnnRet, oneDayIncome, oneDayAnnRet, \
          nav, liqBTC, liqETH
 
-def kfPrintFunding(kf, futures, log, ccy):
-  df = log[log['Ccy'] == ccy].copy()
-  oneDayFunding = df['fundingRate'].mean()
-  prevFunding = df['fundingRate'][-1]
-  tickers = cl.kfGetTickers(kf)
-  estFunding1 = cl.kfGetEstFunding1(kf, ccy, tickers)
-  estFunding2 = cl.kfGetEstFunding2(kf, ccy, tickers)
-  printFunding('KF', futures, ccy, oneDayFunding, prevFunding, estFunding1, estFunding2)
+def kfPrintFunding(obj,ccy):
+  if obj.log is None:
+    prevFunding = obj.prevAnnRet
+    oneDayFunding = obj.oneDayAnnRet
+  else:
+    df = obj.log[obj.log['Ccy'] == ccy].copy()
+    prevFunding = df['fundingRate'][-1]
+    oneDayFunding = df['fundingRate'].mean()
+  tickers = cl.kfGetTickers(obj.api)
+  estFunding1 = cl.kfGetEstFunding1(obj.api, ccy, tickers)
+  estFunding2 = cl.kfGetEstFunding2(obj.api, ccy, tickers)
+  printFunding('KF', obj.futures, ccy, oneDayFunding, prevFunding, estFunding1, estFunding2)
 
 ####################################################################################################
 
@@ -566,8 +577,8 @@ if CR_IS_ADVANCED:
   print()
   #####
   printIncomes('KF', kfCore.prevIncome, kfCore.prevAnnRet, kfCore.oneDayIncome, kfCore.oneDayAnnRet)
-  kfPrintFunding(kfCore.api, kfCore.futures, kfCore.log, 'BTC')
-  kfPrintFunding(kfCore.api, kfCore.futures, kfCore.log, 'ETH')
+  kfPrintFunding(kfCore,'BTC')
+  kfPrintFunding(kfCore,'ETH')
   printLiq(kfCore)
   print()
   #####
