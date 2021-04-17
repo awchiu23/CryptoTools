@@ -1,7 +1,7 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
 # Mod: imported CryptoParams
 # Mod: "editorder" added
-# Mod: Futures URI replaced if CR_IS_ADVANCED
+# Mod: Futures URI replaced if IS_IP_WHITELIST
 # Mod: "get_account_log" added
 
 """Low level client for Kraken and Kraken Future."""
