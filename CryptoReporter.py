@@ -110,24 +110,6 @@ def ftxInit(ftx,spotBTC,spotETH):
          nav,liq,mf,mmReq,freeCollateral, \
          spotFTT
 
-def ftxPrintFlowsSummary(ccy, oneDayFlows,oneDayFlowsAnnRet,prevFlows,prevFlowsAnnRet):
-  z1 = '$' + str(round(oneDayFlows)) + ' (' + str(round(oneDayFlowsAnnRet * 100)) + '% p.a.)'
-  z2 = '$' + str(round(prevFlows)) + ' (' + str(round(prevFlowsAnnRet * 100)) + '% p.a.)'
-  print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
-
-def ftxPrintBorrowLending(ftx, wallet, nav, ccy):
-  estBorrow = cl.ftxGetEstBorrow(ftx,ccy)
-  estLending = cl.ftxGetEstLending(ftx,ccy)
-  n = wallet.loc[ccy, 'usdValue']
-  z1 = '($' + str(round(n))+')'
-  z2 = '(' + str(round(n/nav*100))+'% of NAV)'
-  print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+ z1+' '+z2)
-
-def ftxPrintCoinLending(ftx, wallet, ccy):
-  estLending = float(pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
-  coinBalance = wallet.loc[ccy, 'usdValue']
-  print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance)) + ')')
-
 ####################################################################################################
 
 def bbInit(bb,spotBTC,spotETH):
@@ -329,29 +311,20 @@ def krInit(kr, spotBTC):
          oneDayIncome, oneDayAnnRet, \
          nav, liqBTC, spotEUR
 
-def krPrintIncomes(*args):
+def krPrintIncomes(krCores):
   zs=[]
   prefixes=[]
-  for i in range(int(len(args)/2)):
-    oneDayIncome=args[i*2]
-    oneDayAnnRet=args[i*2+1]
-    zs.append('$' + str(round(oneDayIncome)) + ' (' + str(round(oneDayAnnRet * 100)) + '% p.a.)')
-    prefixes.append('KR' + str(i+1))
+  for krCore in krCores:
+    zs.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
+    prefixes.append('KR' + str(krCore.n))
   print(termcolor.colored(('/'.join(prefixes) + ' 24h rollover fees: ').rjust(41) + ' / '.join(zs), 'blue'))
 
-def krPrintBorrow(btcMarginDeltaUSD, nav, n):
-  z = '($' + str(round(-btcMarginDeltaUSD)) + ') '
-  z += '(' + str(round(-btcMarginDeltaUSD / nav * 100)) + '% of NAV)'
-  print(('KR'+ str(n)+' USD/EUR est borrow rate: ').rjust(41) + '22% p.a. ' + z)
-
-def krPrintLiq(*args):
+def krPrintLiq(krCores):
   zs=[]
   prefixes=[]
-  n=0
-  for liqBTC in args:
-    n+=1
-    zs.append('never' if (liqBTC <= 0 or liqBTC > 10) else str(round(liqBTC * 100)) + '%')
-    prefixes.append('KR'+str(n))
+  for krCore in krCores:
+    zs.append('never' if (krCore.liqBTC <= 0 or krCore.liqBTC > 10) else str(round(krCore.liqBTC * 100)) + '%')
+    prefixes.append('KR' + str(krCore.n))
   print(termcolor.colored(('/'.join(prefixes) + ' liquidation (BTC): ').rjust(41) + '/'.join(zs) + ' (of spot)', 'red'))
 
 ####################################################################################################
@@ -474,6 +447,51 @@ class core:
       zETH = 'never' if (self.liqETH <= 0 or self.liqETH >= 10) else str(round(self.liqETH * 100)) + '%'
       print(termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red'))
 
+  def ftxPrintFlowsSummary(self,ccy):
+    if ccy=='USD':
+      oneDayFlows=self.oneDayUSDFlows
+      oneDayFlowsAnnRet=self.oneDayUSDFlowsAnnRet
+      prevFlows=self.prevUSDFlows
+      prevFlowsAnnRet=self.prevUSDFlowsAnnRet      
+    elif ccy=='USDT':
+      oneDayFlows = self.oneDayUSDTFlows
+      oneDayFlowsAnnRet = self.oneDayUSDTFlowsAnnRet
+      prevFlows = self.prevUSDTFlows
+      prevFlowsAnnRet = self.prevUSDTFlowsAnnRet
+    elif ccy=='BTC':
+      oneDayFlows = self.oneDayBTCFlows
+      oneDayFlowsAnnRet = self.oneDayBTCFlowsAnnRet
+      prevFlows = self.prevBTCFlows*self.spotBTC
+      prevFlowsAnnRet = self.prevBTCFlowsAnnRet
+    elif ccy=='ETH':
+      oneDayFlows = self.oneDayETHFlows
+      oneDayFlowsAnnRet = self.oneDayETHFlowsAnnRet
+      prevFlows = self.prevETHFlows*self.spotETH
+      prevFlowsAnnRet = self.prevETHFlowsAnnRet      
+    else:
+      sys.exit(1)
+    z1 = '$' + str(round(oneDayFlows)) + ' (' + str(round(oneDayFlowsAnnRet * 100)) + '% p.a.)'
+    z2 = '$' + str(round(prevFlows)) + ' (' + str(round(prevFlowsAnnRet * 100)) + '% p.a.)'
+    print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+  
+  def ftxPrintBorrowLending(self, ccy, nav):
+    estBorrow = cl.ftxGetEstBorrow(self.api,ccy)
+    estLending = cl.ftxGetEstLending(self.api,ccy)
+    n = self.wallet.loc[ccy, 'usdValue']
+    z1 = '($' + str(round(n))+')'
+    z2 = '(' + str(round(n/nav*100))+'% of NAV)'
+    print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+ z1+' '+z2)
+  
+  def ftxPrintCoinLending(self, ccy):
+    estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
+    coinBalance = self.wallet.loc[ccy, 'usdValue']
+    print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance)) + ')')
+
+  def krPrintBorrow(self, nav):
+    z = '($' + str(round(-self.btcMarginDeltaUSD)) + ') '
+    z += '(' + str(round(-self.btcMarginDeltaUSD / nav * 100)) + '% of NAV)'
+    print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + '22% p.a. ' + z)
+
 ####################################################################################################
 
 ######
@@ -491,15 +509,10 @@ objs=[ftxCore,bbCore,cbCore]
 if CR_IS_ADVANCED:
   bnCore = core('bn', spotBTC, spotETH)
   kfCore = core('kf', spotBTC, spotETH)
-  kr1Core = core('kr',spotBTC, spotETH,1)
-  kr2Core = core('kr',spotBTC, spotETH,2)
-  objs.extend([kr1Core,kr2Core,bnCore,kfCore])
-  if CR_N_KR_ACCOUNTS >= 3:
-    kr3Core = core('kr', spotBTC, spotETH, 3)
-    objs.append(kr3Core)
-  if CR_N_KR_ACCOUNTS >= 4:
-    kr4Core = core('kr', spotBTC, spotETH, 4)
-    objs.append(kr4Core)
+  krCores = []
+  for i in range(CR_N_KR_ACCOUNTS):
+    krCores.append(core('kr',spotBTC, spotETH,i+1))
+  objs.extend([bnCore,kfCore]+krCores)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
 #############
@@ -520,7 +533,7 @@ for obj in objs:
   futDeltaETH+=obj.futures.loc['ETH','FutDelta']
 oneDayIncome+=ftxCore.oneDayUSDFlows+ftxCore.oneDayUSDTFlows+ftxCore.oneDayBTCFlows+ftxCore.oneDayETHFlows
 if CR_IS_ADVANCED:
-  nav+=get_EXTERNAL_EUR_NAV(kr1Core.spotEUR)
+  nav+=get_EXTERNAL_EUR_NAV(krCores[0].spotEUR)
 spotDeltaFTT=ftxCore.spotDeltaFTT
 futDeltaFTT=ftxCore.futures.loc['FTT','FutDelta']
 
@@ -533,26 +546,24 @@ z+=' / BB: $' + str(round(bbCore.nav/1000)) + 'K'
 if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnCore.nav/1000)) + 'K'
   z += ' / KF: $' + str(round(kfCore.nav / 1000)) + 'K'
-  z+=' / KR1: $' + str(round(kr1Core.nav/1000)) + 'K'
-  z += ' / KR2: $' + str(round(kr2Core.nav / 1000)) + 'K'
-  if CR_N_KR_ACCOUNTS>=3: z += ' / KR3: $' + str(round(kr3Core.nav / 1000)) + 'K'
-  if CR_N_KR_ACCOUNTS>=4: z += ' / KR4: $' + str(round(kr4Core.nav / 1000)) + 'K'
+  for krCore in krCores:
+    z+= ' / KR' + str(krCore.n)+': $'+str(round(krCore.nav/1000))+'K'
 z+=' / CB: $' + str(round(cbCore.nav/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
 print()
 #####
-ftxPrintFlowsSummary('USD',ftxCore.oneDayUSDFlows,ftxCore.oneDayUSDFlowsAnnRet,ftxCore.prevUSDFlows,ftxCore.prevUSDFlowsAnnRet)
-ftxPrintFlowsSummary('USDT',ftxCore.oneDayUSDTFlows,ftxCore.oneDayUSDTFlowsAnnRet,ftxCore.prevUSDTFlows,ftxCore.prevUSDTFlowsAnnRet)
-ftxPrintBorrowLending(ftxCore.api,ftxCore.wallet,nav,'USD')
-ftxPrintBorrowLending(ftxCore.api,ftxCore.wallet,nav,'USDT')
+ftxCore.ftxPrintFlowsSummary('USD')
+ftxCore.ftxPrintFlowsSummary('USDT')
+ftxCore.ftxPrintBorrowLending('USD',nav)
+ftxCore.ftxPrintBorrowLending('USDT',nav)
 print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
-  ftxPrintFlowsSummary('BTC',ftxCore.oneDayBTCFlows,ftxCore.oneDayBTCFlowsAnnRet,ftxCore.prevBTCFlows*spotBTC,ftxCore.prevBTCFlowsAnnRet)
-  ftxPrintFlowsSummary('ETH',ftxCore.oneDayETHFlows,ftxCore.oneDayETHFlowsAnnRet,ftxCore.prevETHFlows*spotETH,ftxCore.prevETHFlowsAnnRet)
-  ftxPrintCoinLending(ftxCore.api,ftxCore.wallet,'BTC')
-  ftxPrintCoinLending(ftxCore.api,ftxCore.wallet,'ETH')
+  ftxCore.ftxPrintFlowsSummary('BTC')
+  ftxCore.ftxPrintFlowsSummary('ETH')
+  ftxCore.ftxPrintCoinLending('BTC')
+  ftxCore.ftxPrintCoinLending('ETH')
   print()
 #####
 ftxCore.printIncomes()
@@ -581,24 +592,17 @@ if CR_IS_ADVANCED:
   kfCore.printLiq()
   print()
   #####
-  args=[]
-  for i in range(CR_N_KR_ACCOUNTS):
-    args.append(globals()['kr'+str(i+1)+'Core'].oneDayIncome)
-    args.append(globals()['kr'+str(i+1)+'Core'].oneDayAnnRet)
-  krPrintIncomes(*args)
-  for i in range(CR_N_KR_ACCOUNTS):
-    krPrintBorrow(globals()['kr'+str(i+1)+'Core'].btcMarginDeltaUSD, nav, i+1)
-  args=[]
-  for i in range(CR_N_KR_ACCOUNTS):
-    args.append(globals()['kr' + str(i + 1) + 'Core'].liqBTC)
-  krPrintLiq(*args)
+  krPrintIncomes(krCores)
+  for krCore in krCores:
+    krCore.krPrintBorrow(nav)
+  krPrintLiq(krCores)
   print()
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
 printDeltas('FTT',ftxCore.spotFTT,spotDeltaFTT,futDeltaFTT)
 if CR_IS_ADVANCED:
-  spotDeltaEUR=kr1Core.spotDeltaEUR + kr2Core.spotDeltaEUR
-  if CR_N_KR_ACCOUNTS>=3: spotDeltaEUR+= kr3Core.spotDeltaEUR
-  if CR_N_KR_ACCOUNTS>=4: spotDeltaEUR+= kr4Core.spotDeltaEUR
-  printEURDeltas(kr1Core.spotEUR,spotDeltaEUR)
+  spotDeltaEUR=0
+  for krCore in krCores:
+    spotDeltaEUR+=krCore.spotDeltaEUR
+  printEURDeltas(krCores[0].spotEUR,spotDeltaEUR)
