@@ -534,8 +534,6 @@ for obj in objs:
 oneDayIncome+=ftxCore.oneDayUSDFlows+ftxCore.oneDayUSDTFlows+ftxCore.oneDayBTCFlows+ftxCore.oneDayETHFlows
 if CR_IS_ADVANCED:
   nav+=get_EXTERNAL_EUR_NAV(krCores[0].spotEUR)
-spotDeltaFTT=ftxCore.spotDeltaFTT
-futDeltaFTT=ftxCore.futures.loc['FTT','FutDelta']
 
 ########
 # Output
@@ -600,7 +598,7 @@ if CR_IS_ADVANCED:
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
-printDeltas('FTT',ftxCore.spotFTT,spotDeltaFTT,futDeltaFTT)
+printDeltas('FTT',ftxCore.spotFTT,ftxCore.spotDeltaFTT,ftxCore.futures.loc['FTT','FutDelta'])
 if CR_IS_ADVANCED:
   spotDeltaEUR=0
   for krCore in krCores:
