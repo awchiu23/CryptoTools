@@ -17,13 +17,13 @@ def getYest():
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
   netDelta=spotDelta+futDelta
-  print((ccy+' spot/fut/net delta: ').rjust(41)+str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1)) + \
-    ' ($' + str(round(spotDelta * spot)) + '/$' + str(round(futDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
+  print((ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1))).ljust(25) + \
+    '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)')
 
 def printEURDeltas(spot,spotDelta):
   netDelta=spotDelta+EXTERNAL_EUR_DELTA
-  print('EUR ext/impl/net delta: '.rjust(41) + str(round(EXTERNAL_EUR_DELTA)) + '/' + str(round(spotDelta)) + '/' + str(round(netDelta)) + \
-    ' ($' + str(round(EXTERNAL_EUR_DELTA * spot)) + '/$' + str(round(spotDelta * spot)) + '/$' + str(round(netDelta * spot)) + ')')
+  print('EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(25) + \
+    '($' + str(round(EXTERNAL_EUR_DELTA * spot/1000)) + 'K/$' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)')
 
 ####################################################################################################
 
@@ -426,15 +426,29 @@ class core:
       tickers = cl.kfGetTickers(self.api)
       estFunding = cl.kfGetEstFunding1(self.api, ccy, tickers)
       est2Funding = cl.kfGetEstFunding2(self.api, ccy, tickers)
+    #####
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/prev/est'
     if self.exch in ['bb', 'kf']:
       prefix += '1/est2'
     prefix += ' funding rate:'
-    suffix = str(round(oneDayFunding * 100)) + '%/' + str(round(prevFunding * 100)) + '%/' + str(round(estFunding * 100)) + '%'
+    #####
+    body = str(round(oneDayFunding * 100)) + '%/' + str(round(prevFunding * 100)) + '%/' + str(round(estFunding * 100)) + '%'
     if self.exch in ['bb', 'kf']:
-      suffix += '/' + str(round(est2Funding * 100)) + '%'
-    suffix += ' p.a. ($' + str(round(self.futures.loc[ccy, 'FutDeltaUSD'])) + ')'
-    print(prefix.rjust(40) + ' ' + suffix)
+      body += '/' + str(round(est2Funding * 100)) + '%'
+    body += ' p.a.'
+    #####
+    if ccy=='BTC':
+      spotDeltaUSD=self.spotDeltaBTC*self.spotBTC
+    elif ccy=='ETH':
+      spotDeltaUSD=self.spotDeltaETH*self.spotETH
+    elif ccy=='FTT':
+      spotDeltaUSD=self.spotDeltaFTT*self.spotFTT
+    else:
+      sys.exit(1)
+    futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
+    netDeltaUSD=spotDeltaUSD+futDeltaUSD
+    suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
+    print(prefix.rjust(40) + ' ' + body.ljust(25) + suffix)
 
   def printLiq(self):
     if self.exch=='ftx':
@@ -478,19 +492,18 @@ class core:
     estBorrow = cl.ftxGetEstBorrow(self.api,ccy)
     estLending = cl.ftxGetEstLending(self.api,ccy)
     n = self.wallet.loc[ccy, 'usdValue']
-    z1 = '($' + str(round(n))+')'
+    z1 = '($' + str(round(n/1000))+'K)'
     z2 = '(' + str(round(n/nav*100))+'% of NAV)'
-    print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+ z1+' '+z2)
+    print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + (str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+z1).ljust(25)+ z2)
   
   def ftxPrintCoinLending(self, ccy):
     estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
     coinBalance = self.wallet.loc[ccy, 'usdValue']
-    print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance)) + ')')
+    print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance/1000)) + 'K)')
 
   def krPrintBorrow(self, nav):
-    z = '($' + str(round(-self.btcMarginDeltaUSD)) + ') '
-    z += '(' + str(round(-self.btcMarginDeltaUSD / nav * 100)) + '% of NAV)'
-    print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + '22% p.a. ' + z)
+    z = '(' + str(round(-self.btcMarginDeltaUSD / nav * 100)) + '% of NAV)'
+    print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.btcMarginDeltaUSD/1000)) + 'K)').ljust(25)+z)
 
 ####################################################################################################
 
@@ -549,6 +562,8 @@ if CR_IS_ADVANCED:
 z+=' / CB: $' + str(round(cbCore.nav/1000)) + 'K)'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
+print('Spots: BTC='.rjust(45)+str(round(ftxCore.spotBTC,1))+ ' / ETH='+str(round(ftxCore.spotETH,1))+ ' / FTT='+str(round(ftxCore.spotFTT,1)))
+
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
@@ -598,7 +613,6 @@ if CR_IS_ADVANCED:
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
-printDeltas('FTT',ftxCore.spotFTT,ftxCore.spotDeltaFTT,ftxCore.futures.loc['FTT','FutDelta'])
 if CR_IS_ADVANCED:
   spotDeltaEUR=0
   for krCore in krCores:
