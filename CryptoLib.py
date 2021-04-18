@@ -227,7 +227,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
       else:
         refTime=time.time()
         try:
-          bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': bbGetLimitPrice(side,distanceToBestBps,refPrice)})
+          bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': bbGetLimitPrice(side,refPrice)})
         except:
           break
     time.sleep(1)
