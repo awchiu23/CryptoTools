@@ -71,6 +71,7 @@ CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of ob
 CT_SLEEP = 3                         # Delay in seconds between observations
 CT_NPROGRAMS = 100                   # Number of programs (each program being a pair of trades)
 CT_BB_DISTANCE_TO_BEST_BPS=5         # Bybit execution parameter
+CT_BB_MAX_WAIT_TIME=20               # Bybit execution parameter
 
 CT_TRADE_BTC_NOTIONAL = 3000         # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000         # Per trade notional

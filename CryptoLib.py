@@ -157,7 +157,7 @@ def bbGetEstFunding1(bb,ccy):
 def bbGetEstFunding2(bb, ccy):
   return float(bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate']) * 3 * 365
 
-def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
+def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bbGetBid(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['bid_price'])
@@ -165,11 +165,11 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
   def bbGetAsk(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
   # Do not use @retry!
-  def bbGetLimitPrice(side,distanceToBestBps,refPrice):
+  def bbGetLimitPrice(side,refPrice):
     if side == 'BUY':
-      return refPrice * (1 - distanceToBestBps / 10000)
+      return refPrice * (1 - CT_BB_DISTANCE_TO_BEST_BPS / 10000)
     else:
-      return refPrice * (1 + distanceToBestBps / 10000)
+      return refPrice * (1 + CT_BB_DISTANCE_TO_BEST_BPS / 10000)
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
@@ -192,10 +192,10 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
   if side=='BUY':
     refPrice = bbGetBid(bb, ticker1)
-    orderId = bb.create_limit_buy_order(ticker1, trade_notional, bbGetLimitPrice(side,distanceToBestBps,refPrice))['info']['order_id']
+    orderId = bb.create_limit_buy_order(ticker1, trade_notional, bbGetLimitPrice(side,refPrice))['info']['order_id']
   else:
     refPrice = bbGetAsk(bb, ticker1)
-    orderId = bb.create_limit_sell_order(ticker1, trade_notional, bbGetLimitPrice(side,distanceToBestBps,refPrice))['info']['order_id']
+    orderId = bb.create_limit_sell_order(ticker1, trade_notional, bbGetLimitPrice(side,refPrice))['info']['order_id']
   refTime = time.time()
   nChases=0
   while True:    
@@ -205,7 +205,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
       newPrice=bbGetBid(bb,ticker1)
     else:
       newPrice=bbGetAsk(bb,ticker1)
-    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice) or ((time.time()-refTime)>20):
+    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice) or ((time.time()-refTime)>CT_BB_MAX_WAIT_TIME):
       refPrice = newPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker2, orderId)
@@ -835,10 +835,10 @@ def ctRun(ccy):
         completedLegs = 0
         isCancelled=False
         if 'bb' in chosenLong and not isCancelled:
-          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs),distanceToBestBps=CT_BB_DISTANCE_TO_BEST_BPS)
+          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bb' in chosenShort and not isCancelled:
-          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs),distanceToBestBps=CT_BB_DISTANCE_TO_BEST_BPS)
+          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bn' in chosenLong and not isCancelled:
           longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
