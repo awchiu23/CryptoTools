@@ -587,11 +587,24 @@ def getSmartBasisDict(ftx, bb, bn, kf, fundingDict, isSkipAdj=False):
   def bnGetMid(bnBookTicker, ccy):
     return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
   #####
-  oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   ftxMarkets = ftxGetMarkets(ftx)
   ftxFutures = ftxGetFutures(ftx)
+  bbTickers = bbGetTickers(bb)
+  bnBookTicker = bnGetBookTicker(bn)
+  kfTickers = kfGetTickers(kf)
+  #####
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
+  ftxFutBTC=ftxGetMid(ftxMarkets, 'BTC-PERP')
+  ftxFutETH=ftxGetMid(ftxMarkets, 'ETH-PERP')
+  bbFutBTC = bbGetMid(bbTickers, 'BTCUSD')
+  bbFutETH = bbGetMid(bbTickers, 'ETHUSD')
+  bnFutBTC=bnGetMid(bnBookTicker, 'BTC')
+  bnFutETH=bnGetMid(bnBookTicker, 'ETH')
+  kfFutBTC=(kfTickers.loc['pi_xbtusd', 'bid'] + kfTickers.loc['pi_xbtusd', 'ask']) / 2
+  kfFutETH=(kfTickers.loc['pi_ethusd', 'bid'] + kfTickers.loc['pi_ethusd', 'ask']) / 2
+  #####
+  oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   if isSkipAdj:
     ftxBTCAdj=0
     ftxETHAdj=0
@@ -612,26 +625,23 @@ def getSmartBasisDict(ftx, bb, bn, kf, fundingDict, isSkipAdj=False):
     kfETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']) / 10000            
   #####
   d = dict()
-  d['ftxBTCBasis'] = ftxGetMid(ftxMarkets, 'BTC-PERP') / spotBTC - 1
-  d['ftxETHBasis'] = ftxGetMid(ftxMarkets, 'ETH-PERP') / spotETH - 1
+  d['ftxBTCBasis'] = ftxFutBTC / spotBTC - 1
+  d['ftxETHBasis'] = ftxFutETH / spotETH - 1
   d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
   d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
   #####
-  bbTickers = bbGetTickers(bb)
-  d['bbBTCBasis'] = bbGetMid(bbTickers, 'BTCUSD') / spotBTC - 1
-  d['bbETHBasis'] = bbGetMid(bbTickers, 'ETHUSD') / spotETH - 1
+  d['bbBTCBasis'] = bbFutBTC / spotBTC - 1
+  d['bbETHBasis'] = bbFutETH / spotETH - 1
   d['bbBTCSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge + bbBTCAdj
   d['bbETHSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge + bbETHAdj
   #####
-  bnBookTicker = bnGetBookTicker(bn)
-  d['bnBTCBasis'] = bnGetMid(bnBookTicker, 'BTC') / spotBTC - 1
-  d['bnETHBasis'] = bnGetMid(bnBookTicker, 'ETH') / spotETH - 1
+  d['bnBTCBasis'] = bnFutBTC / spotBTC - 1
+  d['bnETHBasis'] = bnFutETH / spotETH - 1
   d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
   d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
   ###
-  kfTickers=kfGetTickers(kf)
-  d['kfBTCBasis']=(kfTickers.loc['pi_xbtusd','bid']+kfTickers.loc['pi_xbtusd','ask'])/2/spotBTC - 1
-  d['kfETHBasis'] = (kfTickers.loc['pi_ethusd', 'bid'] + kfTickers.loc['pi_ethusd', 'ask']) / 2 / spotETH - 1
+  d['kfBTCBasis']= kfFutBTC / spotBTC - 1
+  d['kfETHBasis'] = kfFutETH / spotETH - 1
   d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
   d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
   return d
