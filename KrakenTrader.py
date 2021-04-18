@@ -7,13 +7,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=3
+nPrograms=5
 targetUSD=5000
 
 account=4                # which Kraken account to use
-side='BUY'               # 'BUY', 'SELL'
+side='SELL'               # 'BUY', 'SELL'
 pair='XXBTZUSD'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='bb'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
 
 ###########
 # Functions
