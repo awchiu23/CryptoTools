@@ -9,9 +9,9 @@ import termcolor
 isRunNow=False            # Run once and stop? Otherwise loop continuously and run one minute before every reset
 isManageCoins=True        # Also manage coins (BTC and ETH) in addition to USD?
 
-minRate=0.05              # Minimum rate for all loans
-usdLendingRatio=0.9       # Percentage of USD to lend out
-coinLendingRatio=0.9      # Percentage of coins (BTC and ETH) to lend out
+minRate=0.03              # Minimum rate for all loans
+usdLendingRatio=0.8       # Percentage of USD to lend out
+coinLendingRatio=0.8      # Percentage of coins (BTC and ETH) to lend out
 
 ###########
 # Functions

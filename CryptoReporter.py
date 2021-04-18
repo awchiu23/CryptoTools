@@ -17,17 +17,17 @@ def getYest():
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
   netDelta=spotDelta+futDelta
-  print((ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1))).ljust(25) + \
+  print((ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)')
 
 def printEURDeltas(spot,spotDelta):
   netDelta=spotDelta+EXTERNAL_EUR_DELTA
-  print('EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(25) + \
+  print('EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(27) + \
     '($' + str(round(EXTERNAL_EUR_DELTA * spot/1000)) + 'K/$' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)')
 
 ####################################################################################################
 
-def ftxInit(ftx,spotBTC,spotETH):
+def ftxInit(ftx,spotBTC,spotETH,spotFTT):
   def cleanBorrows(ccy, df):
     dummy = pd.DataFrame([[0,0,0,0,0,0]], columns=['time','coin', 'size', 'rate', 'cost', 'proceeds'])
     if len(df)==0:
@@ -58,7 +58,6 @@ def ftxInit(ftx,spotBTC,spotETH):
   ######
   wallet=cl.ftxGetWallet(ftx)
   wallet['SpotDelta']=wallet['total']
-  spotFTT = wallet.loc['FTT','spot']
   spotDeltaBTC = wallet.loc['BTC','SpotDelta']
   spotDeltaETH = wallet.loc['ETH','SpotDelta']
   spotDeltaFTT = wallet.loc['FTT','SpotDelta']
@@ -107,8 +106,7 @@ def ftxInit(ftx,spotBTC,spotETH):
          prevUSDTFlows, prevUSDTFlowsAnnRet, oneDayUSDTFlows, oneDayUSDTFlowsAnnRet, \
          prevBTCFlows, prevBTCFlowsAnnRet, oneDayBTCFlows, oneDayBTCFlowsAnnRet, \
          prevETHFlows,prevETHFlowsAnnRet,oneDayETHFlows,oneDayETHFlowsAnnRet, \
-         nav,liq,mf,mmReq,freeCollateral, \
-         spotFTT
+         nav,liq,mf,mmReq,freeCollateral
 
 ####################################################################################################
 
@@ -269,7 +267,7 @@ def kfInit(kf,spotBTC,spotETH):
 
 ####################################################################################################
 
-def krInit(kr, spotBTC):
+def krInit(kr, spotBTC, spotETH, spotEUR):
   def getBal(bal, ccy):
     try:
       return float(bal[ccy])
@@ -280,6 +278,7 @@ def krInit(kr, spotBTC):
   spotDeltaBTC = getBal(bal,'XXBT')
   spotDeltaETH = getBal(bal,'XETH')
   spotDeltaEUR = getBal(bal,'ZEUR')
+  collateralDf = pd.DataFrame([['BTC', spotDeltaBTC*spotBTC], ['ETH', spotDeltaETH*spotETH]], columns=['Ccy', 'CollateralUSD']).set_index('Ccy')
   #####
   positions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
   if not all([z in ['XXBTZUSD','XXBTZEUR'] for z in positions.index]):
@@ -287,18 +286,16 @@ def krInit(kr, spotBTC):
     sys.exit(1)
   cl.dfSetFloat(positions, ['vol', 'vol_closed', 'time'])
   positions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in positions['time']]
-  positions['volNetBTC'] = positions['vol']- positions['vol_closed']
-  positions['volNetUSD'] = positions['volNetBTC']*spotBTC
+  positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
+  positions['volNetUSD'] = positions['volNetBTC'] * spotBTC
   spotDeltaBTC += positions['volNetBTC'].sum()
-  btcMarginDeltaUSD = positions['volNetUSD'].sum()
+  spotDeltaEUR -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
   notional = positions['volNetUSD'].abs().sum()
   #####
-  spot_xxbtzeur=float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
-  spot_xxbtzusd=float(kr.public_get_ticker({'pair': 'XXBTZUSD'})['result']['XXBTZUSD']['c'][0])
-  spotEUR = spot_xxbtzusd/spot_xxbtzeur
-  spotDeltaEUR -= positions.loc['XXBTZEUR','volNetBTC'].sum()*spot_xxbtzeur
+  # mdbUSD=Margin Delta BTC in USD
+  mdbUSDDf = pd.DataFrame([['USD', positions.loc['XXBTZUSD', 'volNetUSD'].sum()], ['EUR', positions.loc['XXBTZEUR', 'volNetUSD'].sum()]], columns=['Ccy', 'MDBU']).set_index('Ccy')
   #####
-  oneDayIncome=-btcMarginDeltaUSD*0.0006
+  oneDayIncome=-mdbUSDDf['MDBU'].sum()*0.0006
   oneDayAnnRet = oneDayIncome * 365 / notional
   #####
   tradeBal = kr.private_post_tradebalance()['result']
@@ -307,9 +304,9 @@ def krInit(kr, spotBTC):
   freeMargin = float(tradeBal['mf'])
   liqBTC = 1 - freeMargin / (spotDeltaBTC * spotBTC)
   #####
-  return spotDeltaBTC, spotDeltaETH, spotDeltaEUR, btcMarginDeltaUSD, \
+  return spotDeltaBTC, spotDeltaETH, spotDeltaEUR, collateralDf,mdbUSDDf, \
          oneDayIncome, oneDayAnnRet, \
-         nav, liqBTC, spotEUR
+         nav, liqBTC
 
 def krPrintIncomes(krCores):
   zs=[]
@@ -342,10 +339,14 @@ def cbInit(cb,spotBTC,spotETH):
 # Classes
 #########
 class core:
-  def __init__(self, exch, spotBTC, spotETH, n=None):
+  def __init__(self, exch, spotBTC, spotETH, spotFTT=None, spotEUR=None, n=None):
     self.exch = exch
     self.spotBTC = spotBTC
     self.spotETH = spotETH
+    if spotFTT is not None:
+      self.spotFTT = spotFTT
+    if spotEUR is not None:
+      self.spotEUR = spotEUR
     if n is not None:
       self.n = n
 
@@ -358,8 +359,7 @@ class core:
       self.prevUSDTFlows, self.prevUSDTFlowsAnnRet, self.oneDayUSDTFlows, self.oneDayUSDTFlowsAnnRet, \
       self.prevBTCFlows, self.prevBTCFlowsAnnRet, self.oneDayBTCFlows, self.oneDayBTCFlowsAnnRet, \
       self.prevETHFlows, self.prevETHFlowsAnnRet, self.oneDayETHFlows, self.oneDayETHFlowsAnnRet, \
-      self.nav, self.liq, self.mf, self.mmReq, self.freeCollateral, \
-      self.spotFTT = ftxInit(self.api,self.spotBTC,self.spotETH)
+      self.nav, self.liq, self.mf, self.mmReq, self.freeCollateral = ftxInit(self.api,self.spotBTC,self.spotETH,self.spotFTT)
     elif self.exch=='bb':
       self.api = cl.bbCCXTInit()
       self.spotDeltaBTC, self.spotDeltaETH, self.futures, self.payments, \
@@ -377,9 +377,9 @@ class core:
       self.nav, self.liqBTC, self.liqETH = kfInit(self.api, self.spotBTC, self.spotETH)
     elif self.exch=='kr':
       self.api = cl.krCCXTInit(self.n)
-      self.spotDeltaBTC, self.spotDeltaETH, self.spotDeltaEUR, self.btcMarginDeltaUSD, \
+      self.spotDeltaBTC, self.spotDeltaETH, self.spotDeltaEUR, self.collateralDf, self.mdbUSDDf, \
       self.oneDayIncome, self.oneDayAnnRet, \
-      self.nav, self.liqBTC, self.spotEUR = krInit(self.api, self.spotBTC)
+      self.nav, self.liqBTC = krInit(self.api, self.spotBTC, self.spotETH, self.spotEUR)
       self.futures = pd.DataFrame([['BTC',0],['ETH',0]],columns=['Ccy','FutDelta']).set_index('Ccy')
     elif self.exch == 'cb':
       self.api = cl.cbCCXTInit()
@@ -448,7 +448,7 @@ class core:
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
     suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
-    print(prefix.rjust(40) + ' ' + body.ljust(25) + suffix)
+    print(prefix.rjust(40) + ' ' + body.ljust(27) + suffix)
 
   def printLiq(self):
     if self.exch=='ftx':
@@ -492,9 +492,9 @@ class core:
     estBorrow = cl.ftxGetEstBorrow(self.api,ccy)
     estLending = cl.ftxGetEstLending(self.api,ccy)
     n = self.wallet.loc[ccy, 'usdValue']
-    z1 = '($' + str(round(n/1000))+'K)'
-    z2 = '(' + str(round(n/nav*100))+'% of NAV)'
-    print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + (str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+z1).ljust(25)+ z2)
+    suffix = '($' + str(round(n/1000))+'K) '
+    suffix += '(' + str(round(n/nav*100))+'%)'
+    print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + (str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+suffix).ljust(27))
   
   def ftxPrintCoinLending(self, ccy):
     estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
@@ -502,8 +502,13 @@ class core:
     print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance/1000)) + 'K)')
 
   def krPrintBorrow(self, nav):
-    z = '(' + str(round(-self.btcMarginDeltaUSD / nav * 100)) + '% of NAV)'
-    print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.btcMarginDeltaUSD/1000)) + 'K)').ljust(25)+z)
+    zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
+    suffix='(collaterals BTC/ETH: $'
+    suffix+=str(round(self.collateralDf.loc['BTC','CollateralUSD']/1000))+'K/$'
+    suffix += str(round(self.collateralDf.loc['ETH', 'CollateralUSD'] / 1000)) + 'K; XXBTZUSD/XXBTZEUR: $'
+    suffix += str(round(self.mdbUSDDf.loc['USD','MDBU']/1000))+'K/$'
+    suffix += str(round(self.mdbUSDDf.loc['EUR','MDBU']/1000))+'K)'
+    print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
 
 ####################################################################################################
 
@@ -511,11 +516,14 @@ class core:
 # Init
 ######
 cl.printHeader('CryptoReporter')
-ftxWallet=cl.ftxGetWallet(cl.ftxCCXTInit())
+ftx=cl.ftxCCXTInit()
+ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC','spot']
 spotETH = ftxWallet.loc['ETH','spot']
+spotFTT = ftxWallet.loc['FTT','spot']
+spotEUR=float(ftx.public_get_markets_market_name({'market_name':'EUR/USD'})['result']['price'])
 #####
-ftxCore = core('ftx',spotBTC,spotETH)
+ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
 bbCore = core('bb',spotBTC,spotETH)
 cbCore = core('cb',spotBTC,spotETH)
 objs=[ftxCore,bbCore,cbCore]
@@ -524,7 +532,7 @@ if CR_IS_ADVANCED:
   kfCore = core('kf', spotBTC, spotETH)
   krCores = []
   for i in range(CR_N_KR_ACCOUNTS):
-    krCores.append(core('kr',spotBTC, spotETH,i+1))
+    krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
   objs.extend([bnCore,kfCore]+krCores)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
@@ -546,7 +554,8 @@ for obj in objs:
   futDeltaETH+=obj.futures.loc['ETH','FutDelta']
 oneDayIncome+=ftxCore.oneDayUSDFlows+ftxCore.oneDayUSDTFlows+ftxCore.oneDayBTCFlows+ftxCore.oneDayETHFlows
 if CR_IS_ADVANCED:
-  nav+=get_EXTERNAL_EUR_NAV(krCores[0].spotEUR)
+  externalEURNAV = get_EXTERNAL_EUR_NAV(spotEUR)
+  nav+=externalEURNAV
 
 ########
 # Output
@@ -559,11 +568,13 @@ if CR_IS_ADVANCED:
   z += ' / KF: $' + str(round(kfCore.nav / 1000)) + 'K'
   for krCore in krCores:
     z+= ' / KR' + str(krCore.n)+': $'+str(round(krCore.nav/1000))+'K'
-z+=' / CB: $' + str(round(cbCore.nav/1000)) + 'K)'
+z+=' / CB: $' + str(round(cbCore.nav/1000)) + 'K'
+if CR_IS_ADVANCED:
+  z+=' / EUR: $' + str(round(externalEURNAV/1000))+'K'
+z+=')'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
-print('Spots: BTC='.rjust(45)+str(round(ftxCore.spotBTC,1))+ ' / ETH='+str(round(ftxCore.spotETH,1))+ ' / FTT='+str(round(ftxCore.spotFTT,1)))
-
+print('Spots: BTC='.rjust(45)+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1))+' / EUR='+str(round(spotEUR,4)))
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
@@ -617,4 +628,4 @@ if CR_IS_ADVANCED:
   spotDeltaEUR=0
   for krCore in krCores:
     spotDeltaEUR+=krCore.spotDeltaEUR
-  printEURDeltas(krCores[0].spotEUR,spotDeltaEUR)
+  printEURDeltas(spotEUR,spotDeltaEUR)
