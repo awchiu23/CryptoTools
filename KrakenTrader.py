@@ -7,13 +7,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=1
+nPrograms=5
 targetUSD=5000
 
 account=1                # which Kraken account to use
-side='BUY'               # 'BUY', 'SELL'
+side='SELL'              # 'BUY', 'SELL'
 pair='XXBTZUSD'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='ftxspot'  # 'ftxspot', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='ftxperp'  # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
 
 ###########
 # Functions
@@ -117,6 +117,8 @@ for n in range(nPrograms):
   fill=krRelOrder(side,kr,pair,trade_btc,maxChases=888)
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
+  if hedgeExchange=='ftxperp':
+    fill=cl.ftxRelOrder(oppSide,ftx,'BTC-PERP',trade_btc,maxChases=888)
   elif hedgeExchange=='bb':
     bb = cl.bbCCXTInit()
     fill=cl.bbRelOrder(oppSide, bb, 'BTC', trade_btc_notional, maxChases=888)
