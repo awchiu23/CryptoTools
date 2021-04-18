@@ -205,7 +205,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distanceToBestBps=0):
       newPrice=bbGetBid(bb,ticker1)
     else:
       newPrice=bbGetAsk(bb,ticker1)
-    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice) or ((time.time()-refTime)>30):
+    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice) or ((time.time()-refTime)>20):
       refPrice = newPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker2, orderId)

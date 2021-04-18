@@ -39,14 +39,14 @@ def ftxInit(ftx,spotBTC,spotETH):
     df2=df2.set_index('time').sort_index()
     return df2
   ######
-  def getBorrowsLoans(ftxWallet,ccy):
+  def getBorrowsLoans(ftxWallet,payments,ccy):
     start_time=getYest()
     borrows = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_borrow_history({'limit': 1000,'start_time':start_time})['result']))
     loans = cleanBorrows(ccy, pd.DataFrame(ftx.private_get_spot_margin_lending_history({'limit': 1000, 'start_time': start_time})['result']))
     cl.dfSetFloat(borrows, 'cost')
     cl.dfSetFloat(loans, 'proceeds')
-    prevBorrow = borrows.iloc[-1]['cost']
-    prevLoan = loans.iloc[-1]['proceeds']
+    prevBorrow = borrows.iloc[-1]['cost'] if borrows.index[-1] == payments.index[-1] else 0
+    prevLoan = loans.iloc[-1]['proceeds'] if loans.index[-1] == payments.index[-1] else 0
     prevFlows = prevLoan - prevBorrow
     absBalance = abs(ftxWallet.loc[ccy, 'total'])
     prevFlowsAnnRet = prevFlows * 24 * 365 / absBalance
@@ -85,10 +85,10 @@ def ftxInit(ftx,spotBTC,spotETH):
   oneDayIncome = -payments['payment'].sum()
   oneDayAnnRet = oneDayIncome * 365 / notional
   #####
-  prevUSDFlows,prevUSDFlowsAnnRet,oneDayUSDFlows,oneDayUSDFlowsAnnRet=getBorrowsLoans(wallet,  'USD')
-  prevUSDTFlows,prevUSDTFlowsAnnRet,oneDayUSDTFlows,oneDayUSDTFlowsAnnRet=getBorrowsLoans(wallet, 'USDT')
-  prevBTCFlows, prevBTCFlowsAnnRet, oneDayBTCFlows, oneDayBTCFlowsAnnRet = getBorrowsLoans(wallet, 'BTC')
-  prevETHFlows, prevETHFlowsAnnRet, oneDayETHFlows, oneDayETHFlowsAnnRet = getBorrowsLoans(wallet, 'ETH')
+  prevUSDFlows,prevUSDFlowsAnnRet,oneDayUSDFlows,oneDayUSDFlowsAnnRet=getBorrowsLoans(wallet, payments, 'USD')
+  prevUSDTFlows,prevUSDTFlowsAnnRet,oneDayUSDTFlows,oneDayUSDTFlowsAnnRet=getBorrowsLoans(wallet, payments,'USDT')
+  prevBTCFlows, prevBTCFlowsAnnRet, oneDayBTCFlows, oneDayBTCFlowsAnnRet = getBorrowsLoans(wallet, payments,'BTC')
+  prevETHFlows, prevETHFlowsAnnRet, oneDayETHFlows, oneDayETHFlowsAnnRet = getBorrowsLoans(wallet, payments,'ETH')
   oneDayBTCFlows *= spotBTC
   oneDayETHFlows*=spotETH
   #####

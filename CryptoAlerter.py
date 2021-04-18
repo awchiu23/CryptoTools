@@ -17,10 +17,10 @@ def process(config,smartBasisDict,color,funding,funding2=None):
   basisBps = smartBasisDict[prefix + 'Basis'] * 10000
   z=tmp[0]+': ' + str(round(smartBasisBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))
   if funding2 is None:
-    n=19
+    n=20
   else:
     z=z+'/'+str(round(funding2*100))
-    n=23
+    n=24
   z+=')'
   print(termcolor.colored(z.ljust(n), color), end='')
 
