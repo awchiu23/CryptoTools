@@ -267,7 +267,7 @@ def kfInit(kf,spotBTC,spotETH):
 
 ####################################################################################################
 
-def krInit(kr, spotBTC, spotETH, spotEUR):
+def krInit(kr, spotBTC, spotETH):
   def getBal(bal, ccy):
     try:
       return float(bal[ccy])
@@ -379,7 +379,7 @@ class core:
       self.api = cl.krCCXTInit(self.n)
       self.spotDeltaBTC, self.spotDeltaETH, self.spotDeltaEUR, self.spotDf, self.mdbUSDDf, \
       self.oneDayIncome, self.oneDayAnnRet, \
-      self.nav, self.liqBTC = krInit(self.api, self.spotBTC, self.spotETH, self.spotEUR)
+      self.nav, self.liqBTC = krInit(self.api, self.spotBTC, self.spotETH)
       self.futures = pd.DataFrame([['BTC',0],['ETH',0]],columns=['Ccy','FutDelta']).set_index('Ccy')
     elif self.exch == 'cb':
       self.api = cl.cbCCXTInit()
