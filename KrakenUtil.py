@@ -48,8 +48,12 @@ def getPositions(kr):
   positions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in positions['time']]
   return positions
 
-def getAutoLiqDate(positions,pair):
-  return positions.loc[pair]['date'].sort_values()[0] + pd.DateOffset(days=365)
+def getAutoLiqDateStr(positions,pair):
+  dtFormat = '%Y-%m-%d'
+  try:
+    return (positions.loc[pair]['date'].sort_values()[0] + pd.DateOffset(days=365)).strftime(dtFormat)
+  except:
+    return "Not available"
 
 ######
 # Init
@@ -78,7 +82,4 @@ n=0
 for krChosen in krs:
   n+=1
   positions=getPositions(krChosen)
-  dtAutoCloseUSD=(positions.loc['XXBTZUSD']['date'].sort_values()[0]+ pd.DateOffset(days=365)).strftime('%Y-%m-%d')
-  dtAutoCloseEUR=(positions.loc['XXBTZEUR']['date'].sort_values()[0]+ pd.DateOffset(days=365)).strftime('%Y-%m-%d')
-  dtFormat='%Y-%m-%d'
-  print('KR'+str(n)+' auto liquidation dates XXBTZUSD/XXBTZEUR: '+getAutoLiqDate(positions,'XXBTZUSD').strftime(dtFormat)+' / '+getAutoLiqDate(positions,'XXBTZEUR').strftime(dtFormat))
+  print('KR'+str(n)+' auto liquidation dates XXBTZUSD/XXBTZEUR: '+getAutoLiqDateStr(positions,'XXBTZUSD')+' / '+getAutoLiqDateStr(positions,'XXBTZEUR'))
