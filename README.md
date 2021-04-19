@@ -43,6 +43,9 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - This tool calculates 24H borrow $ of Kraken accounts
 - Can be used to check against CryptoReporter's numbers, which are based on estimation
 
+## KrakenAlerter
+- This tool is for monitoring difference of Kraken spots to FTX spots
+
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
 - Has ability to work hedges off other exchanges

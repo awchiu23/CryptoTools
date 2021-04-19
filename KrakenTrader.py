@@ -18,11 +18,6 @@ hedgeExchange='ftxperp'  # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
 ###########
 # Functions
 ###########
-def krGetSpotEUR(kr):
-  spot_xxbtzeur = float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
-  spot_xxbtzusd = float(kr.public_get_ticker({'pair': 'XXBTZUSD'})['result']['XXBTZUSD']['c'][0])
-  return spot_xxbtzusd / spot_xxbtzeur
-
 def krRelOrder(side,kr,pair,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def krGetBid(kr, pair):
