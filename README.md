@@ -40,7 +40,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Universe: USD, BTC, ETH
 
 ## KrakenAlerter
-- This tool is for monitoring difference of Kraken spots to FTX spots
+- This tool is for monitoring differences of Kraken spots to FTX spots
 
 ## KrakenUtil
 - This tool provides the following information from your Kraken accounts:

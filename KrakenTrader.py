@@ -7,7 +7,7 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=1
+nPrograms=3
 targetUSD=5000
 
 account=1                # which Kraken account to use
@@ -135,7 +135,7 @@ for n in range(nPrograms):
   if hedgeExchange=='ftxspot':
     krExec(side, kr, pair, trade_qty, isMargin)
     fill=cl.ftxRelOrder(oppSide, ftx,ccy+'/USD', trade_qty, maxChases=888)
-  if hedgeExchange=='ftxperp':
+  elif hedgeExchange=='ftxperp':
     krExec(side, kr, pair, trade_qty, isMargin)
     fill=cl.ftxRelOrder(oppSide, ftx,ccy+'-PERP', trade_qty, maxChases=888)
   elif hedgeExchange=='bb':
@@ -153,6 +153,7 @@ for n in range(nPrograms):
   elif hedgeExchange=='none':
     krExec(side, kr, pair, trade_qty, isMargin)
   else:
+    print('Bad exchange!')
     sys.exit(1)
   time.sleep(3)
 
