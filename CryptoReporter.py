@@ -278,7 +278,7 @@ def krInit(kr, spotBTC, spotETH, spotEUR):
   spotDeltaBTC = getBal(bal,'XXBT')
   spotDeltaETH = getBal(bal,'XETH')
   spotDeltaEUR = getBal(bal,'ZEUR')
-  collateralDf = pd.DataFrame([['BTC', spotDeltaBTC*spotBTC], ['ETH', spotDeltaETH*spotETH]], columns=['Ccy', 'CollateralUSD']).set_index('Ccy')
+  spotDf = pd.DataFrame([['BTC', spotDeltaBTC*spotBTC], ['ETH', spotDeltaETH*spotETH]], columns=['Ccy', 'SpotUSD']).set_index('Ccy')
   #####
   positions = pd.DataFrame(kr.private_post_openpositions()['result']).transpose().set_index('pair')
   if not all([z in ['XXBTZUSD','XXBTZEUR'] for z in positions.index]):
@@ -304,7 +304,7 @@ def krInit(kr, spotBTC, spotETH, spotEUR):
   freeMargin = float(tradeBal['mf'])
   liqBTC = 1 - freeMargin / (spotDeltaBTC * spotBTC)
   #####
-  return spotDeltaBTC, spotDeltaETH, spotDeltaEUR, collateralDf,mdbUSDDf, \
+  return spotDeltaBTC, spotDeltaETH, spotDeltaEUR, spotDf,mdbUSDDf, \
          oneDayIncome, oneDayAnnRet, \
          nav, liqBTC
 
@@ -377,7 +377,7 @@ class core:
       self.nav, self.liqBTC, self.liqETH = kfInit(self.api, self.spotBTC, self.spotETH)
     elif self.exch=='kr':
       self.api = cl.krCCXTInit(self.n)
-      self.spotDeltaBTC, self.spotDeltaETH, self.spotDeltaEUR, self.collateralDf, self.mdbUSDDf, \
+      self.spotDeltaBTC, self.spotDeltaETH, self.spotDeltaEUR, self.spotDf, self.mdbUSDDf, \
       self.oneDayIncome, self.oneDayAnnRet, \
       self.nav, self.liqBTC = krInit(self.api, self.spotBTC, self.spotETH, self.spotEUR)
       self.futures = pd.DataFrame([['BTC',0],['ETH',0]],columns=['Ccy','FutDelta']).set_index('Ccy')
@@ -503,9 +503,9 @@ class core:
 
   def krPrintBorrow(self, nav):
     zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
-    suffix='(collaterals BTC/ETH: $'
-    suffix+=str(round(self.collateralDf.loc['BTC','CollateralUSD']/1000))+'K/$'
-    suffix += str(round(self.collateralDf.loc['ETH', 'CollateralUSD'] / 1000)) + 'K; XXBTZUSD/XXBTZEUR: $'
+    suffix='(spot BTC/ETH: $'
+    suffix+= str(round(self.spotDf.loc['BTC', 'SpotUSD'] / 1000)) + 'K/$'
+    suffix += str(round(self.spotDf.loc['ETH', 'SpotUSD'] / 1000)) + 'K; XXBTZUSD/XXBTZEUR: $'
     suffix += str(round(self.mdbUSDDf.loc['USD','MDBU']/1000))+'K/$'
     suffix += str(round(self.mdbUSDDf.loc['EUR','MDBU']/1000))+'K)'
     print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
@@ -521,8 +521,7 @@ ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC','spot']
 spotETH = ftxWallet.loc['ETH','spot']
 spotFTT = ftxWallet.loc['FTT','spot']
-d=ftx.public_get_markets_market_name({'market_name':'EUR/USD'})['result']
-spotEUR=(float(d['bid'])+float(d['ask']))/2
+spotEUR = cl.ftxGetSpotEUR(ftx)
 #####
 ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
 bbCore = core('bb',spotBTC,spotETH)

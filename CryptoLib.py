@@ -72,6 +72,10 @@ def ftxGetEstLending(ftx, ccy=None):
   else:
     return s[ccy]
 
+def ftxGetSpotEUR(ftx):
+  d = ftx.public_get_markets_market_name({'market_name': 'EUR/USD'})['result']
+  return (float(d['bid']) + float(d['ask'])) / 2
+
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def ftxGetBid(ftx,ticker):

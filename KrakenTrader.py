@@ -13,7 +13,7 @@ targetUSD=5000
 account=1                # which Kraken account to use
 side='SELL'              # 'BUY', 'SELL'
 pair='XXBTZEUR'          # 'XXBTZUSD', 'XXBTZEUR'
-hedgeExchange='bb'       # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='kf'       # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
 
 ###########
 # Functions
@@ -110,6 +110,9 @@ cl.printHeader('KrakenTrader')
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
   fill=krRelOrder(side,kr,pair,trade_btc,maxChases=888)
+  if pair=='XXBTZEUR':
+    spotEUR=cl.ftxGetSpotEUR(ftx)
+    print(cl.getCurrentTime()+': Filled at '+str(round(fill*spotEUR))+' in USD; f/x='+str(round(spotEUR,4)))
   if hedgeExchange=='ftxspot':
     fill=cl.ftxRelOrder(oppSide,ftx,'BTC/USD',trade_btc,maxChases=888)
   if hedgeExchange=='ftxperp':
