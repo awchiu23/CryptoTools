@@ -39,12 +39,13 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
 - Universe: USD, BTC, ETH
 
-## Kraken24HBorrowCalc
-- This tool calculates 24H borrow $ of Kraken accounts
-- Can be used to check against CryptoReporter's numbers, which are based on estimation
-
 ## KrakenAlerter
 - This tool is for monitoring difference of Kraken spots to FTX spots
+
+## KrakenUtil
+- This tool provides the following information from your Kraken accounts:
+  1. 24H borrow fees
+  2. Auto liquidation dates (365-day windows)
 
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot
