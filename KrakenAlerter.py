@@ -23,7 +23,15 @@ while True:
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
   spot_xxbtzusd = float(kr.public_get_ticker({'pair': 'XXBTZUSD'})['result']['XXBTZUSD']['c'][0])
   spot_xxbtzeur = float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+
+
+  spotEUR=ftxGetMid(ftxMarkets,'EUR/USD')
+
   spotEUR=float(ftx.public_get_markets_market_name({'market_name':'EUR/USD'})['result']['price'])
+
+  pd.DataFrame(ftx.public_get_markets_market_name({'market_name': 'EUR/USD'})['result'])
+
+
   basisUSD=spot_xxbtzusd/spotBTC-1
   basisEUR=spot_xxbtzeur*spotEUR/spotBTC-1
   z='XXBTZUSD:'+str(round(basisUSD*10000)).ljust(10)+'XXBTZEUR: '+str(round(basisEUR*10000))

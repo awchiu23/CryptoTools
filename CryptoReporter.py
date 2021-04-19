@@ -521,7 +521,8 @@ ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC','spot']
 spotETH = ftxWallet.loc['ETH','spot']
 spotFTT = ftxWallet.loc['FTT','spot']
-spotEUR=float(ftx.public_get_markets_market_name({'market_name':'EUR/USD'})['result']['price'])
+d=ftx.public_get_markets_market_name({'market_name':'EUR/USD'})['result']
+spotEUR=(float(d['bid'])+float(d['ask']))/2
 #####
 ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
 bbCore = core('bb',spotBTC,spotETH)
