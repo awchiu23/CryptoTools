@@ -7,7 +7,7 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=5
+nPrograms=1
 targetUSD=5000
 
 account=1                # which Kraken account to use

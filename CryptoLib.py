@@ -167,9 +167,9 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   # Do not use @retry!
   def bbGetLimitPrice(side,refPrice):
     if side == 'BUY':
-      return refPrice * (1 - CT_BB_DISTANCE_TO_BEST_BPS / 10000)
+      return round(refPrice * (1 - CT_BB_DISTANCE_TO_BEST_BPS / 10000),2)
     else:
-      return refPrice * (1 + CT_BB_DISTANCE_TO_BEST_BPS / 10000)
+      return round(refPrice * (1 + CT_BB_DISTANCE_TO_BEST_BPS / 10000),2)
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
@@ -192,21 +192,23 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
   if side=='BUY':
     refPrice = bbGetBid(bb, ticker1)
-    orderId = bb.create_limit_buy_order(ticker1, trade_notional, bbGetLimitPrice(side,refPrice))['info']['order_id']
+    limitPrice=bbGetLimitPrice(side, refPrice)
+    orderId = bb.create_limit_buy_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   else:
     refPrice = bbGetAsk(bb, ticker1)
-    orderId = bb.create_limit_sell_order(ticker1, trade_notional, bbGetLimitPrice(side,refPrice))['info']['order_id']
+    limitPrice = bbGetLimitPrice(side, refPrice)
+    orderId = bb.create_limit_sell_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   refTime = time.time()
   nChases=0
-  while True:    
+  while True:
     orderStatus=bbGetOrder(bb,ticker2,orderId)
     if orderStatus['order_status']=='Filled': break
     if side=='BUY':
-      newPrice=bbGetBid(bb,ticker1)
+      newRefPrice=bbGetBid(bb,ticker1)
     else:
-      newPrice=bbGetAsk(bb,ticker1)
-    if (side=='BUY' and newPrice > refPrice) or (side=='SELL' and newPrice < refPrice) or ((time.time()-refTime)>CT_BB_MAX_WAIT_TIME):
-      refPrice = newPrice
+      newRefPrice=bbGetAsk(bb,ticker1)
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_BB_MAX_WAIT_TIME):
+      refPrice = newRefPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker2, orderId)
       if orderStatus['order_status']=='Filled': break
@@ -225,11 +227,14 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
           print(getCurrentTime() + ': Cancelled')
           return 0
       else:
-        refTime=time.time()
-        try:
-          bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': bbGetLimitPrice(side,refPrice)})
-        except:
-          break
+        refTime = time.time()
+        newLimitPrice=bbGetLimitPrice(side,refPrice)
+        if newLimitPrice!=limitPrice:
+          limitPrice=newLimitPrice
+          try:
+            bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': bbGetLimitPrice(side,refPrice)})
+          except:
+            break
     time.sleep(1)
   fill=bbGetFillPrice(bb, ticker2, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
