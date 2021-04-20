@@ -46,6 +46,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - This tool provides the following information from your Kraken accounts:
   1. 24H borrow fees
   2. Auto liquidation dates (365-day windows)
+  3. Cash balances
 
 ## KrakenTrader
 - Execution tool for Kraken to trade BTC margined spot

@@ -10,10 +10,10 @@ from retrying import retry
 nPrograms=1
 targetUSD=5000
 
-account=1                # which Kraken account to use
+account=2                # which Kraken account to use
 side='SELL'              # 'BUY', 'SELL'
-pair='XXBTZUSD'          # 'XXBTZUSD','XXBTZEUR','XETHZUSD','XETHZEUR'
-hedgeExchange='none'     # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
+pair='XXBTZUSD'          # 'XXBTZUSD','XXBTZEUR'
+hedgeExchange='ftxperp'  # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
 isMargin=True            # Margin trading?
 
 ###########
@@ -96,6 +96,12 @@ def krExec(side,kr,pair,qty,isMargin):
     spotEUR = cl.ftxGetSpotEUR(ftx)
     print(cl.getCurrentTime() + ': Filled at ' + str(round(fill * spotEUR)) + ' in USD; f/x=' + str(round(spotEUR, 4)))
 
+def getBal(bal, ccy):
+  try:
+    return float(bal[ccy])
+  except:
+    return 0
+
 ######
 # Init
 ######
@@ -157,4 +163,8 @@ for n in range(nPrograms):
     sys.exit(1)
   time.sleep(3)
 
+bal = kr.private_post_balance()['result']
+spotDeltaUSD = getBal(bal, 'ZUSD')
+spotDeltaEUR = getBal(bal, 'ZEUR')
+print(cl.getCurrentTime()+': Cash balances post trade: $'+str(round(spotDeltaUSD))+' / €'+str(round(spotDeltaEUR)))
 cl.speak('KrakenTrader has completed')

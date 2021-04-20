@@ -8,6 +8,11 @@ import datetime
 import time
 import sys
 
+########
+# Params
+########
+isSkipBorrow=False
+
 ###########
 # Functions
 ###########
@@ -55,6 +60,12 @@ def getAutoLiqDateStr(positions,pair):
   except:
     return "Not available"
 
+def getBal(bal, ccy):
+  try:
+    return float(bal[ccy])
+  except:
+    return 0
+
 ######
 # Init
 ######
@@ -70,16 +81,26 @@ spot_xxbtzeur = float(krs[0].public_get_ticker({'pair': 'XXBTZEUR'})['result']['
 spot_xxbtzusd = float(krs[0].public_get_ticker({'pair': 'XXBTZUSD'})['result']['XXBTZUSD']['c'][0])
 spotEUR = spot_xxbtzusd / spot_xxbtzeur
 
-print('Please wait ....')
-n=0
-for krChosen in krs:
-  n+=1
-  ledgers=getLedgers(krChosen,spotBTC,spotEUR)
-  print('KR'+str(n)+' 24h borrow: $'+str(round(ledgers['feeUSD'].sum())))
-print()
+if not isSkipBorrow:
+  print('Please wait ....')
+  n=0
+  for krChosen in krs:
+    n+=1
+    ledgers=getLedgers(krChosen,spotBTC,spotEUR)
+    print('KR'+str(n)+' 24h borrow: $'+str(round(ledgers['feeUSD'].sum())))
+  print()
 
 n=0
 for krChosen in krs:
   n+=1
   positions=getPositions(krChosen)
   print('KR'+str(n)+' auto liquidation dates XXBTZUSD/XXBTZEUR: '+getAutoLiqDateStr(positions,'XXBTZUSD')+' / '+getAutoLiqDateStr(positions,'XXBTZEUR'))
+print()
+
+n=0
+for krChosen in krs:
+  n+=1
+  bal = krChosen.private_post_balance()['result']
+  spotDeltaUSD = getBal(bal, 'ZUSD')
+  spotDeltaEUR = getBal(bal, 'ZEUR')
+  print('KR'+str(n)+' cash: $'+str(round(spotDeltaUSD))+' / €'+str(round(spotDeltaEUR)))
