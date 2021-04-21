@@ -29,4 +29,4 @@ while True:
   z='XXBTZUSD:'+str(round(basisUSD*10000))
   z2='XXBTZEUR: '+str(round(basisEUR*10000))+' (f/x='+str(round(spotEUR,4))+')'
   print(cl.getCurrentTime().ljust(30)+termcolor.colored(z.ljust(25),'blue')+termcolor.colored(z2,'magenta'))
-  time.sleep(3)
+  time.sleep(2)

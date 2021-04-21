@@ -82,7 +82,7 @@ def krRelOrder(side,kr,pair,trade_qty,lev,maxChases=0):
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice, lev)
     else:
       print('.',end='')
-    time.sleep(3)
+    time.sleep(2)
   print()
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
@@ -161,7 +161,7 @@ for n in range(nPrograms):
   else:
     print('Bad exchange!')
     sys.exit(1)
-  time.sleep(3)
+  time.sleep(2)
 
 bal = kr.private_post_balance()['result']
 spotDeltaUSD = getBal(bal, 'ZUSD')
