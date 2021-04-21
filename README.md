@@ -32,9 +32,6 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Automated trading of spot and futures
 - If interested, please speak with me directly
 
-## DeribitAlerter
-- This tool is for monitoring smart basis (as well as raw basis) of Deribit futures
-
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
 - Universe: USD, BTC, ETH
