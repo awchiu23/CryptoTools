@@ -75,7 +75,7 @@ CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long
 CT_STREAK = 5                        # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 15             # Max number of allowed bps for range of observations
 CT_SLEEP = 2                         # Delay in seconds between observations
-CT_NPROGRAMS = 100                   # Number of programs (each program being a pair of trades)
+CT_NPROGRAMS = 200                   # Number of programs (each program being a pair of trades)
 CT_BB_DISTANCE_TO_BEST_BPS=5         # Bybit execution parameter
 CT_BB_MAX_WAIT_TIME=20               # Bybit execution parameter
 
