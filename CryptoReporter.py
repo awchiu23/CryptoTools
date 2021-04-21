@@ -576,7 +576,10 @@ if CR_IS_ADVANCED:
 z+=')'
 print(termcolor.colored(z,'blue'))
 print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
-print('Spots: BTC='.rjust(45)+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1))+' / EUR='+str(round(spotEUR,4)))
+z='Spots: BTC='.rjust(45)+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1))
+if CR_IS_ADVANCED:
+  z+=' / EUR='+str(round(spotEUR,4))
+print(z)
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
