@@ -546,11 +546,12 @@ def getFundingDict(ftx,bb,bn,db,kf):
   d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
   d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')  
   d['dbEstFundingBTC'] = dbGetEstFunding(db, 'BTC')
-  d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')  
-  d['kfEstFunding1BTC'] = kfGetEstFunding1(kf, 'BTC')
-  d['kfEstFunding1ETH'] = kfGetEstFunding1(kf, 'ETH')
-  d['kfEstFunding2BTC'] = kfGetEstFunding2(kf, 'BTC')
-  d['kfEstFunding2ETH'] = kfGetEstFunding2(kf, 'ETH')
+  d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')
+  kfTickers = kfGetTickers(kf)
+  d['kfEstFunding1BTC'] = kfGetEstFunding1(kf, 'BTC',kfTickers)
+  d['kfEstFunding1ETH'] = kfGetEstFunding1(kf, 'ETH',kfTickers)
+  d['kfEstFunding2BTC'] = kfGetEstFunding2(kf, 'BTC',kfTickers)
+  d['kfEstFunding2ETH'] = kfGetEstFunding2(kf, 'ETH',kfTickers)
   return d
 
 #############################################################################################
@@ -972,12 +973,6 @@ def ctRun(ccy):
         if 'bn' in chosenShort and not isCancelled:
           shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'kf' in chosenLong and not isCancelled:
-          longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'kf' in chosenShort and not isCancelled:
-          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
@@ -990,6 +985,12 @@ def ctRun(ccy):
         if 'ftx' in chosenShort and not isCancelled:
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
+        if 'kf' in chosenLong and not isCancelled:
+          longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'kf' in chosenShort and not isCancelled:
+          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'db' in chosenLong and not isCancelled:
           longFill = dbRelOrder('BUY', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
