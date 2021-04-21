@@ -678,6 +678,7 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   def ftxGetFutures(ftx):
     return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
   #####
+  # Do not use @retry
   def ftxGetMid(ftxMarkets, name):
     return (float(ftxMarkets.loc[name,'bid']) + float(ftxMarkets.loc[name,'ask'])) / 2
   #####
@@ -685,6 +686,7 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   def bbGetTickers(bb):
     return pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
   #####
+  # Do not use @retry
   def bbGetMid(bbTickers, ccy):
     return (float(bbTickers.loc[ccy,'bid_price']) + float(bbTickers.loc[ccy,'ask_price'])) / 2
   #####
@@ -692,6 +694,7 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   def bnGetBookTicker(bn):
     return pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
   #####
+  # Do not use @retry
   def bnGetMid(bnBookTicker, ccy):
     return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
   #####
@@ -700,10 +703,22 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
     d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
     return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
   #####
-  ftxMarkets = ftxGetMarkets(ftx)
-  ftxFutures = ftxGetFutures(ftx)
+  # Do not use @retry
+  def kfGetMid(kfTickers, ccy):
+    if ccy == 'BTC':
+      ticker = 'pi_xbtusd'
+    elif ccy == 'ETH':
+      ticker = 'pi_ethusd'
+    else:
+      sys.exit(1)
+    return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
+  #####
   bbTickers = bbGetTickers(bb)
   bnBookTicker = bnGetBookTicker(bn)
+  ftxMarkets = ftxGetMarkets(ftx)
+  ftxFutures = ftxGetFutures(ftx)
+  dbFutBTC = dbGetMid(db, 'BTC')
+  dbFutETH = dbGetMid(db, 'ETH')
   kfTickers = kfGetTickers(kf)
   #####
   spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
@@ -714,10 +729,8 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   bbFutETH = bbGetMid(bbTickers, 'ETHUSD')
   bnFutBTC=bnGetMid(bnBookTicker, 'BTC')
   bnFutETH=bnGetMid(bnBookTicker, 'ETH')
-  dbFutBTC = dbGetMid(db, 'BTC')
-  dbFutETH = dbGetMid(db, 'ETH')
-  kfFutBTC=(kfTickers.loc['pi_xbtusd', 'bid'] + kfTickers.loc['pi_xbtusd', 'ask']) / 2
-  kfFutETH=(kfTickers.loc['pi_ethusd', 'bid'] + kfTickers.loc['pi_ethusd', 'ask']) / 2
+  kfFutBTC=kfGetMid(kfTickers,'BTC')
+  kfFutETH=kfGetMid(kfTickers,'ETH')
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   if isSkipAdj:
@@ -967,12 +980,6 @@ def ctRun(ccy):
         if 'bb' in chosenShort and not isCancelled:
           shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
-        if 'bn' in chosenLong and not isCancelled:
-          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bn' in chosenShort and not isCancelled:
-          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
@@ -990,6 +997,12 @@ def ctRun(ccy):
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kf' in chosenShort and not isCancelled:
           shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
+        if 'bn' in chosenLong and not isCancelled:
+          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'bn' in chosenShort and not isCancelled:
+          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'db' in chosenLong and not isCancelled:
           longFill = dbRelOrder('BUY', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
