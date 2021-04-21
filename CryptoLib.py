@@ -2,6 +2,7 @@
 # Crypto Library
 ################
 from CryptoParams import *
+from joblib import Parallel, delayed
 import pandas as pd
 import numpy as np
 import datetime
@@ -12,6 +13,81 @@ import termcolor
 import ccxt
 import apophis
 from retrying import retry
+
+#########
+# Classes
+#########
+class getPrices:
+  def __init__(self, exch, api):
+    self.exch = exch
+    self.api = api
+
+  def run(self):
+    if self.exch == 'ftx':
+      ftxMarkets=self.ftxGetMarkets(self.api)
+      self.spotBTC=self.ftxGetMid(ftxMarkets, 'BTC/USD')
+      self.spotETH=self.ftxGetMid(ftxMarkets, 'ETH/USD')
+      self.futBTC=self.ftxGetMid(ftxMarkets, 'BTC-PERP')
+      self.futETH=self.ftxGetMid(ftxMarkets, 'ETH-PERP')
+      self.ftxFutures = self.ftxGetFutures(self.api)
+    elif self.exch == 'bb':
+      bbTickers=self.bbGetTickers(self.api)
+      self.futBTC=self.bbGetMid(bbTickers,'BTC')
+      self.futETH = self.bbGetMid(bbTickers,'ETH')
+    elif self.exch == 'bn':
+      bnBookTicker = self.bnGetBookTicker(self.api)
+      self.futBTC = self.bnGetMid(bnBookTicker, 'BTC')
+      self.futETH = self.bnGetMid(bnBookTicker, 'ETH')
+    elif self.exch == 'db':
+      self.futBTC =  self.dbGetMid(self.api, 'BTC')
+      self.futETH =  self.dbGetMid(self.api, 'ETH')
+    elif self.exch == 'kf':
+      self.kfTickers = kfGetTickers(self.api)
+      self.futBTC = self.kfGetMid(self.kfTickers, 'BTC')
+      self.futETH = self.kfGetMid(self.kfTickers, 'ETH')
+
+  @retry(wait_fixed=1000)
+  def ftxGetMarkets(self, ftx):
+    return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
+
+  @retry(wait_fixed=1000)
+  def ftxGetFutures(self, ftx):
+    return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
+
+  @retry(wait_fixed=1000)
+  def bbGetTickers(self, bb):
+    return pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
+
+  @retry(wait_fixed=1000)
+  def bnGetBookTicker(self, bn):
+    return pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
+
+  @retry(wait_fixed=1000)
+  def dbGetMid(self, db,ccy):
+    d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
+    return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
+
+  # Do not use @retry
+  def ftxGetMid(self, ftxMarkets, name):
+    return (float(ftxMarkets.loc[name, 'bid']) + float(ftxMarkets.loc[name, 'ask'])) / 2
+
+  # Do not use @retry
+  def bbGetMid(self, bbTickers, ccy):
+    return (float(bbTickers.loc[ccy+'USD', 'bid_price']) + float(bbTickers.loc[ccy+'USD', 'ask_price'])) / 2
+
+  # Do not use @retry
+  def bnGetMid(self, bnBookTicker, ccy):
+    return (float(bnBookTicker.loc[ccy + 'USD_PERP', 'bidPrice']) + float(bnBookTicker.loc[ccy + 'USD_PERP', 'askPrice'])) / 2
+
+  # Do not use @retry
+  def kfGetMid(self, kfTickers, ccy):
+    if ccy == 'BTC':
+      ticker = 'pi_xbtusd'
+    elif ccy == 'ETH':
+      ticker = 'pi_ethusd'
+    else:
+      sys.exit(1)
+    return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
 
 ###########
 # Functions
@@ -670,67 +746,13 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
 #############################################################################################
 
 def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
-  @retry(wait_fixed=1000)
-  def ftxGetMarkets(ftx):
-    return pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
-  #####
-  @retry(wait_fixed=1000)
-  def ftxGetFutures(ftx):
-    return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
-  #####
-  # Do not use @retry
-  def ftxGetMid(ftxMarkets, name):
-    return (float(ftxMarkets.loc[name,'bid']) + float(ftxMarkets.loc[name,'ask'])) / 2
-  #####
-  @retry(wait_fixed=1000)
-  def bbGetTickers(bb):
-    return pd.DataFrame(bb.v2PublicGetTickers()['result']).set_index('symbol')
-  #####
-  # Do not use @retry
-  def bbGetMid(bbTickers, ccy):
-    return (float(bbTickers.loc[ccy,'bid_price']) + float(bbTickers.loc[ccy,'ask_price'])) / 2
-  #####
-  @retry(wait_fixed=1000)
-  def bnGetBookTicker(bn):
-    return pd.DataFrame(bn.dapiPublicGetTickerBookTicker()).set_index('symbol')
-  #####
-  # Do not use @retry
-  def bnGetMid(bnBookTicker, ccy):
-    return (float(bnBookTicker.loc[ccy+'USD_PERP','bidPrice']) + float(bnBookTicker.loc[ccy+'USD_PERP','askPrice'])) / 2
-  #####
-  @retry(wait_fixed=1000)
-  def dbGetMid(db,ccy):
-    d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
-    return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
-  #####
-  # Do not use @retry
-  def kfGetMid(kfTickers, ccy):
-    if ccy == 'BTC':
-      ticker = 'pi_xbtusd'
-    elif ccy == 'ETH':
-      ticker = 'pi_ethusd'
-    else:
-      sys.exit(1)
-    return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
-  #####
-  bbTickers = bbGetTickers(bb)
-  bnBookTicker = bnGetBookTicker(bn)
-  ftxMarkets = ftxGetMarkets(ftx)
-  ftxFutures = ftxGetFutures(ftx)
-  dbFutBTC = dbGetMid(db, 'BTC')
-  dbFutETH = dbGetMid(db, 'ETH')
-  kfTickers = kfGetTickers(kf)
-  #####
-  spotBTC = ftxGetMid(ftxMarkets, 'BTC/USD')
-  spotETH = ftxGetMid(ftxMarkets, 'ETH/USD')
-  ftxFutBTC=ftxGetMid(ftxMarkets, 'BTC-PERP')
-  ftxFutETH=ftxGetMid(ftxMarkets, 'ETH-PERP')
-  bbFutBTC = bbGetMid(bbTickers, 'BTCUSD')
-  bbFutETH = bbGetMid(bbTickers, 'ETHUSD')
-  bnFutBTC=bnGetMid(bnBookTicker, 'BTC')
-  bnFutETH=bnGetMid(bnBookTicker, 'ETH')
-  kfFutBTC=kfGetMid(kfTickers,'BTC')
-  kfFutETH=kfGetMid(kfTickers,'ETH')
+  ftxPrices = getPrices('ftx', ftx)
+  bbPrices = getPrices('bb', bb)
+  bnPrices = getPrices('bn', bn)
+  kfPrices = getPrices('kf', kf)
+  dbPrices = getPrices('db', db)
+  objs = [ftxPrices, bbPrices, bnPrices, kfPrices, dbPrices]
+  Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   if isSkipAdj:
@@ -757,30 +779,30 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
     kfETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']) / 10000            
   #####
   d = dict()
-  d['ftxBTCBasis'] = ftxFutBTC / spotBTC - 1
-  d['ftxETHBasis'] = ftxFutETH / spotETH - 1
-  d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
-  d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
+  d['ftxBTCBasis'] = ftxPrices.futBTC / ftxPrices.spotBTC - 1
+  d['ftxETHBasis'] = ftxPrices.futETH / ftxPrices.spotETH - 1
+  d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxPrices.ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
+  d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxPrices.ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
   #####
-  d['bbBTCBasis'] = bbFutBTC / spotBTC - 1
-  d['bbETHBasis'] = bbFutETH / spotETH - 1
+  d['bbBTCBasis'] = bbPrices.futBTC / ftxPrices.spotBTC - 1
+  d['bbETHBasis'] = bbPrices.futETH / ftxPrices.spotETH - 1
   d['bbBTCSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge + bbBTCAdj
   d['bbETHSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge + bbETHAdj
   #####
-  d['bnBTCBasis'] = bnFutBTC / spotBTC - 1
-  d['bnETHBasis'] = bnFutETH / spotETH - 1
+  d['bnBTCBasis'] = bnPrices.futBTC / ftxPrices.spotBTC - 1
+  d['bnETHBasis'] = bnPrices.futETH / ftxPrices.spotETH - 1
   d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
   d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
   ###
-  d['dbBTCBasis'] = dbFutBTC / spotBTC - 1
-  d['dbETHBasis'] = dbFutETH / spotETH - 1
+  d['dbBTCBasis'] = dbPrices.futBTC / ftxPrices.spotBTC - 1
+  d['dbETHBasis'] = dbPrices.futETH / ftxPrices.spotETH - 1
   d['dbBTCSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'BTC', d['dbBTCBasis']) - oneDayShortSpotEdge + dbBTCAdj
   d['dbETHSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'ETH', d['dbETHBasis']) - oneDayShortSpotEdge + dbETHAdj
   ###
-  d['kfBTCBasis']= kfFutBTC / spotBTC - 1
-  d['kfETHBasis'] = kfFutETH / spotETH - 1
-  d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
-  d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
+  d['kfBTCBasis']= kfPrices.futBTC / ftxPrices.spotBTC - 1
+  d['kfETHBasis'] = kfPrices.futETH / ftxPrices.spotETH - 1
+  d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
+  d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
   return d
 
 #############################################################################################
@@ -986,6 +1008,12 @@ def ctRun(ccy):
         if 'spot' in chosenShort and not isCancelled:
           shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
+        if 'ftx' in chosenLong and not isCancelled:
+          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'ftx' in chosenShort and not isCancelled:
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kf' in chosenLong and not isCancelled:
           longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
@@ -997,12 +1025,6 @@ def ctRun(ccy):
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'db' in chosenShort and not isCancelled:
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'ftx' in chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'ftx' in chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bn' in chosenLong and not isCancelled:
           longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
