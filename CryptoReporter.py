@@ -216,6 +216,39 @@ def bnInit(bn,spotBTC,spotETH):
 
 ####################################################################################################
 
+def dbInit(db,spotBTC,spotETH):
+  def get4pmIncome(db,ccy,spot):
+    df = pd.DataFrame(db.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
+    if len(df)==0: return 0
+    cl.dfSetFloat(df, 'funding')
+    df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
+    df=df.set_index('date').sort_index()
+    if df.index[-1]>=(datetime.datetime.now() - pd.DateOffset(days=1)):
+      return df['funding'].iloc[-1]*spot
+    else:
+      return 0
+  #####
+  asBTC = db.private_get_get_account_summary({'currency': 'BTC'})['result']
+  asETH = db.private_get_get_account_summary({'currency': 'ETH'})['result']
+  spotDeltaBTC = float(asBTC['equity'])
+  spotDeltaETH = float(asETH['equity'])
+  futures = pd.DataFrame([['BTC', spotBTC, cl.dbGetFutPos(db, 'BTC')], ['ETH', spotETH, cl.dbGetFutPos(db, 'ETH')]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
+  futures['FutDelta'] = futures['FutDeltaUSD'] / futures['Spot']
+  notional = futures['FutDeltaUSD'].abs().sum()
+  #####
+  oneDayIncome=get4pmIncome(db,'BTC',spotBTC)+get4pmIncome(db,'ETH',spotETH)
+  oneDayAnnRet = oneDayIncome * 365 / notional
+  #####
+  nav = spotDeltaBTC * spotBTC + spotDeltaETH * spotETH
+  liqBTC=float(asBTC['estimated_liquidation_ratio'])
+  liqETH=float(asETH['estimated_liquidation_ratio'])
+  #####
+  return spotDeltaBTC, spotDeltaETH, futures, \
+         oneDayIncome, oneDayAnnRet, \
+         nav, liqBTC, liqETH
+
+####################################################################################################
+
 def kfInit(kf,spotBTC,spotETH):
   def getLog(kf, futures):
     ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
@@ -372,6 +405,11 @@ class core:
       self.spotDeltaBTC, self.spotDeltaETH, self.bal, self.futures, self.payments, \
       self.prevIncome, self.prevAnnRet, self.oneDayIncome, self.oneDayAnnRet, \
       self.nav, self.liqBTC, self.liqETH = bnInit(self.api, self.spotBTC, self.spotETH)
+    elif self.exch=='db':
+      self.api = cl.dbCCXTInit()
+      self.spotDeltaBTC, self.spotDeltaETH, self.futures, \
+      self.oneDayIncome, self.oneDayAnnRet, \
+      self.nav, self.liqBTC, self.liqETH = dbInit(self.api, self.spotBTC, self.spotETH)
     elif self.exch=='kf':
       self.api = cl.kfInit()
       self.spotDeltaBTC, self.spotDeltaETH, self.futures, self.log, \
@@ -391,8 +429,11 @@ class core:
 
   def printIncomes(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
-    z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-    print(termcolor.colored((self.exch.upper() + ' 24h/prev funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+    if self.exch=='db':
+      print(termcolor.colored('DB 4pm funding income: '.rjust(41) + z1, 'blue'))
+    else:
+      z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
+      print(termcolor.colored((self.exch.upper() + ' 24h/prev funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
 
   def printFunding(self,ccy):
     if self.exch=='ftx':
@@ -417,6 +458,9 @@ class core:
       oneDayFunding = df['fundingRate'].mean() * 3 * 365
       prevFunding = df['fundingRate'][-1] * 3 * 365
       estFunding = cl.bnGetEstFunding(self.api, ccy)
+    elif self.exch=='db':
+      oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
+      estFunding = cl.dbGetEstFunding(self.api, ccy)
     elif self.exch=='kf':
       if self.log is None:
         prevFunding = self.prevAnnRet
@@ -429,12 +473,17 @@ class core:
       estFunding = cl.kfGetEstFunding1(self.api, ccy, tickers)
       est2Funding = cl.kfGetEstFunding2(self.api, ccy, tickers)
     #####
-    prefix = self.exch.upper() + ' ' + ccy + ' 24h/prev/est'
+    prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
+    if self.exch!='db': prefix+='prev/'
+    prefix+='est'
     if self.exch in ['bb', 'kf']:
       prefix += '1/est2'
     prefix += ' funding rate:'
     #####
-    body = str(round(oneDayFunding * 100)) + '%/' + str(round(prevFunding * 100)) + '%/' + str(round(estFunding * 100)) + '%'
+    body = str(round(oneDayFunding * 100)) + '%/'
+    if self.exch!='db':
+      body += str(round(prevFunding * 100)) + '%/'
+    body += str(round(estFunding * 100)) + '%'
     if self.exch in ['bb', 'kf']:
       body += '/' + str(round(est2Funding * 100)) + '%'
     body += ' p.a.'
@@ -503,6 +552,10 @@ class core:
     coinBalance = self.wallet.loc[ccy, 'usdValue']
     print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance/1000)) + 'K)')
 
+  def dbPrintIncomes(self):
+    z1 = '$' + str(round(self._4pmIncome)) + ' (' + str(round(self._4pmAnnRet * 100)) + '% p.a.)'
+    print(termcolor.colored(('DB 4pm funding income: ').rjust(41) + z1, 'blue'))
+
   def krPrintBorrow(self, nav):
     zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
     suffix='(spot BTC/ETH: $'
@@ -531,11 +584,12 @@ cbCore = core('cb',spotBTC,spotETH)
 objs=[ftxCore,bbCore,cbCore]
 if CR_IS_ADVANCED:
   bnCore = core('bn', spotBTC, spotETH)
+  dbCore = core('db', spotBTC, spotETH)
   kfCore = core('kf', spotBTC, spotETH)
   krCores = []
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
-  objs.extend([bnCore,kfCore]+krCores)
+  objs.extend([bnCore,dbCore,kfCore]+krCores)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
 #############
@@ -567,6 +621,7 @@ z+=' (FTX: $' + str(round(ftxCore.nav/1000)) + 'K'
 z+=' / BB: $' + str(round(bbCore.nav/1000)) + 'K'
 if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnCore.nav/1000)) + 'K'
+  z += ' / DB: $' + str(round(dbCore.nav / 1000)) + 'K'
   z += ' / KF: $' + str(round(kfCore.nav / 1000)) + 'K'
   for krCore in krCores:
     z+= ' / KR' + str(krCore.n)+': $'+str(round(krCore.nav/1000))+'K'
@@ -613,6 +668,12 @@ if CR_IS_ADVANCED:
   bnCore.printFunding('BTC')
   bnCore.printFunding('ETH')
   bnCore.printLiq()
+  print()
+  #####
+  dbCore.printIncomes()
+  dbCore.printFunding('BTC')
+  dbCore.printFunding('ETH')
+  dbCore.printLiq()
   print()
   #####
   kfCore.printIncomes()
