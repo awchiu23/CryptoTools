@@ -558,15 +558,22 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   k = 2 / (60 * 15 / CT_SLEEP + 1)
   if ccy == 'BTC':
     smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapBTC = getEMANow(snapFundingRate, kfGetOneDayShortFutEdge.emaSnapBTC, k)
-    smoothedEst2Rate=kfGetOneDayShortFutEdge.emaEst2BTC=getEMANow(fundingDict['kfEstFunding2BTC'], kfGetOneDayShortFutEdge.emaEst2BTC, k)    
+    smoothedEst2Rate=kfGetOneDayShortFutEdge.emaEst2BTC=getEMANow(fundingDict['kfEstFunding2BTC'], kfGetOneDayShortFutEdge.emaEst2BTC, k)
   elif ccy == 'ETH':
     smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapETH = getEMANow(snapFundingRate, kfGetOneDayShortFutEdge.emaSnapETH, k)
     smoothedEst2Rate=kfGetOneDayShortFutEdge.emaEst2ETH=getEMANow(fundingDict['kfEstFunding2ETH'], kfGetOneDayShortFutEdge.emaEst2ETH, k)
-    ##################################
-    #print('[ETH Snap:',round(snapFundingRate*100), ' / SmoothedSnap:',round(smoothedSnapRate*100),' / SmoothedEst2',round(smoothedEst2Rate*100),']')
-    ##################################
   else:
     sys.exit(1)
+  ##################################################
+  if False: # Turn to True for debugging
+    if ccy=='BTC':
+      z = 'Snap: ' + str(round(snapFundingRate * 100)) + ' / SmoothedSnap: ' + str(round(smoothedSnapRate * 100)) + ' / SmoothedEst2: ' + str(round(smoothedEst2Rate * 100))
+      print()
+      print(termcolor.colored(z, 'cyan').rjust(112), end='')
+    else:
+      z = 'Snap: ' + str(round(snapFundingRate * 100)) + ' / SmoothedSnap: ' + str(round(smoothedSnapRate * 100)) + ' / SmoothedEst2: ' + str(round(smoothedEst2Rate * 100))
+      print(termcolor.colored(z, 'red').rjust(98))
+  ##################################################
   return getOneDayShortFutEdge(4, basis, smoothedSnapRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1' + ccy], isKF=True)
 
 #############################################################################################
