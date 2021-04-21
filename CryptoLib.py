@@ -660,10 +660,10 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
     if ccy=='BTC':
       z = 'Snap: ' + str(round(snapFundingRate * 100)) + ' / SmoothedSnap: ' + str(round(smoothedSnapRate * 100)) + ' / SmoothedEst2: ' + str(round(smoothedEst2Rate * 100))
       print()
-      print(termcolor.colored(z, 'cyan').rjust(112), end='')
+      print(termcolor.colored(z, 'cyan').rjust(125), end='')
     else:
       z = 'Snap: ' + str(round(snapFundingRate * 100)) + ' / SmoothedSnap: ' + str(round(smoothedSnapRate * 100)) + ' / SmoothedEst2: ' + str(round(smoothedEst2Rate * 100))
-      print(termcolor.colored(z, 'red').rjust(98))
+      print(termcolor.colored(z, 'red').rjust(112))
   ##################################################
   return getOneDayShortFutEdge(4, basis, smoothedSnapRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1' + ccy], isKF=True)
 
