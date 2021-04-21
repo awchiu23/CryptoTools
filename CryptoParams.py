@@ -67,7 +67,7 @@ CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
-CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
@@ -79,8 +79,8 @@ CT_NPROGRAMS = 100                   # Number of programs (each program being a 
 CT_BB_DISTANCE_TO_BEST_BPS=5         # Bybit execution parameter
 CT_BB_MAX_WAIT_TIME=20               # Bybit execution parameter
 
-CT_TRADE_BTC_NOTIONAL = 3000         # Per trade notional
-CT_TRADE_ETH_NOTIONAL = 3000         # Per trade notional
+CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
+CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
 
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
