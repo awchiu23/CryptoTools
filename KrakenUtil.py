@@ -54,9 +54,14 @@ def getPositions(kr):
   return positions
 
 def getAutoLiqDateStr(positions,pair):
-  dtFormat = '%Y-%m-%d'
   try:
-    return (positions.loc[pair]['date'].sort_values()[0] + pd.DateOffset(days=365)).strftime(dtFormat)
+    dtFormat = '%Y-%m-%d'
+    dts=positions.loc[pair]['date']
+    if isinstance(dts, datetime.datetime):
+      dt=dts
+    else:
+      dt=dts.sort_values()[0]
+    return (dt + pd.DateOffset(days=365)).strftime(dtFormat)
   except:
     return "Not available"
 

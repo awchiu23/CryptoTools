@@ -289,11 +289,13 @@ def krInit(kr, spotBTC, spotETH):
   positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
   positions['volNetUSD'] = positions['volNetBTC'] * spotBTC
   spotDeltaBTC += positions['volNetBTC'].sum()
-  spotDeltaEUR -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+  if 'XXBTZEUR' in positions.index:
+    spotDeltaEUR -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(kr.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
   notional = positions['volNetUSD'].abs().sum()
   #####
   # mdbUSD=Margin Delta BTC in USD
-  mdbUSDDf = pd.DataFrame([['USD', positions.loc['XXBTZUSD', 'volNetUSD'].sum()], ['EUR', positions.loc['XXBTZEUR', 'volNetUSD'].sum()]], columns=['Ccy', 'MDBU']).set_index('Ccy')
+  xxbtzeur_volNetUSD_sum=positions.loc['XXBTZEUR', 'volNetUSD'].sum() if 'XXBTZEUR' in positions.index else 0
+  mdbUSDDf = pd.DataFrame([['USD', positions.loc['XXBTZUSD', 'volNetUSD'].sum()], ['EUR', xxbtzeur_volNetUSD_sum]], columns=['Ccy', 'MDBU']).set_index('Ccy')
   #####
   oneDayIncome=-mdbUSDDf['MDBU'].sum()*0.0006
   oneDayAnnRet = oneDayIncome * 365 / notional
