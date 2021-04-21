@@ -100,7 +100,7 @@ BASE_BASIS = BASE_FUNDING_RATE/365
 #################
 CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
 CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
-CR_N_KR_ACCOUNTS = 2                 # Number of Kraken accounts
+CR_N_KR_ACCOUNTS = 1                 # Number of Kraken accounts
 
 #############################################################################################
 

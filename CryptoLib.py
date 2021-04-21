@@ -479,15 +479,19 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
   edge=basis-getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1]
 
   # gain on coupon from elapsed time
-  pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
+  if isKF: # Special mod for kf
+    pctElapsed=1
+  else:
+    pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
   edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
   hoursAccountedFor=hoursInterval*pctElapsed
 
   # gain on coupon from previous reset
   if not prevFundingRate is None:
-    pctCaptured=1
     if isKF: # Special mod for kf
-      pctCaptured-=getPctElapsed(hoursInterval)
+      pctCaptured=1-getPctElapsed(hoursInterval)
+    else:
+      pctCaptured=1
     edge+=prevFundingRate/365/(24/hoursInterval)*pctCaptured
     hoursAccountedFor+=hoursInterval*pctCaptured
 
@@ -499,22 +503,20 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
 
 @retry(wait_fixed=1000)
 def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
-  if not hasattr(ftxGetOneDayShortFutEdge,'emaBTC'):
-    ftxGetOneDayShortFutEdge.emaBTC = fundingDict['ftxEstFundingBTC']
-  if not hasattr(ftxGetOneDayShortFutEdge, 'emaETH'):
-    ftxGetOneDayShortFutEdge.emaETH = fundingDict['ftxEstFundingETH']
+  if not hasattr(ftxGetOneDayShortFutEdge,'emaSnapBTC'):
+    ftxGetOneDayShortFutEdge.emaSnapBTC = fundingDict['ftxEstFundingBTC']
+  if not hasattr(ftxGetOneDayShortFutEdge, 'emaSnapETH'):
+    ftxGetOneDayShortFutEdge.emaSnapETH = fundingDict['ftxEstFundingETH']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(float(df['mark']) / float(df['index']) - 1)*365
   k=2/(60 * 15 / CT_SLEEP + 1)
   if ccy=='BTC':
-    ftxGetOneDayShortFutEdge.emaBTC = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaBTC * (1 - k)
-    smoothedSnapFundingRate=ftxGetOneDayShortFutEdge.emaBTC
+    smoothedSnapRate = ftxGetOneDayShortFutEdge.emaSnapBTC = getEMANow(snapFundingRate, ftxGetOneDayShortFutEdge.emaSnapBTC, k)
   elif ccy=='ETH':
-    ftxGetOneDayShortFutEdge.emaETH = snapFundingRate * k + ftxGetOneDayShortFutEdge.emaETH * (1 - k)
-    smoothedSnapFundingRate = ftxGetOneDayShortFutEdge.emaETH
+    smoothedSnapRate = ftxGetOneDayShortFutEdge.emaSnapETH = getEMANow(snapFundingRate, ftxGetOneDayShortFutEdge.emaSnapETH, k)
   else:
     sys.exit(1)
-  return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate, fundingDict['ftxEstFunding' + ccy])
+  return getOneDayShortFutEdge(1,basis,smoothedSnapRate, fundingDict['ftxEstFunding' + ccy])
 
 @retry(wait_fixed=1000)
 def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
@@ -535,14 +537,14 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
 
 @retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2BTC'):
-    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC']
   if not hasattr(kfGetOneDayShortFutEdge, 'emaSnapBTC'):
     kfGetOneDayShortFutEdge.emaSnapBTC = fundingDict['kfEstFunding2BTC']
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2ETH'):
-    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2BTC'):
+    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC']
   if not hasattr(kfGetOneDayShortFutEdge, 'emaSnapETH'):
     kfGetOneDayShortFutEdge.emaSnapETH = fundingDict['kfEstFunding2ETH']
+  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2ETH'):
+    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH']
   symbol = kfCcyToSymbol(ccy)
   if ccy == 'BTC':
     indexSymbol = 'in_xbtusd'
@@ -555,15 +557,14 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   snapFundingRate = premIndexClipped * 365 * 3
   k = 2 / (60 * 15 / CT_SLEEP + 1)
   if ccy == 'BTC':
-    kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC'] * k + kfGetOneDayShortFutEdge.emaEst2BTC * (1 - k)
-    smoothedEst2Rate = kfGetOneDayShortFutEdge.emaEst2BTC
-    kfGetOneDayShortFutEdge.emaSnapBTC = snapFundingRate * k + kfGetOneDayShortFutEdge.emaSnapBTC * (1 - k)
-    smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapBTC
+    smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapBTC = getEMANow(snapFundingRate, kfGetOneDayShortFutEdge.emaSnapBTC, k)
+    smoothedEst2Rate=kfGetOneDayShortFutEdge.emaEst2BTC=getEMANow(fundingDict['kfEstFunding2BTC'], kfGetOneDayShortFutEdge.emaEst2BTC, k)    
   elif ccy == 'ETH':
-    kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH'] * k + kfGetOneDayShortFutEdge.emaEst2ETH * (1 - k)
-    smoothedEst2Rate = kfGetOneDayShortFutEdge.emaEst2ETH
-    kfGetOneDayShortFutEdge.emaSnapETH = snapFundingRate * k + kfGetOneDayShortFutEdge.emaSnapETH * (1 - k)
-    smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapETH
+    smoothedSnapRate = kfGetOneDayShortFutEdge.emaSnapETH = getEMANow(snapFundingRate, kfGetOneDayShortFutEdge.emaSnapETH, k)
+    smoothedEst2Rate=kfGetOneDayShortFutEdge.emaEst2ETH=getEMANow(fundingDict['kfEstFunding2ETH'], kfGetOneDayShortFutEdge.emaEst2ETH, k)
+    ##################################
+    #print('[ETH Snap:',round(snapFundingRate*100), ' / SmoothedSnap:',round(smoothedSnapRate*100),' / SmoothedEst2',round(smoothedEst2Rate*100),']')
+    ##################################
   else:
     sys.exit(1)
   return getOneDayShortFutEdge(4, basis, smoothedSnapRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1' + ccy], isKF=True)
@@ -895,6 +896,10 @@ def ctRun(ccy):
 # Cast column of dataframe to float
 def dfSetFloat(df,colName):
   df[colName] = df[colName].astype(float)
+
+# Get EMA now
+def getEMANow(valueNow,emaPrev,k):
+  return valueNow*k + emaPrev*(1-k)
 
 # Filter dictionary by keyword
 def filterDict(d, keyword):
