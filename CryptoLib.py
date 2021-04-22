@@ -222,6 +222,86 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
 
 #############################################################################################
 
+def ftxRelOrderX(side,ftx,ticker,trade_qty,maxChases=0):
+  @retry(wait_fixed=1000)
+  def ftxGetBid(ftx,ticker):
+    return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid'])
+  @retry(wait_fixed=1000)
+  def ftxGetAsk(ftx,ticker):
+    return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask'])
+  # Do not use @retry!
+  def ftxGetLimitPrice(side, refPrice):
+    if side == 'BUY':
+      return round(refPrice * (1 - CT_FTX_DISTANCE_TO_BEST_BPS / 10000), 1)
+    else:
+      return round(refPrice * (1 + CT_FTX_DISTANCE_TO_BEST_BPS / 10000), 1)
+  @retry(wait_fixed=1000)
+  def ftxGetRemainingSize(ftx,orderId):
+    return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
+  @retry(wait_fixed=1000)
+  def ftxGetFilledSize(ftx, orderId):
+    return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['filledSize'])
+  @retry(wait_fixed=1000)
+  def ftxGetFillPrice(ftx,orderId):
+    return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice'])
+  #####
+  if side != 'BUY' and side != 'SELL':
+    sys.exit(1)
+  if ticker[:3] == 'BTC':
+    qty = round(trade_qty, 3)
+  elif ticker[:3] == 'ETH':
+    qty = round(trade_qty, 2)
+  else:
+    sys.exit(1)
+  print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
+  if side == 'BUY':
+    refPrice = ftxGetBid(ftx, ticker)
+  else:
+    refPrice = ftxGetAsk(ftx, ticker)
+  limitPrice = ftxGetLimitPrice(side, refPrice)
+  orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+  refTime = time.time()
+  nChases=0
+  while True:
+    if ftxGetRemainingSize(ftx,orderId) == 0:
+      break
+    if side=='BUY':
+      newRefPrice=ftxGetBid(ftx,ticker)
+    else:
+      newRefPrice=ftxGetAsk(ftx,ticker)
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_FTX_MAX_WAIT_TIME):
+      refPrice=newRefPrice
+      nChases+=1
+      if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
+        if side == 'BUY':
+          farPrice = round(refPrice * .95,1)
+        else:
+          farPrice = round(refPrice * 1.05,1)
+        try:
+          orderId = ftx.private_post_orders_order_id_modify({'order_id': orderId, 'price': farPrice})['result']['id']
+        except:
+          break
+        if ftxGetRemainingSize(ftx, orderId) == qty:
+          ftx.private_delete_orders_order_id({'order_id': orderId})
+          print(getCurrentTime() + ': Cancelled')
+          return 0
+      else:
+        print('Debug stamp in revision area')
+        refTime=time.time()
+        newLimitPrice=ftxGetLimitPrice(side,refPrice)
+        if newLimitPrice!=limitPrice:
+          limitPrice=newLimitPrice
+          try:
+            orderId=ftx.private_post_orders_order_id_modify({'order_id':orderId,'price':limitPrice})['result']['id']
+          except:
+            break
+    time.sleep(1)
+  fill=ftxGetFillPrice(ftx,orderId)
+  print(getCurrentTime() + ': Filled at '+str(round(fill,6)))
+  return fill
+
+#############################################################################################
+
 @retry(wait_fixed=1000)
 def bbGetFutPos(bb,ccy):
   df = bb.v2_private_get_position_list()['result']
@@ -315,7 +395,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
         if newLimitPrice!=limitPrice:
           limitPrice=newLimitPrice
           try:
-            bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': bbGetLimitPrice(side,refPrice)})
+            bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
           except:
             break
     time.sleep(1)
@@ -1002,10 +1082,10 @@ def ctRun(ccy,tgtBps):
           shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'spot' in chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
+          longFill = ftxRelOrderX('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'spot' in chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          shortFill = ftxRelOrderX('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'kf' in chosenLong and not isCancelled:
           longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
@@ -1020,10 +1100,10 @@ def ctRun(ccy,tgtBps):
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'ftx' in chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          longFill = ftxRelOrderX('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'ftx' in chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          shortFill = ftxRelOrderX('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bn' in chosenLong and not isCancelled:
           longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
