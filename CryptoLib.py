@@ -286,7 +286,6 @@ def ftxRelOrderX(side,ftx,ticker,trade_qty,maxChases=0):
           print(getCurrentTime() + ': Cancelled')
           return 0
       else:
-        print('Debug stamp in revision area')
         refTime=time.time()
         newLimitPrice=ftxGetLimitPrice(side,refPrice)
         if newLimitPrice!=limitPrice:
