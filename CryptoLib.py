@@ -462,6 +462,18 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def dbGetOrder(db,orderId):
     return db.private_get_get_order_state({'order_id': orderId})['result']
+  # Do not use @retry!
+  def dbEditOrder(db, orderId, trade_notional, limitPrice):
+    if dbGetOrder(db, orderId)['order_state']=='filled':
+      return False
+    for i in range(3):
+      try:
+        print(getCurrentTime() + ': [DEBUG INFO: private_get_edit order_id=' + str(orderId) + ' price=' + str(limitPrice) + ' try='+str(i+1)+']')
+        db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
+        return True
+      except:
+        time.sleep(1)
+    return False
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -501,10 +513,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
           farPrice = dbRoundPrice(refPrice * .95,ccy)
         else:
           farPrice = dbRoundPrice(refPrice * 1.05,ccy)
-        try:
-          print(getCurrentTime()+': [DEBUG INFO 1: private_get_edit order_id=' + str(orderId) + ' price='+str(farPrice)+']')
-          db.private_get_edit({'order_id':orderId,'amount':trade_notional,'price':farPrice})
-        except:
+        if not dbEditOrder(db, orderId, trade_notional, farPrice):
           break
         if float(dbGetOrder(db, orderId)['filled_amount'])==0:
           db.private_get_cancel({'order_id': orderId})
@@ -515,20 +524,8 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
         newLimitPrice=dbGetLimitPrice(side,refPrice,ccy)
         if newLimitPrice!=limitPrice:
           limitPrice=newLimitPrice
-          isOk=False
-          for i in range(3):
-            try:
-              print(getCurrentTime()+': [DEBUG INFO 2: private_get_edit order_id='+str(orderId)+' price='+str(limitPrice)+']')
-              db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
-              isOk=True
-              break
-            except:
-              print(getCurrentTime() + ': [DEBUG INFO 3: retrying counter'+str(i)+' .... ]')
-              time.sleep(1)
-          if isOk:
+          if not dbEditOrder(db, orderId, trade_notional, limitPrice):
             break
-          else:
-            sys.exit(1)
     time.sleep(1)
   fill=float(dbGetOrder(db, orderId)['average_price'])
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -1076,12 +1073,6 @@ def ctRun(ccy,tgtBps):
         if 'bb' in chosenShort and not isCancelled:
           shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
-        if 'spot' in chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty,maxChases=ctGetMaxChases(completedLegs))
-          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
-        if 'spot' in chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'kf' in chosenLong and not isCancelled:
           longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
@@ -1093,6 +1084,12 @@ def ctRun(ccy,tgtBps):
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'db' in chosenShort and not isCancelled:
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
+        if 'spot' in chosenLong and not isCancelled:
+          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'spot' in chosenShort and not isCancelled:
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'ftx' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
