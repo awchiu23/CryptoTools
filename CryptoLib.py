@@ -886,14 +886,13 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
     print(getCurrentTime() + ': '+ termcolor.colored('Avg realized slippage:  '+str(round(np.mean(realizedSlippageBps))) + 'bps','red'))
   return realizedSlippageBps
 
-def ctRun(ccy):
+def ctRun(ccy,tgtBps):
   ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH']:
     print('Invalid ccy!')
     sys.exit(1)
   trade_qty = qty_dict[ccy]
   trade_notional = notional_dict[ccy]
-  tgtBps=CT_CONFIGS_DICT[ccy+'_TGT_BPS']
   realizedSlippageBps = []
   for i in range(CT_NPROGRAMS):
     prevSmartBasis = []
