@@ -67,16 +67,13 @@ CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=-10
 
+# General params
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
 CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
 CT_STREAK = 5                        # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 15             # Max number of allowed bps for range of observations
 CT_SLEEP = 2                         # Delay in seconds between observations
 CT_NPROGRAMS = 100                   # Number of programs (each program being a pair of trades)
-CT_FTX_DISTANCE_TO_BEST_BPS=5         # Bybit execution parameter
-CT_FTX_MAX_WAIT_TIME=20               # Bybit execution parameter
-CT_BB_DISTANCE_TO_BEST_BPS=5         # Bybit execution parameter
-CT_BB_MAX_WAIT_TIME=20               # Bybit execution parameter
 
 CT_TRADE_BTC_NOTIONAL = 3000         # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 3000         # Per trade notional
@@ -84,6 +81,18 @@ CT_TRADE_ETH_NOTIONAL = 3000         # Per trade notional
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
 CT_MAX_ETH = 10                      # Hard limit
+
+# Executions params
+CT_FTX_DISTANCE_TO_BEST_BPS=5
+CT_FTX_MAX_WAIT_TIME=20
+CT_BB_DISTANCE_TO_BEST_BPS=5
+CT_BB_MAX_WAIT_TIME=20
+CT_BN_DISTANCE_TO_BEST_BPS=5
+CT_BN_MAX_WAIT_TIME=20
+CT_DB_DISTANCE_TO_BEST_BPS=5
+CT_DB_MAX_WAIT_TIME=20
+CT_KF_DISTANCE_TO_BEST_BPS=3
+CT_KF_MAX_WAIT_TIME=20
 
 #############################################################################################
 
