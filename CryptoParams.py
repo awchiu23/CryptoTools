@@ -68,7 +68,7 @@ CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=-5
-CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=-5
 
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
 CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
