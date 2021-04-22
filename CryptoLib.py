@@ -284,7 +284,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   ticker1=ccy+'/USD'
   ticker2=ccy+'USD'
   trade_notional = round(trade_notional)
-  print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(round(trade_notional))+') ....')
+  print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
     refPrice = bbGetBid(bb, ticker1)
     limitPrice=bbGetLimitPrice(side, refPrice)
@@ -362,8 +362,6 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
       return round(px,1)
     elif ccy=='ETH':
       return round(px,2)
-    else:
-      sys.exit(1)
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
@@ -449,11 +447,18 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
     d = db.public_get_ticker({'instrument_name': ticker})['result']
     return float(d['best_ask_price'])
   # Do not use @retry!
-  def dbGetLimitPrice(side, refPrice):
+  def dbRoundPrice(price,ccy):
+    if ccy == 'BTC':
+      return round(price * 2) / 2
+    elif ccy == 'ETH':
+      return round(price * 20) / 20
+  # Do not use @retry!
+  def dbGetLimitPrice(side, refPrice,ccy):
     if side == 'BUY':
-      return round(refPrice * (1 - CT_DB_DISTANCE_TO_BEST_BPS / 10000), 2)
+      px=refPrice * (1 - CT_DB_DISTANCE_TO_BEST_BPS / 10000)
     else:
-      return round(refPrice * (1 + CT_DB_DISTANCE_TO_BEST_BPS / 10000), 2)
+      px=refPrice * (1 + CT_DB_DISTANCE_TO_BEST_BPS / 10000)
+    return dbRoundPrice(px,ccy)
   @retry(wait_fixed=1000)
   def dbGetOrder(db,orderId):
     return db.private_get_get_order_state({'order_id': orderId})['result']
@@ -462,17 +467,19 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
     sys.exit(1)
   if ccy=='BTC':
     trade_notional=round(trade_notional,-1)
-  else:
+  elif ccy=='ETH':
     trade_notional=round(trade_notional)
+  else:
+    sys.exit(1)
   ticker = ccy + '-PERPETUAL'
   print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
     refPrice = dbGetBid(db, ticker)
-    limitPrice = dbGetLimitPrice(side, refPrice)
+    limitPrice = dbGetLimitPrice(side, refPrice,ccy)
     orderId=db.private_get_buy({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
   else:
     refPrice = dbGetAsk(db, ticker)
-    limitPrice = dbGetLimitPrice(side, refPrice)
+    limitPrice = dbGetLimitPrice(side, refPrice,ccy)
     orderId=db.private_get_sell({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
   refTime = time.time()
   nChases=0
@@ -491,11 +498,11 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
         break
       if nChases>maxChases and float(orderStatus['filled_amount'])==0:
         if side == 'BUY':
-          farPrice = round(refPrice * .95, 2)
+          farPrice = dbRoundPrice(refPrice * .95,ccy)
         else:
-          farPrice = round(refPrice * 1.05, 2)
+          farPrice = dbRoundPrice(refPrice * 1.05,ccy)
         try:
-          print(getCurrentTime()+': [DEBUG INFO: private_get_edit order_id=' + str(orderId) + ' price='+str(farPrice)+']')
+          print(getCurrentTime()+': [DEBUG INFO 1: private_get_edit order_id=' + str(orderId) + ' price='+str(farPrice)+']')
           db.private_get_edit({'order_id':orderId,'amount':trade_notional,'price':farPrice})
         except:
           break
@@ -505,14 +512,23 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=dbGetLimitPrice(side,refPrice)
+        newLimitPrice=dbGetLimitPrice(side,refPrice,ccy)
         if newLimitPrice!=limitPrice:
           limitPrice=newLimitPrice
-          try:
-            print(getCurrentTime()+': [DEBUG INFO: private_get_edit order_id='+str(orderId)+' price='+str(limitPrice)+']')
-            db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
-          except:
+          isOk=False
+          for i in range(3):
+            try:
+              print(getCurrentTime()+': [DEBUG INFO 2: private_get_edit order_id='+str(orderId)+' price='+str(limitPrice)+']')
+              db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
+              isOk=True
+              break
+            except:
+              print(getCurrentTime() + ': [DEBUG INFO 3: retrying counter'+str(i)+' .... ]')
+              time.sleep(1)
+          if isOk:
             break
+          else:
+            sys.exit(1)
     time.sleep(1)
   fill=float(dbGetOrder(db, orderId)['average_price'])
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -560,17 +576,18 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
   def kfGetAsk(kf, symbol):
     return kfGetTickers(kf).loc[symbol,'ask']
   # Do not use @retry!
+  def kfRoundPrice(price, ccy):
+    if ccy == 'BTC':
+      return round(price * 2) / 2
+    elif ccy == 'ETH':
+      return round(price * 20) / 20
+  # Do not use @retry!
   def kfGetLimitPrice(side, refPrice, ccy):
     if side == 'BUY':
       px = refPrice * (1 - CT_KF_DISTANCE_TO_BEST_BPS / 10000)
     else:
       px = refPrice * (1 + CT_KF_DISTANCE_TO_BEST_BPS / 10000)
-    if ccy=='BTC':
-      return round(px*2)/2
-    elif ccy=='ETH':
-      return round(px*20)/20
-    else:
-      sys.exit(1)
+    return kfRoundPrice(px,ccy)
   @retry(wait_fixed=1000)
   def kfGetOrderStatus(kf, orderId):
     l = kf.query('openorders')['openOrders']
@@ -620,9 +637,9 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
         break
       if nChases>maxChases and float(orderStatus['filledSize'])==0:
         if side == 'BUY':
-          farPrice = round(refPrice * .98,2)
+          farPrice = kfRoundPrice(refPrice * .98,ccy)
         else:
-          farPrice = round(refPrice * 1.02,2)
+          farPrice = kfRoundPrice(refPrice * 1.02,ccy)
         try:
           kf.query('editorder',{'orderId':orderId,'limitPrice':farPrice})
         except:
