@@ -82,7 +82,7 @@ def krRelOrder(side,kr,pair,trade_qty,lev,maxChases=0):
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice, lev)
     else:
       print('.',end='')
-    time.sleep(2)
+    time.sleep(3)
   print()
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
