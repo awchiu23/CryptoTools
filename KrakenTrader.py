@@ -1,4 +1,5 @@
 import CryptoLib as cl
+from CryptoParams import *
 import numpy as np
 import sys
 import time
@@ -82,7 +83,7 @@ def krRelOrder(side,kr,pair,trade_qty,lev,maxChases=0):
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice, lev)
     else:
       print('.',end='')
-    time.sleep(2)
+    time.sleep(CT_SLEEP)
   print()
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
