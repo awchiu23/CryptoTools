@@ -18,18 +18,21 @@ from retrying import retry
 # Classes
 #########
 class getPrices:
-  def __init__(self, exch, api):
+  def __init__(self, exch, api,ftx=None):
     self.exch = exch
     self.api = api
+    if ftx is None:
+      self.ftx = api
+    else:
+      self.ftx = ftx
 
   def run(self):
+    ftxMarkets=None
     if self.exch == 'ftx':
-      ftxMarkets=self.ftxGetMarkets(self.api)
-      self.spotBTC=self.ftxGetMid(ftxMarkets, 'BTC/USD')
-      self.spotETH=self.ftxGetMid(ftxMarkets, 'ETH/USD')
-      self.futBTC=self.ftxGetMid(ftxMarkets, 'BTC-PERP')
+      self.ftxFutures = self.ftxGetFutures(self.ftx)
+      ftxMarkets = self.ftxGetMarkets(self.ftx)
+      self.futBTC = self.ftxGetMid(ftxMarkets, 'BTC-PERP')
       self.futETH=self.ftxGetMid(ftxMarkets, 'ETH-PERP')
-      self.ftxFutures = self.ftxGetFutures(self.api)
     elif self.exch == 'bb':
       bbTickers=self.bbGetTickers(self.api)
       self.futBTC=self.bbGetMid(bbTickers,'BTC')
@@ -45,6 +48,10 @@ class getPrices:
       self.kfTickers = kfGetTickers(self.api)
       self.futBTC = self.kfGetMid(self.kfTickers, 'BTC')
       self.futETH = self.kfGetMid(self.kfTickers, 'ETH')
+    if ftxMarkets is None:
+      ftxMarkets = self.ftxGetMarkets(self.ftx)
+    self.spotBTC = self.ftxGetMid(ftxMarkets, 'BTC/USD')
+    self.spotETH = self.ftxGetMid(ftxMarkets, 'ETH/USD')
 
   @retry(wait_fixed=1000)
   def ftxGetMarkets(self, ftx):
@@ -819,10 +826,10 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
 
 def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   ftxPrices = getPrices('ftx', ftx)
-  bbPrices = getPrices('bb', bb)
-  bnPrices = getPrices('bn', bn)
-  kfPrices = getPrices('kf', kf)
-  dbPrices = getPrices('db', db)
+  bbPrices = getPrices('bb', bb, ftx=ftx)
+  bnPrices = getPrices('bn', bn, ftx=ftx)
+  kfPrices = getPrices('kf', kf, ftx=ftx)
+  dbPrices = getPrices('db', db, ftx=ftx)
   objs = [ftxPrices, bbPrices, bnPrices, kfPrices, dbPrices]
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
@@ -856,23 +863,23 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxPrices.ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
   d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxPrices.ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
   #####
-  d['bbBTCBasis'] = bbPrices.futBTC / ftxPrices.spotBTC - 1
-  d['bbETHBasis'] = bbPrices.futETH / ftxPrices.spotETH - 1
+  d['bbBTCBasis'] = bbPrices.futBTC / bbPrices.spotBTC - 1
+  d['bbETHBasis'] = bbPrices.futETH / bbPrices.spotETH - 1
   d['bbBTCSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge + bbBTCAdj
   d['bbETHSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge + bbETHAdj
   #####
-  d['bnBTCBasis'] = bnPrices.futBTC / ftxPrices.spotBTC - 1
-  d['bnETHBasis'] = bnPrices.futETH / ftxPrices.spotETH - 1
+  d['bnBTCBasis'] = bnPrices.futBTC / bnPrices.spotBTC - 1
+  d['bnETHBasis'] = bnPrices.futETH / bnPrices.spotETH - 1
   d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
   d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
   ###
-  d['dbBTCBasis'] = dbPrices.futBTC / ftxPrices.spotBTC - 1
-  d['dbETHBasis'] = dbPrices.futETH / ftxPrices.spotETH - 1
+  d['dbBTCBasis'] = dbPrices.futBTC / dbPrices.spotBTC - 1
+  d['dbETHBasis'] = dbPrices.futETH / dbPrices.spotETH - 1
   d['dbBTCSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'BTC', d['dbBTCBasis']) - oneDayShortSpotEdge + dbBTCAdj
   d['dbETHSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'ETH', d['dbETHBasis']) - oneDayShortSpotEdge + dbETHAdj
   ###
-  d['kfBTCBasis']= kfPrices.futBTC / ftxPrices.spotBTC - 1
-  d['kfETHBasis'] = kfPrices.futETH / ftxPrices.spotETH - 1
+  d['kfBTCBasis']= kfPrices.futBTC / kfPrices.spotBTC - 1
+  d['kfETHBasis'] = kfPrices.futETH / kfPrices.spotETH - 1
   d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
   d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
   return d
