@@ -919,7 +919,7 @@ def ctStreakEnded(i, tgtBps):
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
-    return 3
+    return 2
   else:
     return 888
 
