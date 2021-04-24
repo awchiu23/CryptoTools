@@ -75,8 +75,8 @@ CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of ob
 CT_SLEEP = 2                         # Delay in seconds between observations
 CT_NPROGRAMS = 100                   # Number of programs (each program being a pair of trades)
 
-CT_TRADE_BTC_NOTIONAL = 3000         # Per trade notional
-CT_TRADE_ETH_NOTIONAL = 3000         # Per trade notional
+CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
+CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
 
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
@@ -84,7 +84,7 @@ CT_MAX_ETH = 10                      # Hard limit
 
 # Executions params
 CT_FTX_DISTANCE_TO_BEST_BPS=3
-CT_BB_DISTANCE_TO_BEST_BPS=5
+CT_BB_DISTANCE_TO_BEST_BPS=3
 CT_BN_DISTANCE_TO_BEST_BPS=0
 CT_DB_DISTANCE_TO_BEST_BPS=1
 CT_KF_DISTANCE_TO_BEST_BPS=0
