@@ -103,8 +103,8 @@ HALF_LIFE_HOURS_SPOT = 8
 HALF_LIFE_HOURS_BASIS = 8
 HALF_LIFE_HOURS_FUNDING = 8
 
-BASE_SPOT_RATE = 0.3
-BASE_FUNDING_RATE = 0.3
+BASE_SPOT_RATE = 0.2
+BASE_FUNDING_RATE = 0.2
 BASE_BASIS = BASE_FUNDING_RATE/365
 
 #############################################################################################
