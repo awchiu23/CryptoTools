@@ -80,7 +80,7 @@ def bnCCXTInit():
   return  ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True})
 
 def dbCCXTInit():
-  return  ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True})
+  return ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 def kfInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
