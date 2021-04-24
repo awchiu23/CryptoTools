@@ -91,6 +91,42 @@ def krCCXTInit(n=1):
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
 
+def getLimitPrice(exch,price,ccy,side):
+  if exch == 'ftx':
+    distanceToBestBps = CT_FTX_DISTANCE_TO_BEST_BPS
+  elif exch == 'bb':
+    distanceToBestBps = CT_BB_DISTANCE_TO_BEST_BPS
+  elif exch == 'bn':
+    distanceToBestBps = CT_BN_DISTANCE_TO_BEST_BPS
+  elif exch == 'db':
+    distanceToBestBps = CT_DB_DISTANCE_TO_BEST_BPS
+  elif exch == 'kf':
+    distanceToBestBps = CT_KF_DISTANCE_TO_BEST_BPS
+  else:
+    sys.exit(1)
+  if side == 'BUY':
+    mult = 1 - distanceToBestBps / 10000
+  else:
+    mult = 1 + distanceToBestBps / 10000
+  return roundPrice(exch, price * mult, ccy)
+
+def roundPrice(exch, price, ccy):
+  if exch=='ftx':
+    if ccy=='BTC':
+      return round(price)
+    else:
+      return round(price,1)
+  elif exch=='bn':
+    if ccy=='BTC':
+      return round(price,1)
+    else:
+      return round(price,2)
+  else:
+    if ccy=='BTC':
+      return round(price*2)/2
+    else:
+      return round(price*20)/20
+
 #############################################################################################
 
 @retry(wait_fixed=1000)
@@ -140,12 +176,6 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def ftxGetAsk(ftx,ticker):
     return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask'])
-  # Do not use @retry!
-  def ftxGetLimitPrice(side, refPrice):
-    if side == 'BUY':
-      return round(refPrice * (1 - CT_FTX_DISTANCE_TO_BEST_BPS / 10000), 1)
-    else:
-      return round(refPrice * (1 + CT_FTX_DISTANCE_TO_BEST_BPS / 10000), 1)
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
@@ -158,9 +188,10 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
-  if ticker[:3] == 'BTC':
+  ccy=ticker[:3]
+  if ccy == 'BTC':
     qty = round(trade_qty, 3)
-  elif ticker[:3] == 'ETH':
+  elif ccy == 'ETH':
     qty = round(trade_qty, 2)
   else:
     sys.exit(1)
@@ -169,7 +200,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     refPrice = ftxGetBid(ftx, ticker)
   else:
     refPrice = ftxGetAsk(ftx, ticker)
-  limitPrice = ftxGetLimitPrice(side, refPrice)
+  limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
   orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
   refTime = time.time()
   nChases=0
@@ -184,10 +215,8 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
       refPrice=newRefPrice
       nChases+=1
       if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
-        if side == 'BUY':
-          farPrice = round(refPrice * .95,1)
-        else:
-          farPrice = round(refPrice * 1.05,1)
+        mult=.95 if side == 'BUY' else 1.05
+        farPrice = roundPrice('ftx', refPrice * mult,ccy)
         try:
           orderId = ftx.private_post_orders_order_id_modify({'order_id': orderId, 'price': farPrice})['result']['id']
         except:
@@ -198,7 +227,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
           return 0
       else:
         refTime=time.time()
-        newLimitPrice=ftxGetLimitPrice(side,refPrice)
+        newLimitPrice=getLimitPrice('ftx',refPrice,ccy,side)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           try:
@@ -237,19 +266,6 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bbGetAsk(bb,ticker):
     return float(bb.fetch_ticker(ticker)['info']['ask_price'])
-  # Do not use @retry!
-  def bbRoundPrice(price, ccy):
-    if ccy == 'BTC':
-      return round(price * 2) / 2
-    elif ccy == 'ETH':
-      return round(price * 20) / 20
-  # Do not use @retry!
-  def bbGetLimitPrice(side, refPrice, ccy):
-    if side == 'BUY':
-      px = refPrice * (1 - CT_BN_DISTANCE_TO_BEST_BPS / 10000)
-    else:
-      px = refPrice * (1 + CT_BN_DISTANCE_TO_BEST_BPS / 10000)
-    return bbRoundPrice(px,ccy)
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
@@ -272,11 +288,11 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
     refPrice = bbGetBid(bb, ticker1)
-    limitPrice=bbGetLimitPrice(side, refPrice,ccy)
+    limitPrice=getLimitPrice('bb',refPrice,ccy,side)
     orderId = bb.create_limit_buy_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   else:
     refPrice = bbGetAsk(bb, ticker1)
-    limitPrice = bbGetLimitPrice(side, refPrice,ccy)
+    limitPrice=getLimitPrice('bb',refPrice,ccy,side)
     orderId = bb.create_limit_sell_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   refTime = time.time()
   nChases=0
@@ -293,10 +309,8 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
       orderStatus = bbGetOrder(bb, ticker2, orderId)
       if orderStatus['order_status']=='Filled': break
       if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
-        if side == 'BUY':
-          farPrice = bbRoundPrice(refPrice * .95, ccy)
-        else:
-          farPrice = bbRoundPrice(refPrice * 1.05, ccy)
+        mult = .95 if side == 'BUY' else 1.05
+        farPrice = roundPrice('bb',refPrice*mult,ccy)
         try:
           bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': farPrice})
         except:
@@ -308,16 +322,16 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=bbGetLimitPrice(side,refPrice,ccy)
+        newLimitPrice=getLimitPrice('bb',refPrice,ccy,side)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
-          print(getCurrentTime() + ': [DEBUG INFO: private_post_order_replace orderId=' + str(orderId) + ' price=' + str(limitPrice)+'->'+str(newLimitPrice) + '; nChases=' + str(nChases) + ']')
+          print(getCurrentTime() + ': [DEBUG: replace order; price=' + str(limitPrice)+'->'+str(newLimitPrice) + '; nChases=' + str(nChases) + ']')
           limitPrice=newLimitPrice
           try:
             bb.v2_private_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
           except:
             break
         else:
-          print(getCurrentTime() + ': [DEBUG INFO: no limit change; price='+str(limitPrice)+'; nChases=' + str(nChases)+']')
+          print(getCurrentTime() + ': [DEBUG: leave order alone; price='+str(limitPrice)+'; nChases=' + str(nChases)+']')
     time.sleep(1)
   fill=bbGetFillPrice(bb, ticker2, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -340,16 +354,6 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bnGetAsk(bn, ticker):
     return float(bn.dapiPublicGetTickerBookTicker({'symbol': ticker})[0]['askPrice'])
-  # Do not use @retry!
-  def bnGetLimitPrice(side, refPrice,ccy):
-    if side == 'BUY':
-      px=refPrice * (1 - CT_BN_DISTANCE_TO_BEST_BPS / 10000)
-    else:
-      px=refPrice * (1 + CT_BN_DISTANCE_TO_BEST_BPS / 10000)
-    if ccy=='BTC':
-      return round(px,1)
-    elif ccy=='ETH':
-      return round(px,2)
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
@@ -382,7 +386,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
     refPrice = bnGetBid(bn, ticker)
   else:
     refPrice = bnGetAsk(bn, ticker)
-  limitPrice = bnGetLimitPrice(side, refPrice,ccy)
+  limitPrice = getLimitPrice('bn', refPrice, ccy, side)
   orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
   nChases=0
@@ -405,7 +409,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
         break
       else:
         refTime = time.time()
-        limitPrice = bnGetLimitPrice(side, refPrice,ccy)
+        limitPrice = getLimitPrice('bn', refPrice, ccy, side)
         orderId=bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
@@ -434,34 +438,18 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
   def dbGetAsk(db, ticker):
     d = db.public_get_ticker({'instrument_name': ticker})['result']
     return float(d['best_ask_price'])
-  # Do not use @retry!
-  def dbRoundPrice(price,ccy):
-    if ccy == 'BTC':
-      return round(price * 2) / 2
-    elif ccy == 'ETH':
-      return round(price * 20) / 20
-  # Do not use @retry!
-  def dbGetLimitPrice(side, refPrice,ccy):
-    if side == 'BUY':
-      px=refPrice * (1 - CT_DB_DISTANCE_TO_BEST_BPS / 10000)
-    else:
-      px=refPrice * (1 + CT_DB_DISTANCE_TO_BEST_BPS / 10000)
-    return dbRoundPrice(px,ccy)
   @retry(wait_fixed=1000)
   def dbGetOrder(db,orderId):
     return db.private_get_get_order_state({'order_id': orderId})['result']
   # Do not use @retry!
   def dbEditOrder(db, orderId, trade_notional, limitPrice):
-    for i in range(3):
-      if dbGetOrder(db, orderId)['order_state'] == 'filled':
-        return False
-      try:
-        print(getCurrentTime() + ': [DEBUG INFO: private_get_edit order_id=' + str(orderId) + ' price=' + str(limitPrice) + ' try='+str(i+1)+']')
-        db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
-        return True
-      except:
-        time.sleep(1)
-    return False
+    if dbGetOrder(db, orderId)['order_state'] == 'filled':
+      return False
+    try:
+      db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
+      return True
+    except:
+      return False
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -475,11 +463,11 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
     refPrice = dbGetBid(db, ticker)
-    limitPrice = dbGetLimitPrice(side, refPrice,ccy)
+    limitPrice = getLimitPrice('db', refPrice, ccy, side)
     orderId=db.private_get_buy({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
   else:
     refPrice = dbGetAsk(db, ticker)
-    limitPrice = dbGetLimitPrice(side, refPrice,ccy)
+    limitPrice = getLimitPrice('db', refPrice, ccy, side)
     orderId=db.private_get_sell({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
   refTime = time.time()
   nChases=0
@@ -497,10 +485,8 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
       if orderStatus['order_state'] == 'filled':
         break
       if nChases>maxChases and float(orderStatus['filled_amount'])==0:
-        if side == 'BUY':
-          farPrice = dbRoundPrice(refPrice * .98,ccy)
-        else:
-          farPrice = dbRoundPrice(refPrice * 1.02,ccy)
+        mult = .98 if side == 'BUY' else 1.02
+        farPrice = roundPrice('db', refPrice * mult, ccy)
         if not dbEditOrder(db, orderId, trade_notional, farPrice):
           break
         if float(dbGetOrder(db, orderId)['filled_amount'])==0:
@@ -509,7 +495,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=dbGetLimitPrice(side,refPrice,ccy)
+        newLimitPrice = getLimitPrice('db', refPrice, ccy, side)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           if not dbEditOrder(db, orderId, trade_notional, limitPrice):
@@ -521,19 +507,26 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
 
 #############################################################################################
 
-def kfCcyToSymbol(ccy):
-  if ccy=='BTC':
-    return 'pi_xbtusd'
-  elif ccy=='ETH':
-    return 'pi_ethusd'
+def kfCcyToSymbol(ccy,isIndex=False):
+  if isIndex:
+    if ccy == 'BTC':
+      return 'in_xbtusd'
+    elif ccy == 'ETH':
+      return 'in_ethusd'
+    else:
+      sys.exit(1)
   else:
-    sys.exit(1)
+    if ccy=='BTC':
+      return 'pi_xbtusd'
+    elif ccy=='ETH':
+      return 'pi_ethusd'
+    else:
+      sys.exit(1)
 
 @retry(wait_fixed=1000)
 def kfGetFutPos(kf,ccy):
-  piSymbol=kfCcyToSymbol(ccy)
-  fiSymbol='f'+piSymbol[1:]
-  return kf.query('accounts')['accounts'][fiSymbol]['balances'][piSymbol]
+  symbol=kfCcyToSymbol(ccy)
+  return kf.query('accounts')['accounts']['f'+symbol[1:]]['balances'][symbol]
 
 @retry(wait_fixed=1000)
 def kfGetTickers(kf):
@@ -560,19 +553,6 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
   # Do not use @retry
   def kfGetAsk(kf, symbol):
     return kfGetTickers(kf).loc[symbol,'ask']
-  # Do not use @retry!
-  def kfRoundPrice(price, ccy):
-    if ccy == 'BTC':
-      return round(price * 2) / 2
-    elif ccy == 'ETH':
-      return round(price * 20) / 20
-  # Do not use @retry!
-  def kfGetLimitPrice(side, refPrice, ccy):
-    if side == 'BUY':
-      px = refPrice * (1 - CT_KF_DISTANCE_TO_BEST_BPS / 10000)
-    else:
-      px = refPrice * (1 + CT_KF_DISTANCE_TO_BEST_BPS / 10000)
-    return kfRoundPrice(px,ccy)
   @retry(wait_fixed=1000)
   def kfGetOrderStatus(kf, orderId):
     l = kf.query('openorders')['openOrders']
@@ -602,7 +582,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
     refPrice = kfGetBid(kf, symbol)
   else:
     refPrice = kfGetAsk(kf, symbol)
-  limitPrice=kfGetLimitPrice(side,refPrice,ccy)
+  limitPrice = getLimitPrice('kf', refPrice, ccy, side)
   orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
   refTime=time.time()
   nChases=0
@@ -621,10 +601,8 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
       if orderStatus is None:  # If order doesn't exist, it means all executed
         break
       if nChases>maxChases and float(orderStatus['filledSize'])==0:
-        if side == 'BUY':
-          farPrice = kfRoundPrice(refPrice * .98,ccy)
-        else:
-          farPrice = kfRoundPrice(refPrice * 1.02,ccy)
+        mult = .98 if side == 'BUY' else 1.02
+        farPrice = roundPrice('kf', refPrice * mult, ccy)
         try:
           kf.query('editorder',{'orderId':orderId,'limitPrice':farPrice})
         except:
@@ -638,7 +616,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
           return 0
       else:
         refTime=time.time()
-        newLimitPrice=kfGetLimitPrice(side,refPrice,ccy)
+        newLimitPrice = getLimitPrice('kf', refPrice, ccy, side)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           try:
@@ -773,12 +751,7 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
   if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2ETH'):
     kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH']
   symbol = kfCcyToSymbol(ccy)
-  if ccy == 'BTC':
-    indexSymbol = 'in_xbtusd'
-  elif ccy == 'ETH':
-    indexSymbol = 'in_ethusd'
-  else:
-    sys.exit(1)
+  indexSymbol = kfCcyToSymbol(ccy,isIndex=True)
   mid = (kfTickers.loc[symbol, 'bid'] + kfTickers.loc[symbol, 'ask']) / 2
   premIndexClipped = np.clip(mid / kfTickers.loc[indexSymbol, 'last'] - 1, -0.008, 0.008)
   snapFundingRate = premIndexClipped * 365 * 3
@@ -791,16 +764,6 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
     smoothedEst2Rate=kfGetOneDayShortFutEdge.emaEst2ETH=getEMANow(fundingDict['kfEstFunding2ETH'], kfGetOneDayShortFutEdge.emaEst2ETH, k)
   else:
     sys.exit(1)
-  ##################################################
-  if False: # Turn to True for debugging
-    if ccy=='BTC':
-      z = 'Snap: ' + str(round(snapFundingRate * 100)) + ' / SmoothedSnap: ' + str(round(smoothedSnapRate * 100)) + ' / SmoothedEst2: ' + str(round(smoothedEst2Rate * 100))
-      print()
-      print(termcolor.colored(z, 'cyan').rjust(125), end='')
-    else:
-      z = 'Snap: ' + str(round(snapFundingRate * 100)) + ' / SmoothedSnap: ' + str(round(smoothedSnapRate * 100)) + ' / SmoothedEst2: ' + str(round(smoothedEst2Rate * 100))
-      print(termcolor.colored(z, 'red').rjust(112))
-  ##################################################
   return getOneDayShortFutEdge(4, basis, smoothedSnapRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1' + ccy], isKF=True)
 
 #############################################################################################
@@ -911,17 +874,20 @@ def ctRemoveDisabledInstrument(smartBasisDict, exch, ccy):
       del smartBasisDict[key]
   return smartBasisDict
 
-def ctGetTargetString(tgtBps):
-  return termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
+def ctGetSuffix(tgtBps, realizedSlippageBps):
+  z= termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
+  if len(realizedSlippageBps) > 0:
+    z += ''.ljust(15) + termcolor.colored('Avg realized slippage:  ' + str(round(np.mean(realizedSlippageBps))) + 'bps', 'red')
+  return z
 
-def ctTooFewCandidates(i, tgtBps):
-  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+def ctTooFewCandidates(i, tgtBps, realizedSlippageBps):
+  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetSuffix(tgtBps, realizedSlippageBps))
   chosenLong = ''
   time.sleep(CT_SLEEP)
   return chosenLong
 
-def ctStreakEnded(i, tgtBps):
-  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetTargetString(tgtBps))
+def ctStreakEnded(i, tgtBps, realizedSlippageBps):
+  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetSuffix(tgtBps, realizedSlippageBps))
   prevSmartBasis = []
   chosenLong = ''
   chosenShort = ''
@@ -949,8 +915,6 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   s= -((shortFill/longFill-1)*10000 - obsBasisBps)
   print(getCurrentTime() +   ': '+ termcolor.colored('Realized slippage:      '+str(round(s))+'bps','red'))
   realizedSlippageBps.append(s)
-  if len(realizedSlippageBps) > 1:
-    print(getCurrentTime() + ': '+ termcolor.colored('Avg realized slippage:  '+str(round(np.mean(realizedSlippageBps))) + 'bps','red'))
   return realizedSlippageBps
 
 def ctRun(ccy,tgtBps):
@@ -986,7 +950,7 @@ def ctRun(ccy,tgtBps):
 
       # Check for too few candidates
       if len(d.keys())<2:
-        chosenLong = ctTooFewCandidates(i, tgtBps)
+        chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps)
         continue  # to next iteration in While True loop
 
       # If pair not lock-in yet
@@ -1020,14 +984,15 @@ def ctRun(ccy,tgtBps):
 
         # Check for too few candidates again
         if len(d.keys()) < 2:
-          chosenLong = ctTooFewCandidates(i, tgtBps)
+          chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps)
           continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
-          print(z + ctGetTargetString(tgtBps))
+          z += ctGetSuffix(tgtBps, realizedSlippageBps)
+          print(z)
           chosenLong = ''
           time.sleep(CT_SLEEP)
           continue # to next iteration in While True loop
@@ -1038,7 +1003,7 @@ def ctRun(ccy,tgtBps):
       try:
         smartBasisBps = (smartBasisDict[chosenShort+ccy+'SmartBasis'] - smartBasisDict[chosenLong+ccy+'SmartBasis'])* 10000
       except:
-        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps)
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps)
         continue # to next iteration in While True Loop
       basisBps      = (smartBasisDict[chosenShort+ccy+'Basis']      - smartBasisDict[chosenLong+ccy+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
@@ -1049,13 +1014,13 @@ def ctRun(ccy,tgtBps):
       if smartBasisBps>=tgtBps:
         status+=1
       else:
-        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps)
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps)
         continue # to next iteration in While True Loop
 
       # Chosen long/short legs
       z = ('Program ' + str(i + 1) + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
       z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), 'blue')
-      print(z + ctGetTargetString(tgtBps))
+      print(z + ctGetSuffix(tgtBps, realizedSlippageBps))
 
       if abs(status) >= CT_STREAK and isStable:
         print()
