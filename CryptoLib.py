@@ -24,11 +24,11 @@ class getPrices:
 
   def run(self):
     if self.exch == 'ftx':
-      self.spotBTC = self.ftxGetMid(self.api, 'BTC/USD')
-      self.spotETH = self.ftxGetMid(self.api, 'ETH/USD')
-      self.futBTC = self.ftxGetMid(self.api, 'BTC-PERP')
-      self.futETH=self.ftxGetMid(self.api, 'ETH-PERP')
-      self.spotUSDT = self.ftxGetMid(self.api, 'USDT/USD')
+      self.spotBTC = ftxGetMid(self.api, 'BTC/USD')
+      self.spotETH = ftxGetMid(self.api, 'ETH/USD')
+      self.futBTC = ftxGetMid(self.api, 'BTC-PERP')
+      self.futETH=ftxGetMid(self.api, 'ETH-PERP')
+      self.spotUSDT = ftxGetMid(self.api, 'USDT/USD')
     elif self.exch == 'bb':
       self.futBTC=self.bbGetMid(self.api,'BTC')
       self.futETH = self.bbGetMid(self.api,'ETH')
@@ -45,11 +45,6 @@ class getPrices:
       self.kfTickers = kfGetTickers(self.api)
       self.futBTC = self.kfGetMid(self.kfTickers, 'BTC')
       self.futETH = self.kfGetMid(self.kfTickers, 'ETH')
-
-  @retry(wait_fixed=1000)
-  def ftxGetMid(self, ftx, name):
-    d=ftx.public_get_markets_market_name({'market_name': name})['result']
-    return (float(d['bid'])+float(d['ask']))/2
 
   @retry(wait_fixed=1000)
   def bbGetMid(self, bb, ccy):
@@ -141,6 +136,11 @@ def roundPrice(exch, price, ccy):
       return round(price*20)/20
 
 #############################################################################################
+
+@retry(wait_fixed=1000)
+def ftxGetMid(ftx, name):
+  d=ftx.public_get_markets_market_name({'market_name': name})['result']
+  return (float(d['bid'])+float(d['ask']))/2
 
 @retry(wait_fixed=1000)
 def ftxGetWallet(ftx):
@@ -1166,10 +1166,10 @@ def ctRun(ccy,tgtBps):
           shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bt' in chosenLong and not isCancelled:
-          longFill = btRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          longFill = btRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs))*ftxGetMid('USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'bt' in chosenShort and not isCancelled:
-          shortFill = btRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          shortFill = btRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs))*ftxGetMid('USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
