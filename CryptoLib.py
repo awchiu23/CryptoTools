@@ -975,17 +975,17 @@ def caRun(ccy, color):
     prefix = tmp[0].lower() + tmp[1]
     smartBasisBps = smartBasisDict[prefix + 'SmartBasis'] * 10000
     basisBps = smartBasisDict[prefix + 'Basis'] * 10000
-    z = tmp[0] + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + '(' + str(round(funding * 100))
+    z = tmp[0] + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps(' + str(round(funding * 100))
     if funding2 is None:
-      n = 17
+      n = 20
     else:
       z = z + '/' + str(round(funding2 * 100))
-      n = 21
+      n = 23
     z += ')'
     print(termcolor.colored(z.ljust(n), color), end='')
   #####
   printHeader(ccy+'Alerter')
-  col1N = 21
+  col1N = 23
   print('Column 1:'.ljust(col1N)+'USD marginal rate / USDT marginal rate / Average coin lending rates (BTC, ETH)')
   print('Body:'.ljust(col1N)+'Smart basis / raw basis (est. funding rate)')
   print()
