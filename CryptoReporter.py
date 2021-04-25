@@ -475,7 +475,7 @@ class core:
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
     payments = pd.DataFrame(self.api.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-    if len(payments)==0:
+    if True: #len(payments)==0:
       prevIncome = 0
       oneDayIncome = 0
     else:
