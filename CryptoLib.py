@@ -1160,7 +1160,7 @@ def ctRun(ccy,tgtBps):
         if 'db' in chosenShort and not isCancelled:
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-         if 'spot' in chosenLong and not isCancelled:
+        if 'spot' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'spot' in chosenShort and not isCancelled:
