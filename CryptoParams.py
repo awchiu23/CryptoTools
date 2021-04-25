@@ -100,13 +100,10 @@ CT_MAX_WAIT_TIME=10
 ####################
 # Smart Basis Models
 ####################
-HALF_LIFE_HOURS_SPOT = 8
-HALF_LIFE_HOURS_BASIS = 8
-HALF_LIFE_HOURS_FUNDING = 8
-BASE_SPOT_RATE = 0.2
-BASE_FUNDING_RATE = 0.2
-BASE_BASIS = BASE_FUNDING_RATE/365
-USDT_COLLATERAL_COVERAGE = 1/7
+SMB_HALF_LIFE_HOURS = 8
+SMB_BASE_RATE = 0.2
+SMB_BASE_BASIS = SMB_BASE_RATE / 365
+SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
 
 #############################################################################################
 

@@ -766,14 +766,14 @@ def getFundingDict(ftx,bb,bn,db,kf):
 #############################################################################################
 
 def getOneDayShortSpotEdge(fundingDict):
-  return getOneDayDecayedMean(fundingDict['ftxEstSpot'], BASE_SPOT_RATE, HALF_LIFE_HOURS_SPOT) / 365
+  return getOneDayDecayedMean(fundingDict['ftxEstSpot'], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365
 
-def getOneDayUSDTCollateralEdge(fundingDict):
-  return -getOneDayDecayedMean(fundingDict['ftxEstMarginalUSDT'], BASE_SPOT_RATE, HALF_LIFE_HOURS_SPOT) / 365 * USDT_COLLATERAL_COVERAGE
+def getOneDayUSDTCollateralBleed(fundingDict):
+  return -getOneDayDecayedMean(fundingDict['ftxEstMarginalUSDT'], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365 * SMB_USDT_COLLATERAL_COVERAGE
 
 def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None,isKF=False):
   # gain on projected basis mtm after 1 day
-  edge=basis-getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1]
+  edge=basis-getOneDayDecayedValues(basis, SMB_BASE_BASIS, SMB_HALF_LIFE_HOURS)[-1]
 
   # gain on coupon from elapsed time
   if isKF: # Special mod for kf
@@ -794,7 +794,7 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
-  edge+= getOneDayDecayedMean(snapFundingRate, BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING, nMinutes=nMinutes) / 365 * (nMinutes/1440)
+  edge+= getOneDayDecayedMean(snapFundingRate, SMB_BASE_RATE, SMB_HALF_LIFE_HOURS, nMinutes=nMinutes) / 365 * (nMinutes / 1440)
 
   return edge
 
@@ -846,12 +846,12 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   else:
     sys.exit(1)
   smoothedSnapRate = (smoothedPremIndex + np.clip(0.0001 - smoothedPremIndex, -0.0005, 0.0005))*365*3
-  return getOneDayShortFutEdge(8, basis,smoothedSnapRate, fundingDict['bntEstFunding' + ccy], pctElapsedPower=2)
+  return getOneDayShortFutEdge(8, basis,smoothedSnapRate, fundingDict['bntEstFunding' + ccy], pctElapsedPower=2) - getOneDayUSDTCollateralBleed(fundingDict)
 
 @retry(wait_fixed=1000)
 def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
-  edge = basis - getOneDayDecayedValues(basis, BASE_BASIS, HALF_LIFE_HOURS_BASIS)[-1] # basis
-  edge += getOneDayDecayedMean(fundingDict['dbEstFunding' + ccy], BASE_FUNDING_RATE, HALF_LIFE_HOURS_FUNDING) / 365 # funding
+  edge = basis - getOneDayDecayedValues(basis, SMB_BASE_BASIS, SMB_HALF_LIFE_HOURS)[-1] # basis
+  edge += getOneDayDecayedMean(fundingDict['dbEstFunding' + ccy], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365 # funding
   return edge
 
 @retry(wait_fixed=1000)
@@ -898,7 +898,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
 
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
-  oneDayUSDTCollateralEdge = getOneDayUSDTCollateralEdge(fundingDict)
   if isSkipAdj:
     ftxBTCAdj=0
     ftxETHAdj=0
@@ -945,8 +944,8 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   ###
   d['bntBTCBasis'] = bntPrices.futBTC * ftxPrices.spotUSDT / ftxPrices.spotBTC - 1
   d['bntETHBasis'] = bntPrices.futETH * ftxPrices.spotUSDT / ftxPrices.spotETH - 1
-  d['bntBTCSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bntBTCBasis']) - oneDayShortSpotEdge + oneDayUSDTCollateralEdge + bntBTCAdj
-  d['bntETHSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bntETHBasis']) - oneDayShortSpotEdge + oneDayUSDTCollateralEdge + bntETHAdj
+  d['bntBTCSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bntBTCBasis']) - oneDayShortSpotEdge + bntBTCAdj
+  d['bntETHSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bntETHBasis']) - oneDayShortSpotEdge + bntETHAdj
   ###
   d['dbBTCBasis'] = dbPrices.futBTC / ftxPrices.spotBTC - 1
   d['dbETHBasis'] = dbPrices.futETH / ftxPrices.spotETH - 1
