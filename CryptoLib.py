@@ -36,9 +36,9 @@ class getPrices:
     elif self.exch == 'bn':
       self.futBTC = self.bnGetMid(self.api, 'BTC')
       self.futETH = self.bnGetMid(self.api, 'ETH')
-    elif self.exch == 'bt':
-      self.futBTC = self.btGetMid(self.api, 'BTC')
-      self.futETH = self.btGetMid(self.api, 'ETH')
+    elif self.exch == 'bnt':
+      self.futBTC = self.bntGetMid(self.api, 'BTC')
+      self.futETH = self.bntGetMid(self.api, 'ETH')
     elif self.exch == 'db':
       self.futBTC =  self.dbGetMid(self.api, 'BTC')
       self.futETH =  self.dbGetMid(self.api, 'ETH')
@@ -58,7 +58,7 @@ class getPrices:
     return (float(d['bidPrice']) + float(d['askPrice'])) / 2
 
   @retry(wait_fixed=1000)
-  def btGetMid(self, bn, ccy):
+  def bntGetMid(self, bn, ccy):
     d = bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})
     return (float(d['bidPrice']) + float(d['askPrice'])) / 2
 
@@ -103,8 +103,8 @@ def getLimitPrice(exch,price,ccy,side):
     distanceToBestBps = CT_BB_DISTANCE_TO_BEST_BPS
   elif exch == 'bn':
     distanceToBestBps = CT_BN_DISTANCE_TO_BEST_BPS
-  elif exch == 'bt':
-    distanceToBestBps = CT_BT_DISTANCE_TO_BEST_BPS
+  elif exch == 'bnt':
+    distanceToBestBps = CT_BNT_DISTANCE_TO_BEST_BPS
   elif exch == 'db':
     distanceToBestBps = CT_DB_DISTANCE_TO_BEST_BPS
   elif exch == 'kf':
@@ -128,7 +128,7 @@ def roundPrice(exch, price, ccy):
       return round(price,1)
     else:
       return round(price,2)
-  elif exch in 'bt':
+  elif exch in 'bnt':
     return round(price,2)
   else:
     if ccy=='BTC':
@@ -437,29 +437,29 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
 #############################################################################################
 
 @retry(wait_fixed=1000)
-def btGetFutPos(bn,ccy):
+def bntGetFutPos(bn, ccy):
   return float(bn.fapiPrivate_get_positionrisk({'symbol':ccy+'USDT'})[0]['positionAmt'])
 
 @retry(wait_fixed=1000)
-def btGetEstFunding(bn, ccy):
+def bntGetEstFunding(bn, ccy):
   return float(bn.fapiPublic_get_premiumindex({'symbol': ccy + 'USDT'})['lastFundingRate']) * 3 * 365
 
-def btRelOrder(side,bn,ccy,trade_qty,maxChases=0):
+def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   @retry(wait_fixed=1000)
-  def btGetBid(bn, ticker):
+  def bntGetBid(bn, ticker):
     return float(bn.fapiPublicGetTickerBookTicker({'symbol':ticker})['bidPrice'])
   @retry(wait_fixed=1000)
-  def btGetAsk(bn, ticker):
+  def bntGetAsk(bn, ticker):
     return float(bn.fapiPublicGetTickerBookTicker({'symbol':ticker})['askPrice'])
   @retry(wait_fixed=1000)
-  def btGetOrder(bn, ticker, orderId):
+  def bntGetOrder(bn, ticker, orderId):
     return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
   # Do not use @retry!
-  def btPlaceOrder(bn, ticker, side, qty, limitPrice):
+  def bntPlaceOrder(bn, ticker, side, qty, limitPrice):
     print(getCurrentTime() + ': [DEBUG: place order; qty=' + str(qty)+' price=' + str(limitPrice) + ']')
     return bn.fapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
   # Do not use @retry!
-  def btCancelOrder(bn, ticker, orderId):
+  def bntCancelOrder(bn, ticker, orderId):
     try:
       orderStatus=bn.fapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
       if orderStatus['status']!='CANCELED':
@@ -467,34 +467,34 @@ def btRelOrder(side,bn,ccy,trade_qty,maxChases=0):
         sys.exit(1)
       return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty'])
     except:
-      orderStatus=btGetOrder(bn, ticker, orderId)
+      orderStatus=bntGetOrder(bn, ticker, orderId)
       return orderStatus,0
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   ticker=ccy+'USDT'
   qty = round(trade_qty, 3)
-  print(getCurrentTime()+': Sending BT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
+  print(getCurrentTime()+': Sending BNT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
-    refPrice = btGetBid(bn, ticker)
+    refPrice = bntGetBid(bn, ticker)
   else:
-    refPrice = btGetAsk(bn, ticker)
-  limitPrice = getLimitPrice('bt', refPrice, ccy, side)
-  orderId=btPlaceOrder(bn, ticker, side, qty, limitPrice)
+    refPrice = bntGetAsk(bn, ticker)
+  limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
+  orderId=bntPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
   nChases=0
   while True:
-    orderStatus = btGetOrder(bn, ticker, orderId)
+    orderStatus = bntGetOrder(bn, ticker, orderId)
     if orderStatus['status']=='FILLED':
       break
     if side=='BUY':
-      newRefPrice=btGetBid(bn,ticker)
+      newRefPrice=bntGetBid(bn,ticker)
     else:
-      newRefPrice=btGetAsk(bn,ticker)
+      newRefPrice=bntGetAsk(bn,ticker)
     if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_MAX_WAIT_TIME):
       refPrice=newRefPrice
       nChases+=1
-      orderStatus,leavesQty=btCancelOrder(bn,ticker,orderId)
+      orderStatus,leavesQty=bntCancelOrder(bn,ticker,orderId)
       if nChases>maxChases and leavesQty==qty:
         print(getCurrentTime() + ': Cancelled')
         return 0
@@ -502,8 +502,8 @@ def btRelOrder(side,bn,ccy,trade_qty,maxChases=0):
         break
       else:
         refTime = time.time()
-        limitPrice = getLimitPrice('bn', refPrice, ccy, side)
-        orderId=btPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
+        limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
+        orderId=bntPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -752,8 +752,8 @@ def getFundingDict(ftx,bb,bn,db,kf):
   d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
   d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
   d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
-  d['btEstFundingBTC'] = btGetEstFunding(bn, 'BTC')
-  d['btEstFundingETH'] = btGetEstFunding(bn, 'ETH')
+  d['bntEstFundingBTC'] = bntGetEstFunding(bn, 'BTC')
+  d['bntEstFundingETH'] = bntGetEstFunding(bn, 'ETH')
   d['dbEstFundingBTC'] = dbGetEstFunding(db, 'BTC')
   d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')
   kfTickers = kfGetTickers(kf)
@@ -829,21 +829,21 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding' + ccy], pctElapsedPower=2)
 
 @retry(wait_fixed=1000)
-def btGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
-  if not hasattr(btGetOneDayShortFutEdge,'emaPremIndexBTC'):
-    btGetOneDayShortFutEdge.emaPremIndexBTC = fundingDict['btEstFundingBTC']/365/3
-  if not hasattr(btGetOneDayShortFutEdge, 'emaPremIndexETH'):
-    btGetOneDayShortFutEdge.emaPremIndexETH = fundingDict['btEstFundingETH']/365/3
+def bntGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
+  if not hasattr(bntGetOneDayShortFutEdge, 'emaPremIndexBTC'):
+    bntGetOneDayShortFutEdge.emaPremIndexBTC = fundingDict['bntEstFundingBTC'] / 365 / 3
+  if not hasattr(bntGetOneDayShortFutEdge, 'emaPremIndexETH'):
+    bntGetOneDayShortFutEdge.emaPremIndexETH = fundingDict['bntEstFundingETH'] / 365 / 3
   d = bn.fapiPublic_get_premiumindex({'symbol': ccy + 'USDT'})
   premIndex = float(d['markPrice']) / float(d['indexPrice']) - 1
   if ccy == 'BTC':
-    smoothedPremIndex = btGetOneDayShortFutEdge.emaPremIndexBTC = getEMANow(premIndex, btGetOneDayShortFutEdge.emaPremIndexBTC, CT_K)
+    smoothedPremIndex = bntGetOneDayShortFutEdge.emaPremIndexBTC = getEMANow(premIndex, bntGetOneDayShortFutEdge.emaPremIndexBTC, CT_K)
   elif ccy == 'ETH':
-    smoothedPremIndex = btGetOneDayShortFutEdge.emaPremIndexETH = getEMANow(premIndex, btGetOneDayShortFutEdge.emaPremIndexETH, CT_K)
+    smoothedPremIndex = bntGetOneDayShortFutEdge.emaPremIndexETH = getEMANow(premIndex, bntGetOneDayShortFutEdge.emaPremIndexETH, CT_K)
   else:
     sys.exit(1)
   smoothedSnapRate = (smoothedPremIndex + np.clip(0.0001 - smoothedPremIndex, -0.0005, 0.0005))*365*3
-  return getOneDayShortFutEdge(8, basis,smoothedSnapRate, fundingDict['btEstFunding' + ccy], pctElapsedPower=2)
+  return getOneDayShortFutEdge(8, basis,smoothedSnapRate, fundingDict['bntEstFunding' + ccy], pctElapsedPower=2)
 
 @retry(wait_fixed=1000)
 def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
@@ -886,11 +886,11 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   ftxPrices = getPrices('ftx', ftx)
   bbPrices = getPrices('bb', bb)
   bnPrices = getPrices('bn', bn)
-  btPrices = getPrices('bt', bn)
+  bntPrices = getPrices('bnt', bn)
   kfPrices = getPrices('kf', kf)
   dbPrices = getPrices('db', db)
 
-  objs = [ftxPrices, bbPrices, bnPrices, btPrices, kfPrices, dbPrices]
+  objs = [ftxPrices, bbPrices, bnPrices, bntPrices, kfPrices, dbPrices]
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
   #####
@@ -902,8 +902,8 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
     bbETHAdj = 0
     bnBTCAdj=0
     bnETHAdj=0
-    btBTCAdj=0
-    btETHAdj=0
+    bntBTCAdj=0
+    bntETHAdj=0
     dbBTCAdj = 0
     dbETHAdj = 0    
     kfBTCAdj=0
@@ -915,8 +915,8 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
     bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
     bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
     bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
-    btBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BT_BTC_ADJ_BPS']) / 10000
-    btETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BT_ETH_ADJ_BPS']) / 10000
+    bntBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BT_BTC_ADJ_BPS']) / 10000
+    bntETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BT_ETH_ADJ_BPS']) / 10000
     dbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']) / 10000
     dbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']) / 10000    
     kfBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']) / 10000
@@ -939,10 +939,10 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
   d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
   d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
   ###
-  d['btBTCBasis'] = btPrices.futBTC * ftxPrices.spotUSDT / ftxPrices.spotBTC - 1
-  d['btETHBasis'] = btPrices.futETH * ftxPrices.spotUSDT / ftxPrices.spotETH - 1
-  d['btBTCSmartBasis'] = btGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['btBTCBasis']) - oneDayShortSpotEdge + btBTCAdj
-  d['btETHSmartBasis'] = btGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['btETHBasis']) - oneDayShortSpotEdge + btETHAdj
+  d['bntBTCBasis'] = bntPrices.futBTC * ftxPrices.spotUSDT / ftxPrices.spotBTC - 1
+  d['bntETHBasis'] = bntPrices.futETH * ftxPrices.spotUSDT / ftxPrices.spotETH - 1
+  d['bntBTCSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bntBTCBasis']) - oneDayShortSpotEdge + bntBTCAdj
+  d['bntETHSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bntETHBasis']) - oneDayShortSpotEdge + bntETHAdj
   ###
   d['dbBTCBasis'] = dbPrices.futBTC / ftxPrices.spotBTC - 1
   d['dbETHBasis'] = dbPrices.futETH / ftxPrices.spotETH - 1
@@ -1055,7 +1055,7 @@ def ctRun(ccy,tgtBps):
       smartBasisDict['spot' + ccy + 'Basis'] = 0
 
       # Remove disabled instruments
-      for exch in ['SPOT','FTX','BB','BN','BT','DB','KF']:
+      for exch in ['SPOT','FTX','BB','BN','BNT','DB','KF']:
         smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict,exch,ccy)
 
       # Remove spots when high spot rate
@@ -1090,8 +1090,8 @@ def ctRun(ccy,tgtBps):
             pos=bbGetFutPos(bb,ccy)
           elif chosenLong=='bn':
             pos=bnGetFutPos(bn,ccy)
-          elif chosenLong=='bt':
-            pos=btGetFutPos(bn,ccy)
+          elif chosenLong=='bnt':
+            pos=bntGetFutPos(bn, ccy)
           elif chosenLong=='db':
             pos=dbGetFutPos(db,ccy)
           elif chosenLong=='kf':
@@ -1183,11 +1183,11 @@ def ctRun(ccy,tgtBps):
         if 'bn' in chosenShort and not isCancelled:
           shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'bt' in chosenLong and not isCancelled:
-          longFill = btRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+        if 'bnt' in chosenLong and not isCancelled:
+          longFill = bntRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bt' in chosenShort and not isCancelled:
-          shortFill = btRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+        if 'bnt' in chosenShort and not isCancelled:
+          shortFill = bntRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
 
         if isCancelled:

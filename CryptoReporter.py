@@ -71,9 +71,9 @@ class core:
     elif self.exch=='bn':
       self.api = cl.bnCCXTInit()
       self.bnInit()
-    elif self.exch=='bt':
+    elif self.exch=='bnt':
       self.api = cl.bnCCXTInit()
-      self.btInit()
+      self.bntInit()
     elif self.exch=='db':
       self.api = cl.dbCCXTInit()
       self.dbInit()
@@ -118,14 +118,14 @@ class core:
       oneDayFunding = df['fundingRate'].mean() * 3 * 365
       prevFunding = df['fundingRate'][-1] * 3 * 365
       estFunding = cl.bnGetEstFunding(self.api, ccy)
-    elif self.exch=='bt':
+    elif self.exch=='bnt':
       df = pd.DataFrame(self.api.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
       cl.dfSetFloat(df, 'fundingRate')
       df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
       df = df.set_index('date').sort_index()
       oneDayFunding = df['fundingRate'].mean() * 3 * 365
       prevFunding = df['fundingRate'][-1] * 3 * 365
-      estFunding = cl.btGetEstFunding(self.api, ccy)
+      estFunding = cl.bntGetEstFunding(self.api, ccy)
     elif self.exch=='db':
       oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
       prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
@@ -169,7 +169,7 @@ class core:
       sys.exit(1)
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch=='bt':
+    if self.exch=='bnt':
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
@@ -460,10 +460,10 @@ class core:
     self.liqBTC = liqBTC
     self.liqETH = liqETH
 
-  ####
-  # BT
-  ####
-  def btInit(self):
+  #####
+  # BNT
+  #####
+  def bntInit(self):
     futures = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
     cl.dfSetFloat(futures, ['positionAmt','unRealizedProfit'])
     futures = futures.set_index('symbol').loc[['BTCUSDT', 'ETHUSDT']]
@@ -703,13 +703,13 @@ cbCore = core('cb',spotBTC,spotETH)
 objs=[ftxCore,bbCore,cbCore]
 if CR_IS_ADVANCED:
   bnCore = core('bn', spotBTC, spotETH)
-  btCore = core('bt', spotBTC, spotETH,spotUSDT=spotUSDT)
+  bntCore = core('bnt', spotBTC, spotETH, spotUSDT=spotUSDT)
   dbCore = core('db', spotBTC, spotETH)
   kfCore = core('kf', spotBTC, spotETH)
   krCores = []
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
-  objs.extend([bnCore,btCore,dbCore,kfCore]+krCores)
+  objs.extend([bnCore, bntCore, dbCore, kfCore] + krCores)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
 #############
@@ -741,7 +741,7 @@ z+=' (FTX: $' + str(round(ftxCore.nav/1000)) + 'K'
 z+=' / BB: $' + str(round(bbCore.nav/1000)) + 'K'
 if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnCore.nav/1000)) + 'K'
-  z+=' / BT: $' + str(round(btCore.nav/1000)) + 'K'
+  z+=' / BNT: $' + str(round(bntCore.nav / 1000)) + 'K'
   z += ' / DB: $' + str(round(dbCore.nav / 1000)) + 'K'
   z += ' / KF: $' + str(round(kfCore.nav / 1000)) + 'K'
   for krCore in krCores:
@@ -791,10 +791,10 @@ if CR_IS_ADVANCED:
   bnCore.printLiq()
   print()
   #####
-  btCore.printIncomes()
-  btCore.printFunding('BTC')
-  btCore.printFunding('ETH')
-  btCore.printLiq()
+  bntCore.printIncomes()
+  bntCore.printFunding('BTC')
+  bntCore.printFunding('ETH')
+  bntCore.printLiq()
   print()
   #####
   dbCore.printIncomes()
