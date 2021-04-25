@@ -1163,15 +1163,6 @@ def ctRun(ccy,tgtBps):
         if 'bn' in chosenLong and not isCancelled:
           longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bn' in chosenShort and not isCancelled:
-          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'bt' in chosenLong and not isCancelled:
-          longFill = btRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs))*ftxGetMid(ftx,'USDT/USD')
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bt' in chosenShort and not isCancelled:
-          shortFill = btRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs))*ftxGetMid(ftx,'USDT/USD')
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' in chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
@@ -1183,6 +1174,15 @@ def ctRun(ccy,tgtBps):
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'ftx' in chosenShort and not isCancelled:
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
+        if 'bn' in chosenShort and not isCancelled:
+          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
+        if 'bt' in chosenLong and not isCancelled:
+          longFill = btRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'bt' in chosenShort and not isCancelled:
+          shortFill = btRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
 
         if isCancelled:
