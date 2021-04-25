@@ -1082,7 +1082,6 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy,tgtBps):
-  tgtBps=10
   ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH']:
     print('Invalid ccy!')
