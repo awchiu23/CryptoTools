@@ -475,17 +475,15 @@ class core:
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
     payments = pd.DataFrame(self.api.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-    if True: #len(payments)==0:
+    if len(payments)==0:
       prevIncome = 0
       oneDayIncome = 0
     else:
       cl.dfSetFloat(payments, 'income')
-      payments = payments[['USD_PERP' in z for z in payments['symbol']]]
+      payments = payments[['USDT' in z for z in payments['symbol']]]
       payments['Ccy'] = [z[:3] for z in payments['symbol']]
       payments = payments.set_index('Ccy').loc[['BTC', 'ETH']]
-      payments['incomeUSD'] = payments['income']
-      payments.loc['BTC', 'incomeUSD'] *= self.spotBTC
-      payments.loc['ETH', 'incomeUSD'] *= self.spotETH
+      payments['incomeUSD'] = payments['income'] * self.spotUSDT
       payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['time']]
       payments = payments.set_index('date')
       prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
