@@ -19,37 +19,38 @@ from retrying import retry
 # Classes
 #########
 class getPrices:
-  def __init__(self, exch, api):
+  def __init__(self, exch, api, ccy):
     self.exch = exch
     self.api = api
+    self.ccy = ccy
 
   def run(self):
     if self.exch == 'ftx':
-      self.spotBTC = ftxGetMid(self.api, 'BTC/USD')
-      self.spotETH = ftxGetMid(self.api, 'ETH/USD')
-      self.futBTC = ftxGetMid(self.api, 'BTC-PERP')
-      self.futETH=ftxGetMid(self.api, 'ETH-PERP')
+      self.spot = ftxGetMid(self.api, self.ccy+'/USD')      
+      self.fut = ftxGetMid(self.api, self.ccy+'-PERP')
       self.spotUSDT = ftxGetMid(self.api, 'USDT/USD')
     elif self.exch == 'bb':
-      self.futBTC=self.bbGetMid(self.api,'BTC')
-      self.futETH = self.bbGetMid(self.api,'ETH')
+      self.fut=self.bbGetMid(self.api,self.ccy)
+    elif self.exch == 'bbt':
+      self.fut=self.bbtGetMid(self.api,self.ccy)
     elif self.exch == 'bn':
-      self.futBTC = self.bnGetMid(self.api, 'BTC')
-      self.futETH = self.bnGetMid(self.api, 'ETH')
+      self.fut = self.bnGetMid(self.api,self.ccy)
     elif self.exch == 'bnt':
-      self.futBTC = self.bntGetMid(self.api, 'BTC')
-      self.futETH = self.bntGetMid(self.api, 'ETH')
+      self.fut = self.bntGetMid(self.api,self.ccy)
     elif self.exch == 'db':
-      self.futBTC =  self.dbGetMid(self.api, 'BTC')
-      self.futETH =  self.dbGetMid(self.api, 'ETH')
+      self.fut =  self.dbGetMid(self.api,self.ccy)
     elif self.exch == 'kf':
       self.kfTickers = kfGetTickers(self.api)
-      self.futBTC = self.kfGetMid(self.kfTickers, 'BTC')
-      self.futETH = self.kfGetMid(self.kfTickers, 'ETH')
+      self.fut = self.kfGetMid(self.kfTickers,self.ccy)
 
   @retry(wait_fixed=1000)
   def bbGetMid(self, bb, ccy):
     d = bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]
+    return (float(d['bid_price']) + float(d['ask_price'])) / 2
+
+  @retry(wait_fixed=1000)
+  def bbtGetMid(self, bb, ccy):
+    d = bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]
     return (float(d['bid_price']) + float(d['ask_price'])) / 2
 
   @retry(wait_fixed=1000)
@@ -101,6 +102,8 @@ def getLimitPrice(exch,price,ccy,side):
     distanceToBestBps = CT_FTX_DISTANCE_TO_BEST_BPS
   elif exch == 'bb':
     distanceToBestBps = CT_BB_DISTANCE_TO_BEST_BPS
+  elif exch == 'bbt':
+    distanceToBestBps = CT_BBT_DISTANCE_TO_BEST_BPS
   elif exch == 'bn':
     distanceToBestBps = CT_BN_DISTANCE_TO_BEST_BPS
   elif exch == 'bnt':
@@ -354,6 +357,23 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   fill=bbGetFillPrice(bb, ticker2, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
+
+#############################################################################################
+
+@retry(wait_fixed=1000)
+def bbtGetFutPos(bb,ccy):
+  df = bb.private_linear_get_position_list()['result']
+  df = pd.DataFrame([pos['data'] for pos in df]).set_index('symbol')
+  df = df.loc[ccy + 'USDT'].set_index('side')
+  return float(df.loc['Buy','size'])-float(df.loc['Sell','size'])
+
+@retry(wait_fixed=1000)
+def bbtGetEstFunding1(bb,ccy):
+  return float(bb.public_linear_get_funding_prev_funding_rate({'symbol': ccy+'USDT'})['result']['funding_rate'])*3*365
+
+@retry(wait_fixed=1000)
+def bbtGetEstFunding2(bb,ccy):
+  return float(bb.private_linear_get_funding_predicted_funding({'symbol': ccy+'USDT'})['result']['predicted_funding_rate'])* 3 * 365
 
 #############################################################################################
 
@@ -726,7 +746,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,db,kf):
+def getFundingDict(ftx,bb,bn,db,kf,ccy):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -744,23 +764,18 @@ def getFundingDict(ftx,bb,bn,db,kf):
   d['ftxEstLendingBTC']=  lendingS['BTC']
   d['ftxEstLendingETH']=  lendingS['ETH']
   d['ftxEstSpot']=d['ftxEstMarginalUSD']-(d['ftxEstLendingBTC']+d['ftxEstLendingETH'])/2
-  d['ftxEstFundingBTC'] = ftxGetEstFunding(ftx, 'BTC')
-  d['ftxEstFundingETH'] = ftxGetEstFunding(ftx, 'ETH')
-  d['bbEstFunding1BTC'] = bbGetEstFunding1(bb, 'BTC')
-  d['bbEstFunding1ETH'] = bbGetEstFunding1(bb, 'ETH')
-  d['bbEstFunding2BTC'] = bbGetEstFunding2(bb, 'BTC')
-  d['bbEstFunding2ETH'] = bbGetEstFunding2(bb, 'ETH')
-  d['bnEstFundingBTC'] = bnGetEstFunding(bn, 'BTC')
-  d['bnEstFundingETH'] = bnGetEstFunding(bn, 'ETH')
-  d['bntEstFundingBTC'] = bntGetEstFunding(bn, 'BTC')
-  d['bntEstFundingETH'] = bntGetEstFunding(bn, 'ETH')
-  d['dbEstFundingBTC'] = dbGetEstFunding(db, 'BTC')
-  d['dbEstFundingETH'] = dbGetEstFunding(db, 'ETH')
+  #####
+  d['ftxEstFunding'+ccy] = ftxGetEstFunding(ftx, ccy)  
+  d['bbEstFunding1'+ccy] = bbGetEstFunding1(bb, ccy)  
+  d['bbEstFunding2'+ccy] = bbGetEstFunding2(bb, ccy)  
+  d['bbtEstFunding1'+ccy] = bbtGetEstFunding1(bb, ccy)  
+  d['bbtEstFunding2'+ccy] = bbtGetEstFunding2(bb, ccy)  
+  d['bnEstFunding'+ccy] = bnGetEstFunding(bn, ccy)  
+  d['bntEstFunding'+ccy] = bntGetEstFunding(bn, ccy)  
+  d['dbEstFunding'+ccy] = dbGetEstFunding(db, ccy)  
   kfTickers = kfGetTickers(kf)
-  d['kfEstFunding1BTC'] = kfGetEstFunding1(kf, 'BTC',kfTickers)
-  d['kfEstFunding1ETH'] = kfGetEstFunding1(kf, 'ETH',kfTickers)
-  d['kfEstFunding2BTC'] = kfGetEstFunding2(kf, 'BTC',kfTickers)
-  d['kfEstFunding2ETH'] = kfGetEstFunding2(kf, 'ETH',kfTickers)
+  d['kfEstFunding1'+ccy] = kfGetEstFunding1(kf,ccy,kfTickers)  
+  d['kfEstFunding2'+ccy] = kfGetEstFunding2(kf,ccy,kfTickers)  
   return d
 
 #############################################################################################
@@ -800,9 +815,9 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
 
 @retry(wait_fixed=1000)
 def ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, basis):
-  if not hasattr(ftxGetOneDayShortFutEdge,'emaSnapBTC'):
+  if ccy=='BTC' and not hasattr(ftxGetOneDayShortFutEdge,'emaSnapBTC'):
     ftxGetOneDayShortFutEdge.emaSnapBTC = fundingDict['ftxEstFundingBTC']
-  if not hasattr(ftxGetOneDayShortFutEdge, 'emaSnapETH'):
+  if ccy=='ETH' and not hasattr(ftxGetOneDayShortFutEdge, 'emaSnapETH'):
     ftxGetOneDayShortFutEdge.emaSnapETH = fundingDict['ftxEstFundingETH']
   df=ftxFutures.loc[ccy+'-PERP']
   snapFundingRate=(float(df['mark']) / float(df['index']) - 1)*365
@@ -823,6 +838,14 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbEstFunding2' + ccy], prevFundingRate=fundingDict['bbEstFunding1'+ccy])
 
 @retry(wait_fixed=1000)
+def bbtGetOneDayShortFutEdge(bb, fundingDict, ccy, basis):
+  start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
+  premIndex=np.mean([float(n) for n in pd.DataFrame(bb.public_linear_get_premium_index_kline({'symbol':ccy+'USDT','interval':1,'from':start_time})['result'])['close']])
+  premIndexClamped  = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
+  snapFundingRate=premIndexClamped*365*3
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbtEstFunding2' + ccy], prevFundingRate=fundingDict['bbtEstFunding1'+ccy]) - getOneDayUSDTCollateralBleed(fundingDict)
+
+@retry(wait_fixed=1000)
 def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
   df=pd.DataFrame(bn.dapiData_get_basis({'pair': ccy + 'USD', 'contractType': 'PERPETUAL', 'period': '1m'}))[-15:]
   dfSetFloat(df,['basis','indexPrice'])
@@ -833,9 +856,9 @@ def bnGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
 
 @retry(wait_fixed=1000)
 def bntGetOneDayShortFutEdge(bn, fundingDict, ccy, basis):
-  if not hasattr(bntGetOneDayShortFutEdge, 'emaPremIndexBTC'):
+  if ccy=='BTC' and not hasattr(bntGetOneDayShortFutEdge, 'emaPremIndexBTC'):
     bntGetOneDayShortFutEdge.emaPremIndexBTC = fundingDict['bntEstFundingBTC'] / 365 / 3
-  if not hasattr(bntGetOneDayShortFutEdge, 'emaPremIndexETH'):
+  if ccy=='ETH' and not hasattr(bntGetOneDayShortFutEdge, 'emaPremIndexETH'):
     bntGetOneDayShortFutEdge.emaPremIndexETH = fundingDict['bntEstFundingETH'] / 365 / 3
   d = bn.fapiPublic_get_premiumindex({'symbol': ccy + 'USDT'})
   premIndex = float(d['markPrice']) / float(d['indexPrice']) - 1
@@ -856,13 +879,13 @@ def dbGetOneDayShortFutEdge(fundingDict, ccy, basis):
 
 @retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaSnapBTC'):
+  if ccy=='BTC' and not hasattr(kfGetOneDayShortFutEdge, 'emaSnapBTC'):
     kfGetOneDayShortFutEdge.emaSnapBTC = fundingDict['kfEstFunding2BTC']
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2BTC'):
+  if ccy=='BTC' and not hasattr(kfGetOneDayShortFutEdge, 'emaEst2BTC'):
     kfGetOneDayShortFutEdge.emaEst2BTC = fundingDict['kfEstFunding2BTC']
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaSnapETH'):
+  if ccy=='ETH' and not hasattr(kfGetOneDayShortFutEdge, 'emaSnapETH'):
     kfGetOneDayShortFutEdge.emaSnapETH = fundingDict['kfEstFunding2ETH']
-  if not hasattr(kfGetOneDayShortFutEdge, 'emaEst2ETH'):
+  if ccy=='ETH' and not hasattr(kfGetOneDayShortFutEdge, 'emaEst2ETH'):
     kfGetOneDayShortFutEdge.emaEst2ETH = fundingDict['kfEstFunding2ETH']
   symbol = kfCcyToSymbol(ccy)
   indexSymbol = kfCcyToSymbol(ccy,isIndex=True)
@@ -881,82 +904,111 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, ccy, basis):
 
 #############################################################################################
 
-def getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict, isSkipAdj=False):
+def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
   @retry(wait_fixed=1000)
   def ftxGetFutures(ftx):
     return pd.DataFrame(ftx.public_get_futures()['result']).set_index('name')
   #####
-  ftxPrices = getPrices('ftx', ftx)
-  bbPrices = getPrices('bb', bb)
-  bnPrices = getPrices('bn', bn)
-  bntPrices = getPrices('bnt', bn)
-  kfPrices = getPrices('kf', kf)
-  dbPrices = getPrices('db', db)
-
-  objs = [ftxPrices, bbPrices, bnPrices, bntPrices, kfPrices, dbPrices]
+  ftxPrices = getPrices('ftx', ftx, ccy)
+  bbPrices = getPrices('bb', bb, ccy)
+  bbtPrices = getPrices('bbt',bb, ccy)
+  bnPrices = getPrices('bn', bn, ccy)
+  bntPrices = getPrices('bnt', bn, ccy)
+  kfPrices = getPrices('kf', kf, ccy)
+  dbPrices = getPrices('db', db, ccy)
+  #####
+  objs = [ftxPrices, bbPrices, bbtPrices, bnPrices, bntPrices, kfPrices, dbPrices]
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
-
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   if isSkipAdj:
-    ftxBTCAdj=0
-    ftxETHAdj=0
-    bbBTCAdj = 0
-    bbETHAdj = 0
-    bnBTCAdj=0
-    bnETHAdj=0
-    bntBTCAdj=0
-    bntETHAdj=0
-    dbBTCAdj = 0
-    dbETHAdj = 0    
-    kfBTCAdj=0
-    kfETHAdj=0
+    ftxAdj=0    
+    bbAdj = 0    
+    bbtAdj = 0    
+    bnAdj=0    
+    bntAdj=0    
+    dbAdj = 0        
+    kfAdj=0    
   else:
-    ftxBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']) / 10000
-    ftxETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']) / 10000
-    bbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']) / 10000
-    bbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']) / 10000
-    bnBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']) / 10000
-    bnETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']) / 10000
-    bntBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS']) / 10000
-    bntETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']) / 10000
-    dbBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']) / 10000
-    dbETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']) / 10000    
-    kfBTCAdj = (CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] - CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']) / 10000
-    kfETHAdj = (CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] - CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']) / 10000            
+    ftxAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_'+ccy+'_ADJ_BPS']) / 10000    
+    bbAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BB_'+ccy+'_ADJ_BPS']) / 10000    
+    bbtAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BBT_'+ccy+'_ADJ_BPS']) / 10000    
+    bnAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BN_'+ccy+'_ADJ_BPS']) / 10000    
+    bntAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_'+ccy+'_ADJ_BPS']) / 10000    
+    dbAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['DB_'+ccy+'_ADJ_BPS']) / 10000        
+    kfAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['KF_'+ccy+'_ADJ_BPS']) / 10000                
   #####
   ftxFutures = ftxGetFutures(ftx)
   d = dict()
-  d['ftxBTCBasis'] = ftxPrices.futBTC / ftxPrices.spotBTC - 1
-  d['ftxETHBasis'] = ftxPrices.futETH / ftxPrices.spotETH - 1
-  d['ftxBTCSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'BTC', d['ftxBTCBasis']) - oneDayShortSpotEdge + ftxBTCAdj
-  d['ftxETHSmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, 'ETH', d['ftxETHBasis']) - oneDayShortSpotEdge + ftxETHAdj
+  d['ftx'+ccy+'Basis'] = ftxPrices.fut / ftxPrices.spot - 1  
+  d['ftx'+ccy+'SmartBasis'] = ftxGetOneDayShortFutEdge(ftxFutures, fundingDict, ccy, d['ftx'+ccy+'Basis']) - oneDayShortSpotEdge + ftxAdj  
   #####
-  d['bbBTCBasis'] = bbPrices.futBTC / ftxPrices.spotBTC - 1
-  d['bbETHBasis'] = bbPrices.futETH / ftxPrices.spotETH - 1
-  d['bbBTCSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'BTC',d['bbBTCBasis']) - oneDayShortSpotEdge + bbBTCAdj
-  d['bbETHSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, 'ETH',d['bbETHBasis']) - oneDayShortSpotEdge + bbETHAdj
+  d['bb'+ccy+'Basis'] = bbPrices.fut / ftxPrices.spot - 1  
+  d['bb'+ccy+'SmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, ccy,d['bb'+ccy+'Basis']) - oneDayShortSpotEdge + bbAdj  
   #####
-  d['bnBTCBasis'] = bnPrices.futBTC / ftxPrices.spotBTC - 1
-  d['bnETHBasis'] = bnPrices.futETH / ftxPrices.spotETH - 1
-  d['bnBTCSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bnBTCBasis']) - oneDayShortSpotEdge + bnBTCAdj
-  d['bnETHSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bnETHBasis']) - oneDayShortSpotEdge + bnETHAdj
+  d['bbt'+ccy+'Basis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1  
+  d['bbt'+ccy+'SmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, ccy, d['bbt'+ccy+'Basis']) - oneDayShortSpotEdge + bbtAdj  
+  #####
+  d['bn'+ccy+'Basis'] = bnPrices.fut / ftxPrices.spot - 1  
+  d['bn'+ccy+'SmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, ccy, d['bn'+ccy+'Basis']) - oneDayShortSpotEdge + bnAdj  
   ###
-  d['bntBTCBasis'] = bntPrices.futBTC * ftxPrices.spotUSDT / ftxPrices.spotBTC - 1
-  d['bntETHBasis'] = bntPrices.futETH * ftxPrices.spotUSDT / ftxPrices.spotETH - 1
-  d['bntBTCSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'BTC', d['bntBTCBasis']) - oneDayShortSpotEdge + bntBTCAdj
-  d['bntETHSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, 'ETH', d['bntETHBasis']) - oneDayShortSpotEdge + bntETHAdj
+  d['bnt'+ccy+'Basis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1  
+  d['bnt'+ccy+'SmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, ccy, d['bnt'+ccy+'Basis']) - oneDayShortSpotEdge + bntAdj  
   ###
-  d['dbBTCBasis'] = dbPrices.futBTC / ftxPrices.spotBTC - 1
-  d['dbETHBasis'] = dbPrices.futETH / ftxPrices.spotETH - 1
-  d['dbBTCSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'BTC', d['dbBTCBasis']) - oneDayShortSpotEdge + dbBTCAdj
-  d['dbETHSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, 'ETH', d['dbETHBasis']) - oneDayShortSpotEdge + dbETHAdj
+  d['db'+ccy+'Basis'] = dbPrices.fut / ftxPrices.spot - 1  
+  d['db'+ccy+'SmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, ccy, d['db'+ccy+'Basis']) - oneDayShortSpotEdge + dbAdj  
   ###
-  d['kfBTCBasis']= kfPrices.futBTC / ftxPrices.spotBTC - 1
-  d['kfETHBasis'] = kfPrices.futETH / ftxPrices.spotETH - 1
-  d['kfBTCSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, 'BTC', d['kfBTCBasis']) - oneDayShortSpotEdge + kfBTCAdj
-  d['kfETHSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, 'ETH', d['kfETHBasis']) - oneDayShortSpotEdge + kfETHAdj
+  d['kf'+ccy+'Basis']= kfPrices.fut / ftxPrices.spot - 1  
+  d['kf'+ccy+'SmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, ccy, d['kf'+ccy+'Basis']) - oneDayShortSpotEdge + kfAdj  
   return d
+
+#############################################################################################
+
+###############
+# CryptoAlerter
+###############
+def caRun(ccy, color):
+  def getCurrentTimeCondensed():
+    return datetime.datetime.today().strftime('%H:%M:%S')
+  def process(config, smartBasisDict, color, funding, funding2=None):
+    tmp = config.split('_')
+    prefix = tmp[0].lower() + tmp[1]
+    smartBasisBps = smartBasisDict[prefix + 'SmartBasis'] * 10000
+    basisBps = smartBasisDict[prefix + 'Basis'] * 10000
+    z = tmp[0] + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + '(' + str(round(funding * 100))
+    if funding2 is None:
+      n = 17
+    else:
+      z = z + '/' + str(round(funding2 * 100))
+      n = 21
+    z += ')'
+    print(termcolor.colored(z.ljust(n), color), end='')
+  #####
+  printHeader(ccy+'Alerter')
+  col1N = 21
+  print('Column 1:'.ljust(col1N)+'USD marginal rate / USDT marginal rate / Average coin lending rates (BTC, ETH)')
+  print('Body:'.ljust(col1N)+'Smart basis / raw basis (est. funding rate)')
+  print()
+  ftx=ftxCCXTInit()
+  bb=bbCCXTInit()
+  bn=bnCCXTInit()
+  db=dbCCXTInit()
+  kf=kfInit()
+  while True:
+    fundingDict = getFundingDict(ftx,bb,bn,db,kf,ccy)
+    smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
+    print(getCurrentTimeCondensed().ljust(10),end='')
+    avgCoinRate=(fundingDict['ftxEstLendingBTC']+fundingDict['ftxEstLendingETH'])/2
+    print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '/'+ \
+      str(round(avgCoinRate * 100))).ljust(col1N-10),'red'),end='')
+    process('FTX_'+ccy, smartBasisDict, color, fundingDict['ftxEstFunding'+ccy])
+    process('BB_'+ccy, smartBasisDict, color, fundingDict['bbEstFunding1'+ccy], fundingDict['bbEstFunding2'+ccy])
+    process('BBT_'+ccy, smartBasisDict, color, fundingDict['bbtEstFunding1'+ccy], fundingDict['bbtEstFunding2'+ccy])
+    process('BN_'+ccy, smartBasisDict, color, fundingDict['bnEstFunding'+ccy])
+    process('BNT_'+ccy, smartBasisDict, color, fundingDict['bntEstFunding'+ccy])
+    process('DB_'+ccy, smartBasisDict, color, fundingDict['dbEstFunding'+ccy])
+    process('KF_'+ccy, smartBasisDict, color, fundingDict['kfEstFunding1'+ccy], fundingDict['kfEstFunding2'+ccy])
+    print()
 
 #############################################################################################
 
@@ -1052,13 +1104,13 @@ def ctRun(ccy,tgtBps):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, db, kf)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, fundingDict)
+      fundingDict=getFundingDict(ftx, bb, bn, db, kf, ccy)
+      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict)
       smartBasisDict['spot' + ccy + 'SmartBasis'] = 0
       smartBasisDict['spot' + ccy + 'Basis'] = 0
 
       # Remove disabled instruments
-      for exch in ['SPOT','FTX','BB','BN','BNT','DB','KF']:
+      for exch in ['SPOT','FTX','BB','BBT','BN','BNT','DB','KF']:
         smartBasisDict = ctRemoveDisabledInstrument(smartBasisDict,exch,ccy)
 
       # Remove spots when high spot rate
@@ -1090,6 +1142,8 @@ def ctRun(ccy,tgtBps):
           if chosenLong=='ftx':
             pos=ftxGetFutPos(ftx,ccy)
           elif chosenLong=='bb':
+            pos=bbGetFutPos(bb,ccy)
+          elif chosenLong=='bbt':
             pos=bbGetFutPos(bb,ccy)
           elif chosenLong=='bn':
             pos=bnGetFutPos(bn,ccy)
