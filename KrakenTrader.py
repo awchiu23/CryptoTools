@@ -14,7 +14,7 @@ targetUSD=5000
 account=1                # which Kraken account to use
 side='SELL'              # 'BUY', 'SELL'
 pair='XXBTZUSD'          # 'XXBTZUSD','XXBTZEUR'
-hedgeExchange='none'     # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
+hedgeExchange='bb'       # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
 isMargin=True            # Margin trading?
 
 ###########

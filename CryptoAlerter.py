@@ -15,12 +15,12 @@ def process(config,smartBasisDict,color,funding,funding2=None):
   prefix=tmp[0].lower()+tmp[1]
   smartBasisBps = smartBasisDict[prefix+'SmartBasis'] * 10000
   basisBps = smartBasisDict[prefix + 'Basis'] * 10000
-  z=tmp[0]+':' + str(round(smartBasisBps)) + '/' +str(round(basisBps)) +'bps('+str(round(funding*100))
+  z=tmp[0]+':' + str(round(smartBasisBps)) + '/' +str(round(basisBps)) +'('+str(round(funding*100))
   if funding2 is None:
-    n=19
+    n=16
   else:
     z=z+'/'+str(round(funding2*100))
-    n=23
+    n=20
   z+=')'
   print(termcolor.colored(z.ljust(n), color), end='')
 
@@ -50,12 +50,13 @@ while True:
   process('FTX_BTC', smartBasisDict, 'blue', fundingDict['ftxEstFundingBTC'])
   process('BB_BTC', smartBasisDict, 'blue', fundingDict['bbEstFunding1BTC'], fundingDict['bbEstFunding2BTC'])
   process('BN_BTC', smartBasisDict, 'blue', fundingDict['bnEstFundingBTC'])
+  process('BT_BTC', smartBasisDict, 'blue', fundingDict['btEstFundingBTC'])
   process('DB_BTC', smartBasisDict, 'blue', fundingDict['dbEstFundingBTC'])
   process('KF_BTC', smartBasisDict, 'blue', fundingDict['kfEstFunding1BTC'], fundingDict['kfEstFunding2BTC'])
   process('FTX_ETH', smartBasisDict, 'magenta', fundingDict['ftxEstFundingETH'])
   process('BB_ETH', smartBasisDict, 'magenta', fundingDict['bbEstFunding1ETH'], fundingDict['bbEstFunding2ETH'])
   process('BN_ETH', smartBasisDict, 'magenta', fundingDict['bnEstFundingETH'])
+  process('BT_ETH', smartBasisDict, 'magenta', fundingDict['btEstFundingETH'])
   process('DB_ETH', smartBasisDict, 'magenta', fundingDict['dbEstFundingETH'])
   process('KF_ETH', smartBasisDict, 'magenta', fundingDict['kfEstFunding1ETH'], fundingDict['kfEstFunding2ETH'])
   print()
-  time.sleep(cl.CT_SLEEP)

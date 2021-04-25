@@ -52,16 +52,14 @@ def krPrintLiq(krCores):
 # Classes
 #########
 class core:
-  def __init__(self, exch, spotBTC, spotETH, spotFTT=None, spotEUR=None, n=None):
+  def __init__(self, exch, spotBTC, spotETH, spotFTT=None, spotUSDT=None, spotEUR=None, n=None):
     self.exch = exch
     self.spotBTC = spotBTC
     self.spotETH = spotETH
-    if spotFTT is not None:
-      self.spotFTT = spotFTT
-    if spotEUR is not None:
-      self.spotEUR = spotEUR
-    if n is not None:
-      self.n = n
+    if spotFTT is not None: self.spotFTT = spotFTT
+    if spotUSDT is not None: self.spotUSDT = spotUSDT
+    if spotEUR is not None: self.spotEUR = spotEUR
+    if n is not None: self.n = n
 
   def run(self):
     if self.exch=='ftx':
@@ -73,6 +71,9 @@ class core:
     elif self.exch=='bn':
       self.api = cl.bnCCXTInit()
       self.bnInit()
+    elif self.exch=='bt':
+      self.api = cl.bnCCXTInit()
+      self.btInit()
     elif self.exch=='db':
       self.api = cl.dbCCXTInit()
       self.dbInit()
@@ -117,6 +118,14 @@ class core:
       oneDayFunding = df['fundingRate'].mean() * 3 * 365
       prevFunding = df['fundingRate'][-1] * 3 * 365
       estFunding = cl.bnGetEstFunding(self.api, ccy)
+    elif self.exch=='bt':
+      df = pd.DataFrame(self.api.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
+      cl.dfSetFloat(df, 'fundingRate')
+      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
+      df = df.set_index('date').sort_index()
+      oneDayFunding = df['fundingRate'].mean() * 3 * 365
+      prevFunding = df['fundingRate'][-1] * 3 * 365
+      estFunding = cl.btGetEstFunding(self.api, ccy)
     elif self.exch=='db':
       oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
       prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
@@ -160,15 +169,18 @@ class core:
       sys.exit(1)
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
+    if self.exch=='bt':
+      suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
+    else:
+      suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     print(prefix.rjust(40) + ' ' + body.ljust(27) + suffix)
 
   def printLiq(self):
     if self.exch=='ftx':
-      z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '%'
-      print(termcolor.colored('FTX liquidation (parallel shock): '.rjust(41) + z + ' (of spot)', 'red'))
-      print(termcolor.colored('FTX margin fraction: '.rjust(41) + str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit)', 'red'))
-      print(termcolor.colored('FTX free collateral: $'.rjust(42) + str(round(self.freeCollateral)), 'red'))
+      z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '% (of spot)'
+      print(termcolor.colored('FTX liquidation (parallel shock): '.rjust(41) + z , 'red'))
+      z= str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
+      print(termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red'))
     else:
       zBTC = 'never' if (self.liqBTC <= 0 or self.liqBTC >= 10) else str(round(self.liqBTC * 100)) + '%'
       zETH = 'never' if (self.liqETH <= 0 or self.liqETH >= 10) else str(round(self.liqETH * 100)) + '%'
@@ -415,19 +427,22 @@ class core:
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
     payments = pd.DataFrame(self.api.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-    cl.dfSetFloat(payments, 'income')
-    payments = payments[['USD_PERP' in z for z in payments['symbol']]]
-    payments['Ccy'] = [z[:3] for z in payments['symbol']]
-    payments = payments.set_index('Ccy').loc[['BTC', 'ETH']]
-    payments['incomeUSD'] = payments['income']
-    payments.loc['BTC', 'incomeUSD'] *= self.spotBTC
-    payments.loc['ETH', 'incomeUSD'] *= self.spotETH
-    payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['time']]
-    payments = payments.set_index('date')
-    #####
-    prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
+    if len(payments)==0:
+      prevIncome = 0
+      oneDayIncome = 0
+    else:
+      cl.dfSetFloat(payments, 'income')
+      payments = payments[['USD_PERP' in z for z in payments['symbol']]]
+      payments['Ccy'] = [z[:3] for z in payments['symbol']]
+      payments = payments.set_index('Ccy').loc[['BTC', 'ETH']]
+      payments['incomeUSD'] = payments['income']
+      payments.loc['BTC', 'incomeUSD'] *= self.spotBTC
+      payments.loc['ETH', 'incomeUSD'] *= self.spotETH
+      payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['time']]
+      payments = payments.set_index('date')
+      prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
+      oneDayIncome = payments['incomeUSD'].sum()
     prevAnnRet = prevIncome * 3 * 365 / notional
-    oneDayIncome = payments['incomeUSD'].sum()
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
     nav = bal.loc['BTC', 'SpotDelta'] * self.spotBTC + bal.loc['ETH', 'SpotDelta'] * self.spotETH
@@ -436,9 +451,55 @@ class core:
     #####
     self.spotDeltaBTC = spotDeltaBTC
     self.spotDeltaETH = spotDeltaETH
-    self.bal=bal
     self.futures = futures
-    self.payments = payments
+    self.prevIncome = prevIncome
+    self.prevAnnRet = prevAnnRet
+    self.oneDayIncome = oneDayIncome
+    self.oneDayAnnRet = oneDayAnnRet
+    self.nav = nav
+    self.liqBTC = liqBTC
+    self.liqETH = liqETH
+
+  ####
+  # BT
+  ####
+  def btInit(self):
+    futures = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
+    cl.dfSetFloat(futures, ['positionAmt','unRealizedProfit'])
+    futures = futures.set_index('symbol').loc[['BTCUSDT', 'ETHUSDT']]
+    futures['Ccy'] = [z[:3] for z in futures.index]
+    futures=futures.set_index('Ccy')
+    futures['FutDelta'] = futures['FutDeltaUSD'] = futures['positionAmt']
+    futures.loc['BTC', 'FutDeltaUSD'] *= self.spotBTC
+    futures.loc['ETH', 'FutDeltaUSD'] *= self.spotETH
+    notional = futures['FutDeltaUSD'].abs().sum()
+    #####
+    payments = pd.DataFrame(self.api.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
+    if len(payments)==0:
+      prevIncome = 0
+      oneDayIncome = 0
+    else:
+      cl.dfSetFloat(payments, 'income')
+      payments = payments[['USD_PERP' in z for z in payments['symbol']]]
+      payments['Ccy'] = [z[:3] for z in payments['symbol']]
+      payments = payments.set_index('Ccy').loc[['BTC', 'ETH']]
+      payments['incomeUSD'] = payments['income']
+      payments.loc['BTC', 'incomeUSD'] *= self.spotBTC
+      payments.loc['ETH', 'incomeUSD'] *= self.spotETH
+      payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['time']]
+      payments = payments.set_index('date')
+      prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
+      oneDayIncome = payments['incomeUSD'].sum()
+    prevAnnRet = prevIncome * 3 * 365 / notional
+    oneDayAnnRet = oneDayIncome * 365 / notional
+    #####
+    nav = float(pd.DataFrame(self.api.fapiPrivate_get_balance()).set_index('asset').loc['USDT', 'balance'])*self.spotUSDT + futures['unRealizedProfit'].sum()
+    liqBTC = float(futures.loc['BTC', 'liquidationPrice']) / float(futures.loc['BTC', 'markPrice'])
+    liqETH = float(futures.loc['ETH', 'liquidationPrice']) / float(futures.loc['ETH', 'markPrice'])
+    #####
+    self.spotDeltaBTC = 0
+    self.spotDeltaETH = 0
+    self.futures = futures
     self.prevIncome = prevIncome
     self.prevAnnRet = prevAnnRet
     self.oneDayIncome = oneDayIncome
@@ -633,6 +694,7 @@ ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC','spot']
 spotETH = ftxWallet.loc['ETH','spot']
 spotFTT = ftxWallet.loc['FTT','spot']
+spotUSDT = ftxWallet.loc['USDT','spot']
 spotEUR = cl.ftxGetSpotEUR(ftx)
 #####
 ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
@@ -641,12 +703,13 @@ cbCore = core('cb',spotBTC,spotETH)
 objs=[ftxCore,bbCore,cbCore]
 if CR_IS_ADVANCED:
   bnCore = core('bn', spotBTC, spotETH)
+  btCore = core('bt', spotBTC, spotETH,spotUSDT=spotUSDT)
   dbCore = core('db', spotBTC, spotETH)
   kfCore = core('kf', spotBTC, spotETH)
   krCores = []
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
-  objs.extend([bnCore,dbCore,kfCore]+krCores)
+  objs.extend([bnCore,btCore,dbCore,kfCore]+krCores)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
 #############
@@ -678,6 +741,7 @@ z+=' (FTX: $' + str(round(ftxCore.nav/1000)) + 'K'
 z+=' / BB: $' + str(round(bbCore.nav/1000)) + 'K'
 if CR_IS_ADVANCED:
   z+=' / BN: $' + str(round(bnCore.nav/1000)) + 'K'
+  z+=' / BT: $' + str(round(btCore.nav/1000)) + 'K'
   z += ' / DB: $' + str(round(dbCore.nav / 1000)) + 'K'
   z += ' / KF: $' + str(round(kfCore.nav / 1000)) + 'K'
   for krCore in krCores:
@@ -687,11 +751,11 @@ if CR_IS_ADVANCED:
   z+=' / EUR: $' + str(round(externalEURNAV/1000))+'K'
 z+=')'
 print(termcolor.colored(z,'blue'))
-print(termcolor.colored('24h income: $'.rjust(42)+str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)','blue'))
-z='Spots: BTC='.rjust(45)+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1))
+#####
+z='BTC='+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1)) + ' / USDT=' + str(round(spotUSDT,4))
 if CR_IS_ADVANCED:
   z+=' / EUR='+str(round(spotEUR,4))
-print(z)
+print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(27),'blue')+z)
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
@@ -725,6 +789,12 @@ if CR_IS_ADVANCED:
   bnCore.printFunding('BTC')
   bnCore.printFunding('ETH')
   bnCore.printLiq()
+  print()
+  #####
+  btCore.printIncomes()
+  btCore.printFunding('BTC')
+  btCore.printFunding('ETH')
+  btCore.printLiq()
   print()
   #####
   dbCore.printIncomes()
