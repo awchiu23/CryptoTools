@@ -493,7 +493,7 @@ class core:
     prevAnnRet = prevIncome * 3 * 365 / notional
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
-    nav = float(pd.DataFrame(self.api.fapiPrivate_get_balance()).set_index('asset').loc['USDT', 'balance'])*self.spotUSDT + futures['unRealizedProfit'].sum()
+    nav = (float(pd.DataFrame(self.api.fapiPrivate_get_balance()).set_index('asset').loc['USDT', 'balance']) + futures['unRealizedProfit'].sum())*self.spotUSDT
     liqBTC = float(futures.loc['BTC', 'liquidationPrice']) / float(futures.loc['BTC', 'markPrice'])
     liqETH = float(futures.loc['ETH', 'liquidationPrice']) / float(futures.loc['ETH', 'markPrice'])
     #####
