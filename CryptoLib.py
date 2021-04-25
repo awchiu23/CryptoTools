@@ -11,6 +11,7 @@ import time
 import operator
 import termcolor
 import ccxt
+from ccxt.base.errors import RateLimitExceeded
 import apophis
 from retrying import retry
 
@@ -214,7 +215,11 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   else:
     refPrice = ftxGetAsk(ftx, ticker)
   limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
-  orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+  try:
+    orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+  except RateLimitExceeded:
+    print('RateLimitExceeded caught!')
+    sys.exit(1)
   refTime = time.time()
   nChases=0
   while True:
