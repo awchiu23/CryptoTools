@@ -115,9 +115,11 @@ SMB_USDT_COLLATERAL_COVERAGE = 1 / 8
 #################
 # Crypto Reporter
 #################
-CR_IS_ADVANCED = True                # Set False to use only FTX, BB and CB
-CR_IS_SHOW_COIN_LENDING = False      # Set True to see lendings in coins
-CR_N_KR_ACCOUNTS = 1                 # Number of Kraken accounts
+CR_IS_ADVANCED = True
+CR_IS_SHOW_EUR_DELTAS = False
+CR_IS_SHOW_USDT_DELTAS = False
+CR_IS_SHOW_COIN_LENDING = False
+CR_N_KR_ACCOUNTS = 1
 
 #############################################################################################
 

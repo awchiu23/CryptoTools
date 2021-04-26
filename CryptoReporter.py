@@ -185,11 +185,12 @@ class core:
     print(prefix.rjust(40) + ' ' + body.ljust(27) + suffix)
 
   def printLiq(self):
-    if self.exch=='ftx':
+    if self.exch in ['ftx','bbt','bnt']:
       z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '% (of spot)'
-      print(termcolor.colored('FTX liquidation (parallel shock): '.rjust(41) + z , 'red'))
-      z= str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
-      print(termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red'))
+      print(termcolor.colored((self.exch.upper()+' liquidation (parallel shock): ').rjust(41) + z, 'red'))
+      if self.exch=='ftx':
+        z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
+        print(termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red'))
     else:
       zBTC = 'never' if (self.liqBTC <= 0 or self.liqBTC >= 10) else str(round(self.liqBTC * 100)) + '%'
       zETH = 'never' if (self.liqETH <= 0 or self.liqETH >= 10) else str(round(self.liqETH * 100)) + '%'
@@ -367,10 +368,11 @@ class core:
       liqPrice = float(futures.loc[ccy, 'liq_price'])
       markPrice = float(futures.loc[ccy, 'size']) / (float(futures.loc[ccy, 'position_value']) + float(futures.loc[ccy, 'unrealised_pnl']))
       return liqPrice / markPrice
-    #####    
-    bal = self.api.fetch_balance()
-    spotDeltaBTC = bal['BTC']['total']
-    spotDeltaETH = bal['ETH']['total']
+    #####
+    wallet=pd.DataFrame(self.api.v2_private_get_wallet_balance()['result']).transpose()
+    cl.dfSetFloat(wallet,'equity')
+    spotDeltaBTC = wallet.loc['BTC','equity']
+    spotDeltaETH = wallet.loc['ETH','equity']
     #####
     futures = self.api.v2_private_get_position_list()['result']
     futures = pd.DataFrame([pos['data'] for pos in futures])
@@ -427,12 +429,6 @@ class core:
     def getPayments(api, ccy):
       return pd.DataFrame(api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False)
     #####
-    def getLiq(api, ccy, spot):
-      df = pd.DataFrame(api.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result'])
-      cl.dfSetFloat(df,['size','liq_price'])
-      df['absSize']=df['size'].abs()
-      return df.sort_values('absSize').iloc[-1]['liq_price'] / spot
-    #####
     futures = pd.DataFrame([['BTC', self.spotBTC, cl.bbtGetFutPos(self.api, 'BTC')], ['ETH', self.spotETH, cl.bbtGetFutPos(self.api, 'ETH')]], columns=['Ccy', 'Spot', 'FutDelta']).set_index('Ccy')
     futures['FutDeltaUSD']=futures['Spot']*futures['FutDelta']
     notional = futures['FutDeltaUSD'].abs().sum()
@@ -448,9 +444,11 @@ class core:
     oneDayIncome = payments['incomeUSD'].sum()
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
-    nav=self.api.fetch_balance()['USDT']['total']*self.spotUSDT
-    liqBTC = getLiq(self.api, 'BTC', self.spotBTC)
-    liqETH = getLiq(self.api, 'ETH', self.spotETH)
+    walletUSDT = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
+    nav=float(walletUSDT['equity'])*self.spotUSDT
+    cushion=float(walletUSDT['available_balance'])*self.spotUSDT
+    totalDelta = futures['FutDeltaUSD'].sum()
+    liq = 1 - cushion / totalDelta
     #####
     self.spotDeltaBTC = 0
     self.spotDeltaETH = 0
@@ -461,8 +459,7 @@ class core:
     self.oneDayIncome = oneDayIncome
     self.oneDayAnnRet = oneDayAnnRet
     self.nav = nav
-    self.liqBTC = liqBTC
-    self.liqETH = liqETH
+    self.liq = liq
     self.estFundingDict = dict()
     self.estFundingDict['BTC'] = cl.bbtGetEstFunding1(self.api, 'BTC')
     self.estFundingDict['ETH'] = cl.bbtGetEstFunding1(self.api, 'ETH')
@@ -537,7 +534,7 @@ class core:
   #####
   def bntInit(self):
     futures = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
-    cl.dfSetFloat(futures, ['positionAmt','unRealizedProfit'])
+    cl.dfSetFloat(futures, ['positionAmt'])
     futures = futures.set_index('symbol').loc[['BTCUSDT', 'ETHUSDT']]
     futures['Ccy'] = [z[:3] for z in futures.index]
     futures=futures.set_index('Ccy')
@@ -563,9 +560,11 @@ class core:
     prevAnnRet = prevIncome * 3 * 365 / notional
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
-    nav = (float(pd.DataFrame(self.api.fapiPrivate_get_balance()).set_index('asset').loc['USDT', 'balance']) + futures['unRealizedProfit'].sum())*self.spotUSDT
-    liqBTC = float(futures.loc['BTC', 'liquidationPrice']) / float(futures.loc['BTC', 'markPrice'])
-    liqETH = float(futures.loc['ETH', 'liquidationPrice']) / float(futures.loc['ETH', 'markPrice'])
+    walletUSDT = pd.DataFrame(self.api.fapiPrivate_get_account()['assets']).set_index('asset').loc['USDT']
+    nav = float(walletUSDT['marginBalance'])*self.spotUSDT
+    cushion = float(walletUSDT['availableBalance'])*self.spotUSDT
+    totalDelta = futures['FutDeltaUSD'].sum()
+    liq = 1 - cushion / totalDelta
     #####
     self.spotDeltaBTC = 0
     self.spotDeltaETH = 0
@@ -575,8 +574,7 @@ class core:
     self.oneDayIncome = oneDayIncome
     self.oneDayAnnRet = oneDayAnnRet
     self.nav = nav
-    self.liqBTC = liqBTC
-    self.liqETH = liqETH
+    self.liq = liq
     self.estFundingDict = dict()
     self.estFundingDict['BTC'] = cl.bntGetEstFunding(self.api, 'BTC')
     self.estFundingDict['ETH'] = cl.bntGetEstFunding(self.api, 'ETH')
@@ -845,8 +843,8 @@ print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
 if CR_IS_ADVANCED:
-  printEURDeltas(krCores, spotEUR)
-  printUSDTDeltas(ftxCore, bbtCore, bntCore, spotUSDT)
+  if CR_IS_SHOW_EUR_DELTAS: printEURDeltas(krCores, spotEUR)
+  if CR_IS_SHOW_USDT_DELTAS: printUSDTDeltas(ftxCore, bbtCore, bntCore, spotUSDT)
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
