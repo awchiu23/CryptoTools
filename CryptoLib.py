@@ -362,9 +362,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
 
 @retry(wait_fixed=1000)
 def bbtGetFutPos(bb,ccy):
-  df = bb.private_linear_get_position_list()['result']
-  df = pd.DataFrame([pos['data'] for pos in df]).set_index('symbol')
-  df = df.loc[ccy + 'USDT'].set_index('side')
+  df=pd.DataFrame(bb.private_linear_get_position_list({'symbol':ccy+'USDT'})['result']).set_index('side')
   return float(df.loc['Buy','size'])-float(df.loc['Sell','size'])
 
 @retry(wait_fixed=1000)

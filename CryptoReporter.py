@@ -3,6 +3,7 @@ import CryptoLib as cl
 from joblib import Parallel, delayed
 import pandas as pd
 import datetime
+import time
 import termcolor
 import sys
 
@@ -20,13 +21,15 @@ def getYest():
 
 def printDeltas(ccy,spot,spotDelta,futDelta):
   netDelta=spotDelta+futDelta
-  print((ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1))).ljust(27) + \
-    '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)')
+  z=(ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,1))+'/'+str(round(futDelta,1))+'/'+str(round(netDelta,1))).ljust(27) + \
+    '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
+  print(termcolor.colored(z,'red'))
 
 def printEURDeltas(spot,spotDelta):
   netDelta=spotDelta+EXTERNAL_EUR_DELTA
-  print('EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(27) + \
-    '($' + str(round(EXTERNAL_EUR_DELTA * spot/1000)) + 'K/$' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)')
+  z='EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(27) + \
+    '($' + str(round(EXTERNAL_EUR_DELTA * spot/1000)) + 'K/$' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
+  print(termcolor.colored(z,'red'))
 
 ####################################################################################################
 
@@ -68,6 +71,9 @@ class core:
     elif self.exch=='bb':
       self.api = cl.bbCCXTInit()
       self.bbInit()
+    elif self.exch=='bbt':
+      self.api = cl.bbCCXTInit()
+      self.bbtInit()
     elif self.exch=='bn':
       self.api = cl.bnCCXTInit()
       self.bnInit()
@@ -101,7 +107,7 @@ class core:
       oneDayFunding = df['rate'].mean() * 24 * 365
       prevFunding = df['rate'][-1] * 24 * 365
       estFunding = cl.ftxGetEstFunding(self.api, ccy)
-    elif self.exch=='bb':
+    elif self.exch == 'bb':
       df = self.payments[self.payments['symbol'] == ccy + 'USD'].copy()
       for i in range(len(df)):
         if 'Sell' in df.iloc[i]['order_id']:
@@ -110,6 +116,15 @@ class core:
       prevFunding = df['fee_rate'][-1] * 3 * 365
       estFunding = cl.bbGetEstFunding1(self.api, ccy)
       est2Funding = cl.bbGetEstFunding2(self.api, ccy)
+    elif self.exch =='bbt':
+      df = self.payments[self.payments['symbol'] == ccy + 'USDT'].copy()
+      for i in range(len(df)):
+        if 'Sell' in df.iloc[i]['order_id']:
+          df.loc[df.index[i], 'fee_rate'] *= -1
+      oneDayFunding = df['fee_rate'].mean() * 3 * 365
+      prevFunding = df['fee_rate'][-1] * 3 * 365
+      estFunding = cl.bbtGetEstFunding1(self.api, ccy)
+      est2Funding = cl.bbtGetEstFunding2(self.api, ccy)
     elif self.exch=='bn':
       df = pd.DataFrame(self.api.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
       cl.dfSetFloat(df, 'fundingRate')
@@ -148,14 +163,14 @@ class core:
     else:
       prefix+='prev'
     prefix+='/est'
-    if self.exch in ['bb', 'kf']:
+    if self.exch in ['bb','bbt','kf']:
       prefix += '1/est2'
     prefix += ' funding rate:'
     #####
     body = str(round(oneDayFunding * 100)) + '%/'
     body += str(round(prevFunding * 100)) + '%/'
     body += str(round(estFunding * 100)) + '%'
-    if self.exch in ['bb', 'kf']:
+    if self.exch in ['bb','bbt','kf']:
       body += '/' + str(round(est2Funding * 100)) + '%'
     body += ' p.a.'
     #####
@@ -169,7 +184,7 @@ class core:
       sys.exit(1)
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch=='bnt':
+    if self.exch in ['bbt','bnt']:
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
@@ -400,7 +415,51 @@ class core:
     self.nav=nav
     self.liqBTC=liqBTC
     self.liqETH=liqETH
-  
+
+  #####
+  # BBT
+  #####
+  def bbtInit(self):
+    def getPayments(api, ccy):
+      return pd.DataFrame(api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False)
+    #####
+    def getLiq(api, ccy, spot):
+      df = pd.DataFrame(api.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result'])
+      cl.dfSetFloat(df,['size','liq_price'])
+      df['absSize']=df['size'].abs()
+      return df.sort_values('absSize').iloc[-1]['liq_price'] / spot
+    #####
+    futures = pd.DataFrame([['BTC', self.spotBTC, cl.bbtGetFutPos(self.api, 'BTC')], ['ETH', self.spotETH, cl.bbtGetFutPos(self.api, 'ETH')]], columns=['Ccy', 'Spot', 'FutDelta']).set_index('Ccy')
+    futures['FutDeltaUSD']=futures['Spot']*futures['FutDelta']
+    notional = futures['FutDeltaUSD'].abs().sum()
+    #####
+    payments = getPayments(self.api, 'BTC').append(getPayments(self.api, 'ETH'))
+    cl.dfSetFloat(payments, ['fee_rate', 'exec_fee'])
+    payments['incomeUSD'] = -payments['exec_fee'] * self.spotUSDT
+    payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['trade_time_ms']]
+    payments = payments.set_index('date').sort_index()
+    #####
+    prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
+    prevAnnRet = prevIncome * 3 * 365 / notional
+    oneDayIncome = payments['incomeUSD'].sum()
+    oneDayAnnRet = oneDayIncome * 365 / notional
+    #####
+    nav=self.api.fetch_balance()['USDT']['total']*self.spotUSDT
+    liqBTC = getLiq(self.api, 'BTC', self.spotBTC)
+    liqETH = getLiq(self.api, 'ETH', self.spotETH)
+    #####
+    self.spotDeltaBTC = 0
+    self.spotDeltaETH = 0
+    self.futures = futures
+    self.payments = payments
+    self.prevIncome = prevIncome
+    self.prevAnnRet = prevAnnRet
+    self.oneDayIncome = oneDayIncome
+    self.oneDayAnnRet = oneDayAnnRet
+    self.nav = nav
+    self.liqBTC = liqBTC
+    self.liqETH = liqETH
+
   ####
   # BN
   ####
@@ -686,7 +745,7 @@ class core:
 ######
 # Init
 ######
-cl.printHeader('CryptoReporter')
+print()
 ftx=cl.ftxCCXTInit()
 ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC','spot']
@@ -700,6 +759,7 @@ bbCore = core('bb',spotBTC,spotETH)
 cbCore = core('cb',spotBTC,spotETH)
 objs=[ftxCore,bbCore,cbCore]
 if CR_IS_ADVANCED:
+  bbtCore = core('bbt', spotBTC, spotETH, spotUSDT=spotUSDT)
   bnCore = core('bn', spotBTC, spotETH)
   bntCore = core('bnt', spotBTC, spotETH, spotUSDT=spotUSDT)
   dbCore = core('db', spotBTC, spotETH)
@@ -707,7 +767,7 @@ if CR_IS_ADVANCED:
   krCores = []
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
-  objs.extend([bnCore, bntCore, dbCore, kfCore] + krCores)
+  objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
 #############
@@ -738,6 +798,7 @@ z=('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))
 z+=' (FTX: $' + str(round(ftxCore.nav/1000)) + 'K'
 z+=' / BB: $' + str(round(bbCore.nav/1000)) + 'K'
 if CR_IS_ADVANCED:
+  z += ' / BBT: $' + str(round(bbtCore.nav / 1000)) + 'K'
   z+=' / BN: $' + str(round(bnCore.nav/1000)) + 'K'
   z+=' / BNT: $' + str(round(bntCore.nav / 1000)) + 'K'
   z += ' / DB: $' + str(round(dbCore.nav / 1000)) + 'K'
@@ -754,6 +815,15 @@ z='BTC='+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(r
 if CR_IS_ADVANCED:
   z+=' / EUR='+str(round(spotEUR,4))
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+z)
+print()
+#####
+printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
+printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
+if CR_IS_ADVANCED:
+  spotDeltaEUR=0
+  for krCore in krCores:
+    spotDeltaEUR+=krCore.spotDeltaEUR
+  printEURDeltas(spotEUR,spotDeltaEUR)
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
@@ -783,6 +853,12 @@ bbCore.printLiq()
 print()
 #####
 if CR_IS_ADVANCED:
+  bbtCore.printIncomes()
+  bbtCore.printFunding('BTC')
+  bbtCore.printFunding('ETH')
+  bbtCore.printLiq()
+  print()
+  #####
   bnCore.printIncomes()
   bnCore.printFunding('BTC')
   bnCore.printFunding('ETH')
@@ -813,10 +889,6 @@ if CR_IS_ADVANCED:
   krPrintLiq(krCores)
   print()
 #####
-printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
-printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
-if CR_IS_ADVANCED:
-  spotDeltaEUR=0
-  for krCore in krCores:
-    spotDeltaEUR+=krCore.spotDeltaEUR
-  printEURDeltas(spotEUR,spotDeltaEUR)
+if '-f' in sys.argv:
+  while True:
+    time.sleep(1)
