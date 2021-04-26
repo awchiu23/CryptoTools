@@ -774,7 +774,7 @@ ftxWallet=cl.ftxGetWallet(ftx)
 spotBTC = ftxWallet.loc['BTC','spot']
 spotETH = ftxWallet.loc['ETH','spot']
 spotFTT = ftxWallet.loc['FTT','spot']
-spotUSDT = ftxWallet.loc['USDT','spot']
+spotUSDT = cl.ftxGetMid(ftx,'USDT/USD')
 spotEUR = cl.ftxGetMid(ftx,'EUR/USD')
 #####
 ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
