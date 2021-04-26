@@ -373,6 +373,87 @@ def bbtGetEstFunding1(bb,ccy):
 def bbtGetEstFunding2(bb,ccy):
   return float(bb.private_linear_get_funding_predicted_funding({'symbol': ccy+'USDT'})['result']['predicted_funding_rate'])* 3 * 365
 
+def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
+  @retry(wait_fixed=1000)
+  def bbtGetBid(bb,ticker):
+    return float(bb.fetch_ticker(ticker)['info']['bid_price'])
+  @retry(wait_fixed=1000)
+  def bbtGetAsk(bb,ticker):
+    return float(bb.fetch_ticker(ticker)['info']['ask_price'])
+  @retry(wait_fixed=1000)
+  def bbtGetOrder(bb,ticker,orderId):
+    result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
+    #if len(result)==0:
+    #  result=dict()
+    #  result['orderStatus']='Filled'
+    return result
+  # Do not use @retry!
+  def bbtGetFillPrice(bb, ticker, orderId):
+    orderStatus = bbtGetOrder(bb, ticker, orderId)
+    cumExecValue=float(orderStatus['cum_exec_value'])
+    cumExecQty=float(orderStatus['cum_exec_qty'])
+    if cumExecQty==0:
+      return 0
+    else:
+      return cumExecValue/cumExecQty
+  #####
+  if side != 'BUY' and side != 'SELL':
+    sys.exit(1)
+  ticker1=ccy+'/USDT'
+  ticker2=ccy+'USDT'
+  qty = round(trade_qty, 3)
+  print(getCurrentTime() + ': Sending BBT ' + side + ' order of ' + ticker1 + ' (qty='+ str(qty)+') ....')
+  if side=='BUY':
+    refPrice = bbtGetBid(bb, ticker1)
+    limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
+    orderId = bb.create_limit_buy_order(ticker1, qty, limitPrice)['info']['order_id']
+  else:
+    refPrice = bbtGetAsk(bb, ticker1)
+    limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
+    orderId = bb.create_limit_sell_order(ticker1, qty, limitPrice)['info']['order_id']
+  refTime = time.time()
+  nChases=0
+  while True:
+    orderStatus=bbtGetOrder(bb,ticker2,orderId)
+    if orderStatus['order_status']=='Filled': break
+    if side=='BUY':
+      newRefPrice=bbtGetBid(bb,ticker1)
+    else:
+      newRefPrice=bbtGetAsk(bb,ticker1)
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
+      refPrice = newRefPrice
+      nChases+=1
+      orderStatus = bbtGetOrder(bb, ticker2, orderId)
+      if orderStatus['order_status']=='Filled': break
+      if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
+        mult = .95 if side == 'BUY' else 1.05
+        farPrice = roundPrice('bbt',refPrice*mult,ccy)
+        try:
+          bb.private_linear_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': farPrice})
+        except:
+          break
+        orderStatus = bbtGetOrder(bb, ticker2, orderId)
+        if float(orderStatus['cum_exec_qty']) == 0:
+          bb.private_linear_post_order_cancel({'symbol': ticker2, 'order_id': orderId})
+          print(getCurrentTime() + ': Cancelled')
+          return 0
+      else:
+        refTime = time.time()
+        newLimitPrice=getLimitPrice('bbt',refPrice,ccy,side)
+        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+          print(getCurrentTime() + ': [DEBUG: replace order; price=' + str(limitPrice)+'->'+str(newLimitPrice) + '; nChases=' + str(nChases) + ']')
+          limitPrice=newLimitPrice
+          try:
+            bb.private_linear_post_order_replace({'symbol':ticker2,'order_id':orderId, 'p_r_price': limitPrice})
+          except:
+            break
+        else:
+          print(getCurrentTime() + ': [DEBUG: leave order alone; price='+str(limitPrice)+'; nChases=' + str(nChases)+']')
+    time.sleep(1)
+  fill=bbtGetFillPrice(bb, ticker2, orderId)
+  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  return fill
+
 #############################################################################################
 
 @retry(wait_fixed=1000)
@@ -1198,6 +1279,12 @@ def ctRun(ccy,tgtBps):
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bb' == chosenShort and not isCancelled:
           shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
+        if 'bbt' == chosenLong and not isCancelled:
+          longFill = bbRelOrder('BUY', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
+        if 'bbt' == chosenShort and not isCancelled:
+          shortFill = bbRelOrder('SELL', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'kf' == chosenLong and not isCancelled:
           longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
