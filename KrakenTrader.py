@@ -1,5 +1,4 @@
 import CryptoLib as cl
-from CryptoParams import *
 import numpy as np
 import sys
 import time
@@ -83,7 +82,7 @@ def krRelOrder(side,kr,pair,trade_qty,lev,maxChases=0):
         orderId=krPlaceOrder(kr, pair, side, leavesQty, limitPrice, lev)
     else:
       print('.',end='')
-    time.sleep(CT_SLEEP)
+    time.sleep(1)
   print()
   orderStatus=krGetOrderStatus(kr,orderId)
   fill=float(orderStatus['price'])
@@ -107,9 +106,8 @@ def getBal(bal, ccy):
 # Init
 ######
 ftx = cl.ftxCCXTInit()
-ftxWallet=cl.ftxGetWallet(ftx)
-spotBTC=ftxWallet.loc['BTC','spot']
-spotETH=ftxWallet.loc['ETH','spot']
+spotBTC=cl.ftxGetMid(ftx,'BTC/USD')
+spotETH=cl.ftxGetMid(ftx,'ETH/USD')
 trade_btc = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotBTC, cl.CT_MAX_BTC])
 trade_eth = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotETH, cl.CT_MAX_ETH])
 trade_btc_notional = trade_btc * spotBTC

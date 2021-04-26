@@ -76,8 +76,7 @@ def getBal(bal, ccy):
 ######
 cl.printHeader('KrakenUtil')
 ftx = cl.ftxCCXTInit()
-ftxWallet = cl.ftxGetWallet(ftx)
-spotBTC = ftxWallet.loc['BTC', 'spot']
+spotBTC = cl.ftxGetMid(ftx,'BTC/USD')
 
 krs=[]
 for i in range(CR_N_KR_ACCOUNTS):
