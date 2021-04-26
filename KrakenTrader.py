@@ -94,7 +94,7 @@ def krExec(side,kr,pair,qty,isMargin):
   lev=5 if isMargin else 1
   fill = krRelOrder(side, kr, pair, qty, lev, maxChases=888)
   if pair == 'XXBTZEUR':
-    spotEUR = cl.ftxGetSpotEUR(ftx)
+    spotEUR = cl.ftxGetMid(ftx,'EUR/USD')
     print(cl.getCurrentTime() + ': Filled at ' + str(round(fill * spotEUR)) + ' in USD; f/x=' + str(round(spotEUR, 4)))
 
 def getBal(bal, ccy):

@@ -87,7 +87,7 @@ def ftxGetBid(ftx,ticker):
 @retry(wait_fixed=1000)
 def ftxGetAsk(ftx,ticker):
   return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
-  
+
 @retry(wait_fixed=1000)
 def bbGetMid(bb, ccy):
   d = bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]
@@ -132,11 +132,11 @@ def bntGetMid(bn, ccy):
   d = bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})
   return (float(d['bidPrice']) + float(d['askPrice'])) / 2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bntGetBid(bn, ccy):
   return float(bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})['bidPrice'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bntGetAsk(bn, ccy):
   return float(bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})['askPrice'])
 
@@ -249,11 +249,7 @@ def ftxGetEstLending(ftx, ccy=None):
   else:
     return s[ccy]
 
-def ftxGetSpotEUR(ftx):
-  d = ftx.public_get_markets_market_name({'market_name': 'EUR/USD'})['result']
-  return (float(d['bid']) + float(d['ask'])) / 2
-
-def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):  
+def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])

@@ -13,9 +13,6 @@ import sys
 def getDummyFutures():
   return pd.DataFrame([['BTC', 0], ['ETH', 0]], columns=['Ccy', 'FutDelta']).set_index('Ccy')
 
-def get_EXTERNAL_EUR_NAV(spotEUR):
-  return (spotEUR-EXTERNAL_EUR_REF)*EXTERNAL_EUR_DELTA
-
 def getYest():
   return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
 
@@ -25,11 +22,19 @@ def printDeltas(ccy,spot,spotDelta,futDelta):
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
-def printEURDeltas(spot,spotDelta):
+def printEURDeltas(krCores,spot):
+  spotDelta=0
+  for krCore in krCores:
+    spotDelta+=krCore.spotDeltaEUR
   netDelta=spotDelta+EXTERNAL_EUR_DELTA
   z='EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(27) + \
     '($' + str(round(EXTERNAL_EUR_DELTA * spot/1000)) + 'K/$' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
+
+def printUSDTDeltas(ftxCore,bbtCore,bntCore,spotUSDT):
+  spotDeltaUSDT=ftxCore.wallet.loc['USDT', 'usdValue'] + (bbtCore.nav + bntCore.nav)/spotUSDT
+  z='USDT delta: '.rjust(41)+(str(round(spotDeltaUSDT/1000))+'K').ljust(27)+'($'+str(round(spotDeltaUSDT*spotUSDT/1000))+'K)'
+  print(termcolor.colored(z, 'red'))
 
 ####################################################################################################
 
@@ -298,7 +303,7 @@ class core:
     self.mmReq=mmReq
     self.freeCollateral=freeCollateral
     self.estFundingDict=dict()
-    self.estFundingDict['BTC']=cl.ftxGetEstFunding(self.api, 'BTC')
+    self.estFundingDict['BTC'] = cl.ftxGetEstFunding(self.api, 'BTC')
     self.estFundingDict['ETH'] = cl.ftxGetEstFunding(self.api, 'ETH')
     self.estFundingDict['FTT'] = cl.ftxGetEstFunding(self.api, 'FTT')
 
@@ -772,7 +777,7 @@ spotBTC = ftxWallet.loc['BTC','spot']
 spotETH = ftxWallet.loc['ETH','spot']
 spotFTT = ftxWallet.loc['FTT','spot']
 spotUSDT = ftxWallet.loc['USDT','spot']
-spotEUR = cl.ftxGetSpotEUR(ftx)
+spotEUR = cl.ftxGetMid(ftx,'EUR/USD')
 #####
 ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
 bbCore = core('bb',spotBTC,spotETH)
@@ -808,7 +813,7 @@ for obj in objs:
   futDeltaETH+=obj.futures.loc['ETH','FutDelta']
 oneDayIncome+=ftxCore.oneDayUSDFlows+ftxCore.oneDayUSDTFlows+ftxCore.oneDayBTCFlows+ftxCore.oneDayETHFlows
 if CR_IS_ADVANCED:
-  externalEURNAV = get_EXTERNAL_EUR_NAV(spotEUR)
+  externalEURNAV = (spotEUR-EXTERNAL_EUR_REF)*EXTERNAL_EUR_DELTA
   nav+=externalEURNAV
 
 ########
@@ -840,10 +845,8 @@ print()
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
 if CR_IS_ADVANCED:
-  spotDeltaEUR=0
-  for krCore in krCores:
-    spotDeltaEUR+=krCore.spotDeltaEUR
-  printEURDeltas(spotEUR,spotDeltaEUR)
+  printEURDeltas(krCores, spotEUR)
+  printUSDTDeltas(ftxCore, bbtCore, bntCore, spotUSDT)
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
