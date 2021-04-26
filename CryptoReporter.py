@@ -770,10 +770,9 @@ class core:
 ######
 print()
 ftx=cl.ftxCCXTInit()
-ftxWallet=cl.ftxGetWallet(ftx)
-spotBTC = ftxWallet.loc['BTC','spot']
-spotETH = ftxWallet.loc['ETH','spot']
-spotFTT = ftxWallet.loc['FTT','spot']
+spotBTC = cl.ftxGetMid(ftx,'BTC/USD')
+spotETH = cl.ftxGetMid(ftx,'ETH/USD')
+spotFTT = cl.ftxGetMid(ftx,'FTT/USD')
 spotUSDT = cl.ftxGetMid(ftx,'USDT/USD')
 spotEUR = cl.ftxGetMid(ftx,'EUR/USD')
 #####
