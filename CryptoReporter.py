@@ -103,53 +103,39 @@ class core:
     if self.exch == 'db':
       print(termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue'))
     else:
+      zPrev  = '4h' if self.exch == 'kf' else 'prev'
       z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-      print(termcolor.colored((self.exch.upper() + ' 24h/prev funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+      print(termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
 
   def printFunding(self,ccy):
+    def calcFunding(s,mult):
+      oneDayFunding = s.mean() * mult
+      prevFunding = s[-1] * mult
+      return oneDayFunding,prevFunding
+    #####
     if self.exch=='ftx':
-      df = self.payments[self.payments['future'] == ccy + '-PERP']
-      oneDayFunding = df['rate'].mean() * 24 * 365
-      prevFunding = df['rate'][-1] * 24 * 365
+      oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['future'] == ccy + '-PERP']['rate'],24*365)
     elif self.exch == 'bb':
       df = self.payments[self.payments['symbol'] == ccy + 'USD'].copy()
       for i in range(len(df)):
         if 'Sell' in df.iloc[i]['order_id']:
           df.loc[df.index[i], 'fee_rate'] *= -1
-      oneDayFunding = df['fee_rate'].mean() * 3 * 365
-      prevFunding = df['fee_rate'][-1] * 3 * 365
+      oneDayFunding,prevFunding=calcFunding(df['fee_rate'],3*365)
     elif self.exch =='bbt':
       df = self.payments[self.payments['symbol'] == ccy + 'USDT'].copy()
       for i in range(len(df)):
         if 'Sell' in df.iloc[i]['order_id']:
           df.loc[df.index[i], 'fee_rate'] *= -1
-      oneDayFunding = df['fee_rate'].mean() * 3 * 365
-      prevFunding = df['fee_rate'][-1] * 3 * 365
+      oneDayFunding, prevFunding = calcFunding(df['fee_rate'], 3 * 365)
     elif self.exch=='bn':
-      df = pd.DataFrame(self.api.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
-      cl.dfSetFloat(df, 'fundingRate')
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-      df = df.set_index('date').sort_index()
-      oneDayFunding = df['fundingRate'].mean() * 3 * 365
-      prevFunding = df['fundingRate'][-1] * 3 * 365
+      oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['symbol'] == ccy + 'USD_PERP']['fundingRate'],3*365)
     elif self.exch=='bnt':
-      df = pd.DataFrame(self.api.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
-      cl.dfSetFloat(df, 'fundingRate')
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-      df = df.set_index('date').sort_index()
-      oneDayFunding = df['fundingRate'].mean() * 3 * 365
-      prevFunding = df['fundingRate'][-1] * 3 * 365
+      oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['symbol'] == ccy + 'USDT']['fundingRate'], 3 * 365)
     elif self.exch=='db':
       oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
       prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
     elif self.exch=='kf':
-      if self.log is None:
-        prevFunding = self.prevAnnRet
-        oneDayFunding = self.oneDayAnnRet
-      else:
-        df = self.log[self.log['Ccy'] == ccy].copy()
-        prevFunding = df['fundingRate'][-1]
-        oneDayFunding = df['fundingRate'].mean()
+      oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['Ccy'] == ccy]['rate'],3*365)
     #####
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     if self.exch=='db':
@@ -471,6 +457,32 @@ class core:
   # BN
   ####
   def bnInit(self):
+    def getPayments(ccy):
+      df = pd.DataFrame(self.api.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
+      cl.dfSetFloat(df, 'fundingRate')
+      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
+      df = df.set_index('date').sort_index()
+      return df
+    #####
+    def getIncomes():
+      df = pd.DataFrame(self.api.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
+      if len(df) == 0:
+        prevIncome = 0
+        oneDayIncome = 0
+      else:
+        cl.dfSetFloat(df, 'income')
+        df = df[['USD_PERP' in z for z in df['symbol']]]
+        df['Ccy'] = [z[:3] for z in df['symbol']]
+        df = df.set_index('Ccy').loc[['BTC', 'ETH']]
+        df['incomeUSD'] = df['income']
+        df.loc['BTC', 'incomeUSD'] *= self.spotBTC
+        df.loc['ETH', 'incomeUSD'] *= self.spotETH
+        df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
+        df = df.set_index('date')
+        prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
+        oneDayIncome = df['incomeUSD'].sum()
+      return prevIncome,oneDayIncome
+    #####
     bal = pd.DataFrame(self.api.dapiPrivate_get_balance())
     cl.dfSetFloat(bal, ['balance', 'crossUnPnl'])
     bal['Ccy'] = bal['asset']
@@ -492,22 +504,8 @@ class core:
     futures.loc['ETH', 'FutDelta'] /= self.spotETH
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
-    payments = pd.DataFrame(self.api.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-    if len(payments)==0:
-      prevIncome = 0
-      oneDayIncome = 0
-    else:
-      cl.dfSetFloat(payments, 'income')
-      payments = payments[['USD_PERP' in z for z in payments['symbol']]]
-      payments['Ccy'] = [z[:3] for z in payments['symbol']]
-      payments = payments.set_index('Ccy').loc[['BTC', 'ETH']]
-      payments['incomeUSD'] = payments['income']
-      payments.loc['BTC', 'incomeUSD'] *= self.spotBTC
-      payments.loc['ETH', 'incomeUSD'] *= self.spotETH
-      payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['time']]
-      payments = payments.set_index('date')
-      prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
-      oneDayIncome = payments['incomeUSD'].sum()
+    payments = getPayments('BTC').append(getPayments('ETH'))
+    prevIncome,oneDayIncome=getIncomes()
     prevAnnRet = prevIncome * 3 * 365 / notional
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
@@ -518,6 +516,7 @@ class core:
     self.spotDeltaBTC = spotDeltaBTC
     self.spotDeltaETH = spotDeltaETH
     self.futures = futures
+    self.payments = payments
     self.prevIncome = prevIncome
     self.prevAnnRet = prevAnnRet
     self.oneDayIncome = oneDayIncome
@@ -533,6 +532,30 @@ class core:
   # BNT
   #####
   def bntInit(self):
+    def getPayments(ccy):
+      df = pd.DataFrame(self.api.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
+      cl.dfSetFloat(df, 'fundingRate')
+      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
+      df = df.set_index('date').sort_index()
+      return df
+    #####
+    def getIncomes():
+      df = pd.DataFrame(self.api.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
+      if len(df) == 0:
+        prevIncome = 0
+        oneDayIncome = 0
+      else:
+        cl.dfSetFloat(df, 'income')
+        df = df[['USDT' in z for z in df['symbol']]]
+        df['Ccy'] = [z[:3] for z in df['symbol']]
+        df = df.set_index('Ccy').loc[['BTC', 'ETH']]
+        df['incomeUSD'] = df['income'] * self.spotUSDT
+        df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
+        df = df.set_index('date')
+        prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
+        oneDayIncome = df['incomeUSD'].sum()
+      return prevIncome,oneDayIncome
+    #####
     futures = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
     cl.dfSetFloat(futures, ['positionAmt'])
     futures = futures.set_index('symbol').loc[['BTCUSDT', 'ETHUSDT']]
@@ -543,20 +566,8 @@ class core:
     futures.loc['ETH', 'FutDeltaUSD'] *= self.spotETH
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
-    payments = pd.DataFrame(self.api.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-    if len(payments)==0:
-      prevIncome = 0
-      oneDayIncome = 0
-    else:
-      cl.dfSetFloat(payments, 'income')
-      payments = payments[['USDT' in z for z in payments['symbol']]]
-      payments['Ccy'] = [z[:3] for z in payments['symbol']]
-      payments = payments.set_index('Ccy').loc[['BTC', 'ETH']]
-      payments['incomeUSD'] = payments['income'] * self.spotUSDT
-      payments['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in payments['time']]
-      payments = payments.set_index('date')
-      prevIncome = payments.loc[payments.index[-1]]['incomeUSD'].sum()
-      oneDayIncome = payments['incomeUSD'].sum()
+    payments = getPayments('BTC').append(getPayments('ETH'))
+    prevIncome,oneDayIncome=getIncomes()
     prevAnnRet = prevIncome * 3 * 365 / notional
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
@@ -569,6 +580,7 @@ class core:
     self.spotDeltaBTC = 0
     self.spotDeltaETH = 0
     self.futures = futures
+    self.payments = payments
     self.prevIncome = prevIncome
     self.prevAnnRet = prevAnnRet
     self.oneDayIncome = oneDayIncome
@@ -625,23 +637,26 @@ class core:
   # KF
   ####
   def kfInit(self):
-    def getLog(api, futures):
+    def getPayments(api, futures):
       ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
       api.get_account_log(ffn)
       df = pd.read_csv(ffn, index_col=0, parse_dates=True)
-      df = df[df['type'] == 'funding rate change'].set_index('symbol')
-      df.loc['xbt', 'Ccy'] = 'BTC'
-      df.loc['eth', 'Ccy'] = 'ETH'
-      df.loc['xbt', 'Spot'] = futures.loc['BTC', 'Spot']
-      df.loc['eth', 'Spot'] = futures.loc['ETH', 'Spot']
-      df.loc['xbt', 'FutDeltaUSD'] = futures.loc['BTC', 'FutDeltaUSD']
-      df.loc['eth', 'FutDeltaUSD'] = futures.loc['ETH', 'FutDeltaUSD']
       df['date'] = [datetime.datetime.strptime(z, '%Y-%m-%d %H:%M:%S') for z in df['dateTime']]
       df['date'] += pd.DateOffset(hours=8)  # Convert from UTC to HK Time
       df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)]
-      df['fundingRate'] = df['funding rate'] * df['Spot'] * 24 * 365
-      df['fundingUSD'] = -df['fundingRate'] * df['FutDeltaUSD'] / 365 / 6
-      return df.set_index('date').sort_index()
+      df = df.set_index('date').sort_index()
+      df['Ccy']=df['collateral']
+      df.loc[df['Ccy']=='XBT','Ccy']='BTC'
+      df.loc[df['Ccy']=='BTC','Spot']=futures.loc['BTC', 'Spot']
+      df.loc[df['Ccy']=='ETH','Spot']=futures.loc['ETH', 'Spot']
+      selection=~df['mark price'].isna()
+      df.loc[selection,'Spot']=df.loc[selection,'mark price']
+      df['incomeUSD'] = df['realized funding'] * df['Spot']
+      prevIncome = df[df.index >= datetime.datetime.now() - pd.DateOffset(hours=4)]['incomeUSD'].sum()
+      oneDayIncome=df['incomeUSD'].sum()
+      df=df[df['type']=='funding rate change']
+      df['rate'] = df['funding rate'] * df['Spot'] * 8
+      return df,prevIncome,oneDayIncome
     #####
     accounts = self.api.query('accounts')['accounts']
     spotDeltaBTC = accounts['fi_xbtusd']['auxiliary']['pv'] + accounts['cash']['balances']['xbt']
@@ -652,16 +667,7 @@ class core:
     futures['FutDelta'] = futures['FutDeltaUSD'] / futures['Spot']
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
-    if IS_IP_WHITELIST:
-      log = getLog(self.api, futures)
-      prevIncome = log.loc[log.index[-1]]['fundingUSD'].sum()
-      oneDayIncome = log['fundingUSD'].sum()
-    else:
-      log = None
-      tickers = cl.kfGetTickers(self.api)
-      oneDayIncome = -futures.loc['BTC', 'FutDeltaUSD'] * cl.kfGetEstFunding1(self.api, 'BTC', tickers) / 365
-      oneDayIncome -= futures.loc['ETH', 'FutDeltaUSD'] * cl.kfGetEstFunding1(self.api, 'ETH', tickers) / 365
-      prevIncome = oneDayIncome / 6
+    payments,prevIncome,oneDayIncome=getPayments(self.api, futures)
     prevAnnRet = prevIncome * 6 * 365 / notional
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
@@ -672,7 +678,7 @@ class core:
     self.spotDeltaBTC = spotDeltaBTC
     self.spotDeltaETH = spotDeltaETH
     self.futures = futures
-    self.log=log
+    self.payments=payments
     self.prevIncome=prevIncome
     self.prevAnnRet=prevAnnRet
     self.oneDayIncome = oneDayIncome
@@ -769,6 +775,9 @@ class core:
 # Init
 ######
 print()
+if CR_IS_ADVANCED and not IS_IP_WHITELIST:
+  print('CryptoReporter cannot be run in advanced mode without IP whitelisting!')
+  sys.exit(1)
 ftx=cl.ftxCCXTInit()
 spotBTC = cl.ftxGetMid(ftx,'BTC/USD')
 spotETH = cl.ftxGetMid(ftx,'ETH/USD')
@@ -828,14 +837,12 @@ if CR_IS_ADVANCED:
   for krCore in krCores:
     z+= ' / KR' + str(krCore.n)+': $'+str(round(krCore.nav/1000))+'K'
 z+=' / CB: $' + str(round(cbCore.nav/1000)) + 'K'
-if CR_IS_ADVANCED:
-  z+=' / EUR: $' + str(round(externalEURNAV/1000))+'K'
+if CR_IS_ADVANCED: z+=' / EUR: $' + str(round(externalEURNAV/1000))+'K'
 z+=')'
 print(termcolor.colored(z,'blue'))
 #####
 z='BTC='+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1)) + ' / USDT=' + str(round(spotUSDT,4))
-if CR_IS_ADVANCED:
-  z+=' / EUR='+str(round(spotEUR,4))
+if CR_IS_ADVANCED: z+=' / EUR='+str(round(spotEUR,4))
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+z)
 print()
 #####
