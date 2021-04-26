@@ -113,27 +113,27 @@ class core:
       prevFunding = s[-1] * mult
       return oneDayFunding,prevFunding
     #####
+    def bbClean(df):
+      for i in range(len(df)):
+        if 'Sell' in df.iloc[i]['order_id']:
+          df.loc[df.index[i], 'fee_rate'] *= -1
+      return df
+    #####
     if self.exch=='ftx':
       oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['future'] == ccy + '-PERP']['rate'],24*365)
     elif self.exch == 'bb':
-      df = self.payments[self.payments['symbol'] == ccy + 'USD'].copy()
-      for i in range(len(df)):
-        if 'Sell' in df.iloc[i]['order_id']:
-          df.loc[df.index[i], 'fee_rate'] *= -1
+      df = bbClean(self.payments[self.payments['symbol'] == ccy + 'USD'].copy())
       oneDayFunding,prevFunding=calcFunding(df['fee_rate'],3*365)
     elif self.exch =='bbt':
-      df = self.payments[self.payments['symbol'] == ccy + 'USDT'].copy()
-      for i in range(len(df)):
-        if 'Sell' in df.iloc[i]['order_id']:
-          df.loc[df.index[i], 'fee_rate'] *= -1
+      df = bbClean(self.payments[self.payments['symbol'] == ccy + 'USDT'].copy())
       oneDayFunding, prevFunding = calcFunding(df['fee_rate'], 3 * 365)
     elif self.exch=='bn':
       oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['symbol'] == ccy + 'USD_PERP']['fundingRate'],3*365)
     elif self.exch=='bnt':
       oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['symbol'] == ccy + 'USDT']['fundingRate'], 3 * 365)
     elif self.exch=='db':
-      oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
-      prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
+      oneDayFunding = self.estFundingDict[ccy+'24H']
+      prevFunding = self.estFundingDict[ccy+'8H']
     elif self.exch=='kf':
       oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['Ccy'] == ccy]['rate'],3*365)
     #####
@@ -632,6 +632,10 @@ class core:
     self.estFundingDict = dict()
     self.estFundingDict['BTC'] = cl.dbGetEstFunding(self.api, 'BTC')
     self.estFundingDict['ETH'] = cl.dbGetEstFunding(self.api, 'ETH')
+    self.estFundingDict['BTC24H'] = cl.dbGetEstFunding(self.api, 'BTC', mins=60 * 24)
+    self.estFundingDict['ETH24H'] = cl.dbGetEstFunding(self.api, 'ETH', mins=60 * 24)
+    self.estFundingDict['BTC8H'] = cl.dbGetEstFunding(self.api, 'BTC', mins=60 * 8)
+    self.estFundingDict['ETH8H'] = cl.dbGetEstFunding(self.api, 'ETH', mins=60 * 8)
 
   ####
   # KF
