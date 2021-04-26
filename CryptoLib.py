@@ -250,6 +250,16 @@ def ftxGetEstLending(ftx, ccy=None):
     return s[ccy]
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
+  # Do not use @retry
+  def ftxPostOrder(ftx, ticker,side,limitPrice,qty):
+    for i in range(3):
+      try:
+        return ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+      except RateLimitExceeded:
+        print(getCurrentTime()+': Rate limit exceeded! Retrying ....')
+        time.sleep(1)
+        continue
+    sys.exit(1)
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
@@ -275,11 +285,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   else:
     refPrice = ftxGetAsk(ftx, ticker)
   limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
-  try:
-    orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
-  except RateLimitExceeded:
-    print('RateLimitExceeded caught!')
-    sys.exit(1)
+  orderId = ftxPostOrder(ftx, ticker, side, limitPrice, qty)
   refTime = time.time()
   nChases=0
   while True:
@@ -434,7 +440,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
     return bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
-  # Do not use @retry!
+  # Do not use @retry
   def bbtGetFillPrice(bb, ticker, orderId):
     orderStatus = bbtGetOrder(bb, ticker, orderId)
     cumExecValue=float(orderStatus['cum_exec_value'])
@@ -518,10 +524,10 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
-  # Do not use @retry!
+  # Do not use @retry
   def bnPlaceOrder(bn, ticker, side, qty, limitPrice):
     return bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
-  # Do not use @retry!
+  # Do not use @retry
   def bnCancelOrder(bn, ticker, orderId):
     try:
       orderStatus=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
@@ -594,11 +600,11 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   @retry(wait_fixed=1000)
   def bntGetOrder(bn, ticker, orderId):
     return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
-  # Do not use @retry!
+  # Do not use @retry
   def bntPlaceOrder(bn, ticker, side, qty, limitPrice):
     print(getCurrentTime() + ': [DEBUG: place order; qty=' + str(qty)+' price=' + str(limitPrice) + ']')
     return bn.fapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
-  # Do not use @retry!
+  # Do not use @retry
   def bntCancelOrder(bn, ticker, orderId):
     try:
       orderStatus=bn.fapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
@@ -669,7 +675,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def dbGetOrder(db,orderId):
     return db.private_get_get_order_state({'order_id': orderId})['result']
-  # Do not use @retry!
+  # Do not use @retry
   def dbEditOrder(db, orderId, trade_notional, limitPrice):
     if dbGetOrder(db, orderId)['order_state'] == 'filled':
       return False
