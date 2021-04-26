@@ -106,7 +106,6 @@ class core:
       df = self.payments[self.payments['future'] == ccy + '-PERP']
       oneDayFunding = df['rate'].mean() * 24 * 365
       prevFunding = df['rate'][-1] * 24 * 365
-      estFunding = cl.ftxGetEstFunding(self.api, ccy)
     elif self.exch == 'bb':
       df = self.payments[self.payments['symbol'] == ccy + 'USD'].copy()
       for i in range(len(df)):
@@ -114,8 +113,6 @@ class core:
           df.loc[df.index[i], 'fee_rate'] *= -1
       oneDayFunding = df['fee_rate'].mean() * 3 * 365
       prevFunding = df['fee_rate'][-1] * 3 * 365
-      estFunding = cl.bbGetEstFunding1(self.api, ccy)
-      est2Funding = cl.bbGetEstFunding2(self.api, ccy)
     elif self.exch =='bbt':
       df = self.payments[self.payments['symbol'] == ccy + 'USDT'].copy()
       for i in range(len(df)):
@@ -123,8 +120,6 @@ class core:
           df.loc[df.index[i], 'fee_rate'] *= -1
       oneDayFunding = df['fee_rate'].mean() * 3 * 365
       prevFunding = df['fee_rate'][-1] * 3 * 365
-      estFunding = cl.bbtGetEstFunding1(self.api, ccy)
-      est2Funding = cl.bbtGetEstFunding2(self.api, ccy)
     elif self.exch=='bn':
       df = pd.DataFrame(self.api.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
       cl.dfSetFloat(df, 'fundingRate')
@@ -132,7 +127,6 @@ class core:
       df = df.set_index('date').sort_index()
       oneDayFunding = df['fundingRate'].mean() * 3 * 365
       prevFunding = df['fundingRate'][-1] * 3 * 365
-      estFunding = cl.bnGetEstFunding(self.api, ccy)
     elif self.exch=='bnt':
       df = pd.DataFrame(self.api.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
       cl.dfSetFloat(df, 'fundingRate')
@@ -140,11 +134,9 @@ class core:
       df = df.set_index('date').sort_index()
       oneDayFunding = df['fundingRate'].mean() * 3 * 365
       prevFunding = df['fundingRate'][-1] * 3 * 365
-      estFunding = cl.bntGetEstFunding(self.api, ccy)
     elif self.exch=='db':
       oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
       prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
-      estFunding = cl.dbGetEstFunding(self.api, ccy)
     elif self.exch=='kf':
       if self.log is None:
         prevFunding = self.prevAnnRet
@@ -153,9 +145,6 @@ class core:
         df = self.log[self.log['Ccy'] == ccy].copy()
         prevFunding = df['fundingRate'][-1]
         oneDayFunding = df['fundingRate'].mean()
-      tickers = cl.kfGetTickers(self.api)
-      estFunding = cl.kfGetEstFunding1(self.api, ccy, tickers)
-      est2Funding = cl.kfGetEstFunding2(self.api, ccy, tickers)
     #####
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     if self.exch=='db':
@@ -169,9 +158,9 @@ class core:
     #####
     body = str(round(oneDayFunding * 100)) + '%/'
     body += str(round(prevFunding * 100)) + '%/'
-    body += str(round(estFunding * 100)) + '%'
+    body += str(round(self.estFundingDict[ccy] * 100)) + '%'
     if self.exch in ['bb','bbt','kf']:
-      body += '/' + str(round(est2Funding * 100)) + '%'
+      body += '/' + str(round(self.estFunding2Dict[ccy] * 100)) + '%'
     body += ' p.a.'
     #####
     if ccy=='BTC':
@@ -308,6 +297,10 @@ class core:
     self.mf=mf
     self.mmReq=mmReq
     self.freeCollateral=freeCollateral
+    self.estFundingDict=dict()
+    self.estFundingDict['BTC']=cl.ftxGetEstFunding(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.ftxGetEstFunding(self.api, 'ETH')
+    self.estFundingDict['FTT'] = cl.ftxGetEstFunding(self.api, 'FTT')
 
   def ftxPrintFlowsSummary(self,ccy):
     if ccy=='USD':
@@ -415,6 +408,12 @@ class core:
     self.nav=nav
     self.liqBTC=liqBTC
     self.liqETH=liqETH
+    self.estFundingDict = dict()
+    self.estFundingDict['BTC'] = cl.bbGetEstFunding1(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.bbGetEstFunding1(self.api, 'ETH')
+    self.estFunding2Dict = dict()
+    self.estFunding2Dict['BTC'] = cl.bbGetEstFunding2(self.api, 'BTC')
+    self.estFunding2Dict['ETH'] = cl.bbGetEstFunding2(self.api, 'ETH')
 
   #####
   # BBT
@@ -459,6 +458,12 @@ class core:
     self.nav = nav
     self.liqBTC = liqBTC
     self.liqETH = liqETH
+    self.estFundingDict = dict()
+    self.estFundingDict['BTC'] = cl.bbtGetEstFunding1(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.bbtGetEstFunding1(self.api, 'ETH')
+    self.estFunding2Dict = dict()
+    self.estFunding2Dict['BTC'] = cl.bbtGetEstFunding2(self.api, 'BTC')
+    self.estFunding2Dict['ETH'] = cl.bbtGetEstFunding2(self.api, 'ETH')
 
   ####
   # BN
@@ -518,6 +523,9 @@ class core:
     self.nav = nav
     self.liqBTC = liqBTC
     self.liqETH = liqETH
+    self.estFundingDict = dict()
+    self.estFundingDict['BTC'] = cl.bnGetEstFunding(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.bnGetEstFunding(self.api, 'ETH')
 
   #####
   # BNT
@@ -564,6 +572,9 @@ class core:
     self.nav = nav
     self.liqBTC = liqBTC
     self.liqETH = liqETH
+    self.estFundingDict = dict()
+    self.estFundingDict['BTC'] = cl.bntGetEstFunding(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.bntGetEstFunding(self.api, 'ETH')
 
   ####
   # DB
@@ -603,6 +614,9 @@ class core:
     self.nav = nav
     self.liqBTC = liqBTC
     self.liqETH = liqETH
+    self.estFundingDict = dict()
+    self.estFundingDict['BTC'] = cl.dbGetEstFunding(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.dbGetEstFunding(self.api, 'ETH')
 
   ####
   # KF
@@ -663,6 +677,12 @@ class core:
     self.nav = nav
     self.liqBTC = liqBTC
     self.liqETH = liqETH
+    self.estFundingDict = dict()
+    self.estFundingDict['BTC'] = cl.kfGetEstFunding1(self.api, 'BTC')
+    self.estFundingDict['ETH'] = cl.kfGetEstFunding1(self.api, 'ETH')
+    self.estFunding2Dict = dict()
+    self.estFunding2Dict['BTC'] = cl.kfGetEstFunding2(self.api, 'BTC')
+    self.estFunding2Dict['ETH'] = cl.kfGetEstFunding2(self.api, 'ETH')
     
   ####
   # KR

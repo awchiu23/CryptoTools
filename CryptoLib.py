@@ -30,51 +30,24 @@ class getPrices:
       self.fut = ftxGetMid(self.api, self.ccy+'-PERP')
       self.spotUSDT = ftxGetMid(self.api, 'USDT/USD')
     elif self.exch == 'bb':
-      self.fut=self.bbGetMid(self.api,self.ccy)
+      self.fut=bbGetMid(self.api,self.ccy)
     elif self.exch == 'bbt':
-      self.fut=self.bbtGetMid(self.api,self.ccy)
+      self.fut=bbtGetMid(self.api,self.ccy)
     elif self.exch == 'bn':
-      self.fut = self.bnGetMid(self.api,self.ccy)
+      self.fut = bnGetMid(self.api,self.ccy)
     elif self.exch == 'bnt':
-      self.fut = self.bntGetMid(self.api,self.ccy)
+      self.fut = bntGetMid(self.api,self.ccy)
     elif self.exch == 'db':
-      self.fut =  self.dbGetMid(self.api,self.ccy)
+      self.fut =  dbGetMid(self.api,self.ccy)
     elif self.exch == 'kf':
       self.kfTickers = kfGetTickers(self.api)
-      self.fut = self.kfGetMid(self.kfTickers,self.ccy)
-
-  @retry(wait_fixed=1000)
-  def bbGetMid(self, bb, ccy):
-    d = bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]
-    return (float(d['bid_price']) + float(d['ask_price'])) / 2
-
-  @retry(wait_fixed=1000)
-  def bbtGetMid(self, bb, ccy):
-    d = bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]
-    return (float(d['bid_price']) + float(d['ask_price'])) / 2
-
-  @retry(wait_fixed=1000)
-  def bnGetMid(self, bn, ccy):
-    d=bn.dapiPublicGetTickerBookTicker({'symbol':ccy+'USD_PERP'})[0]
-    return (float(d['bidPrice']) + float(d['askPrice'])) / 2
-
-  @retry(wait_fixed=1000)
-  def bntGetMid(self, bn, ccy):
-    d = bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})
-    return (float(d['bidPrice']) + float(d['askPrice'])) / 2
-
-  @retry(wait_fixed=1000)
-  def dbGetMid(self, db,ccy):
-    d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
-    return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
-
-  # Do not use @retry
-  def kfGetMid(self, kfTickers, ccy):
-    ticker=kfCcyToSymbol(ccy)
-    return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
+      self.fut = kfGetMid(self.kfTickers,self.ccy)
 
 ###########
 # Functions
+###########
+###########
+# API Inits
 ###########
 def ftxCCXTInit():
   return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
@@ -96,6 +69,100 @@ def krCCXTInit(n=1):
 
 def cbCCXTInit():
   return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
+
+########
+# Prices
+########
+@retry(wait_fixed=1000)
+def ftxGetMid(ftx, name):
+  d=ftx.public_get_markets_market_name({'market_name': name})['result']
+  return (float(d['bid'])+float(d['ask']))/2
+
+@retry(wait_fixed=1000)
+def ftxGetBid(ftx,ticker):
+  return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['bid'])
+  
+@retry(wait_fixed=1000)
+def ftxGetAsk(ftx,ticker):
+  return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
+  
+@retry(wait_fixed=1000)
+def bbGetMid(bb, ccy):
+  d = bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]
+  return (float(d['bid_price']) + float(d['ask_price'])) / 2
+
+@retry(wait_fixed=1000)
+def bbGetBid(bb,ccy):
+  return float(bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]['bid_price'])
+
+@retry(wait_fixed=1000)
+def bbGetAsk(bb,ccy):
+  return float(bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]['ask_price'])
+
+@retry(wait_fixed=1000)
+def bbtGetMid(bb, ccy):
+  d = bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]
+  return (float(d['bid_price']) + float(d['ask_price'])) / 2
+
+@retry(wait_fixed=1000)
+def bbtGetBid(bb,ccy):
+  return float(bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]['bid_price'])
+
+@retry(wait_fixed=1000)
+def bbtGetAsk(bb,ccy):
+  return float(bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]['ask_price'])
+
+@retry(wait_fixed=1000)
+def bnGetMid(bn, ccy):
+  d=bn.dapiPublicGetTickerBookTicker({'symbol':ccy+'USD_PERP'})[0]
+  return (float(d['bidPrice']) + float(d['askPrice'])) / 2
+
+@retry(wait_fixed=1000)
+def bnGetBid(bn, ccy):
+  return float(bn.dapiPublicGetTickerBookTicker({'symbol': ccy+'USD_PERP'})[0]['bidPrice'])
+
+@retry(wait_fixed=1000)
+def bnGetAsk(bn, ccy):
+  return float(bn.dapiPublicGetTickerBookTicker({'symbol': ccy+'USD_PERP'})[0]['askPrice'])
+
+@retry(wait_fixed=1000)
+def bntGetMid(bn, ccy):
+  d = bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})
+  return (float(d['bidPrice']) + float(d['askPrice'])) / 2
+
+@retry(wait_fixed=1000)
+def bntGetBid(bn, ccy):
+  return float(bn.dapiPublicGetTickerBookTicker({'symbol': ccy+'USDT'})[0]['bidPrice'])
+
+@retry(wait_fixed=1000)
+def bntGetAsk(bn, ccy):
+  return float(bn.dapiPublicGetTickerBookTicker({'symbol': ccy+'USDT'})[0]['askPrice'])
+
+@retry(wait_fixed=1000)
+def dbGetMid(db,ccy):
+  d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
+  return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
+
+@retry(wait_fixed=1000)
+def dbGetBid(db, ccy):
+  return float(db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']['best_bid_price'])
+
+@retry(wait_fixed=1000)
+def dbGetAsk(db, ccy):
+  return float(db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']['best_ask_price'])
+
+# Do not use @retry
+def kfGetMid(kfTickers, ccy):
+  ticker=kfCcyToSymbol(ccy)
+  return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
+
+# Do not use @retry
+def kfGetBid(kf, ccy):
+  return kfGetTickers(kf).loc[kfCcyToSymbol(ccy), 'bid']
+
+# Do not use @retry
+def kfGetAsk(kf, ccy):
+  return kfGetTickers(kf).loc[kfCcyToSymbol(ccy), 'ask']
 
 def getLimitPrice(exch,price,ccy,side):
   if exch == 'ftx':
@@ -142,11 +209,6 @@ def roundPrice(exch, price, ccy):
 #############################################################################################
 
 @retry(wait_fixed=1000)
-def ftxGetMid(ftx, name):
-  d=ftx.public_get_markets_market_name({'market_name': name})['result']
-  return (float(d['bid'])+float(d['ask']))/2
-
-@retry(wait_fixed=1000)
 def ftxGetWallet(ftx):
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   dfSetFloat(wallet,wallet.columns)
@@ -186,13 +248,7 @@ def ftxGetSpotEUR(ftx):
   d = ftx.public_get_markets_market_name({'market_name': 'EUR/USD'})['result']
   return (float(d['bid']) + float(d['ask'])) / 2
 
-def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
-  @retry(wait_fixed=1000)
-  def ftxGetBid(ftx,ticker):
-    return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['bid'])
-  @retry(wait_fixed=1000)
-  def ftxGetAsk(ftx,ticker):
-    return float(ftx.publicGetMarketsMarketName({'market_name':ticker})['result']['ask'])
+def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):  
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
@@ -282,12 +338,6 @@ def bbGetEstFunding2(bb, ccy):
 
 def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
-  def bbGetBid(bb,ticker):
-    return float(bb.fetch_ticker(ticker)['info']['bid_price'])
-  @retry(wait_fixed=1000)
-  def bbGetAsk(bb,ticker):
-    return float(bb.fetch_ticker(ticker)['info']['ask_price'])
-  @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
     if len(result)==0:
@@ -308,11 +358,11 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker1 + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
-    refPrice = bbGetBid(bb, ticker1)
+    refPrice = bbGetBid(bb, ccy)
     limitPrice=getLimitPrice('bb',refPrice,ccy,side)
     orderId = bb.create_limit_buy_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   else:
-    refPrice = bbGetAsk(bb, ticker1)
+    refPrice = bbGetAsk(bb, ccy)
     limitPrice=getLimitPrice('bb',refPrice,ccy,side)
     orderId = bb.create_limit_sell_order(ticker1, trade_notional, limitPrice)['info']['order_id']
   refTime = time.time()
@@ -321,9 +371,9 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
     orderStatus=bbGetOrder(bb,ticker2,orderId)
     if orderStatus['order_status']=='Filled': break
     if side=='BUY':
-      newRefPrice=bbGetBid(bb,ticker1)
+      newRefPrice=bbGetBid(bb,ccy)
     else:
-      newRefPrice=bbGetAsk(bb,ticker1)
+      newRefPrice=bbGetAsk(bb,ccy)
     if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
       refPrice = newRefPrice
       nChases+=1
@@ -375,18 +425,8 @@ def bbtGetEstFunding2(bb,ccy):
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
   @retry(wait_fixed=1000)
-  def bbtGetBid(bb,ticker):
-    return float(bb.fetch_ticker(ticker)['info']['bid_price'])
-  @retry(wait_fixed=1000)
-  def bbtGetAsk(bb,ticker):
-    return float(bb.fetch_ticker(ticker)['info']['ask_price'])
-  @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
-    result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
-    #if len(result)==0:
-    #  result=dict()
-    #  result['orderStatus']='Filled'
-    return result
+    return bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
   # Do not use @retry!
   def bbtGetFillPrice(bb, ticker, orderId):
     orderStatus = bbtGetOrder(bb, ticker, orderId)
@@ -404,11 +444,11 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
   qty = round(trade_qty, 3)
   print(getCurrentTime() + ': Sending BBT ' + side + ' order of ' + ticker1 + ' (qty='+ str(qty)+') ....')
   if side=='BUY':
-    refPrice = bbtGetBid(bb, ticker1)
+    refPrice = bbtGetBid(bb, ccy)
     limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
     orderId = bb.create_limit_buy_order(ticker1, qty, limitPrice)['info']['order_id']
   else:
-    refPrice = bbtGetAsk(bb, ticker1)
+    refPrice = bbtGetAsk(bb, ccy)
     limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
     orderId = bb.create_limit_sell_order(ticker1, qty, limitPrice)['info']['order_id']
   refTime = time.time()
@@ -417,9 +457,9 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     orderStatus=bbtGetOrder(bb,ticker2,orderId)
     if orderStatus['order_status']=='Filled': break
     if side=='BUY':
-      newRefPrice=bbtGetBid(bb,ticker1)
+      newRefPrice=bbtGetBid(bb,ccy)
     else:
-      newRefPrice=bbtGetAsk(bb,ticker1)
+      newRefPrice=bbtGetAsk(bb,ccy)
     if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
       refPrice = newRefPrice
       nChases+=1
@@ -466,12 +506,6 @@ def bnGetEstFunding(bn, ccy):
 
 def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
-  def bnGetBid(bn, ticker):
-    return float(bn.dapiPublicGetTickerBookTicker({'symbol':ticker})[0]['bidPrice'])
-  @retry(wait_fixed=1000)
-  def bnGetAsk(bn, ticker):
-    return float(bn.dapiPublicGetTickerBookTicker({'symbol': ticker})[0]['askPrice'])
-  @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
   # Do not use @retry!
@@ -500,9 +534,9 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   else:
     sys.exit(1)
   if side == 'BUY':
-    refPrice = bnGetBid(bn, ticker)
+    refPrice = bnGetBid(bn, ccy)
   else:
-    refPrice = bnGetAsk(bn, ticker)
+    refPrice = bnGetAsk(bn, ccy)
   limitPrice = getLimitPrice('bn', refPrice, ccy, side)
   orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
@@ -512,9 +546,9 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
     if orderStatus['status']=='FILLED':
       break
     if side=='BUY':
-      newRefPrice=bnGetBid(bn,ticker)
+      newRefPrice=bnGetBid(bn,ccy)
     else:
-      newRefPrice=bnGetAsk(bn,ticker)
+      newRefPrice=bnGetAsk(bn,ccy)
     if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_MAX_WAIT_TIME):
       refPrice=newRefPrice
       nChases+=1
@@ -545,12 +579,6 @@ def bntGetEstFunding(bn, ccy):
 
 def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   @retry(wait_fixed=1000)
-  def bntGetBid(bn, ticker):
-    return float(bn.fapiPublicGetTickerBookTicker({'symbol':ticker})['bidPrice'])
-  @retry(wait_fixed=1000)
-  def bntGetAsk(bn, ticker):
-    return float(bn.fapiPublicGetTickerBookTicker({'symbol':ticker})['askPrice'])
-  @retry(wait_fixed=1000)
   def bntGetOrder(bn, ticker, orderId):
     return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
   # Do not use @retry!
@@ -575,9 +603,9 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   qty = round(trade_qty, 3)
   print(getCurrentTime()+': Sending BNT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
-    refPrice = bntGetBid(bn, ticker)
+    refPrice = bntGetBid(bn, ccy)
   else:
-    refPrice = bntGetAsk(bn, ticker)
+    refPrice = bntGetAsk(bn, ccy)
   limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
   orderId=bntPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
@@ -587,9 +615,9 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
     if orderStatus['status']=='FILLED':
       break
     if side=='BUY':
-      newRefPrice=bntGetBid(bn,ticker)
+      newRefPrice=bntGetBid(bn,ccy)
     else:
-      newRefPrice=bntGetAsk(bn,ticker)
+      newRefPrice=bntGetAsk(bn,ccy)
     if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_MAX_WAIT_TIME):
       refPrice=newRefPrice
       nChases+=1
@@ -623,14 +651,6 @@ def dbGetEstFunding(db,ccy,mins=15):
 
 def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
-  def dbGetBid(db, ticker):
-    d = db.public_get_ticker({'instrument_name': ticker})['result']
-    return float(d['best_bid_price'])
-  @retry(wait_fixed=1000)
-  def dbGetAsk(db, ticker):
-    d = db.public_get_ticker({'instrument_name': ticker})['result']
-    return float(d['best_ask_price'])
-  @retry(wait_fixed=1000)
   def dbGetOrder(db,orderId):
     return db.private_get_get_order_state({'order_id': orderId})['result']
   # Do not use @retry!
@@ -654,11 +674,11 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
   ticker = ccy + '-PERPETUAL'
   print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
-    refPrice = dbGetBid(db, ticker)
+    refPrice = dbGetBid(db, ccy)
     limitPrice = getLimitPrice('db', refPrice, ccy, side)
     orderId=db.private_get_buy({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
   else:
-    refPrice = dbGetAsk(db, ticker)
+    refPrice = dbGetAsk(db, ccy)
     limitPrice = getLimitPrice('db', refPrice, ccy, side)
     orderId=db.private_get_sell({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
   refTime = time.time()
@@ -667,9 +687,9 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
     if dbGetOrder(db, orderId)['order_state']=='filled':
       break
     if side=='BUY':
-      newRefPrice=dbGetBid(db,ticker)
+      newRefPrice=dbGetBid(db,ccy)
     else:
-      newRefPrice=dbGetAsk(db,ticker)
+      newRefPrice=dbGetAsk(db,ccy)
     if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
       refPrice = newRefPrice
       nChases+=1
@@ -739,12 +759,6 @@ def kfGetEstFunding2(kf, ccy,kfTickers=None):
   return kfTickers.loc[symbol, 'fundingRatePrediction']*kfTickers.loc[symbol,'markPrice']*24*365
 
 def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
-  # Do not use @retry
-  def kfGetBid(kf, symbol):
-    return kfGetTickers(kf).loc[symbol,'bid']
-  # Do not use @retry
-  def kfGetAsk(kf, symbol):
-    return kfGetTickers(kf).loc[symbol,'ask']
   @retry(wait_fixed=1000)
   def kfGetOrderStatus(kf, orderId):
     l = kf.query('openorders')['openOrders']
@@ -771,9 +785,9 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
   trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending KF ' + side + ' order of ' + symbol + ' (notional=$' + str(trade_notional) + ') ....')
   if side == 'BUY':
-    refPrice = kfGetBid(kf, symbol)
+    refPrice = kfGetBid(kf, ccy)
   else:
-    refPrice = kfGetAsk(kf, symbol)
+    refPrice = kfGetAsk(kf, ccy)
   limitPrice = getLimitPrice('kf', refPrice, ccy, side)
   orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
   refTime=time.time()
@@ -783,9 +797,9 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
     if orderStatus is None:  # If order doesn't exist, it means all executed
       break
     if side=='BUY':
-      newRefPrice=kfGetBid(kf,symbol)
+      newRefPrice=kfGetBid(kf,ccy)
     else:
-      newRefPrice=kfGetAsk(kf,symbol)
+      newRefPrice=kfGetAsk(kf,ccy)
     if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
       refPrice=newRefPrice
       nChases+=1
