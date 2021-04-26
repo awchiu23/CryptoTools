@@ -108,7 +108,7 @@ CT_MAX_WAIT_TIME=10
 SMB_HALF_LIFE_HOURS = 8
 SMB_BASE_RATE = 0.2
 SMB_BASE_BASIS = SMB_BASE_RATE / 365
-SMB_USDT_COLLATERAL_COVERAGE = 1 / 8
+SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
 
 #############################################################################################
 
