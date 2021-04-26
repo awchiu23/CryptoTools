@@ -89,7 +89,7 @@ class core:
       self.api = cl.dbCCXTInit()
       self.dbInit()
     elif self.exch=='kf':
-      self.api = cl.kfInit()
+      self.api = cl.kfApophisInit()
       self.kfInit()
     elif self.exch=='kr':
       self.api = cl.krCCXTInit(self.n)

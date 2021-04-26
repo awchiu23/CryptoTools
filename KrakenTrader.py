@@ -153,7 +153,7 @@ for n in range(nPrograms):
     fill=cl.bnRelOrder(oppSide, bn, ccy, trade_notional, maxChases=888)
   elif hedgeExchange=='kf':
     krExec(side, kr, pair, trade_qty, isMargin)
-    kf = cl.kfInit()
+    kf = cl.kfApophisInit()
     fill=cl.kfRelOrder(oppSide, kf, ccy, trade_notional, maxChases=888)
   elif hedgeExchange=='none':
     krExec(side, kr, pair, trade_qty, isMargin)

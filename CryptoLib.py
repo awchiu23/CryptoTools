@@ -63,7 +63,7 @@ def bnCCXTInit():
 def dbCCXTInit():
   return ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
-def kfInit():
+def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
 def krCCXTInit(n=1):
@@ -1092,7 +1092,7 @@ def caRun(ccy, color):
   bb=bbCCXTInit()
   bn=bnCCXTInit()
   db=dbCCXTInit()
-  kf=kfInit()
+  kf=kfApophisInit()
   while True:
     fundingDict = getFundingDict(ftx,bb,bn,db,kf,ccy)
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
@@ -1119,7 +1119,7 @@ def ctInit():
   bb = bbCCXTInit()
   bn = bnCCXTInit()
   db = dbCCXTInit()
-  kf = kfInit()
+  kf = kfApophisInit()
   spotBTC=ftxGetMid(ftx,'BTC/USD')
   spotETH=ftxGetMid(ftx,'ETH/USD')
   trade_btc = np.min([np.min([CT_TRADE_BTC_NOTIONAL, CT_MAX_NOTIONAL]) / spotBTC, CT_MAX_BTC])
