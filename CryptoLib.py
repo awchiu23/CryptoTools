@@ -1114,8 +1114,8 @@ def ctInit():
   bn = bnCCXTInit()
   db = dbCCXTInit()
   kf = kfInit()
-  spotBTC=ftxGetMid('BTC/USD')
-  spotETH=ftxGetMid('ETH/USD')
+  spotBTC=ftxGetMid(ftx,'BTC/USD')
+  spotETH=ftxGetMid(ftx,'ETH/USD')
   trade_btc = np.min([np.min([CT_TRADE_BTC_NOTIONAL, CT_MAX_NOTIONAL]) / spotBTC, CT_MAX_BTC])
   trade_eth = np.min([np.min([CT_TRADE_ETH_NOTIONAL, CT_MAX_NOTIONAL]) / spotETH, CT_MAX_ETH])
   trade_btc_notional = trade_btc * spotBTC
