@@ -1214,7 +1214,7 @@ def ctRun(ccy,tgtBps):
           elif chosenLong=='bb':
             pos=bbGetFutPos(bb,ccy)
           elif chosenLong=='bbt':
-            pos=bbGetFutPos(bb,ccy)
+            pos=bbtGetFutPos(bb,ccy)
           elif chosenLong=='bn':
             pos=bnGetFutPos(bn,ccy)
           elif chosenLong=='bnt':
