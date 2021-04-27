@@ -5,8 +5,9 @@ import CryptoLib as cl
 ########
 ccy='BTC'
 tgtBps=15
+color='blue'
 
 ######
 # Main
 ######
-cl.ctRun(ccy,tgtBps)
+cl.ctRun(ccy,tgtBps,color)

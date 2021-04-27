@@ -69,9 +69,6 @@ def kfApophisInit():
 def krCCXTInit(n=1):
   return ccxt.kraken({'apiKey': globals()['API_KEY_KR'+str(n)], 'secret': globals()['API_SECRET_KR'+str(n)], 'enableRateLimit': False})
 
-def cbCCXTInit():
-  return ccxt.coinbase({'apiKey': API_KEY_CB, 'secret': API_SECRET_CB, 'enableRateLimit': True})
-
 ########
 # Prices
 ########
@@ -1098,7 +1095,7 @@ def caRun(ccy, color):
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     avgCoinRate=(fundingDict['ftxEstLendingBTC']+fundingDict['ftxEstLendingETH'])/2
-    print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '/'+ \
+    print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100)) + '/'+
       str(round(avgCoinRate * 100))).ljust(col1N-10),'red'),end='')
     process('ftx', smartBasisDict, color, fundingDict['ftxEstFunding'])
     process('bb', smartBasisDict, color, fundingDict['bbEstFunding1'], fundingDict['bbEstFunding2'])
@@ -1139,18 +1136,18 @@ def ctInit():
   return ftx,bb,bn,db,kf,qty_dict,notional_dict
 
 def ctGetSuffix(tgtBps, realizedSlippageBps):
-  z= termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'magenta')
+  z= termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'red')
   if len(realizedSlippageBps) > 0:
     z += ''.ljust(15) + termcolor.colored('Avg realized slippage:  ' + str(round(np.mean(realizedSlippageBps))) + 'bps', 'red')
   return z
 
-def ctTooFewCandidates(i, tgtBps, realizedSlippageBps):
-  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), 'blue') + ctGetSuffix(tgtBps, realizedSlippageBps))
+def ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color):
+  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), color) + ctGetSuffix(tgtBps, realizedSlippageBps))
   chosenLong = ''
   return chosenLong
 
-def ctStreakEnded(i, tgtBps, realizedSlippageBps):
-  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), 'blue') + ctGetSuffix(tgtBps, realizedSlippageBps))
+def ctStreakEnded(i, tgtBps, realizedSlippageBps, color):
+  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), color) + ctGetSuffix(tgtBps, realizedSlippageBps))
   prevSmartBasis = []
   chosenLong = ''
   chosenShort = ''
@@ -1180,7 +1177,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
-def ctRun(ccy,tgtBps):
+def ctRun(ccy,tgtBps,color):
   ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH']:
     print('Invalid ccy!')
@@ -1214,7 +1211,7 @@ def ctRun(ccy,tgtBps):
 
       # Check for too few candidates
       if len(d.keys())<2:
-        chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps)
+        chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
         continue  # to next iteration in While True loop
 
       # If pair not lock-in yet
@@ -1252,13 +1249,13 @@ def ctRun(ccy,tgtBps):
 
         # Check for too few candidates again
         if len(d.keys()) < 2:
-          chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps)
+          chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
           continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:
           z = ('Program ' + str(i + 1) + ':').ljust(23)
-          z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),'blue')
+          z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),color)
           z += ctGetSuffix(tgtBps, realizedSlippageBps)
           print(z)
           chosenLong = ''
@@ -1270,7 +1267,7 @@ def ctRun(ccy,tgtBps):
       try:
         smartBasisBps = (smartBasisDict[chosenShort+'SmartBasis'] - smartBasisDict[chosenLong+'SmartBasis'])* 10000
       except:
-        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps)
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps, color)
         continue # to next iteration in While True Loop
       basisBps      = (smartBasisDict[chosenShort+'Basis']      - smartBasisDict[chosenLong+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
@@ -1281,12 +1278,12 @@ def ctRun(ccy,tgtBps):
       if smartBasisBps>=tgtBps:
         status+=1
       else:
-        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps)
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps, color)
         continue # to next iteration in While True Loop
 
       # Chosen long/short legs
       z = ('Program ' + str(i + 1) + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
-      z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), 'blue')
+      z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), color)
       print(z + ctGetSuffix(tgtBps, realizedSlippageBps))
 
       if abs(status) >= CT_STREAK and isStable:
