@@ -101,9 +101,6 @@ class core:
     elif self.exch=='kr':
       self.api = cl.krCCXTInit(self.n)
       self.krInit()
-    elif self.exch == 'cb':
-      self.api = cl.cbCCXTInit()
-      self.cbInit()
     elif self.exch == 'dummy':
       self.dummyInit()
 
@@ -763,20 +760,6 @@ class core:
     suffix += str(round(self.mdbUSDDf.loc['EUR','MDBU']/1000))+'K)'
     print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
 
-  ####
-  # CB
-  ####
-  def cbInit(self):
-    bal = self.api.fetch_balance()
-    spotDeltaBTC = bal['BTC']['total']
-    spotDeltaETH = bal['ETH']['total']
-    nav = spotDeltaBTC * spotBTC + spotDeltaETH * spotETH
-    self.spotDeltaBTC=spotDeltaBTC
-    self.spotDeltaETH=spotDeltaETH
-    self.futures = getDummyFutures()
-    self.oneDayIncome = 0
-    self.nav=nav
-
   #######
   # Dummy
   #######
@@ -816,8 +799,6 @@ if CR_IS_ADVANCED:
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
   objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
-cbCore = core('cb',spotBTC,spotETH)
-objs.append(cbCore)
 Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
 
 #############
@@ -849,8 +830,8 @@ oneDayIncome+=ftxCore.oneDayUSDFlows+ftxCore.oneDayUSDTFlows+ftxCore.oneDayBTCFl
 navStrList=[]
 for obj in objs:
   navStrList.append(getNAVStr(obj.name,obj.nav))
-if externalCoinsNAV!=0: navStrList.append(getNAVStr('Ext Coins',externalCoinsNAV))
-if externalEURNAV!=0: navStrList.append(getNAVStr('Ext EUR',externalEURNAV))
+if externalCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext',externalCoinsNAV))
+if externalEURNAV!=0: navStrList.append(getNAVStr('EUR ext',externalEURNAV))
 print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
 #####
 z='BTC='+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1)) + ' / USDT=' + str(round(spotUSDT,4)) + ' / EUR='+str(round(spotEUR,4))
