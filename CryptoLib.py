@@ -646,7 +646,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
       else:
         refTime = time.time()
         limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
-        orderId=bntPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
+        orderId=bntPlaceOrder(bn, ticker, side, round(leavesQty,3), limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
