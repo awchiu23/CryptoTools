@@ -97,8 +97,11 @@ class core:
     elif self.exch == 'cb':
       self.api = cl.cbCCXTInit()
       self.cbInit()
+    elif self.exch == 'dummy':
+      self.dummyInit()
 
   def printIncomes(self):
+    if self.exch=='dummy': return
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
     if self.exch == 'db':
       print(termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue'))
@@ -119,7 +122,9 @@ class core:
           df.loc[df.index[i], 'fee_rate'] *= -1
       return df
     #####
-    if self.exch=='ftx':
+    if self.exch == 'dummy':
+      return
+    elif self.exch=='ftx':
       oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['future'] == ccy + '-PERP']['rate'],24*365)
     elif self.exch == 'bb':
       df = bbClean(self.payments[self.payments['symbol'] == ccy + 'USD'].copy())
@@ -171,7 +176,9 @@ class core:
     print(prefix.rjust(40) + ' ' + body.ljust(27) + suffix)
 
   def printLiq(self):
-    if self.exch in ['ftx','bbt','bnt']:
+    if self.exch == 'dummy':
+      return
+    elif self.exch in ['ftx','bbt','bnt']:
       z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '% (of spot)'
       print(termcolor.colored((self.exch.upper()+' liquidation (parallel shock): ').rjust(41) + z, 'red'))
       if self.exch=='ftx':
@@ -770,6 +777,16 @@ class core:
     self.futures = getDummyFutures()
     self.oneDayIncome = 0
     self.nav=nav
+
+  #######
+  # Dummy
+  #######
+  def dummyInit(self):
+    self.spotDeltaBTC=0
+    self.spotDeltaETH=0
+    self.futures=getDummyFutures()
+    self.oneDayIncome=0
+    self.nav=0
 
 ####################################################################################################
 
