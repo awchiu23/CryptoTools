@@ -31,7 +31,6 @@ def printUSDTDeltas(ftxCore,bbtCore,bntCore,spotUSDT):
   print(termcolor.colored(z, 'red'))
 
 def printEURDeltas(krCores, spotEUR):
-  if not CR_IS_ADVANCED: return
   spotDelta=0
   for krCore in krCores:
     spotDelta+=krCore.spotDeltaEUR
@@ -860,8 +859,9 @@ print()
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
-printUSDTDeltas(ftxCore, bbtCore, bntCore, spotUSDT)
-printEURDeltas(krCores, spotEUR)
+if CR_IS_ADVANCED:
+  printUSDTDeltas(ftxCore, bbtCore, bntCore, spotUSDT)
+  printEURDeltas(krCores, spotEUR)
 print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
