@@ -40,23 +40,41 @@ def printEURDeltas(krCores, spotEUR):
     '($' + str(round(EXTERNAL_EUR_DELTA * spotEUR / 1000)) + 'K/$' + str(round(spotDelta * spotEUR / 1000)) + 'K/$' + str(round(netDelta * spotEUR / 1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
-####################################################################################################
+def printAllDual(core1, core2):
+  if core1.exch == 'dummy' and core2.exch == 'dummy': return
+  if core1.exch == 'dummy':
+    core2.printAll()
+  elif core2.exch == 'dummy':
+    core1.printAll()
+  else:
+    n=130
+    print(core1.incomesStr.ljust(n+9) + core2.incomesStr)
+    print(core1.fundingBTCStr.ljust(n) + core2.fundingBTCStr)
+    print(core1.fundingETHStr.ljust(n) + core2.fundingETHStr)
+    print(core1.liqStr.ljust(n+9) + core2.liqStr)
+    print()
 
-def krPrintIncomes(krCores):
-  zs=[]
-  prefixes=[]
+def krPrintAll(krCores,nav):
+  # Incomes
+  zs = []
+  prefixes = []
   for krCore in krCores:
     zs.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
     prefixes.append('KR' + str(krCore.n))
   print(termcolor.colored(('/'.join(prefixes) + ' 24h rollover fees: ').rjust(41) + ' / '.join(zs), 'blue'))
-
-def krPrintLiq(krCores):
-  zs=[]
-  prefixes=[]
+  #####
+  # Borrows
+  for krCore in krCores:
+    krCore.krPrintBorrow(nav)
+  #####
+  # Liq
+  zs = []
+  prefixes = []
   for krCore in krCores:
     zs.append('never' if (krCore.liqBTC <= 0 or krCore.liqBTC > 10) else str(round(krCore.liqBTC * 100)) + '%')
     prefixes.append('KR' + str(krCore.n))
   print(termcolor.colored(('/'.join(prefixes) + ' liquidation (BTC): ').rjust(41) + '/'.join(zs) + ' (of spot)', 'red'))
+  print()
 
 ####################################################################################################
 
@@ -77,9 +95,13 @@ class core:
       self.name += str(n)
 
   def run(self):
-    if self.exch=='ftx':
+    if self.exch=='dummy':
+      self.dummyInit()
+      return
+    elif self.exch=='ftx':
       self.api = cl.ftxCCXTInit()
       self.ftxInit()
+      self.fundingFTTStr = self.getFundingStr('FTT')
     elif self.exch=='bb':
       self.api = cl.bbCCXTInit()
       self.bbInit()
@@ -101,20 +123,23 @@ class core:
     elif self.exch=='kr':
       self.api = cl.krCCXTInit(self.n)
       self.krInit()
-    elif self.exch == 'dummy':
-      self.dummyInit()
+    if not self.exch == 'kr':
+      self.incomesStr = self.getIncomesStr()
+      self.fundingBTCStr = self.getFundingStr('BTC')
+      self.fundingETHStr = self.getFundingStr('ETH')
+      self.liqStr = self.getLiqStr()
 
-  def printIncomes(self):
+  def getIncomesStr(self):
     if self.exch=='dummy': return
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
     if self.exch == 'db':
-      print(termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue'))
+      return termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue')
     else:
       zPrev  = '4h' if self.exch == 'kf' else 'prev'
       z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-      print(termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+      return termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
 
-  def printFunding(self,ccy):
+  def getFundingStr(self,ccy):
     def calcFunding(s,mult):
       oneDayFunding = s.mean() * mult
       prevFunding = s[-1] * mult
@@ -177,21 +202,31 @@ class core:
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
-    print(prefix.rjust(40) + ' ' + body.ljust(27) + suffix)
+    return prefix.rjust(40) + ' ' + body.ljust(27) + suffix
 
-  def printLiq(self):
+  def getLiqStr(self):
     if self.exch == 'dummy':
       return
     elif self.exch in ['ftx','bbt','bnt']:
       z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '% (of spot)'
-      print(termcolor.colored((self.exch.upper()+' liquidation (parallel shock): ').rjust(41) + z, 'red'))
+      zRet=termcolor.colored((self.exch.upper()+' liquidation (parallel shock): ').rjust(41) + z, 'red')
       if self.exch=='ftx':
         z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
-        print(termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red'))
+        zRet+='\n'+termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red')
     else:
       zBTC = 'never' if (self.liqBTC <= 0 or self.liqBTC >= 10) else str(round(self.liqBTC * 100)) + '%'
       zETH = 'never' if (self.liqETH <= 0 or self.liqETH >= 10) else str(round(self.liqETH * 100)) + '%'
-      print(termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red'))
+      zRet=termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red')
+    return zRet
+
+  def printAll(self):
+    if self.exch=='dummy': return
+    print(self.incomesStr)
+    print(self.fundingBTCStr)
+    print(self.fundingETHStr)
+    if self.exch=='ftx': print(self.fundingFTTStr)
+    print(self.liqStr)
+    print()
 
   #####
   # FTX
@@ -775,7 +810,7 @@ class core:
 ######
 # Init
 ######
-print()
+cl.printHeader('CryptoReporter')
 if CR_IS_ADVANCED and not IS_IP_WHITELIST:
   print('CryptoReporter cannot be run in advanced mode without IP whitelisting!')
   sys.exit(1)
@@ -796,6 +831,7 @@ if CR_IS_ADVANCED:
   bntCore = core('bnt', spotBTC, spotETH, spotUSDT=spotUSDT)
   dbCore = core('db', spotBTC, spotETH)
   kfCore = core('kf', spotBTC, spotETH)
+  #kfCore = core('dummy', spotBTC, spotETH)
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
   objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
@@ -858,55 +894,15 @@ if CR_IS_SHOW_COIN_LENDING:
   ftxCore.ftxPrintCoinLending('ETH')
   print()
 #####
-ftxCore.printIncomes()
-ftxCore.printFunding('BTC')
-ftxCore.printFunding('ETH')
-ftxCore.printFunding('FTT')
-ftxCore.printLiq()
-print()
-#####
-bbCore.printIncomes()
-bbCore.printFunding('BTC')
-bbCore.printFunding('ETH')
-bbCore.printLiq()
-print()
-#####
+ftxCore.printAll()
 if CR_IS_ADVANCED:
-  bbtCore.printIncomes()
-  bbtCore.printFunding('BTC')
-  bbtCore.printFunding('ETH')
-  bbtCore.printLiq()
-  print()
-  #####
-  bnCore.printIncomes()
-  bnCore.printFunding('BTC')
-  bnCore.printFunding('ETH')
-  bnCore.printLiq()
-  print()
-  #####
-  bntCore.printIncomes()
-  bntCore.printFunding('BTC')
-  bntCore.printFunding('ETH')
-  bntCore.printLiq()
-  print()
-  #####
-  dbCore.printIncomes()
-  dbCore.printFunding('BTC')
-  dbCore.printFunding('ETH')
-  dbCore.printLiq()
-  print()
-  #####
-  kfCore.printIncomes()
-  kfCore.printFunding('BTC')
-  kfCore.printFunding('ETH')
-  kfCore.printLiq()
-  print()
-  #####
-  krPrintIncomes(krCores)
-  for krCore in krCores:
-    krCore.krPrintBorrow(nav)
-  krPrintLiq(krCores)
-  print()
+  printAllDual(bbCore, bbtCore)
+  printAllDual(bnCore, bntCore)
+  dbCore.printAll()
+  kfCore.printAll()
+  krPrintAll(krCores, nav)
+else:
+  bbCore.printAll()
 #####
 if '-f' in sys.argv:
   while True:

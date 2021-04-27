@@ -8,7 +8,7 @@ from retrying import retry
 # Params
 ########
 nPrograms=1
-targetUSD=5000
+targetUSD=3000
 
 account=1                # which Kraken account to use
 side='SELL'              # 'BUY', 'SELL'
