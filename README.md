@@ -29,7 +29,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## CryptoReporter
 - This tool is for monitoring NAVs, positions and risks across multiple exchanges
-- Please set **CR_IS_ADVANCED** to **False** in CryptoParams.  The tool will then work across FTX and Bybit
+- Please set **CR_MODE** to 1 in CryptoParams.  The tool will then work across FTX and Bybit
 - For more advanced users, please speak with me directly
 
 ## FTXLender

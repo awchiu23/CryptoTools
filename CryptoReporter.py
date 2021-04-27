@@ -811,8 +811,8 @@ class core:
 # Init
 ######
 cl.printHeader('CryptoReporter')
-if CR_IS_ADVANCED and not IS_IP_WHITELIST:
-  print('CryptoReporter cannot be run in advanced mode without IP whitelisting!')
+if CR_MODE>0 and not IS_IP_WHITELIST:
+  print('CryptoReporter cannot be run in higher modes without IP whitelisting!')
   sys.exit(1)
 ftx=cl.ftxCCXTInit()
 spotBTC = cl.ftxGetMid(ftx,'BTC/USD')
@@ -825,7 +825,7 @@ ftxCore = core('ftx',spotBTC,spotETH,spotFTT=spotFTT)
 bbCore = core('bb',spotBTC,spotETH)
 objs=[ftxCore,bbCore]
 krCores=[]
-if CR_IS_ADVANCED:
+if CR_MODE>0:
   bbtCore = core('bbt', spotBTC, spotETH, spotUSDT=spotUSDT)
   bnCore = core('bn', spotBTC, spotETH)
   bntCore = core('bnt', spotBTC, spotETH, spotUSDT=spotUSDT)
@@ -875,7 +875,7 @@ print()
 #####
 printDeltas('BTC',spotBTC,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotETH,spotDeltaETH,futDeltaETH)
-if CR_IS_ADVANCED:
+if CR_MODE>0:
   printUSDTDeltas(ftxCore, bbtCore, bntCore, spotUSDT)
   printEURDeltas(krCores, spotEUR)
 print()
@@ -894,7 +894,7 @@ if CR_IS_SHOW_COIN_LENDING:
   print()
 #####
 ftxCore.printAll()
-if CR_IS_ADVANCED:
+if CR_MODE>0:
   printAllDual(bbCore, bbtCore)
   printAllDual(bnCore, bntCore)
   dbCore.printAll()

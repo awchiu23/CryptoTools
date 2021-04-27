@@ -115,7 +115,7 @@ SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
 #################
 # Crypto Reporter
 #################
-CR_IS_ADVANCED = True
+CR_MODE = 2                          # 0 = FTX/BB only; 1 = +BBT/BN/BNT/DB/KF/KR; 2 = +BG
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
 
