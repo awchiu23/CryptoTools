@@ -5,7 +5,7 @@
 ######
 # Main
 ######
-CRYPTOTOOLS_MODE = 1         # 0 = FTX/BB only; 1 = +BBT/BN/BNT/DB/KF/KR; 2 = +BG
+CRYPTO_MODE = 1         # 0 = FTX/BB only; 1 = +BBT/BN/BNT/DB/KF/KR; 2 = +BG
 API_KEY_FTX = ''
 API_SECRET_FTX = ''
 API_KEY_BB = ''
@@ -77,8 +77,8 @@ CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=-3
 
 # General params
-CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
 CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
+CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of observations
 CT_NPROGRAMS = 50                    # Number of programs (each program being a pair of trades)
@@ -134,7 +134,7 @@ IS_IP_WHITELIST = True               # Use the whitelisted URI
 import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
-  CRYPTOTOOLS_MODE = 2
+  CRYPTO_MODE = 2
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
   API_KEY_BB = sl.jLoad('API_KEY_BB')

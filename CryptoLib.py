@@ -883,15 +883,16 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy):
   d['Ccy'] = ccy
   d['ftxEstFunding'] = ftxGetEstFunding(ftx, ccy)  
   d['bbEstFunding1'] = bbGetEstFunding1(bb, ccy)  
-  d['bbEstFunding2'] = bbGetEstFunding2(bb, ccy)  
-  d['bbtEstFunding1'] = bbtGetEstFunding1(bb, ccy)  
-  d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)  
-  d['bnEstFunding'] = bnGetEstFunding(bn, ccy)  
-  d['bntEstFunding'] = bntGetEstFunding(bn, ccy)  
-  d['dbEstFunding'] = dbGetEstFunding(db, ccy)  
-  kfTickers = kfGetTickers(kf)
-  d['kfEstFunding1'] = kfGetEstFunding1(kf,ccy,kfTickers)  
-  d['kfEstFunding2'] = kfGetEstFunding2(kf,ccy,kfTickers)  
+  d['bbEstFunding2'] = bbGetEstFunding2(bb, ccy)
+  if CRYPTO_MODE>0:
+    d['bbtEstFunding1'] = bbtGetEstFunding1(bb, ccy)
+    d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)
+    d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
+    d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
+    d['dbEstFunding'] = dbGetEstFunding(db, ccy)
+    kfTickers = kfGetTickers(kf)
+    d['kfEstFunding1'] = kfGetEstFunding1(kf,ccy,kfTickers)
+    d['kfEstFunding2'] = kfGetEstFunding2(kf,ccy,kfTickers)
   return d
 
 #############################################################################################
@@ -1011,13 +1012,14 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
   #####
   ftxPrices = getPrices('ftx', ftx, ccy)
   bbPrices = getPrices('bb', bb, ccy)
-  bbtPrices = getPrices('bbt',bb, ccy)
-  bnPrices = getPrices('bn', bn, ccy)
-  bntPrices = getPrices('bnt', bn, ccy)
-  kfPrices = getPrices('kf', kf, ccy)
-  dbPrices = getPrices('db', db, ccy)
-  #####
-  objs = [ftxPrices, bbPrices, bbtPrices, bnPrices, bntPrices, kfPrices, dbPrices]
+  objs = [ftxPrices, bbPrices]
+  if CRYPTO_MODE>0:
+    bbtPrices = getPrices('bbt', bb, ccy)
+    bnPrices = getPrices('bn', bn, ccy)
+    bntPrices = getPrices('bnt', bn, ccy)
+    kfPrices = getPrices('kf', kf, ccy)
+    dbPrices = getPrices('db', db, ccy)
+    objs.extend([bbtPrices, bnPrices, bntPrices, kfPrices, dbPrices])
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
@@ -1046,20 +1048,21 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
   d['bbBasis'] = bbPrices.fut / ftxPrices.spot - 1  
   d['bbSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, d['bbBasis']) - oneDayShortSpotEdge + bbAdj
   #####
-  d['bbtBasis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1  
-  d['bbtSmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, d['bbtBasis']) - oneDayShortSpotEdge + bbtAdj
-  #####
-  d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1  
-  d['bnSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, d['bnBasis']) - oneDayShortSpotEdge + bnAdj
-  ###
-  d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1  
-  d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
-  ###
-  d['dbBasis'] = dbPrices.fut / ftxPrices.spot - 1  
-  d['dbSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, d['dbBasis']) - oneDayShortSpotEdge + dbAdj
-  ###
-  d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1  
-  d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
+  if CRYPTO_MODE>0:
+    d['bbtBasis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
+    d['bbtSmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, d['bbtBasis']) - oneDayShortSpotEdge + bbtAdj
+    #####
+    d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1
+    d['bnSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, d['bnBasis']) - oneDayShortSpotEdge + bnAdj
+    ###
+    d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
+    d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
+    ###
+    d['dbBasis'] = dbPrices.fut / ftxPrices.spot - 1
+    d['dbSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, d['dbBasis']) - oneDayShortSpotEdge + dbAdj
+    ###
+    d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
+    d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
   return d
 
 #############################################################################################
@@ -1087,9 +1090,14 @@ def caRun(ccy, color):
   print()
   ftx=ftxCCXTInit()
   bb=bbCCXTInit()
-  bn=bnCCXTInit()
-  db=dbCCXTInit()
-  kf=kfApophisInit()
+  if CRYPTO_MODE>0:
+    bn=bnCCXTInit()
+    db=dbCCXTInit()
+    kf=kfApophisInit()
+  else:
+    bn=None
+    db=None
+    kf=None
   while True:
     fundingDict = getFundingDict(ftx,bb,bn,db,kf,ccy)
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
@@ -1099,11 +1107,12 @@ def caRun(ccy, color):
       str(round(avgCoinRate * 100))).ljust(col1N-10),'red'),end='')
     process('ftx', smartBasisDict, color, fundingDict['ftxEstFunding'])
     process('bb', smartBasisDict, color, fundingDict['bbEstFunding1'], fundingDict['bbEstFunding2'])
-    process('bbt', smartBasisDict, color, fundingDict['bbtEstFunding1'], fundingDict['bbtEstFunding2'])
-    process('bn', smartBasisDict, color, fundingDict['bnEstFunding'])
-    process('bnt', smartBasisDict, color, fundingDict['bntEstFunding'])
-    process('db', smartBasisDict, color, fundingDict['dbEstFunding'])
-    process('kf', smartBasisDict, color, fundingDict['kfEstFunding1'], fundingDict['kfEstFunding2'])
+    if CRYPTO_MODE>0:
+      process('bbt', smartBasisDict, color, fundingDict['bbtEstFunding1'], fundingDict['bbtEstFunding2'])
+      process('bn', smartBasisDict, color, fundingDict['bnEstFunding'])
+      process('bnt', smartBasisDict, color, fundingDict['bntEstFunding'])
+      process('db', smartBasisDict, color, fundingDict['dbEstFunding'])
+      process('kf', smartBasisDict, color, fundingDict['kfEstFunding1'], fundingDict['kfEstFunding2'])
     print()
 
 #############################################################################################
