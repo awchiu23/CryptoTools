@@ -647,7 +647,7 @@ class core:
       df = pd.read_csv(ffn, index_col=0, parse_dates=True)
       df['date'] = [datetime.datetime.strptime(z, '%Y-%m-%d %H:%M:%S') for z in df['dateTime']]
       df['date'] += pd.DateOffset(hours=8)  # Convert from UTC to HK Time
-      df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)].sort_values('date')
+      df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)]
       df['Ccy']=df['collateral']
       df.loc[df['Ccy']=='XBT','Ccy']='BTC'
       df=df.set_index('Ccy',drop=False)
