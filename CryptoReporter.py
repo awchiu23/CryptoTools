@@ -641,24 +641,22 @@ class core:
   # KF
   ####
   def kfInit(self):
-    def getPayments(api, futures):
+    def getPayments():
       ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
-      api.get_account_log(ffn)
+      self.api.get_account_log(ffn)
       df = pd.read_csv(ffn, index_col=0, parse_dates=True)
       df['date'] = [datetime.datetime.strptime(z, '%Y-%m-%d %H:%M:%S') for z in df['dateTime']]
       df['date'] += pd.DateOffset(hours=8)  # Convert from UTC to HK Time
-      df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)]
-      df = df.set_index('date').sort_index()
+      df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)].sort_values('date')
       df['Ccy']=df['collateral']
       df.loc[df['Ccy']=='XBT','Ccy']='BTC'
-      df.loc[df['Ccy']=='BTC','Spot']=futures.loc['BTC', 'Spot']
-      df.loc[df['Ccy']=='ETH','Spot']=futures.loc['ETH', 'Spot']
-      selection=~df['mark price'].isna()
-      df.loc[selection,'Spot']=df.loc[selection,'mark price']
+      df=df.set_index('Ccy',drop=False)
+      df.loc['BTC', 'Spot'] = self.spotBTC
+      df.loc['ETH', 'Spot'] = self.spotETH
       df['incomeUSD'] = df['realized funding'] * df['Spot']
-      prevIncome = df[df.index >= datetime.datetime.now() - pd.DateOffset(hours=4)]['incomeUSD'].sum()
+      prevIncome = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(hours=4)]['incomeUSD'].sum()
       oneDayIncome=df['incomeUSD'].sum()
-      df=df[df['type']=='funding rate change']
+      df=df[df['type']=='funding rate change'].set_index('date').sort_index()
       df['rate'] = df['funding rate'] * df['Spot'] * 8
       return df,prevIncome,oneDayIncome
     #####
@@ -671,7 +669,7 @@ class core:
     futures['FutDelta'] = futures['FutDeltaUSD'] / futures['Spot']
     notional = futures['FutDeltaUSD'].abs().sum()
     #####
-    payments,prevIncome,oneDayIncome=getPayments(self.api, futures)
+    payments,prevIncome,oneDayIncome=getPayments()
     prevAnnRet = prevIncome * 6 * 365 / notional
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
