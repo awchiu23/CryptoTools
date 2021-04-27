@@ -47,7 +47,7 @@ def printAllDual(core1, core2):
   elif core2.exch == 'dummy':
     core1.printAll()
   else:
-    n=130
+    n=120
     print(core1.incomesStr.ljust(n+9) + core2.incomesStr)
     print(core1.fundingBTCStr.ljust(n) + core2.fundingBTCStr)
     print(core1.fundingETHStr.ljust(n) + core2.fundingETHStr)
@@ -830,8 +830,8 @@ if CR_IS_ADVANCED:
   bnCore = core('bn', spotBTC, spotETH)
   bntCore = core('bnt', spotBTC, spotETH, spotUSDT=spotUSDT)
   dbCore = core('db', spotBTC, spotETH)
-  kfCore = core('kf', spotBTC, spotETH)
-  #kfCore = core('dummy', spotBTC, spotETH)
+  #kfCore = core('kf', spotBTC, spotETH)
+  kfCore = core('dummy', spotBTC, spotETH)
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
   objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
