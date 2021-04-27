@@ -849,8 +849,8 @@ oneDayIncome+=ftxCore.oneDayUSDFlows+ftxCore.oneDayUSDTFlows+ftxCore.oneDayBTCFl
 navStrList=[]
 for obj in objs:
   navStrList.append(getNAVStr(obj.name,obj.nav))
-if externalCoinsNAV!=0: navStrList.append('Ext Coins',externalCoinsNAV)
-if externalEURNAV!=0: navStrList.append('Ext EUR',externalEURNAV)
+if externalCoinsNAV!=0: navStrList.append(getNAVStr('Ext Coins',externalCoinsNAV))
+if externalEURNAV!=0: navStrList.append(getNAVStr('Ext EUR',externalEURNAV))
 print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
 #####
 z='BTC='+str(round(spotBTC,1))+ ' / ETH='+str(round(spotETH,1))+ ' / FTT='+str(round(spotFTT,1)) + ' / USDT=' + str(round(spotUSDT,4)) + ' / EUR='+str(round(spotEUR,4))
