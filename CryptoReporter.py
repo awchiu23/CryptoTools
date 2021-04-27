@@ -830,8 +830,7 @@ if CR_IS_ADVANCED:
   bnCore = core('bn', spotBTC, spotETH)
   bntCore = core('bnt', spotBTC, spotETH, spotUSDT=spotUSDT)
   dbCore = core('db', spotBTC, spotETH)
-  #kfCore = core('kf', spotBTC, spotETH)
-  kfCore = core('dummy', spotBTC, spotETH)
+  kfCore = core('kf', spotBTC, spotETH)
   for i in range(CR_N_KR_ACCOUNTS):
     krCores.append(core('kr',spotBTC, spotETH,spotEUR=spotEUR,n=i+1))
   objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
