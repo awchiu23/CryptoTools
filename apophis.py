@@ -316,7 +316,7 @@ class Apophis:
                     fd.write(self.response.content)
                     fd.close()
         except:
-            print('[ERROR: KF account log cannot be updated successfully!]')
+            print('[ERROR: KF account log retrieval failed!]')
             print()
             return
         finally:
