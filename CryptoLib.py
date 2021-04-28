@@ -1010,9 +1010,9 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
     bbtPrices = getPrices('bbt', bb, ccy)
     bnPrices = getPrices('bn', bn, ccy)
     bntPrices = getPrices('bnt', bn, ccy)
-    kfPrices = getPrices('kf', kf, ccy)
     dbPrices = getPrices('db', db, ccy)
-    objs.extend([bbtPrices, bnPrices, bntPrices, kfPrices, dbPrices])
+    kfPrices = getPrices('kf', kf, ccy)    
+    objs.extend([bbtPrices, bnPrices, bntPrices, dbPrices, kfPrices])
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
