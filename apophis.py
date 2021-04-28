@@ -308,10 +308,17 @@ class Apophis:
         headers = self._sign_message(data, endpoint)
         params["headers"] = headers
 
-        with session_call(url, timeout=self.timeout, **params) as self.response:
-            self.lock.release()
-
-            if self.response.status_code == 200:
-                fd = open(filename, 'wb')
-                fd.write(self.response.content)
-                fd.close()
+        try:
+            with session_call(url, timeout=self.timeout, **params) as self.response:
+                self.lock.release()
+                if self.response.status_code == 200:
+                    fd = open(filename, 'wb')
+                    fd.write(self.response.content)
+                    fd.close()
+        except:
+            print('[ERROR: KF account log cannot be updated successfully!]')
+            print()
+            return
+        finally:
+            if self.lock.locked():
+                self.lock.release()

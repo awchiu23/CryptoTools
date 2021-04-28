@@ -11,7 +11,6 @@ import time
 import operator
 import termcolor
 import ccxt
-from ccxt.base.errors import RateLimitExceeded
 import apophis
 from retrying import retry
 
@@ -52,13 +51,13 @@ class getPrices:
 # API Inits
 ###########
 def ftxCCXTInit():
-  return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True})
+  return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 def bbCCXTInit():
-  return ccxt.bybit({'apiKey': API_KEY_BB, 'secret': API_SECRET_BB, 'enableRateLimit': True})
+  return ccxt.bybit({'apiKey': API_KEY_BB, 'secret': API_SECRET_BB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 def bnCCXTInit():
-  return  ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True})
+  return  ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 def dbCCXTInit():
   return ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
@@ -247,14 +246,6 @@ def ftxGetEstLending(ftx, ccy=None):
     return s[ccy]
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
-  # Do not use @retry
-  def ftxPostOrder(ftx, ticker,side,limitPrice,qty):
-    try:
-      return ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
-    except RateLimitExceeded:
-      print(getCurrentTime()+': Rate limit exceeded!')
-      print(getCurrentTime() + ': [DEBUG: price=' + str(limitPrice)+']')
-      sys.exit(1)
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
@@ -280,7 +271,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   else:
     refPrice = ftxGetAsk(ftx, ticker)
   limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
-  orderId = ftxPostOrder(ftx, ticker, side, limitPrice, qty)
+  orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
   refTime = time.time()
   nChases=0
   while True:
