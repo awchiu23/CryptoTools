@@ -249,14 +249,12 @@ def ftxGetEstLending(ftx, ccy=None):
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   # Do not use @retry
   def ftxPostOrder(ftx, ticker,side,limitPrice,qty):
-    for i in range(3):
-      try:
-        return ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
-      except RateLimitExceeded:
-        print(getCurrentTime()+': Rate limit exceeded! Retrying ....')
-        time.sleep(1)
-        continue
-    sys.exit(1)
+    try:
+      return ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+    except RateLimitExceeded:
+      print(getCurrentTime()+': Rate limit exceeded!')
+      print(getCurrentTime() + ': [DEBUG: price=' + str(limitPrice)+']')
+      sys.exit(1)
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
