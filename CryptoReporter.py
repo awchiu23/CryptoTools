@@ -11,7 +11,7 @@ import sys
 # Functions
 ###########
 def getDummyFutures():
-  return pd.DataFrame([['BTC', 0], ['ETH', 0]], columns=['Ccy', 'FutDelta']).set_index('Ccy')
+  return pd.DataFrame([['BTC', 0], ['ETH', 0], ['XRP', 0], ['FTT', 0]], columns=['Ccy', 'FutDelta']).set_index('Ccy')
 
 def getYest():
   return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
@@ -82,11 +82,12 @@ def krPrintAll(krCores,nav):
 # Classes
 #########
 class core:
-  def __init__(self, exch, spotBTC, spotETH, spotFTT=None, spotUSDT=None, spotEUR=None, n=None):
+  def __init__(self, exch, spotBTC, spotETH, spotXRP=None, spotFTT=None, spotUSDT=None, spotEUR=None, n=None):
     self.exch = exch
     self.name = exch.upper()
     self.spotBTC = spotBTC
     self.spotETH = spotETH
+    if spotXRP is not None: self.spotXRP = spotXRP
     if spotFTT is not None: self.spotFTT = spotFTT
     if spotUSDT is not None: self.spotUSDT = spotUSDT
     if spotEUR is not None: self.spotEUR = spotEUR
@@ -288,12 +289,12 @@ class core:
     oneDayIncome = -payments['payment'].sum()
     oneDayAnnRet = oneDayIncome * 365 / notional
     #####
-    prevUSDFlows, prevUSDFlowsAnnRet, oneDayUSDFlows, oneDayUSDFlowsAnnRet = getBorrowsLoans(wallet, payments, 'USD')
-    prevUSDTFlows, prevUSDTFlowsAnnRet, oneDayUSDTFlows, oneDayUSDTFlowsAnnRet = getBorrowsLoans(wallet, payments, 'USDT')
-    prevBTCFlows, prevBTCFlowsAnnRet, oneDayBTCFlows, oneDayBTCFlowsAnnRet = getBorrowsLoans(wallet, payments, 'BTC')
-    prevETHFlows, prevETHFlowsAnnRet, oneDayETHFlows, oneDayETHFlowsAnnRet = getBorrowsLoans(wallet, payments, 'ETH')
-    oneDayBTCFlows *= self.spotBTC
-    oneDayETHFlows *= self.spotETH
+    self.prevUSDFlows, self.prevUSDFlowsAnnRet, self.oneDayUSDFlows, self.oneDayUSDFlowsAnnRet = getBorrowsLoans(wallet, payments, 'USD')
+    self.prevUSDTFlows, self.prevUSDTFlowsAnnRet, self.oneDayUSDTFlows, self.oneDayUSDTFlowsAnnRet = getBorrowsLoans(wallet, payments, 'USDT')
+    self.prevBTCFlows, self.prevBTCFlowsAnnRet, self.oneDayBTCFlows, self.oneDayBTCFlowsAnnRet = getBorrowsLoans(wallet, payments, 'BTC')
+    self.prevETHFlows, self.prevETHFlowsAnnRet, self.oneDayETHFlows, self.oneDayETHFlowsAnnRet = getBorrowsLoans(wallet, payments, 'ETH')
+    self.oneDayBTCFlows *= self.spotBTC
+    self.oneDayETHFlows *= self.spotETH
     #####
     nav = wallet['usdValue'].sum()
     mf = float(info['marginFraction'])
@@ -314,22 +315,6 @@ class core:
     self.prevAnnRet=prevAnnRet
     self.oneDayIncome=oneDayIncome
     self.oneDayAnnRet=oneDayAnnRet
-    self.prevUSDFlows=prevUSDFlows
-    self.prevUSDFlowsAnnRet=prevUSDFlowsAnnRet
-    self.oneDayUSDFlows=oneDayUSDFlows
-    self.oneDayUSDFlowsAnnRet=oneDayUSDFlowsAnnRet
-    self.prevUSDTFlows = prevUSDTFlows
-    self.prevUSDTFlowsAnnRet = prevUSDTFlowsAnnRet
-    self.oneDayUSDTFlows = oneDayUSDTFlows
-    self.oneDayUSDTFlowsAnnRet = oneDayUSDTFlowsAnnRet
-    self.prevBTCFlows = prevBTCFlows
-    self.prevBTCFlowsAnnRet = prevBTCFlowsAnnRet
-    self.oneDayBTCFlows = oneDayBTCFlows
-    self.oneDayBTCFlowsAnnRet = oneDayBTCFlowsAnnRet
-    self.prevETHFlows = prevETHFlows
-    self.prevETHFlowsAnnRet = prevETHFlowsAnnRet
-    self.oneDayETHFlows = oneDayETHFlows
-    self.oneDayETHFlowsAnnRet = oneDayETHFlowsAnnRet
     self.nav=nav
     self.liq=liq
     self.mf=mf
