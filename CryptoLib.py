@@ -910,16 +910,15 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy):
   d['bbEstFunding1'] = bbGetEstFunding1(bb, ccy)  
   d['bbEstFunding2'] = bbGetEstFunding2(bb, ccy)
   if CRYPTO_MODE>0:
+    d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
+    d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
+    kfTickers = kfGetTickers(kf)
+    d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
+    d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
     if ccy!='XRP':
       d['bbtEstFunding1'] = bbtGetEstFunding1(bb, ccy)
       d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)
-    d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
-    d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
-    if ccy!='XRP':
       d['dbEstFunding'] = dbGetEstFunding(db, ccy)
-    kfTickers = kfGetTickers(kf)
-    d['kfEstFunding1'] = kfGetEstFunding1(kf,ccy,kfTickers)
-    d['kfEstFunding2'] = kfGetEstFunding2(kf,ccy,kfTickers)
   return d
 
 #############################################################################################
