@@ -1098,15 +1098,18 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
 # CryptoAlerter
 ###############
 def caRun(ccy, color):
-  def process(exch, smartBasisDict, color, funding, funding2=None):
+  def process(exch, fundingDict, smartBasisDict, isEst2, color):
     smartBasisBps = smartBasisDict[exch + 'SmartBasis'] * 10000
     basisBps = smartBasisDict[exch + 'Basis'] * 10000
-    z = exch.upper() + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps(' + str(round(funding * 100))
-    if funding2 is None:
-      n = 20
+    if isEst2:
+      est1=fundingDict[exch+'EstFunding1']
+      est2=fundingDict[exch+'EstFunding2']
+      n=23
     else:
-      z = z + '/' + str(round(funding2 * 100))
-      n = 23
+      est1=fundingDict[exch+'EstFunding']
+      n=20
+    z = exch.upper() + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps(' + str(round(est1 * 100))
+    if isEst2: z = z + '/' + str(round(est2 * 100))
     z += ')'
     print(termcolor.colored(z.ljust(n), color), end='')
   #####
@@ -1130,14 +1133,9 @@ def caRun(ccy, color):
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
-    process('ftx', smartBasisDict, color, fundingDict['ftxEstFunding'])
-    process('bb', smartBasisDict, color, fundingDict['bbEstFunding1'], fundingDict['bbEstFunding2'])
-    if CRYPTO_MODE>0:
-      if ccy!='XRP': process('bbt', smartBasisDict, color, fundingDict['bbtEstFunding1'], fundingDict['bbtEstFunding2'])
-      process('bn', smartBasisDict, color, fundingDict['bnEstFunding'])
-      process('bnt', smartBasisDict, color, fundingDict['bntEstFunding'])
-      if ccy!='XRP': process('db', smartBasisDict, color, fundingDict['dbEstFunding'])
-      process('kf', smartBasisDict, color, fundingDict['kfEstFunding1'], fundingDict['kfEstFunding2'])
+    for exch in INT_CCY_DICT[ccy]['exch']:
+      isEst2 = exch in ['bb', 'bbt', 'kf']
+      process(exch, fundingDict, smartBasisDict, isEst2, color)
     print()
     if ccy=='XRP': time.sleep(1)
 
@@ -1240,11 +1238,7 @@ def ctRun(ccy,tgtBps,color):
       smartBasisDict['spotBasis'] = 0
 
       # Remove disabled instruments
-      if ccy=='XRP':
-        exchList = ['spot', 'ftx', 'bb', 'bn', 'bnt', 'kf']
-      else:
-        exchList = ['spot','ftx','bb','bbt','bn','bnt','db','kf']
-      for exch in exchList:
+      for exch in INT_CCY_DICT[ccy]['exch']:
         if CT_CONFIGS_DICT[exch.upper() + '_' + ccy + '_OK'] == 0:
           del smartBasisDict[exch + 'SmartBasis']
           del smartBasisDict[exch+'Basis']

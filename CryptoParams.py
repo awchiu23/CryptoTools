@@ -50,7 +50,7 @@ CT_CONFIGS_DICT['DB_BTC_OK']=1
 CT_CONFIGS_DICT['KF_BTC_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS']=0
@@ -73,7 +73,7 @@ CT_CONFIGS_DICT['DB_ETH_OK']=1
 CT_CONFIGS_DICT['KF_ETH_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-5
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
@@ -94,7 +94,7 @@ CT_CONFIGS_DICT['BNT_XRP_OK']=1
 CT_CONFIGS_DICT['KF_XRP_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=5
 CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0
@@ -112,7 +112,7 @@ CT_K = 2/(60 * 15 / 4 + 1)           # EMA smoothing parameter
 
 CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
-CT_TRADE_XRP_NOTIONAL = 1000         # Per trade notional
+CT_TRADE_XRP_NOTIONAL = 2500         # Per trade notional
 
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
@@ -130,24 +130,33 @@ CT_MAX_WAIT_TIME=10                  # Execution setting
 
 #############################################################################################
 
+##########################
+# Apophis (Kraken Futures)
+##########################
+APOPHIS_IS_IP_WHITELIST = True
+
 #################
 # Crypto Reporter
 #################
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
 
+###########
+# Internals
+###########
+INT_CCY_DICT=dict()
+INT_CCY_DICT['BTC']={'exch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
+INT_CCY_DICT['ETH']={'exch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
+INT_CCY_DICT['XRP']={'exch':['ftx', 'bb', 'bn', 'bnt', 'kf']}
+INT_CCY_DICT['FTT']={'exch':['ftx']}
+
 #############
 # Smart Basis
 #############
 SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.20
+SMB_BASE_RATE = 0.30
 SMB_BASE_BASIS = SMB_BASE_RATE / 365
 SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
-
-##########################
-# Apophis (Kraken Futures)
-##########################
-IS_IP_WHITELIST = True
 
 #############################################################################################
 
@@ -157,7 +166,6 @@ IS_IP_WHITELIST = True
 import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
-  CRYPTO_MODE = 1
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
   API_KEY_BB = sl.jLoad('API_KEY_BB')

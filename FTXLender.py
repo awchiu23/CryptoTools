@@ -7,11 +7,11 @@ import termcolor
 # Params
 ########
 isRunNow=False            # Run once and stop? Otherwise loop continuously and run one minute before every reset
-isManageCoins=True        # Also manage coins (BTC and ETH) in addition to USD?
+isManageCoins=True        # Also manage coins (BTC, ETH, XRP) in addition to USD?
 
 minRate=0.03              # Minimum rate for all loans
 usdLendingRatio=0.8       # Percentage of USD to lend out
-coinLendingRatio=0.8      # Percentage of coins (BTC and ETH) to lend out
+coinLendingRatio=0.8      # Percentage of coins to lend out
 
 ###########
 # Functions
@@ -60,6 +60,7 @@ while True:
   if isManageCoins:
     ftxProcessLoan(ftx, 'BTC', coinLendingRatio, minRate)
     ftxProcessLoan(ftx, 'ETH', coinLendingRatio, minRate)
+    ftxProcessLoan(ftx, 'XRP', coinLendingRatio, minRate)
 
   if isRunNow:
     break

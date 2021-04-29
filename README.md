@@ -23,7 +23,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 	- Future funding payments
 - To get this to work, you will first need API keys set up properly in CryptoParams for the following: FTX, Bybit, Binance, Deribit and Kraken Futures
 
-## BTCTrader / ETHTrader
+## BTCTrader / ETHTrader / XRPTrader
 - Automated trading of spot and futures
 - If interested, please speak with me directly
 
@@ -34,7 +34,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
-- Universe: USD, BTC, ETH
+- Universe: USD, BTC, ETH, XRP
 
 ## KrakenAlerter
 - This tool is for monitoring differences of Kraken spots to FTX spots
