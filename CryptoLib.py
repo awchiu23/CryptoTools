@@ -197,20 +197,53 @@ def roundPrice(exch, price, ccy):
   if exch=='ftx':
     if ccy=='BTC':
       return round(price)
-    else:
+    elif ccy=='ETH':
       return round(price,1)
-  elif exch in 'bn':
+    elif ccy=='XRP':
+      return round(price*40000)/40000
+    else:
+      sys.exit(1)
+  elif exch=='bb':
+    if ccy=='BTC':
+      return round(price*2)/2
+    elif ccy=='ETH':
+      return round(price*20)/20
+    elif ccy=='XRP':
+      return round(price,4)
+    else:
+      sys.exit(1)
+  elif exch == 'bn':
     if ccy=='BTC':
       return round(price,1)
-    else:
+    elif ccy=='ETH':
       return round(price,2)
-  elif exch in 'bnt':
-    return round(price,2)
+    elif ccy=='XRP':
+      return round(price,4)
+    else:
+      sys.exit(1)
+  elif exch == 'bnt':
+    if ccy in ['BTC','ETH']:
+      return round(price,2)
+    elif ccy=='XRP':
+      return round(price,4)
+    else:
+      sys.exit(1)
+  elif exch =='kf':
+    if ccy == 'BTC':
+      return round(price * 2) / 2
+    elif ccy=='ETH':
+      return round(price * 20) / 20
+    elif ccy=='XRP':
+      return round(price, 4)
+    else:
+      sys.exit(1)
   else:
     if ccy=='BTC':
       return round(price*2)/2
-    else:
+    elif ccy=='ETH':
       return round(price*20)/20
+    else:
+      sys.exit(1)
 
 #############################################################################################
 
@@ -271,6 +304,8 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     qty = round(trade_qty, 3)
   elif ccy == 'ETH':
     qty = round(trade_qty, 2)
+  elif ccy == 'XRP':
+    qty = round(trade_qty)
   else:
     sys.exit(1)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
@@ -539,7 +574,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if ccy=='BTC':
     qty=round(trade_notional/100)
-  elif ccy=='ETH':
+  elif ccy in ['ETH','XRP']:
     qty=round(trade_notional/10)
   else:
     sys.exit(1)
@@ -739,16 +774,12 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
 # KF
 ####
 def kfCcyToSymbol(ccy,isIndex=False):
+  suffix ='XBT' if ccy=='BTC' else ccy
+  suffix = '_'+suffix.lower()+'usd'
   if isIndex:
-    if ccy == 'BTC':
-      return 'in_xbtusd'
-    else:
-      return 'in_'+ccy.lower()+'usd'
+    return 'in'+suffix
   else:
-    if ccy=='BTC':
-      return 'pi_xbtusd'
-    else:
-      return 'pi_'+ccy.lower()+'usd'
+    return 'pi'+suffix
 
 @retry(wait_fixed=1000)
 def kfGetFutPos(kf,ccy):
@@ -1117,16 +1148,21 @@ def ctInit():
   kf = kfApophisInit()
   spotBTC=ftxGetMid(ftx,'BTC/USD')
   spotETH=ftxGetMid(ftx,'ETH/USD')
+  spotXRP=ftxGetMid(ftx,'XRP/USD')
   trade_btc = np.min([np.min([CT_TRADE_BTC_NOTIONAL, CT_MAX_NOTIONAL]) / spotBTC, CT_MAX_BTC])
   trade_eth = np.min([np.min([CT_TRADE_ETH_NOTIONAL, CT_MAX_NOTIONAL]) / spotETH, CT_MAX_ETH])
+  trade_xrp = np.min([np.min([CT_TRADE_XRP_NOTIONAL, CT_MAX_NOTIONAL]) / spotXRP, CT_MAX_XRP])
   trade_btc_notional = trade_btc * spotBTC
   trade_eth_notional = trade_eth * spotETH
+  trade_xrp_notional = trade_xrp * spotXRP
   qty_dict = dict()
   qty_dict['BTC'] = trade_btc
   qty_dict['ETH'] = trade_eth
+  qty_dict['XRP'] = trade_xrp
   notional_dict = dict()
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
+  notional_dict['XRP'] = trade_xrp_notional
   printHeader('CryptoTrader')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
@@ -1177,7 +1213,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
 
 def ctRun(ccy,tgtBps,color):
   ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
-  if not ccy in ['BTC', 'ETH']:
+  if not ccy in ['BTC', 'ETH', 'XRP']:
     print('Invalid ccy!')
     sys.exit(1)
   trade_qty = qty_dict[ccy]
@@ -1194,7 +1230,11 @@ def ctRun(ccy,tgtBps,color):
       smartBasisDict['spotBasis'] = 0
 
       # Remove disabled instruments
-      for exch in ['spot','ftx','bb','bbt','bn','bnt','db','kf']:
+      if ccy=='XRP':
+        exchList = ['spot', 'ftx', 'bb', 'bn', 'bnt', 'kf']
+      else:
+        exchList = ['spot','ftx','bb','bbt','bn','bnt','db','kf']
+      for exch in exchList:
         if CT_CONFIGS_DICT[exch.upper() + '_' + ccy + '_OK'] == 0:
           del smartBasisDict[exch + 'SmartBasis']
           del smartBasisDict[exch+'Basis']

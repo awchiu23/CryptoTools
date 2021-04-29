@@ -76,6 +76,22 @@ CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
+# XRP --- 0=Disabled; 1=Enabled
+CT_CONFIGS_DICT['SPOT_XRP_OK']=1
+CT_CONFIGS_DICT['FTX_XRP_OK']=1
+CT_CONFIGS_DICT['BB_XRP_OK']=1
+CT_CONFIGS_DICT['BN_XRP_OK']=1
+CT_CONFIGS_DICT['BNT_XRP_OK']=1
+CT_CONFIGS_DICT['KF_XRP_OK']=1
+
+# XRP --- Positive = eager to buy; Negative = eager to sell
+CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
+
 # General params
 CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
@@ -86,10 +102,12 @@ CT_K = 2/(60 * 15 / 4 + 1)           # EMA smoothing parameter
 
 CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
+CT_TRADE_XRP_NOTIONAL = 1000         # Per trade notional
 
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
 CT_MAX_ETH = 10                      # Hard limit
+CT_MAX_XRP = 10000                   # Hard limit
 
 # Executions params
 CT_FTX_DISTANCE_TO_BEST_BPS=0
