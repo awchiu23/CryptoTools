@@ -31,9 +31,9 @@ EXTERNAL_EUR_REF = 0
 
 #############################################################################################
 
-##############
-# CryptoTrader
-##############
+###############
+# Crypto Trader
+###############
 CT_CONFIGS_DICT=dict()
 
 #####
@@ -101,7 +101,8 @@ CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
 
-# General params
+#############################################################################################
+
 CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
 CT_IS_HIGH_SPOT_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering
@@ -118,25 +119,14 @@ CT_MAX_BTC = 0.5                     # Hard limit
 CT_MAX_ETH = 10                      # Hard limit
 CT_MAX_XRP = 10000                   # Hard limit
 
-# Executions params
-CT_FTX_DISTANCE_TO_BEST_BPS=0
-CT_BB_DISTANCE_TO_BEST_BPS=-5
-CT_BBT_DISTANCE_TO_BEST_BPS=-5
-CT_BN_DISTANCE_TO_BEST_BPS=0
-CT_BNT_DISTANCE_TO_BEST_BPS=0
-CT_DB_DISTANCE_TO_BEST_BPS=0
-CT_KF_DISTANCE_TO_BEST_BPS=0
-CT_MAX_WAIT_TIME=10
-
-#############################################################################################
-
-####################
-# Smart Basis Models
-####################
-SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.20
-SMB_BASE_BASIS = SMB_BASE_RATE / 365
-SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
+CT_FTX_DISTANCE_TO_BEST_BPS=0        # Execution setting
+CT_BB_DISTANCE_TO_BEST_BPS=-5        # Execution setting
+CT_BBT_DISTANCE_TO_BEST_BPS=-5       # Execution setting
+CT_BN_DISTANCE_TO_BEST_BPS=0         # Execution setting
+CT_BNT_DISTANCE_TO_BEST_BPS=0        # Execution setting
+CT_DB_DISTANCE_TO_BEST_BPS=0         # Execution setting
+CT_KF_DISTANCE_TO_BEST_BPS=0         # Execution setting
+CT_MAX_WAIT_TIME=10                  # Execution setting
 
 #############################################################################################
 
@@ -146,12 +136,18 @@ SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
 
-#############################################################################################
+#############
+# Smart Basis
+#############
+SMB_HALF_LIFE_HOURS = 8
+SMB_BASE_RATE = 0.20
+SMB_BASE_BASIS = SMB_BASE_RATE / 365
+SMB_USDT_COLLATERAL_COVERAGE = 1 / 7
 
-#########
-# Apophis
-#########
-IS_IP_WHITELIST = True               # Use the whitelisted URI
+##########################
+# Apophis (Kraken Futures)
+##########################
+IS_IP_WHITELIST = True
 
 #############################################################################################
 
