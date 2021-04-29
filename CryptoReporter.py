@@ -8,10 +8,19 @@ import termcolor
 import sys
 
 ###########
+# Constants
+###########
+CR_DICT=dict()
+CR_DICT['BTC']={'exch':['ftx','bb','bbt','bn','bnt','db','kf']}
+CR_DICT['ETH']={'exch':['ftx','bb','bbt','bn','bnt','db','kf']}
+CR_DICT['XRP']={'exch':['ftx','bb','bn','bnt','kf']}
+CR_DICT['FTT']={'exch':['ftx']}
+
+###########
 # Functions
 ###########
 def getDummyFutures():
-  return pd.DataFrame([['BTC', 0], ['ETH', 0], ['XRP', 0], ['FTT', 0]], columns=['Ccy', 'FutDelta']).set_index('Ccy')
+  return pd.DataFrame({'Ccy':CR_DICT.keys(),'FutDelta':[0]*len(CR_DICT)}).set_index('Ccy')
 
 def getYest():
   return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
