@@ -121,7 +121,7 @@ CT_MAX_XRP = 10000                   # Hard limit
 
 CT_FTX_DISTANCE_TO_BEST_BPS=0        # Execution setting
 CT_BB_DISTANCE_TO_BEST_BPS=-5        # Execution setting
-CT_BBT_DISTANCE_TO_BEST_BPS=0        # Execution setting
+CT_BBT_DISTANCE_TO_BEST_BPS=-3       # Execution setting
 CT_BN_DISTANCE_TO_BEST_BPS=0         # Execution setting
 CT_BNT_DISTANCE_TO_BEST_BPS=0        # Execution setting
 CT_DB_DISTANCE_TO_BEST_BPS=0         # Execution setting
