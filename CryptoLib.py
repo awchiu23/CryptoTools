@@ -1133,6 +1133,10 @@ def caRun(ccy, color):
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
+    if CRYPTO_MODE>0:
+      exchList=INT_CCY_DICT[ccy]['exch']
+    else:
+      exchList=['ftx','bb']
     for exch in INT_CCY_DICT[ccy]['exch']:
       isEst2 = exch in ['bb', 'bbt', 'kf']
       process(exch, fundingDict, smartBasisDict, isEst2, color)
