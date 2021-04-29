@@ -13,7 +13,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Library for accessing Kraken futures
 ---
 
-## BTCAlerter/ETHAlerter
+## BTCAlerter / ETHAlerter / XRPAlerter
 - These tools are for monitoring smart basis (as well as raw basis) of various futures
 - Raw basis: premium of future vs. FTX spot
 - Smart basis: same but adjusted for these extras:
@@ -23,7 +23,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 	- Future funding payments
 - To get this to work, you will first need API keys set up properly in CryptoParams for the following: FTX, Bybit, Binance, Deribit and Kraken Futures
 
-## BTCTrader/ETHTrader
+## BTCTrader / ETHTrader
 - Automated trading of spot and futures
 - If interested, please speak with me directly
 
