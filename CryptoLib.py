@@ -1134,6 +1134,7 @@ def caRun(ccy, color):
       if ccy!='XRP': process('db', smartBasisDict, color, fundingDict['dbEstFunding'])
       process('kf', smartBasisDict, color, fundingDict['kfEstFunding1'], fundingDict['kfEstFunding2'])
     print()
+    if ccy=='XRP': time.sleep(1)
 
 #############################################################################################
 
@@ -1211,6 +1212,10 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
+def ctPostProcess(ccy):
+  if ccy=='XRP':
+    time.sleep(1)
+
 def ctRun(ccy,tgtBps,color):
   ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
   if not ccy in ['BTC', 'ETH', 'XRP']:
@@ -1250,6 +1255,7 @@ def ctRun(ccy,tgtBps,color):
       # Check for too few candidates
       if len(d.keys())<2:
         chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+        ctPostProcess(ccy)
         continue  # to next iteration in While True loop
 
       # If pair not lock-in yet
@@ -1288,6 +1294,7 @@ def ctRun(ccy,tgtBps,color):
         # Check for too few candidates again
         if len(d.keys()) < 2:
           chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+          ctPostProcess(ccy)
           continue  # to next iteration in While True loop
 
         # If target not reached yet ....
@@ -1297,6 +1304,7 @@ def ctRun(ccy,tgtBps,color):
           z += ctGetSuffix(tgtBps, realizedSlippageBps)
           print(z)
           chosenLong = ''
+          ctPostProcess(ccy)
           continue # to next iteration in While True loop
         else:
           status=0
@@ -1306,6 +1314,7 @@ def ctRun(ccy,tgtBps,color):
         smartBasisBps = (smartBasisDict[chosenShort+'SmartBasis'] - smartBasisDict[chosenLong+'SmartBasis'])* 10000
       except:
         prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps, color)
+        ctPostProcess(ccy)
         continue # to next iteration in While True Loop
       basisBps      = (smartBasisDict[chosenShort+'Basis']      - smartBasisDict[chosenLong+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
@@ -1317,6 +1326,7 @@ def ctRun(ccy,tgtBps,color):
         status+=1
       else:
         prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps, color)
+        ctPostProcess(ccy)
         continue # to next iteration in While True Loop
 
       # Chosen long/short legs
@@ -1382,12 +1392,14 @@ def ctRun(ccy,tgtBps,color):
           status=(min(abs(status),CT_STREAK)-1)*np.sign(status)
           print()
           speak('Cancelled')
+          ctPostProcess(ccy)
           continue # to next iteration in While True loop
         else:
           realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
           print(getCurrentTime() + ': Done')
           print()
           speak('Done')
+          ctPostProcess(ccy)
           break # Go to next program
   speak('All done')
 

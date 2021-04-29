@@ -36,7 +36,10 @@ EXTERNAL_EUR_REF = 0
 ##############
 CT_CONFIGS_DICT=dict()
 
-# BTC --- 0=Disabled; 1=Enabled
+#####
+# BTC
+#####
+# 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=1
 CT_CONFIGS_DICT['FTX_BTC_OK']=1
 CT_CONFIGS_DICT['BB_BTC_OK']=1
@@ -46,7 +49,7 @@ CT_CONFIGS_DICT['BNT_BTC_OK']=1
 CT_CONFIGS_DICT['DB_BTC_OK']=1
 CT_CONFIGS_DICT['KF_BTC_OK']=1
 
-# BTC --- Positive = eager to buy; Negative = eager to sell
+# Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-3
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
@@ -56,7 +59,10 @@ CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
 
-# ETH --- 0=Disabled; 1=Enabled
+#####
+# ETH
+#####
+# 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_ETH_OK']=1
 CT_CONFIGS_DICT['FTX_ETH_OK']=1
 CT_CONFIGS_DICT['BB_ETH_OK']=1
@@ -66,7 +72,7 @@ CT_CONFIGS_DICT['BNT_ETH_OK']=1
 CT_CONFIGS_DICT['DB_ETH_OK']=1
 CT_CONFIGS_DICT['KF_ETH_OK']=1
 
-# ETH --- Positive = eager to buy; Negative = eager to sell
+# Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
@@ -76,15 +82,18 @@ CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
-# XRP --- 0=Disabled; 1=Enabled
+#####
+# XRP
+#####
+# 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_XRP_OK']=1
 CT_CONFIGS_DICT['FTX_XRP_OK']=1
 CT_CONFIGS_DICT['BB_XRP_OK']=1
 CT_CONFIGS_DICT['BN_XRP_OK']=1
 CT_CONFIGS_DICT['BNT_XRP_OK']=1
-CT_CONFIGS_DICT['KF_XRP_OK']=1
+CT_CONFIGS_DICT['KF_XRP_OK']=0
 
-# XRP --- Positive = eager to buy; Negative = eager to sell
+# Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0
@@ -102,7 +111,7 @@ CT_K = 2/(60 * 15 / 4 + 1)           # EMA smoothing parameter
 
 CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
-CT_TRADE_XRP_NOTIONAL = 1000         # Per trade notional
+CT_TRADE_XRP_NOTIONAL = 2500         # Per trade notional
 
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
