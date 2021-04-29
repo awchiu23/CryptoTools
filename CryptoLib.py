@@ -1137,7 +1137,7 @@ def caRun(ccy, color):
       exchList=INT_CCY_DICT[ccy]['exch']
     else:
       exchList=['ftx','bb']
-    for exch in INT_CCY_DICT[ccy]['exch']:
+    for exch in exchList:
       isEst2 = exch in ['bb', 'bbt', 'kf']
       process(exch, fundingDict, smartBasisDict, isEst2, color)
     print()
