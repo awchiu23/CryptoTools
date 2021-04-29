@@ -626,6 +626,12 @@ def bntGetEstFunding(bn, ccy):
   return float(bn.fapiPublic_get_premiumindex({'symbol': ccy + 'USDT'})['lastFundingRate']) * 3 * 365
 
 def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
+  # Do not use @retry
+  def roundQty(ccy,qty):
+    if ccy=='XRP':
+      return round(qty)
+    else:
+      return round(qty,3)
   @retry(wait_fixed=1000)
   def bntGetOrder(bn, ticker, orderId):
     return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
@@ -648,7 +654,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   ticker=ccy+'USDT'
-  qty = round(trade_qty, 3)
+  qty = roundQty(ccy,trade_qty)
   print(getCurrentTime()+': Sending BNT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
     refPrice = bntGetBid(bn, ccy)
@@ -678,7 +684,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
       else:
         refTime = time.time()
         limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
-        orderId=bntPlaceOrder(bn, ticker, side, round(leavesQty,3), limitPrice)
+        orderId=bntPlaceOrder(bn, ticker, side, roundQty(ccy,leavesQty), limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
