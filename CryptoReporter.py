@@ -68,7 +68,7 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
 def printEURDeltas(krCores, spotDict):
   spotDelta=0
   for krCore in krCores:
-    spotDelta+=krCore.spotDeltaEUR
+    spotDelta+=krCore.spots.loc['EUR','SpotDelta']
   if spotDelta == 0 and EXTERNAL_EUR_DELTA == 0: return
   netDelta=spotDelta+EXTERNAL_EUR_DELTA
   z='EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(27) + \
@@ -99,11 +99,11 @@ class core:
       if exch in INT_CCY_DICT[ccy]['exch']:
         self.validCcys.append(ccy)
     #####
-    self.spotDeltaBTC=0
-    self.spotDeltaETH=0
-    self.spotDeltaXRP=0
-    self.spotDeltaFTT=0
-    self.futures = pd.DataFrame({'Ccy':INT_CCY_DICT.keys(), 'FutDelta': [0] * len(INT_CCY_DICT)}).set_index('Ccy')
+    ccyList = list(INT_CCY_DICT.keys())
+    if exch=='kr': ccyList.append('EUR')
+    zeroes = [0] * len(ccyList)
+    self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')
+    self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes}).set_index('Ccy')
     self.oneDayIncome = 0
     self.nav = 0
 
@@ -139,6 +139,10 @@ class core:
       self.fundingStrDict=dict()
       for ccy in self.validCcys:
         self.fundingStrDict[ccy] = self.getFundingStr(ccy)
+
+  def calcSpotDeltaUSD(self):
+    for ccy in self.validCcys:
+      self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
 
   def getIncomesStr(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
@@ -196,16 +200,7 @@ class core:
       body += '/' + str(round(self.estFunding2Dict[ccy] * 100)) + '%'
     body += ' p.a.'
     #####
-    if ccy=='BTC':
-      spotDeltaUSD=self.spotDeltaBTC*self.spotDict['BTC']
-    elif ccy=='ETH':
-      spotDeltaUSD=self.spotDeltaETH*self.spotDict['ETH']
-    elif ccy=='FTT':
-      spotDeltaUSD=self.spotDeltaFTT*self.spotDict['FTT']
-    elif ccy=='XRP':
-      spotDeltaUSD=self.spotDeltaXRP*self.spotDict['XRP']
-    else:
-      sys.exit(1)
+    spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
     if self.exch in ['bbt','bnt']:
@@ -275,11 +270,9 @@ class core:
       return d
     ######
     self.wallet = cl.ftxGetWallet(ftx)
-    self.wallet['SpotDelta'] = self.wallet['total']
-    self.spotDeltaBTC = self.wallet.loc['BTC', 'SpotDelta']
-    self.spotDeltaETH = self.wallet.loc['ETH', 'SpotDelta']
-    self.spotDeltaXRP = self.wallet.loc['XRP', 'SpotDelta']
-    self.spotDeltaFTT = self.wallet.loc['FTT', 'SpotDelta']
+    for ccy in self.validCcys:
+      self.spots.loc[ccy,'SpotDelta'] = self.wallet.loc[ccy,'total']
+    self.calcSpotDeltaUSD()
     ######
     info = self.api.private_get_account()['result']
     futs = pd.DataFrame(info['positions'])
@@ -367,9 +360,9 @@ class core:
     #####
     self.wallet=pd.DataFrame(self.api.v2_private_get_wallet_balance()['result']).transpose()
     cl.dfSetFloat(self.wallet,'equity')
-    self.spotDeltaBTC = self.wallet.loc['BTC','equity']
-    self.spotDeltaETH = self.wallet.loc['ETH','equity']
-    self.spotDeltaXRP = self.wallet.loc['XRP','equity']
+    for ccy in self.validCcys:
+      self.spots.loc[ccy,'SpotDelta']=self.wallet.loc[ccy,'equity']
+    self.calcSpotDeltaUSD()
     #####
     futs = self.api.v2_private_get_position_list()['result']
     futs = pd.DataFrame([pos['data'] for pos in futs])
@@ -399,7 +392,7 @@ class core:
     self.oneDayIncome = self.payments['incomeUSD'].sum()
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
-    self.nav = self.spotDeltaBTC * self.spotDict['BTC'] + self.spotDeltaETH * self.spotDict['ETH'] + self.spotDeltaXRP * self.spotDict['XRP']
+    self.nav=self.spots['SpotDeltaUSD'].sum()
     self.liqBTC = getLiq(self.futures, 'BTC')
     self.liqETH = getLiq(self.futures, 'ETH')
     self.liqXRP = getLiq(self.futures, 'XRP')
@@ -479,9 +472,9 @@ class core:
     bal['Ccy'] = bal['asset']
     bal = bal.set_index('Ccy').loc[self.validCcys]
     bal['SpotDelta'] = bal['balance'] + bal['crossUnPnl']
-    self.spotDeltaBTC = bal.loc['BTC', 'SpotDelta']
-    self.spotDeltaETH = bal.loc['ETH', 'SpotDelta']
-    self.spotDeltaXRP = bal.loc['XRP', 'SpotDelta']
+    for ccy in self.validCcys:
+      self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'SpotDelta']
+    self.calcSpotDeltaUSD()
     #####
     futs = pd.DataFrame(self.api.dapiPrivate_get_positionrisk())
     cl.dfSetFloat(futs, 'positionAmt')
@@ -504,7 +497,7 @@ class core:
     self.prevAnnRet = self.prevIncome * 3 * 365 / notional
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
-    self.nav = bal.loc['BTC', 'SpotDelta'] * self.spotDict['BTC'] + bal.loc['ETH', 'SpotDelta'] * self.spotDict['ETH'] + bal.loc['XRP', 'SpotDelta'] * self.spotDict['XRP']
+    self.nav = self.spots['SpotDeltaUSD'].sum()
     self.liqBTC = float(futs.loc['BTC', 'liquidationPrice']) / float(futs.loc['BTC', 'markPrice'])
     self.liqETH = float(futs.loc['ETH', 'liquidationPrice']) / float(futs.loc['ETH', 'markPrice'])
     self.liqXRP = float(futs.loc['XRP', 'liquidationPrice']) / float(futs.loc['XRP', 'markPrice'])
@@ -578,10 +571,15 @@ class core:
       else:
         return 0
     #####
-    asBTC = self.api.private_get_get_account_summary({'currency': 'BTC'})['result']
-    asETH = self.api.private_get_get_account_summary({'currency': 'ETH'})['result']
-    self.spotDeltaBTC = float(asBTC['equity'])
-    self.spotDeltaETH = float(asETH['equity'])
+    for ccy in self.validCcys:
+      acSum=self.api.private_get_get_account_summary({'currency': ccy})['result']
+      self.spots.loc[ccy,'SpotDelta']=float(acSum['equity'])
+      if ccy=='BTC':
+        self.liqBTC = float(acSum['estimated_liquidation_ratio'])
+      else:
+        self.liqETH = float(acSum['estimated_liquidation_ratio'])
+    self.calcSpotDeltaUSD()
+    #####
     futs = pd.DataFrame([['BTC', self.spotDict['BTC'], cl.dbGetFutPos(self.api, 'BTC')],
                          ['ETH', self.spotDict['ETH'], cl.dbGetFutPos(self.api, 'ETH')],
                          ['XRP', self.spotDict['XRP'], 0]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
@@ -592,9 +590,9 @@ class core:
     self.oneDayIncome = getOneDayIncome('BTC', self.spotDict['BTC']) + getOneDayIncome('ETH', self.spotDict['ETH'])
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
-    self.nav = self.spotDeltaBTC * self.spotDict['BTC'] + self.spotDeltaETH * self.spotDict['ETH']
-    self.liqBTC = float(asBTC['estimated_liquidation_ratio'])
-    self.liqETH = float(asETH['estimated_liquidation_ratio'])
+    self.nav = self.spots['SpotDeltaUSD'].sum()
+    #self.liqBTC = float(asBTC['estimated_liquidation_ratio'])
+    #self.liqETH = float(asETH['estimated_liquidation_ratio'])
     #####
     self.estFundingDict = dict()
     for ccy in self.validCcys:
@@ -626,9 +624,10 @@ class core:
       return df,prevIncome,oneDayIncome
     #####
     accounts = self.api.query('accounts')['accounts']
-    self.spotDeltaBTC = accounts['fi_xbtusd']['auxiliary']['pv'] + accounts['cash']['balances']['xbt']
-    self.spotDeltaETH = accounts['fi_ethusd']['auxiliary']['pv'] + accounts['cash']['balances']['eth']
-    self.spotDeltaXRP = accounts['fi_xrpusd']['auxiliary']['pv'] + accounts['cash']['balances']['xrp']
+    for ccy in self.validCcys:
+      ccy2 = 'xbt' if ccy=='BTC' else ccy.lower()
+      self.spots.loc[ccy,'SpotDelta'] = accounts['fi_'+ccy2+'usd']['auxiliary']['pv'] + accounts['cash']['balances'][ccy2]
+    self.calcSpotDeltaUSD()
     #####
     futs = pd.DataFrame([['BTC', self.spotDict['BTC'], accounts['fi_xbtusd']['balances']['pi_xbtusd']], \
                          ['ETH', self.spotDict['ETH'], accounts['fi_ethusd']['balances']['pi_ethusd']],
@@ -641,7 +640,7 @@ class core:
     self.prevAnnRet = self.prevIncome * 6 * 365 / notional
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
-    self.nav = self.spotDeltaBTC * self.spotDict['BTC'] + self.spotDeltaETH * self.spotDict['ETH'] + self.spotDeltaXRP * self.spotDict['XRP']
+    self.nav = self.spots['SpotDeltaUSD'].sum()
     self.liqBTC = accounts['fi_xbtusd']['triggerEstimates']['im'] / self.spotDict['BTC']
     self.liqETH = accounts['fi_ethusd']['triggerEstimates']['im'] / self.spotDict['ETH']
     self.liqXRP = accounts['fi_xrpusd']['triggerEstimates']['im'] / self.spotDict['XRP']
@@ -657,19 +656,16 @@ class core:
   ####
   def krInit(self):
     def getBal(bal, ccy):
+      d = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
       try:
-        return float(bal[ccy])
+        return float(bal[d[ccy]])
       except:
         return 0
     #####
+    KR_CCYS = ['BTC','ETH','XRP','EUR']
     bal = self.api.private_post_balance()['result']
-    self.spotDeltaBTC = getBal(bal, 'XXBT')
-    self.spotDeltaETH = getBal(bal, 'XETH')
-    self.spotDeltaXRP = getBal(bal, 'XXRP')
-    self.spotDeltaEUR = getBal(bal, 'ZEUR')
-    self.spotDf = pd.DataFrame([['BTC', self.spotDeltaBTC * self.spotDict['BTC']],
-                                ['ETH', self.spotDeltaETH * self.spotDict['ETH']],
-                                ['XRP', self.spotDeltaXRP * self.spotDict['XRP']]], columns=['Ccy', 'SpotUSD']).set_index('Ccy')
+    for ccy in KR_CCYS:
+      self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
     #####
     positions = pd.DataFrame(self.api.private_post_openpositions()['result']).transpose().set_index('pair')
     if not all([z in ['XXBTZUSD', 'XXBTZEUR'] for z in positions.index]):
@@ -679,9 +675,11 @@ class core:
     positions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in positions['time']]
     positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
     positions['volNetUSD'] = positions['volNetBTC'] * self.spotDict['BTC']
-    self.spotDeltaBTC += positions['volNetBTC'].sum()
+    self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
     if 'XXBTZEUR' in positions.index:
-      self.spotDeltaEUR -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+      self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+    for ccy in KR_CCYS:
+      self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
     notional = positions['volNetUSD'].abs().sum()
     #####
     # mdbUSD=Margin Delta BTC in USD
@@ -695,14 +693,14 @@ class core:
     self.nav = float(tradeBal['e'])
     #####
     freeMargin = float(tradeBal['mf'])
-    self.liqBTC = 1 - freeMargin / (self.spotDeltaBTC * self.spotDict['BTC'])
+    self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
 
   def krPrintBorrow(self, nav):
     zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
     suffix='(spot BTC/ETH/XRP: $'
-    suffix+= str(round(self.spotDf.loc['BTC', 'SpotUSD'] / 1000)) + 'K/$'
-    suffix += str(round(self.spotDf.loc['ETH', 'SpotUSD'] / 1000)) + 'K/$'
-    suffix += str(round(self.spotDf.loc['XRP', 'SpotUSD'] / 1000)) + 'K; XXBTZUSD/XXBTZEUR: $'
+    suffix+= str(round(self.spots.loc['BTC', 'SpotDeltaUSD'] / 1000)) + 'K/$'
+    suffix += str(round(self.spots.loc['ETH', 'SpotDeltaUSD'] / 1000)) + 'K/$'
+    suffix += str(round(self.spots.loc['XRP', 'SpotDeltaUSD'] / 1000)) + 'K; XXBTZUSD/XXBTZEUR: $'
     suffix += str(round(self.mdbUSDDf.loc['USD','MDBU']/1000))+'K/$'
     suffix += str(round(self.mdbUSDDf.loc['EUR','MDBU']/1000))+'K)'
     print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
@@ -751,9 +749,9 @@ futDeltaXRP=0
 oneDayIncome=0
 for obj in objs:
   nav+=obj.nav
-  spotDeltaBTC+=obj.spotDeltaBTC
-  spotDeltaETH+=obj.spotDeltaETH
-  spotDeltaXRP+=obj.spotDeltaXRP
+  spotDeltaBTC+=obj.spots.loc['BTC','SpotDelta']
+  spotDeltaETH+=obj.spots.loc['ETH','SpotDelta']
+  spotDeltaXRP+=obj.spots.loc['XRP','SpotDelta']
   futDeltaBTC+=obj.futures.loc['BTC','FutDelta']
   futDeltaETH+=obj.futures.loc['ETH','FutDelta']
   futDeltaXRP+=obj.futures.loc['XRP','FutDelta']

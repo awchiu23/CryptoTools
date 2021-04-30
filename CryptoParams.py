@@ -112,7 +112,7 @@ CT_K = 2/(60 * 15 / 4 + 1)           # EMA smoothing parameter
 
 CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
 CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
-CT_TRADE_XRP_NOTIONAL = 2500         # Per trade notional
+CT_TRADE_XRP_NOTIONAL = 3000         # Per trade notional
 
 CT_MAX_NOTIONAL = 50000              # Hard limit
 CT_MAX_BTC = 0.5                     # Hard limit
@@ -144,7 +144,7 @@ CR_N_KR_ACCOUNTS = 1
 ###########
 # Internals
 ###########
-INT_CCY_DICT=dict()
+INT_CCY_DICT=dict() # Exch = Valid futures exchanges
 INT_CCY_DICT['BTC']={'exch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
 INT_CCY_DICT['ETH']={'exch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
 INT_CCY_DICT['XRP']={'exch':['ftx', 'bb', 'bn', 'bnt', 'kf']}
