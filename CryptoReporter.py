@@ -693,15 +693,18 @@ class core:
     self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
 
   def krPrintBorrow(self, nav):
+    d=self.KR_CCY_DICT.copy()
+    del d['EUR']
+    zList=[]
+    for ccy in d.keys():
+      zList.append('$'+str(round(self.spots.loc[ccy,'SpotDeltaUSD']/1000))+'K')
     zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
-    suffix='(spot BTC/ETH/XRP: $'
-    suffix+= str(round(self.spots.loc['BTC', 'SpotDeltaUSD'] / 1000)) + 'K/$'
-    suffix += str(round(self.spots.loc['ETH', 'SpotDeltaUSD'] / 1000)) + 'K/$'
-    suffix += str(round(self.spots.loc['XRP', 'SpotDeltaUSD'] / 1000)) + 'K; XXBTZUSD/XXBTZEUR: $'
-    suffix += str(round(self.mdbUSDDf.loc['USD','MDBU']/1000))+'K/$'
-    suffix += str(round(self.mdbUSDDf.loc['EUR','MDBU']/1000))+'K)'
+    suffix='(spot '+'/'.join(d.keys())+': '
+    suffix+='/'.join(zList)
+    suffix+='; XXBTZUSD/XXBTZEUR: $'
+    suffix += str(round(self.mdbUSDDf.loc['USD', 'MDBU'] / 1000)) + 'K/$'
+    suffix += str(round(self.mdbUSDDf.loc['EUR', 'MDBU'] / 1000)) + 'K)'
     print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
-
 
 ####################################################################################################
 
