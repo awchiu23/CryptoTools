@@ -87,7 +87,7 @@ def printUSDTDeltas(ftxCore,usdtCoreList,spotDict):
   netDelta=realDelta+implDelta
   z1=str(round(realDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'+str(round(netDelta/1000))+'K'
   z2='($'+str(round(realDelta_USD/1000))+'K/$'+str(round(implDelta_USD/1000))+'K/$'+ str(round(netDelta_USD/1000))+'K)'
-  print(termcolor.colored('USDT delta: '.rjust(41)+z1.ljust(27)+z2, 'red'))
+  print(termcolor.colored('USDT real/impl/net delta: '.rjust(41)+z1.ljust(27)+z2, 'red'))
 
 ####################################################################################################
 
