@@ -465,6 +465,11 @@ def bbtGetEstFunding2(bb,ccy):
   return float(bb.private_linear_get_funding_predicted_funding({'symbol': ccy+'USDT'})['result']['predicted_funding_rate'])* 3 * 365
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
+  # Do not use @retry
+  def getIsReduceOnly(bb, ccy, side, qty, cushionUSD=50000):
+    df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
+    oppSide = 'Sell' if side == 'BUY' else 'Buy'
+    return (qty + cushionUSD / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
   @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
     return bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
@@ -488,7 +493,10 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
   else:
     refPrice = bbtGetAsk(bb, ccy)
   limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
-  orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel','reduce_only':True,'close_on_trigger':False})['result']['order_id']
+  isReduceOnly=getIsReduceOnly(bb, ccy, side, qty)
+  print(getCurrentTime() + ': [DEBUG: isReduceOnly: '+str(isReduceOnly)+']')
+  orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel',
+                                               'reduce_only':bool(isReduceOnly),'close_on_trigger':False})['result']['order_id']
   refTime = time.time()
   nChases=0
   while True:
