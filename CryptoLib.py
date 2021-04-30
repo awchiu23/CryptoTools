@@ -1245,7 +1245,7 @@ def ctRun(ccy,tgtBps,color):
       smartBasisDict['spotBasis'] = 0
 
       # Remove disabled instruments
-      for exch in INT_CCY_DICT[ccy]['exch']:
+      for exch in INT_CCY_DICT[ccy]['exch']+['spot']:
         if CT_CONFIGS_DICT[exch.upper() + '_' + ccy + '_OK'] == 0:
           del smartBasisDict[exch + 'SmartBasis']
           del smartBasisDict[exch+'Basis']
