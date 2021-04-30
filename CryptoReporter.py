@@ -110,35 +110,27 @@ class core:
   def run(self):
     if self.exch=='dummy': return
     if self.exch=='ftx':
-      self.api = cl.ftxCCXTInit()
       self.ftxInit()
     elif self.exch=='bb':
-      self.api = cl.bbCCXTInit()
       self.bbInit()
     elif self.exch=='bbt':
-      self.api = cl.bbCCXTInit()
       self.bbtInit()
     elif self.exch=='bn':
-      self.api = cl.bnCCXTInit()
       self.bnInit()
     elif self.exch=='bnt':
-      self.api = cl.bnCCXTInit()
       self.bntInit()
     elif self.exch=='db':
-      self.api = cl.dbCCXTInit()
       self.dbInit()
     elif self.exch=='kf':
-      self.api = cl.kfApophisInit()
       self.kfInit()
     elif self.exch=='kr':
-      self.api = cl.krCCXTInit(self.n)
       self.krInit()
     if not self.exch == 'kr':
       self.incomesStr = self.getIncomesStr()
-      self.liqStr = self.getLiqStr()
       self.fundingStrDict=dict()
       for ccy in self.validCcys:
         self.fundingStrDict[ccy] = self.getFundingStr(ccy)
+      self.liqStr = self.getLiqStr()
 
   def calcSpotDeltaUSD(self):
     for ccy in self.validCcys:
@@ -269,6 +261,7 @@ class core:
       d['oneDayFlowsAnnRet']=oneDayFlowsAnnRet
       return d
     ######
+    self.api = cl.ftxCCXTInit()
     self.wallet = cl.ftxGetWallet(ftx)
     for ccy in self.validCcys:
       self.spots.loc[ccy,'SpotDelta'] = self.wallet.loc[ccy,'total']
@@ -358,6 +351,7 @@ class core:
       markPrice = float(self.futures.loc[ccy, 'size']) / (float(self.futures.loc[ccy, 'position_value']) + float(self.futures.loc[ccy, 'unrealised_pnl']))
       return liqPrice / markPrice
     #####
+    self.api = cl.bbCCXTInit()
     self.wallet=pd.DataFrame(self.api.v2_private_get_wallet_balance()['result']).transpose()
     cl.dfSetFloat(self.wallet,'equity')
     for ccy in self.validCcys:
@@ -411,6 +405,7 @@ class core:
     def getPayments(ccy):
       return pd.DataFrame(self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False)
     #####
+    self.api = cl.bbCCXTInit()
     futs = pd.DataFrame([['BTC', self.spotDict['BTC'], cl.bbtGetFutPos(self.api, 'BTC')],
                          ['ETH', self.spotDict['ETH'], cl.bbtGetFutPos(self.api, 'ETH')],
                          ['XRP', self.spotDict['XRP'], 0]], columns=['Ccy', 'Spot', 'FutDelta']).set_index('Ccy')
@@ -468,6 +463,7 @@ class core:
       oneDayIncome = df['incomeUSD'].sum()
       return prevIncome,oneDayIncome
     #####
+    self.api = cl.bnCCXTInit()
     bal = pd.DataFrame(self.api.dapiPrivate_get_balance())
     cl.dfSetFloat(bal, ['balance', 'crossUnPnl'])
     bal['Ccy'] = bal['asset']
@@ -532,6 +528,7 @@ class core:
       oneDayIncome = df['incomeUSD'].sum()
       return prevIncome, oneDayIncome
     #####
+    self.api = cl.bnCCXTInit()
     futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
     cl.dfSetFloat(futs, ['positionAmt'])
     futs = futs.set_index('symbol').loc[['BTCUSDT', 'ETHUSDT', 'XRPUSDT']]
@@ -573,6 +570,7 @@ class core:
       else:
         return 0
     #####
+    self.api = cl.dbCCXTInit()
     self.liqDict = dict()
     for ccy in self.validCcys:
       acSum=self.api.private_get_get_account_summary({'currency': ccy})['result']
@@ -620,7 +618,8 @@ class core:
       df=df[df['type']=='funding rate change'].set_index('date').sort_index()
       df['rate'] = df['funding rate'] * df['Spot'] * 8
       return df,prevIncome,oneDayIncome
-    #####    
+    #####
+    self.api = cl.kfApophisInit()
     accounts = self.api.query('accounts')['accounts']
     self.liqDict = dict()
     for ccy in self.validCcys:
@@ -652,14 +651,14 @@ class core:
   # KR
   ####
   def krInit(self):
-    self.KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
-    #####
     def getBal(bal, ccy):
       try:
         return float(bal[self.KR_CCY_DICT[ccy]])
       except:
         return 0
     #####
+    self.KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
+    self.api = cl.krCCXTInit(self.n)
     bal = self.api.private_post_balance()['result']
     for ccy in self.KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
