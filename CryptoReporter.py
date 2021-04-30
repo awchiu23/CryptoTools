@@ -217,10 +217,10 @@ class core:
         z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
         zRet+='\n'+termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red')
     else:
-      zBTC = 'never' if (self.liqBTC <= 0 or self.liqBTC >= 10) else str(round(self.liqBTC * 100)) + '%'
-      zETH = 'never' if (self.liqETH <= 0 or self.liqETH >= 10) else str(round(self.liqETH * 100)) + '%'
+      zBTC = 'never' if (self.liqDict['BTC'] <= 0 or self.liqDict['BTC'] >= 10) else str(round(self.liqDict['BTC'] * 100)) + '%'
+      zETH = 'never' if (self.liqDict['ETH'] <= 0 or self.liqDict['ETH'] >= 10) else str(round(self.liqDict['ETH'] * 100)) + '%'
       if 'XRP' in self.validCcys:
-        zXRP = 'never' if (self.liqXRP <= 0 or self.liqXRP >= 10) else str(round(self.liqXRP * 100)) + '%'
+        zXRP = 'never' if (self.liqDict['XRP'] <= 0 or self.liqDict['XRP'] >= 10) else str(round(self.liqDict['XRP'] * 100)) + '%'
         zRet = termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH/XRP): ').rjust(41) + zBTC + '/' + zETH + '/' + zXRP + ' (of spot)', 'red')
       else:
         zRet = termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red')
@@ -353,9 +353,9 @@ class core:
           df = df.append(pd.DataFrame(tl))
       return df.set_index('symbol', drop=False)
     #####
-    def getLiq(futures, ccy):
-      liqPrice = float(futures.loc[ccy, 'liq_price'])
-      markPrice = float(futures.loc[ccy, 'size']) / (float(futures.loc[ccy, 'position_value']) + float(futures.loc[ccy, 'unrealised_pnl']))
+    def getLiq(ccy):
+      liqPrice = float(self.futures.loc[ccy, 'liq_price'])
+      markPrice = float(self.futures.loc[ccy, 'size']) / (float(self.futures.loc[ccy, 'position_value']) + float(self.futures.loc[ccy, 'unrealised_pnl']))
       return liqPrice / markPrice
     #####
     self.wallet=pd.DataFrame(self.api.v2_private_get_wallet_balance()['result']).transpose()
@@ -393,9 +393,13 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
     self.nav=self.spots['SpotDeltaUSD'].sum()
-    self.liqBTC = getLiq(self.futures, 'BTC')
-    self.liqETH = getLiq(self.futures, 'ETH')
-    self.liqXRP = getLiq(self.futures, 'XRP')
+    #####
+    self.liqDict = dict()
+    for ccy in self.validCcys:
+      self.liqDict[ccy] = getLiq(ccy)    
+    #self.liqBTC = getLiq(self.futures, 'BTC')
+    #self.liqETH = getLiq(self.futures, 'ETH')
+    #self.liqXRP = getLiq(self.futures, 'XRP')
     #####
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
@@ -498,9 +502,10 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
-    self.liqBTC = float(futs.loc['BTC', 'liquidationPrice']) / float(futs.loc['BTC', 'markPrice'])
-    self.liqETH = float(futs.loc['ETH', 'liquidationPrice']) / float(futs.loc['ETH', 'markPrice'])
-    self.liqXRP = float(futs.loc['XRP', 'liquidationPrice']) / float(futs.loc['XRP', 'markPrice'])
+    #####
+    self.liqDict = dict()
+    for ccy in self.validCcys:
+      self.liqDict[ccy] = float(self.futures.loc[ccy, 'liquidationPrice']) / float(self.futures.loc[ccy, 'markPrice']) 
     #####
     self.estFundingDict=dict()
     for ccy in self.validCcys:
@@ -571,13 +576,11 @@ class core:
       else:
         return 0
     #####
+    self.liqDict = dict()
     for ccy in self.validCcys:
       acSum=self.api.private_get_get_account_summary({'currency': ccy})['result']
       self.spots.loc[ccy,'SpotDelta']=float(acSum['equity'])
-      if ccy=='BTC':
-        self.liqBTC = float(acSum['estimated_liquidation_ratio'])
-      else:
-        self.liqETH = float(acSum['estimated_liquidation_ratio'])
+      self.liqDict[ccy] = float(acSum['estimated_liquidation_ratio']) 
     self.calcSpotDeltaUSD()
     #####
     futs = pd.DataFrame([['BTC', self.spotDict['BTC'], cl.dbGetFutPos(self.api, 'BTC')],
@@ -591,8 +594,6 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
-    #self.liqBTC = float(asBTC['estimated_liquidation_ratio'])
-    #self.liqETH = float(asETH['estimated_liquidation_ratio'])
     #####
     self.estFundingDict = dict()
     for ccy in self.validCcys:
@@ -622,11 +623,13 @@ class core:
       df=df[df['type']=='funding rate change'].set_index('date').sort_index()
       df['rate'] = df['funding rate'] * df['Spot'] * 8
       return df,prevIncome,oneDayIncome
-    #####
+    #####    
     accounts = self.api.query('accounts')['accounts']
+    self.liqDict = dict()
     for ccy in self.validCcys:
       ccy2 = 'xbt' if ccy=='BTC' else ccy.lower()
       self.spots.loc[ccy,'SpotDelta'] = accounts['fi_'+ccy2+'usd']['auxiliary']['pv'] + accounts['cash']['balances'][ccy2]
+      self.liqDict[ccy] = accounts['fi_' + ccy2 + 'usd']['triggerEstimates']['im'] / self.spotDict[ccy]
     self.calcSpotDeltaUSD()
     #####
     futs = pd.DataFrame([['BTC', self.spotDict['BTC'], accounts['fi_xbtusd']['balances']['pi_xbtusd']], \
@@ -641,9 +644,6 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
-    self.liqBTC = accounts['fi_xbtusd']['triggerEstimates']['im'] / self.spotDict['BTC']
-    self.liqETH = accounts['fi_ethusd']['triggerEstimates']['im'] / self.spotDict['ETH']
-    self.liqXRP = accounts['fi_xrpusd']['triggerEstimates']['im'] / self.spotDict['XRP']
     #####
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
