@@ -75,10 +75,19 @@ def printEURDeltas(krCores, spotDict):
     '($' + str(round(EXTERNAL_EUR_DELTA * spotDict['EUR'] / 1000)) + 'K/$' + str(round(spotDelta * spotDict['EUR'] / 1000)) + 'K/$' + str(round(netDelta * spotDict['EUR'] / 1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
-def printUSDTDeltas(ftxCore,bbtCore,bntCore,spotDict):
-  spotDeltaUSDT=ftxCore.wallet.loc['USDT', 'usdValue'] + (bbtCore.nav + bntCore.nav)/spotDict['USDT']
-  z='USDT delta: '.rjust(41)+(str(round(spotDeltaUSDT/1000))+'K').ljust(27)+'($'+str(round(spotDeltaUSDT*spotDict['USDT']/1000))+'K)'
-  print(termcolor.colored(z, 'red'))
+def printUSDTDeltas(ftxCore,usdtCoreList,spotDict):
+  realDelta_USD=ftxCore.wallet.loc['USDT','usdValue']
+  implDelta_USD=0
+  for core in usdtCoreList:
+    realDelta_USD+=core.nav
+    implDelta_USD-=core.futures['FutDeltaUSD'].sum()
+  netDelta_USD=realDelta_USD+implDelta_USD
+  realDelta=realDelta_USD/spotDict['USDT']
+  implDelta=implDelta_USD/spotDict['USDT']
+  netDelta=realDelta+implDelta
+  z1=str(round(realDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'+str(round(netDelta/1000))+'K'
+  z2='($'+str(round(realDelta_USD/1000))+'K/$'+str(round(implDelta_USD/1000))+'K/$'+ str(round(netDelta_USD/1000))+'K)'
+  print(termcolor.colored('USDT delta: '.rjust(41)+z1.ljust(27)+z2, 'red'))
 
 ####################################################################################################
 
@@ -103,7 +112,7 @@ class core:
     if exch=='kr': ccyList.append('EUR')
     zeroes = [0] * len(ccyList)
     self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')
-    self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes}).set_index('Ccy')
+    self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
     self.oneDayIncome = 0
     self.nav = 0
 
@@ -135,6 +144,10 @@ class core:
   def calcSpotDeltaUSD(self):
     for ccy in self.validCcys:
       self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
+
+  def calcFuturesDeltaUSD(self):
+    for ccy in self.validCcys:
+      self.futures.loc[ccy, 'FutDeltaUSD'] = self.futures.loc[ccy, 'FutDelta'] * self.spotDict[ccy]
 
   def getIncomesStr(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
@@ -402,18 +415,15 @@ class core:
   # BBT
   #####
   def bbtInit(self):
-    def getPayments(ccy):
-      return pd.DataFrame(self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False)
-    #####
     self.api = cl.bbCCXTInit()
-    futs = pd.DataFrame([['BTC', self.spotDict['BTC'], cl.bbtGetFutPos(self.api, 'BTC')],
-                         ['ETH', self.spotDict['ETH'], cl.bbtGetFutPos(self.api, 'ETH')],
-                         ['XRP', self.spotDict['XRP'], 0]], columns=['Ccy', 'Spot', 'FutDelta']).set_index('Ccy')
-    futs['FutDeltaUSD']=futs['Spot']*futs['FutDelta']
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures=futs
+    for ccy in self.validCcys:
+      self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
+    self.calcFuturesDeltaUSD()
+    notional = self.futures['FutDeltaUSD'].abs().sum()
     #####
-    pmts = getPayments('BTC').append(getPayments('ETH'))
+    pmts=pd.DataFrame()
+    for ccy in self.validCcys:
+      pmts=pmts.append(pd.DataFrame(self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False))
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
     pmts['incomeUSD'] = -pmts['exec_fee'] * self.spotDict['USDT']
     pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
@@ -428,7 +438,7 @@ class core:
     walletUSDT = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
     self.nav=float(walletUSDT['equity'])*self.spotDict['USDT']
     cushion=float(walletUSDT['available_balance'])*self.spotDict['USDT']
-    totalDelta = futs['FutDeltaUSD'].sum()
+    totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
     self.estFundingDict = dict()
@@ -531,7 +541,7 @@ class core:
     self.api = cl.bnCCXTInit()
     futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
     cl.dfSetFloat(futs, ['positionAmt'])
-    futs = futs.set_index('symbol').loc[['BTCUSDT', 'ETHUSDT', 'XRPUSDT']]
+    futs = futs.set_index('symbol').loc[[z+'USDT' for z in self.validCcys]]
     futs['Ccy'] = [z[:3] for z in futs.index]
     futs=futs.set_index('Ccy')
     futs['FutDelta'] = futs['FutDeltaUSD'] = futs['positionAmt']
@@ -540,7 +550,10 @@ class core:
     notional = futs['FutDeltaUSD'].abs().sum()
     self.futures=futs
     #####
-    self.payments = getPayments('BTC').append(getPayments('ETH')).append(getPayments('XRP'))
+    pmts=pd.DataFrame()
+    for ccy in self.validCcys:
+      pmts=pmts.append(getPayments(ccy))
+    self.payments=pmts
     self.prevIncome,self.oneDayIncome=getIncomes()
     self.prevAnnRet = self.prevIncome * 3 * 365 / notional
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
@@ -781,7 +794,7 @@ printDeltas('BTC',spotDict,spotDeltaBTC,futDeltaBTC)
 printDeltas('ETH',spotDict,spotDeltaETH,futDeltaETH)
 printDeltas('XRP',spotDict,spotDeltaXRP,futDeltaXRP)
 if CRYPTO_MODE>0:
-  printUSDTDeltas(ftxCore, bbtCore, bntCore, spotDict)
+  printUSDTDeltas(ftxCore, [bbtCore, bntCore], spotDict)
   printEURDeltas(krCores, spotDict)
 print()
 #####
