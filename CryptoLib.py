@@ -254,7 +254,6 @@ def roundPrice(exch, price, ccy):
 def ftxGetWallet(ftx):
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   dfSetFloat(wallet,wallet.columns)
-  wallet['spot']=wallet['usdValue']/wallet['total']
   return wallet
 
 @retry(wait_fixed=1000)

@@ -397,9 +397,6 @@ class core:
     self.liqDict = dict()
     for ccy in self.validCcys:
       self.liqDict[ccy] = getLiq(ccy)    
-    #self.liqBTC = getLiq(self.futures, 'BTC')
-    #self.liqETH = getLiq(self.futures, 'ETH')
-    #self.liqXRP = getLiq(self.futures, 'XRP')
     #####
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
@@ -655,16 +652,16 @@ class core:
   # KR
   ####
   def krInit(self):
+    self.KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
+    #####
     def getBal(bal, ccy):
-      d = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
       try:
-        return float(bal[d[ccy]])
+        return float(bal[self.KR_CCY_DICT[ccy]])
       except:
         return 0
     #####
-    KR_CCYS = ['BTC','ETH','XRP','EUR']
     bal = self.api.private_post_balance()['result']
-    for ccy in KR_CCYS:
+    for ccy in self.KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
     #####
     positions = pd.DataFrame(self.api.private_post_openpositions()['result']).transpose().set_index('pair')
@@ -678,7 +675,7 @@ class core:
     self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
     if 'XXBTZEUR' in positions.index:
       self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
-    for ccy in KR_CCYS:
+    for ccy in self.KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
     notional = positions['volNetUSD'].abs().sum()
     #####
@@ -690,7 +687,7 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
     tradeBal = self.api.private_post_tradebalance()['result']
-    self.nav = float(tradeBal['e'])
+    self.nav = float(tradeBal['eb'])+float(tradeBal['n'])
     #####
     freeMargin = float(tradeBal['mf'])
     self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
