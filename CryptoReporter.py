@@ -281,17 +281,13 @@ class core:
     self.calcSpotDeltaUSD()
     ######
     info = self.api.private_get_account()['result']
-    futs = pd.DataFrame(info['positions'])
+    futs = pd.DataFrame(info['positions']).set_index('future')
     cl.dfSetFloat(futs, 'size')
-    futs['Ccy'] = [z[:3] for z in futs['future']]
-    futs = futs.set_index('Ccy').loc[self.validCcys]
-    futs['FutDelta'] = futs['size']
-    futs.loc[futs['side'] == 'sell', 'FutDelta'] *= -1
-    futs['FutDeltaUSD'] = futs['FutDelta']
     for ccy in self.validCcys:
-      futs.loc[ccy, 'FutDeltaUSD'] *= self.spotDict[ccy]
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures = futs
+      mult = -1 if futs.loc[ccy + '-PERP', 'side'] else 1
+      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy+'-PERP','size']*mult
+    self.calcFuturesDeltaUSD()
+    notional = self.futures['FutDeltaUSD'].abs().sum()
     ######
     pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': getYest()})['result'])
     pmts = pmts.set_index('future', drop=False).loc[['BTC-PERP', 'ETH-PERP', 'XRP-PERP', 'FTT-PERP']].set_index('time')
@@ -316,7 +312,7 @@ class core:
     self.mmReq = float(info['maintenanceMarginRequirement'])
     totalPositionNotional = self.nav / self.mf
     cushion = (self.mf - self.mmReq) * totalPositionNotional
-    totalDelta = self.wallet.loc[self.validCcys, 'usdValue'].sum() + futs['FutDeltaUSD'].sum()
+    totalDelta = self.wallet.loc[self.validCcys, 'usdValue'].sum() + self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     self.freeCollateral = float(info['freeCollateral'])
     #####    
