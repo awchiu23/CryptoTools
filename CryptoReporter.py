@@ -290,7 +290,7 @@ class core:
     notional = self.futures['FutDeltaUSD'].abs().sum()
     ######
     pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': getYest()})['result'])
-    pmts = pmts.set_index('future', drop=False).loc[['BTC-PERP', 'ETH-PERP', 'XRP-PERP', 'FTT-PERP']].set_index('time')
+    pmts = pmts.set_index('future', drop=False).loc[[z+'-PERP' for z in self.validCcys]].set_index('time')
     cl.dfSetFloat(pmts, ['payment', 'rate'])
     pmts = pmts.sort_index()
     self.payments = pmts
