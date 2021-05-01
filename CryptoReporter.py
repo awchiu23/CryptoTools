@@ -11,7 +11,7 @@ import sys
 #########
 # Configs
 #########
-QUOTED_CCY_DICT =dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                        # Values are nDigits for display
+QUOTE_CCY_DICT =dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                         # Values are nDigits for display
 AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
 FTX_FLOWS_CCYS = ['BTC','ETH','XRP','USD','USDT']                                                     # Borrow/lending cash flows are calculated for these
 KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})                      # Values are Kraken currency names
@@ -690,7 +690,7 @@ if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
 spotDict['USD']=1
-for ccy in QUOTED_CCY_DICT.keys():
+for ccy in QUOTE_CCY_DICT.keys():
   spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
 #####
 ftxCore = core('ftx',spotDict)
@@ -739,8 +739,8 @@ if externalEURNAV!=0: navStrList.append(getNAVStr('EUR ext',externalEURNAV))
 print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
 #####
 zList=[]
-for ccy in QUOTED_CCY_DICT.keys():
-  zList.append(ccy + '=' + str(round(spotDict[ccy], QUOTED_CCY_DICT[ccy])))
+for ccy in QUOTE_CCY_DICT.keys():
+  zList.append(ccy + '=' + str(round(spotDict[ccy], QUOTE_CCY_DICT[ccy])))
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
 print()
 #####
