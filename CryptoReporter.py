@@ -13,6 +13,7 @@ import sys
 #########
 MAIN_CCY_DICT =dict({'BTC':1,'ETH':1,'XRP':4,'FTT':1,'USDT':4,'EUR':4})                               # Values are nDigits for display
 AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
+FTX_FLOWS_CCYS = ['BTC','ETH','XRP','USD','USDT']
 
 ###########
 # Functions
@@ -309,7 +310,7 @@ class core:
     #####
     self.oneDayFlows=0
     self.flowsDict=dict()
-    for ccy in ['USD','USDT','BTC','ETH','XRP']:
+    for ccy in FTX_FLOWS_CCYS:
       d=getBorrowsLoans(ccy)
       self.flowsDict[ccy]=d
       self.oneDayFlows+=d['oneDayFlows']
@@ -469,11 +470,12 @@ class core:
     self.api = cl.bnCCXTInit()
     bal = pd.DataFrame(self.api.dapiPrivate_get_balance())
     cl.dfSetFloat(bal, ['balance', 'crossUnPnl'])
-    bal['Ccy'] = bal['asset']
-    bal = bal.set_index('Ccy').loc[self.validCcys]
-    bal['SpotDelta'] = bal['balance'] + bal['crossUnPnl']
+    bal = bal.set_index('asset').loc[self.validCcys]
+    #bal['Ccy'] = bal['asset']
+    #bal = bal.set_index('Ccy').loc[self.validCcys]
+    #bal['SpotDelta'] = bal['balance'] + bal['crossUnPnl']
     for ccy in self.validCcys:
-      self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'SpotDelta']
+      self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'balance']+bal.loc[ccy,'crossUnPnl']
     self.calcSpotDeltaUSD()
     #####
     self.liqDict = dict()
@@ -481,7 +483,7 @@ class core:
     cl.dfSetFloat(futs, ['positionAmt','liquidationPrice','markPrice'])
     for ccy in self.validCcys:
       ccy2=ccy+'USD_PERP'
-      mult=100 if ccy=='BTC' else 10
+      mult=100 if ccy=='BTC' else 10 # ETH and XRP are 10 multipliers
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']*mult/self.spotDict[ccy]
       self.liqDict[ccy] = futs.loc[ccy2,'liquidationPrice'] / futs.loc[ccy2,'markPrice']
     self.calcFuturesDeltaUSD()
