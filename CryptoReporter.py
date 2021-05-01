@@ -27,24 +27,24 @@ def getYest():
 
 def krPrintAll(krCores,nav):
   # Incomes
-  zs = []
-  prefixes = []
+  zList = []
+  prefixList = []
   for krCore in krCores:
-    zs.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
-    prefixes.append('KR' + str(krCore.n))
-  print(termcolor.colored(('/'.join(prefixes) + ' 24h rollover fees: ').rjust(41) + ' / '.join(zs), 'blue'))
+    zList.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
+    prefixList.append('KR' + str(krCore.n))
+  print(termcolor.colored(('/'.join(prefixList) + ' 24h rollover fees: ').rjust(41) + ' / '.join(zList), 'blue'))
   #####
   # Borrows
   for krCore in krCores:
     krCore.krPrintBorrow(nav)
   #####
   # Liq
-  zs = []
-  prefixes = []
+  zList = []
+  prefixList = []
   for krCore in krCores:
-    zs.append('never' if (krCore.liqBTC <= 0 or krCore.liqBTC > 10) else str(round(krCore.liqBTC * 100)) + '%')
-    prefixes.append('KR' + str(krCore.n))
-  print(termcolor.colored(('/'.join(prefixes) + ' liquidation (BTC): ').rjust(41) + '/'.join(zs) + ' (of spot)', 'red'))
+    zList.append('never' if (krCore.liqBTC <= 0 or krCore.liqBTC > 10) else str(round(krCore.liqBTC * 100)) + '%')
+    prefixList.append('KR' + str(krCore.n))
+  print(termcolor.colored(('/'.join(prefixList) + ' liquidation (BTC): ').rjust(41) + '/'.join(zList) + ' (of spot)', 'red'))
   print()
 
 def printAllDual(core1, core2):
@@ -68,7 +68,7 @@ def printAllDual(core1, core2):
 def printDeltas(ccy,spotDict,spotDelta,futDelta):
   spot = spotDict[ccy]
   netDelta=spotDelta+futDelta
-  nDigits=None if ccy=='XRP' else 1
+  nDigits=1 if ccy in ['BTC','ETH'] else None
   z=(ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
@@ -231,13 +231,10 @@ class core:
         z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
         zRet+='\n'+termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red')
     else:
-      zBTC = 'never' if (self.liqDict['BTC'] <= 0 or self.liqDict['BTC'] >= 10) else str(round(self.liqDict['BTC'] * 100)) + '%'
-      zETH = 'never' if (self.liqDict['ETH'] <= 0 or self.liqDict['ETH'] >= 10) else str(round(self.liqDict['ETH'] * 100)) + '%'
-      if 'XRP' in self.validCcys:
-        zXRP = 'never' if (self.liqDict['XRP'] <= 0 or self.liqDict['XRP'] >= 10) else str(round(self.liqDict['XRP'] * 100)) + '%'
-        zRet = termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH/XRP): ').rjust(41) + zBTC + '/' + zETH + '/' + zXRP + ' (of spot)', 'red')
-      else:
-        zRet = termcolor.colored((self.exch.upper() + ' liquidation (BTC/ETH): ').rjust(41) + zBTC + '/' + zETH + ' (of spot)', 'red')
+      zList=[]
+      for ccy in self.validCcys:
+        zList.append('never' if (self.liqDict[ccy] <= 0 or self.liqDict[ccy] >= 10) else str(round(self.liqDict[ccy] * 100)) + '%')
+      zRet = termcolor.colored((self.exch.upper() + ' liquidation ('+'/'.join(self.validCcys)+'): ').rjust(41) + '/'.join(zList) + ' (of spot)', 'red')
     return zRet
 
   def printAll(self):
