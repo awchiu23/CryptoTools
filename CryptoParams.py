@@ -140,7 +140,7 @@ APOPHIS_IS_IP_WHITELIST = True
 #################
 # Crypto Reporter
 #################
-CR_IS_SHOW_COIN_LENDING = True
+CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
 
 ###########
