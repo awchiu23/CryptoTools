@@ -13,7 +13,8 @@ import sys
 #########
 QUOTED_CCY_DICT =dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                        # Values are nDigits for display
 AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
-FTX_FLOWS_CCYS = ['BTC','ETH','XRP','USD','USDT']
+FTX_FLOWS_CCYS = ['BTC','ETH','XRP','USD','USDT']                                                     # Borrow/lending cash flows are calculated for these
+KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})                      # Values are Kraken currency names
 
 ###########
 # Functions
@@ -620,16 +621,14 @@ class core:
       self.liqDict[ccy] = accounts['fi_' + ccy2 + 'usd']['triggerEstimates']['im'] / self.spotDict[ccy]
     self.calcSpotDeltaUSD()
     #####
-    futs = pd.DataFrame([['BTC', self.spotDict['BTC'], accounts['fi_xbtusd']['balances']['pi_xbtusd']], \
-                         ['ETH', self.spotDict['ETH'], accounts['fi_ethusd']['balances']['pi_ethusd']],
-                         ['XRP', self.spotDict['XRP'], accounts['fi_xrpusd']['balances']['pi_xrpusd']]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
-    futs['FutDelta'] = futs['FutDeltaUSD'] / futs['Spot']
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures = futs
+    for ccy in self.validCcys:
+      ccy2 = 'xbt' if ccy == 'BTC' else ccy.lower()
+      self.futures.loc[ccy,'FutDelta']=accounts['fi_'+ccy2+'usd']['balances']['pi_'+ccy2+'usd']/spotDict[ccy]
+    self.calcFuturesDeltaUSD()
     #####
     self.payments,self.prevIncome,self.oneDayIncome=getPayments()
-    self.prevAnnRet = self.prevIncome * 6 * 365 / notional
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.prevAnnRet = self.prevIncome * 6 * 365 / self.futNotional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
@@ -645,14 +644,13 @@ class core:
   def krInit(self):
     def getBal(bal, ccy):
       try:
-        return float(bal[self.KR_CCY_DICT[ccy]])
+        return float(bal[KR_CCY_DICT[ccy]])
       except:
         return 0
     #####
-    self.KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
     self.api = cl.krCCXTInit(self.n)
     bal = self.api.private_post_balance()['result']
-    for ccy in self.KR_CCY_DICT.keys():
+    for ccy in KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
     #####
     positions = pd.DataFrame(self.api.private_post_openpositions()['result']).transpose().set_index('pair')
@@ -666,7 +664,7 @@ class core:
     self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
     if 'XXBTZEUR' in positions.index:
       self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
-    for ccy in self.KR_CCY_DICT.keys():
+    for ccy in KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
     notional = positions['volNetUSD'].abs().sum()
     #####
@@ -684,7 +682,7 @@ class core:
     self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
 
   def krPrintBorrow(self, nav):
-    d=self.KR_CCY_DICT.copy()
+    d=KR_CCY_DICT.copy()
     del d['EUR']
     zList=[]
     for ccy in d.keys():
