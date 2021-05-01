@@ -471,9 +471,6 @@ class core:
     bal = pd.DataFrame(self.api.dapiPrivate_get_balance())
     cl.dfSetFloat(bal, ['balance', 'crossUnPnl'])
     bal = bal.set_index('asset').loc[self.validCcys]
-    #bal['Ccy'] = bal['asset']
-    #bal = bal.set_index('Ccy').loc[self.validCcys]
-    #bal['SpotDelta'] = bal['balance'] + bal['crossUnPnl']
     for ccy in self.validCcys:
       self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'balance']+bal.loc[ccy,'crossUnPnl']
     self.calcSpotDeltaUSD()
@@ -752,8 +749,9 @@ for obj in objs:
 externalCoinsNAV=0
 for ccy in AG_CCY_DICT.keys():
   externalCoinsNAV += AG_CCY_DICT[ccy] * spotDict[ccy]
+externalUSDTNAV = EXTERNAL_USDT_DELTA * spotDict['USDT']
 externalEURNAV = EXTERNAL_EUR_DELTA*(spotDict['EUR']-EXTERNAL_EUR_REF)
-nav+=externalCoinsNAV+externalEURNAV
+nav+=externalCoinsNAV+externalUSDTNAV+externalEURNAV
 oneDayIncome+=ftxCore.oneDayFlows
 
 ########
