@@ -1251,7 +1251,7 @@ def ctRun(ccy,tgtBps,color):
           del smartBasisDict[exch+'Basis']
 
       # Remove spots when high spot rate
-      if CT_IS_HIGH_SPOT_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1:
+      if CT_IS_HIGH_USD_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1:
         for key in filterDict(smartBasisDict, 'spot'):
           del smartBasisDict[key]
 
