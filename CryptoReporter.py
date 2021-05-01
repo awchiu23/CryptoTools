@@ -11,7 +11,7 @@ import sys
 #########
 # Configs
 #########
-MAIN_CCY_DICT =dict({'BTC':1,'ETH':1,'XRP':4,'FTT':1,'USDT':4,'EUR':4})                               # Values are nDigits for display
+QUOTED_CCY_DICT =dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                        # Values are nDigits for display
 AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
 FTX_FLOWS_CCYS = ['BTC','ETH','XRP','USD','USDT']
 
@@ -525,29 +525,25 @@ class core:
       return prevIncome, oneDayIncome
     #####
     self.api = cl.bnCCXTInit()
-    futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk())
+    futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk()).set_index('symbol')
     cl.dfSetFloat(futs, ['positionAmt'])
-    futs = futs.set_index('symbol').loc[[z+'USDT' for z in self.validCcys]]
-    futs['Ccy'] = [z[:3] for z in futs.index]
-    futs=futs.set_index('Ccy')
-    futs['FutDelta'] = futs['FutDeltaUSD'] = futs['positionAmt']
     for ccy in self.validCcys:
-      futs.loc[ccy, 'FutDeltaUSD'] *= self.spotDict[ccy]
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures=futs
+      ccy2=ccy+'USDT'
+      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']
+    self.calcFuturesDeltaUSD()
     #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
       pmts=pmts.append(getPayments(ccy))
     self.payments=pmts
     self.prevIncome,self.oneDayIncome=getIncomes()
-    self.prevAnnRet = self.prevIncome * 3 * 365 / notional
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     walletUSDT = pd.DataFrame(self.api.fapiPrivate_get_account()['assets']).set_index('asset').loc['USDT']
     self.nav = float(walletUSDT['marginBalance'])*self.spotDict['USDT']
     cushion = float(walletUSDT['availableBalance'])*self.spotDict['USDT']
-    totalDelta = futs['FutDeltaUSD'].sum()
+    totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
     self.estFundingDict = dict()
@@ -577,15 +573,12 @@ class core:
       self.liqDict[ccy] = float(acSum['estimated_liquidation_ratio']) 
     self.calcSpotDeltaUSD()
     #####
-    futs = pd.DataFrame([['BTC', self.spotDict['BTC'], cl.dbGetFutPos(self.api, 'BTC')],
-                         ['ETH', self.spotDict['ETH'], cl.dbGetFutPos(self.api, 'ETH')],
-                         ['XRP', self.spotDict['XRP'], 0]], columns=['Ccy', 'Spot', 'FutDeltaUSD']).set_index('Ccy')
-    futs['FutDelta'] = futs['FutDeltaUSD'] / futs['Spot']
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures=futs
+    for ccy in self.validCcys:
+      self.futures.loc[ccy, 'FutDelta']=cl.dbGetFutPos(self.api,ccy)/spotDict[ccy]
+    self.calcFuturesDeltaUSD()
     #####
     self.oneDayIncome = getOneDayIncome('BTC', self.spotDict['BTC']) + getOneDayIncome('ETH', self.spotDict['ETH'])
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
@@ -716,7 +709,7 @@ if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
 spotDict['USD']=1
-for ccy in MAIN_CCY_DICT.keys():
+for ccy in QUOTED_CCY_DICT.keys():
   spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
 #####
 ftxCore = core('ftx',spotDict)
@@ -765,8 +758,8 @@ if externalEURNAV!=0: navStrList.append(getNAVStr('EUR ext',externalEURNAV))
 print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
 #####
 zList=[]
-for ccy in MAIN_CCY_DICT.keys():
-  zList.append(ccy + '=' + str(round(spotDict[ccy],MAIN_CCY_DICT[ccy])))
+for ccy in QUOTED_CCY_DICT.keys():
+  zList.append(ccy + '=' + str(round(spotDict[ccy], QUOTED_CCY_DICT[ccy])))
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
 print()
 #####
