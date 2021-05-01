@@ -470,32 +470,26 @@ class core:
       self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'SpotDelta']
     self.calcSpotDeltaUSD()
     #####
-    futs = pd.DataFrame(self.api.dapiPrivate_get_positionrisk())
-    cl.dfSetFloat(futs, 'positionAmt')
-    futs = futs[['USD_PERP' in z for z in futs['symbol']]]
-    futs['Ccy'] = [z[:3] for z in futs['symbol']]
-    futs = futs.set_index('Ccy').loc[self.validCcys]
-    futs['FutDeltaUSD'] = futs['positionAmt']
-    futs.loc['BTC', 'FutDeltaUSD'] *= 100
-    futs.loc['ETH', 'FutDeltaUSD'] *= 10
-    futs.loc['XRP', 'FutDeltaUSD'] *= 10
-    futs['FutDelta'] = futs['FutDeltaUSD']
+    self.liqDict = dict()
+    futs = pd.DataFrame(self.api.dapiPrivate_get_positionrisk()).set_index('symbol')
+    cl.dfSetFloat(futs, ['positionAmt','liquidationPrice','markPrice'])
     for ccy in self.validCcys:
-      futs.loc[ccy, 'FutDelta'] /= self.spotDict[ccy]
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures=futs
+      ccy2=ccy+'USD_PERP'
+      mult=100 if ccy=='BTC' else 10
+      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']*mult/self.spotDict[ccy]
+      self.liqDict[ccy] = futs.loc[ccy2,'liquidationPrice'] / futs.loc[ccy2,'markPrice']
+    self.calcFuturesDeltaUSD()
     #####
-    self.payments = getPayments('BTC').append(getPayments('ETH')).append(getPayments('XRP'))
+    pmts = pd.DataFrame()
+    for ccy in self.validCcys:
+      pmts = pmts.append(getPayments(ccy))
+    self.payments = pmts
     #####
     self.prevIncome,self.oneDayIncome=getIncomes()
-    self.prevAnnRet = self.prevIncome * 3 * 365 / notional
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
-    #####
-    self.liqDict = dict()
-    for ccy in self.validCcys:
-      self.liqDict[ccy] = float(self.futures.loc[ccy, 'liquidationPrice']) / float(self.futures.loc[ccy, 'markPrice']) 
     #####
     self.estFundingDict=dict()
     for ccy in self.validCcys:
