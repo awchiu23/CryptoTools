@@ -223,7 +223,10 @@ class core:
       oneDayFunding = self.estFundingDict[ccy+'24H']
       prevFunding = self.estFundingDict[ccy+'8H']
     elif self.exch=='kf':
-      oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['Ccy'] == ccy]['rate'],3*365)
+      if self.payments is None:
+        oneDayFunding, prevFunding = 0,0
+      else:
+        oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['Ccy'] == ccy]['rate'],3*365)
     #####
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     if self.exch=='db':
@@ -609,7 +612,10 @@ class core:
       self.futures.loc[ccy,'FutDelta']=accounts['fi_'+ccy2+'usd']['balances']['pi_'+ccy2+'usd']/spotDict[ccy]
     self.calcFuturesDeltaUSD()
     #####
-    self.payments,self.prevIncome,self.oneDayIncome=getPayments()
+    if APOPHIS_IS_IP_WHITELIST:
+      self.payments,self.prevIncome,self.oneDayIncome=getPayments()
+    else:
+      self.payments,self.prevIncome,self.oneDayIncome = None,0,0
     self.prevAnnRet = self.prevIncome * 6 * 365 / self.futNotional
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
@@ -685,8 +691,8 @@ class core:
 ######
 cl.printHeader('CryptoReporter')
 if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
-  print('CryptoReporter cannot be run in higher modes without IP whitelisting!')
-  sys.exit(1)
+  print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown!]')
+  print()
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
 spotDict['USD']=1

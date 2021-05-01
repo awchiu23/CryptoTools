@@ -81,7 +81,7 @@ CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=5 ###
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
 #####
@@ -106,7 +106,7 @@ CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
 #############################################################################################
 
 CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
-CT_IS_HIGH_USD_RATE_PAUSE = True    # Trading of spot paused when spot rates >= 100%?
+CT_IS_HIGH_USD_RATE_PAUSE = True     # Trading of spot paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of observations
 CT_NPROGRAMS = 50                    # Number of programs (each program being a pair of trades)
@@ -135,7 +135,7 @@ CT_MAX_WAIT_TIME=10                  # Execution setting
 ##########################
 # Apophis (Kraken Futures)
 ##########################
-APOPHIS_IS_IP_WHITELIST = True
+APOPHIS_IS_IP_WHITELIST = False
 
 #################
 # Crypto Reporter
