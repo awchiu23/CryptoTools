@@ -75,8 +75,8 @@ def printEURDeltas(krCores, spotDict):
     '($' + str(round(EXTERNAL_EUR_DELTA * spotDict['EUR'] / 1000)) + 'K/$' + str(round(spotDelta * spotDict['EUR'] / 1000)) + 'K/$' + str(round(netDelta * spotDict['EUR'] / 1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
-def printUSDTDeltas(ftxCore,usdtCoreList,spotDict):
-  realDelta_USD=ftxCore.wallet.loc['USDT','usdValue']
+def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
+  realDelta_USD=ftxCore.wallet.loc['USDT','usdValue']+EXTERNAL_USDT_DELTA*spotDict['USDT']
   implDelta_USD=0
   for core in usdtCoreList:
     realDelta_USD+=core.nav
@@ -732,28 +732,24 @@ Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in ob
 #############
 # Aggregation
 #############
+AG_CCYS = ['BTC','ETH','XRP']
+zeroes = [0] * len(AG_CCYS)
+agDf = pd.DataFrame({'Ccy': AG_CCYS, 'SpotDelta': zeroes, 'FutDelta':zeroes}).set_index('Ccy')
 nav=0
-spotDeltaBTC=0
-spotDeltaETH=0
-spotDeltaXRP=0
-futDeltaBTC=0
-futDeltaETH=0
-futDeltaXRP=0
 oneDayIncome=0
 for obj in objs:
   nav+=obj.nav
-  spotDeltaBTC+=obj.spots.loc['BTC','SpotDelta']
-  spotDeltaETH+=obj.spots.loc['ETH','SpotDelta']
-  spotDeltaXRP+=obj.spots.loc['XRP','SpotDelta']
-  futDeltaBTC+=obj.futures.loc['BTC','FutDelta']
-  futDeltaETH+=obj.futures.loc['ETH','FutDelta']
-  futDeltaXRP+=obj.futures.loc['XRP','FutDelta']
-  oneDayIncome += obj.oneDayIncome
-externalCoinsNAV = EXTERNAL_BTC_DELTA * spotDict['BTC'] + EXTERNAL_ETH_DELTA * spotDict['ETH']
+  for ccy in AG_CCYS:
+    agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
+
+    agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
+    oneDayIncome += obj.oneDayIncome
+externalCoinsNAV = EXTERNAL_BTC_DELTA * spotDict['BTC'] + EXTERNAL_ETH_DELTA * spotDict['ETH'] + EXTERNAL_XRP_DELTA * spotDict['XRP'] + EXTERNAL_USDT_DELTA * spotDict['USDT']
 externalEURNAV = EXTERNAL_EUR_DELTA*(spotDict['EUR']-EXTERNAL_EUR_REF)
 nav+=externalCoinsNAV+externalEURNAV
-spotDeltaBTC+=EXTERNAL_BTC_DELTA
-spotDeltaETH+=EXTERNAL_ETH_DELTA
+agDf.loc['BTC','SpotDelta']+=EXTERNAL_BTC_DELTA
+agDf.loc['ETH','SpotDelta']+=EXTERNAL_ETH_DELTA
+agDf.loc['XRP','SpotDelta']+=EXTERNAL_XRP_DELTA
 oneDayIncome+=ftxCore.oneDayFlows
 
 ########
@@ -771,11 +767,10 @@ z='BTC='+str(round(spotDict['BTC'],1))+ ' / ETH='+str(round(spotDict['ETH'],1))+
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+z)
 print()
 #####
-printDeltas('BTC',spotDict,spotDeltaBTC,futDeltaBTC)
-printDeltas('ETH',spotDict,spotDeltaETH,futDeltaETH)
-printDeltas('XRP',spotDict,spotDeltaXRP,futDeltaXRP)
+for ccy in AG_CCYS:
+  printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
 if CRYPTO_MODE>0:
-  printUSDTDeltas(ftxCore, [bbtCore, bntCore], spotDict)
+  printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
   printEURDeltas(krCores, spotDict)
 print()
 #####
@@ -786,12 +781,8 @@ ftxCore.ftxPrintBorrowLending('USDT',nav)
 print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
-  ftxCore.ftxPrintFlowsSummary('BTC')
-  ftxCore.ftxPrintFlowsSummary('ETH')
-  ftxCore.ftxPrintFlowsSummary('XRP')
-  ftxCore.ftxPrintCoinLending('BTC')
-  ftxCore.ftxPrintCoinLending('ETH')
-  ftxCore.ftxPrintCoinLending('XRP')
+  for ccy in AG_CCYS:
+    ftxCore.ftxPrintFlowsSummary(AG_CCYS)
   print()
 #####
 ftxCore.printAll()
