@@ -148,6 +148,7 @@ class core:
   def calcFuturesDeltaUSD(self):
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDeltaUSD'] = self.futures.loc[ccy, 'FutDelta'] * self.spotDict[ccy]
+    self.futNotional = self.futures['FutDeltaUSD'].abs().sum()
 
   def getIncomesStr(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
@@ -284,10 +285,9 @@ class core:
     futs = pd.DataFrame(info['positions']).set_index('future')
     cl.dfSetFloat(futs, 'size')
     for ccy in self.validCcys:
-      mult = -1 if futs.loc[ccy + '-PERP', 'side'] else 1
+      mult = -1 if futs.loc[ccy + '-PERP', 'side']=='sell' else 1
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy+'-PERP','size']*mult
     self.calcFuturesDeltaUSD()
-    notional = self.futures['FutDeltaUSD'].abs().sum()
     ######
     pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': getYest()})['result'])
     pmts = pmts.set_index('future', drop=False).loc[[z+'-PERP' for z in self.validCcys]].set_index('time')
@@ -296,9 +296,9 @@ class core:
     self.payments = pmts
     #####
     self.prevIncome = -self.payments.loc[self.payments.index[-1]]['payment'].sum()
-    self.prevAnnRet = self.prevIncome * 24 * 365 / notional
+    self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
     self.oneDayIncome = -self.payments['payment'].sum()
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     self.oneDayFlows=0
     self.flowsDict=dict()
@@ -355,11 +355,6 @@ class core:
           df = df.append(pd.DataFrame(tl))
       return df.set_index('symbol', drop=False)
     #####
-    def getLiq(ccy):
-      liqPrice = float(self.futures.loc[ccy, 'liq_price'])
-      markPrice = float(self.futures.loc[ccy, 'size']) / (float(self.futures.loc[ccy, 'position_value']) + float(self.futures.loc[ccy, 'unrealised_pnl']))
-      return liqPrice / markPrice
-    #####
     self.api = cl.bbCCXTInit()
     self.wallet=pd.DataFrame(self.api.v2_private_get_wallet_balance()['result']).transpose()
     cl.dfSetFloat(self.wallet,'equity')
@@ -367,20 +362,20 @@ class core:
       self.spots.loc[ccy,'SpotDelta']=self.wallet.loc[ccy,'equity']
     self.calcSpotDeltaUSD()
     #####
+    self.liqDict=dict()
     futs = self.api.v2_private_get_position_list()['result']
-    futs = pd.DataFrame([pos['data'] for pos in futs])
-    cl.dfSetFloat(futs, 'size')
-    futs['Ccy'] = [z[:3] for z in futs['symbol']]
-    futs = futs.set_index('Ccy').loc[self.validCcys]
-    futs['FutDeltaUSD'] = futs['size']
-    futs.loc[futs['side'] == 'Sell', 'FutDeltaUSD'] *= -1
-    futs['FutDelta'] = futs['FutDeltaUSD']
+    futs = pd.DataFrame([pos['data'] for pos in futs]).set_index('symbol')
+    cl.dfSetFloat(futs, ['size','liq_price','position_value','unrealised_pnl'])
     for ccy in self.validCcys:
-      futs.loc[ccy, 'FutDelta'] /= self.spotDict[ccy]
-    notional = futs['FutDeltaUSD'].abs().sum()
-    self.futures = futs
+      ccy2=ccy+'USD'
+      mult = -1 if futs.loc[ccy2,'side']=='Sell' else 1
+      self.futures.loc[ccy, 'FutDelta'] = futs.loc[ccy2, 'size'] * mult / self.spotDict[ccy]
+      self.liqDict[ccy] = futs.loc[ccy2,'liq_price'] / cl.bbGetMid(self.api,ccy)
+    self.calcFuturesDeltaUSD()
     #####
-    pmts = getPayments('BTC').append(getPayments('ETH')).append(getPayments('XRP'))
+    pmts = pd.DataFrame()
+    for ccy in self.validCcys:
+      pmts = pmts.append(getPayments(ccy))
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
     pmts['incomeUSD'] = -pmts['exec_fee']
     for ccy in self.validCcys:
@@ -391,15 +386,11 @@ class core:
     self.payments = pmts
     #####
     self.prevIncome = self.payments.loc[self.payments.index[-1]]['incomeUSD'].sum()
-    self.prevAnnRet = self.prevIncome * 3 * 365 / notional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     self.oneDayIncome = self.payments['incomeUSD'].sum()
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     self.nav=self.spots['SpotDeltaUSD'].sum()
-    #####
-    self.liqDict = dict()
-    for ccy in self.validCcys:
-      self.liqDict[ccy] = getLiq(ccy)    
     #####
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
