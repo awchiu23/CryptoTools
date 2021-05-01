@@ -758,8 +758,9 @@ ftxCore.ftxPrintBorrowLending('USDT',nav)
 print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
-  for ccy in AG_CCY_DICT.keys():
-    ftxCore.ftxPrintFlowsSummary(ccy)
+  for ccy in FTX_FLOWS_CCYS:
+    if not ccy in ['USD','USDT']:
+      ftxCore.ftxPrintFlowsSummary(ccy)
   print()
 #####
 ftxCore.printAll()
