@@ -732,24 +732,22 @@ Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in ob
 #############
 # Aggregation
 #############
-AG_CCYS = ['BTC','ETH','XRP']
-zeroes = [0] * len(AG_CCYS)
-agDf = pd.DataFrame({'Ccy': AG_CCYS, 'SpotDelta': zeroes, 'FutDelta':zeroes}).set_index('Ccy')
+AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA})
+zeroes = [0] * len(AG_CCY_DICT.keys())
+agDf = pd.DataFrame({'Ccy': AG_CCY_DICT.keys(), 'SpotDelta': AG_CCY_DICT.values(), 'FutDelta':zeroes}).set_index('Ccy')
 nav=0
 oneDayIncome=0
 for obj in objs:
   nav+=obj.nav
-  for ccy in AG_CCYS:
+  oneDayIncome += obj.oneDayIncome
+  for ccy in AG_CCY_DICT.keys():
     agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
-
     agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
-    oneDayIncome += obj.oneDayIncome
-externalCoinsNAV = EXTERNAL_BTC_DELTA * spotDict['BTC'] + EXTERNAL_ETH_DELTA * spotDict['ETH'] + EXTERNAL_XRP_DELTA * spotDict['XRP'] + EXTERNAL_USDT_DELTA * spotDict['USDT']
+externalCoinsNAV=0
+for ccy in AG_CCY_DICT.keys():
+  externalCoinsNAV += AG_CCY_DICT[ccy] * spotDict[ccy]
 externalEURNAV = EXTERNAL_EUR_DELTA*(spotDict['EUR']-EXTERNAL_EUR_REF)
 nav+=externalCoinsNAV+externalEURNAV
-agDf.loc['BTC','SpotDelta']+=EXTERNAL_BTC_DELTA
-agDf.loc['ETH','SpotDelta']+=EXTERNAL_ETH_DELTA
-agDf.loc['XRP','SpotDelta']+=EXTERNAL_XRP_DELTA
 oneDayIncome+=ftxCore.oneDayFlows
 
 ########
@@ -767,7 +765,7 @@ z='BTC='+str(round(spotDict['BTC'],1))+ ' / ETH='+str(round(spotDict['ETH'],1))+
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+z)
 print()
 #####
-for ccy in AG_CCYS:
+for ccy in AG_CCY_DICT.keys():
   printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
 if CRYPTO_MODE>0:
   printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
@@ -781,8 +779,8 @@ ftxCore.ftxPrintBorrowLending('USDT',nav)
 print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
-  for ccy in AG_CCYS:
-    ftxCore.ftxPrintFlowsSummary(AG_CCYS)
+  for ccy in AG_CCY_DICT.keys():
+    ftxCore.ftxPrintFlowsSummary(AG_CCY_DICT.keys())
   print()
 #####
 ftxCore.printAll()
