@@ -780,7 +780,7 @@ print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
   for ccy in AG_CCY_DICT.keys():
-    ftxCore.ftxPrintFlowsSummary(AG_CCY_DICT.keys())
+    ftxCore.ftxPrintFlowsSummary(ccy)
   print()
 #####
 ftxCore.printAll()
