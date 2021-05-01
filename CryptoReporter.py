@@ -19,6 +19,34 @@ KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})
 ###########
 # Functions
 ###########
+def bnGetPayments(bn, ccy, isBNT=False):
+  if isBNT:
+    df = pd.DataFrame(bn.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
+  else:
+    df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
+  cl.dfSetFloat(df, 'fundingRate')
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
+  df = df.set_index('date').sort_index()
+  return df
+
+def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
+  if isBNT:
+    df = pd.DataFrame(bn.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000})).set_index('symbol')
+  else:
+    df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000})).set_index('symbol')
+  cl.dfSetFloat(df, 'income')
+  suffix = 'USDT' if isBNT else 'USD_PERP'
+  df = df.loc[[z + suffix for z in validCcys]]
+  for ccy in validCcys:
+    ccy2 = ccy + suffix
+    fx = spotDict['USDT'] if isBNT else spotDict[ccy]
+    df.loc[ccy2, 'incomeUSD'] = df.loc[ccy2, 'income'] * fx
+  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
+  df = df.set_index('date')
+  prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
+  oneDayIncome = df['incomeUSD'].sum()
+  return prevIncome, oneDayIncome
+
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
 
@@ -443,28 +471,6 @@ class core:
   # BN
   ####
   def bnInit(self):
-    def getPayments(ccy):
-      df = pd.DataFrame(self.api.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
-      cl.dfSetFloat(df, 'fundingRate')
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-      df = df.set_index('date').sort_index()
-      return df
-    #####
-    def getIncomes():
-      df = pd.DataFrame(self.api.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-      cl.dfSetFloat(df, 'income')
-      df = df[['USD_PERP' in z for z in df['symbol']]]
-      df['Ccy'] = [z[:3] for z in df['symbol']]
-      df = df.set_index('Ccy').loc[self.validCcys]
-      df['incomeUSD'] = df['income']
-      for ccy in self.validCcys:
-        df.loc[ccy, 'incomeUSD'] *= self.spotDict[ccy]
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
-      df = df.set_index('date')
-      prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
-      oneDayIncome = df['incomeUSD'].sum()
-      return prevIncome,oneDayIncome
-    #####
     self.api = cl.bnCCXTInit()
     bal = pd.DataFrame(self.api.dapiPrivate_get_balance())
     cl.dfSetFloat(bal, ['balance', 'crossUnPnl'])
@@ -485,10 +491,10 @@ class core:
     #####
     pmts = pd.DataFrame()
     for ccy in self.validCcys:
-      pmts = pmts.append(getPayments(ccy))
+      pmts = pmts.append(bnGetPayments(self.api,ccy))
     self.payments = pmts
     #####
-    self.prevIncome,self.oneDayIncome=getIncomes()
+    self.prevIncome,self.oneDayIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict)
     self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
@@ -502,26 +508,6 @@ class core:
   # BNT
   #####
   def bntInit(self):
-    def getPayments(ccy):
-      df = pd.DataFrame(self.api.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
-      cl.dfSetFloat(df, 'fundingRate')
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-      df = df.set_index('date').sort_index()
-      return df
-    #####
-    def getIncomes():
-      df = pd.DataFrame(self.api.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000}))
-      cl.dfSetFloat(df, 'income')
-      df = df[['USDT' in z for z in df['symbol']]]
-      df['Ccy'] = [z[:3] for z in df['symbol']]
-      df = df.set_index('Ccy').loc[self.validCcys]
-      df['incomeUSD'] = df['income'] * self.spotDict['USDT']
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
-      df = df.set_index('date')
-      prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
-      oneDayIncome = df['incomeUSD'].sum()
-      return prevIncome, oneDayIncome
-    #####
     self.api = cl.bnCCXTInit()
     futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk()).set_index('symbol')
     cl.dfSetFloat(futs, ['positionAmt'])
@@ -532,9 +518,9 @@ class core:
     #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
-      pmts=pmts.append(getPayments(ccy))
+      pmts=pmts.append(bnGetPayments(self.api,ccy,isBNT=True))
     self.payments=pmts
-    self.prevIncome,self.oneDayIncome=getIncomes()
+    self.prevIncome,self.oneDayIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict,isBNT=True)
     self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
