@@ -8,6 +8,12 @@ import time
 import termcolor
 import sys
 
+#########
+# Configs
+#########
+MAIN_CCY_DICT =dict({'BTC':1,'ETH':1,'XRP':4,'FTT':1,'USDT':4,'EUR':4})                               # Values are nDigits for display
+AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
+
 ###########
 # Functions
 ###########
@@ -711,7 +717,7 @@ if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
 spotDict['USD']=1
-for ccy in ['BTC','ETH','XRP','FTT','USDT','EUR']:
+for ccy in MAIN_CCY_DICT.keys():
   spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
 #####
 ftxCore = core('ftx',spotDict)
@@ -732,9 +738,7 @@ Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in ob
 #############
 # Aggregation
 #############
-AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA})
-zeroes = [0] * len(AG_CCY_DICT.keys())
-agDf = pd.DataFrame({'Ccy': AG_CCY_DICT.keys(), 'SpotDelta': AG_CCY_DICT.values(), 'FutDelta':zeroes}).set_index('Ccy')
+agDf = pd.DataFrame({'Ccy': AG_CCY_DICT.keys(), 'SpotDelta': AG_CCY_DICT.values(), 'FutDelta':[0] * len(AG_CCY_DICT.keys())}).set_index('Ccy')
 nav=0
 oneDayIncome=0
 for obj in objs:
@@ -760,9 +764,10 @@ if externalCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext',externalCoinsNAV
 if externalEURNAV!=0: navStrList.append(getNAVStr('EUR ext',externalEURNAV))
 print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
 #####
-z='BTC='+str(round(spotDict['BTC'],1))+ ' / ETH='+str(round(spotDict['ETH'],1))+ \
-  ' / XRP='+str(round(spotDict['XRP'],4)) + ' / FTT='+str(round(spotDict['FTT'],1)) + ' / USDT=' + str(round(spotDict['USDT'],4)) + ' / EUR='+str(round(spotDict['EUR'],4))
-print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+z)
+zList=[]
+for ccy in MAIN_CCY_DICT.keys():
+  zList.append(ccy + '=' + str(round(spotDict[ccy],MAIN_CCY_DICT[ccy])))
+print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
 print()
 #####
 for ccy in AG_CCY_DICT.keys():
