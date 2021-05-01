@@ -285,8 +285,9 @@ class core:
     futs = pd.DataFrame(info['positions']).set_index('future')
     cl.dfSetFloat(futs, 'size')
     for ccy in self.validCcys:
-      mult = -1 if futs.loc[ccy + '-PERP', 'side']=='sell' else 1
-      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy+'-PERP','size']*mult
+      ccy2=ccy+'-PERP'
+      mult = -1 if futs.loc[ccy2, 'side']=='sell' else 1
+      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
     self.calcFuturesDeltaUSD()
     ######
     pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': getYest()})['result'])
@@ -406,7 +407,6 @@ class core:
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
     self.calcFuturesDeltaUSD()
-    notional = self.futures['FutDeltaUSD'].abs().sum()
     #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
@@ -418,9 +418,9 @@ class core:
     self.payments = pmts
     #####
     self.prevIncome = self.payments.loc[self.payments.index[-1]]['incomeUSD'].sum()
-    self.prevAnnRet = self.prevIncome * 3 * 365 / notional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     self.oneDayIncome = self.payments['incomeUSD'].sum()
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     walletUSDT = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
     self.nav=float(walletUSDT['equity'])*self.spotDict['USDT']
