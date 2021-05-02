@@ -471,16 +471,18 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     return (qty + cushionUSD / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
   @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
-    return bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
-  # Do not use @retry
+    result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
+    if len(result)==0:
+      print(getCurrentTime() + ': [DEBUG: len(result)==0; orderId='+orderId+']')
+      result=dict()
+      result['orderStatus']='Filled'
+    return result
+  @retry(wait_fixed=1000)
   def bbtGetFillPrice(bb, ticker, orderId):
-    orderStatus = bbtGetOrder(bb, ticker, orderId)
-    cumExecValue=float(orderStatus['cum_exec_value'])
-    cumExecQty=float(orderStatus['cum_exec_qty'])
-    if cumExecQty==0:
-      return 0
-    else:
-      return cumExecValue/cumExecQty
+    df = pd.DataFrame(bb.private_linear_get_trade_execution_list({'symbol': ticker})['result']['data'])
+    df = df[df['order_id'] == orderId]
+    dfSetFloat(df, ['exec_qty', 'exec_price'])
+    return (df['exec_qty'] * df['exec_price']).sum() / df['exec_qty'].sum()
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
