@@ -151,6 +151,7 @@ class core:
     self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
     self.oneDayIncome = 0
     self.nav = 0
+    self.fundingStrDict=dict()
 
   def run(self):
     if self.exch=='dummy': return
@@ -172,9 +173,6 @@ class core:
       self.krInit()
     if not self.exch == 'kr':
       self.incomesStr = self.getIncomesStr()
-      self.fundingStrDict=dict()
-      for ccy in self.validCcys:
-        self.fundingStrDict[ccy] = self.getFundingStr(ccy)
       self.liqStr = self.getLiqStr()
 
   def calcSpotDeltaUSD(self):
@@ -195,11 +193,7 @@ class core:
       z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
       return termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
 
-  def getFundingStr(self,ccy):
-    #if self.exch in ['ftx','bb','bbt','bn','bnt','db','kf']:
-    oneDayFunding = self.oneDayFundingDict[ccy]
-    prevFunding = self.prevFundingDict[ccy]
-    #####
+  def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     if self.exch=='db':
       prefix+='8h'
@@ -212,9 +206,9 @@ class core:
     #####
     body = str(round(oneDayFunding * 100)) + '%/'
     body += str(round(prevFunding * 100)) + '%/'
-    body += str(round(self.estFundingDict[ccy] * 100)) + '%'
+    body += str(round(estFunding * 100)) + '%'
     if self.exch in ['bb','bbt','kf']:
-      body += '/' + str(round(self.estFunding2Dict[ccy] * 100)) + '%'
+      body += '/' + str(round(estFunding2 * 100)) + '%'
     body += ' p.a.'
     #####
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
@@ -224,7 +218,7 @@ class core:
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
-    return prefix.rjust(40) + ' ' + body.ljust(27) + suffix
+    self.fundingStrDict[ccy] = prefix.rjust(40) + ' ' + body.ljust(27) + suffix
 
   def getLiqStr(self):
     if self.exch in ['ftx','bbt','bnt']:
@@ -325,14 +319,12 @@ class core:
     self.liq = 1 - cushion / totalDelta
     self.freeCollateral = float(info['freeCollateral'])
     #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict=dict()
     for ccy in self.validCcys:
       df = pmts.loc[pmts['future'] == ccy + '-PERP', 'rate']
-      self.oneDayFundingDict[ccy] = df.mean() * 24 * 365
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 24 * 365
-      self.estFundingDict[ccy] = cl.ftxGetEstFunding(self.api, ccy)
+      oneDayFunding = df.mean() * 24 * 365
+      prevFunding = df[df.index[-1]].mean() * 24 * 365
+      estFunding = cl.ftxGetEstFunding(self.api, ccy)
+      self.makeFundingStr(ccy,oneDayFunding,prevFunding,estFunding)
 
   def ftxPrintFlowsSummary(self,ccy):
     d = self.flowsDict[ccy]
@@ -406,16 +398,13 @@ class core:
     #####
     self.nav=self.spots['SpotDeltaUSD'].sum()
     #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict = dict()
-    self.estFunding2Dict = dict()
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USD', 'fee_rate']
-      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
-      self.estFundingDict[ccy] = cl.bbGetEstFunding1(self.api, ccy)
-      self.estFunding2Dict[ccy] = cl.bbGetEstFunding2(self.api, ccy)
+      oneDayFunding = df.mean() * 3 * 365
+      prevFunding = df[df.index[-1]].mean() * 3 * 365
+      estFunding = cl.bbGetEstFunding1(self.api, ccy)
+      estFunding2 = cl.bbGetEstFunding2(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
 
   #####
   # BBT
@@ -446,16 +435,13 @@ class core:
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict = dict()
-    self.estFunding2Dict = dict()
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
-      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
-      self.estFundingDict[ccy] = cl.bbtGetEstFunding1(self.api, ccy)
-      self.estFunding2Dict[ccy] = cl.bbtGetEstFunding2(self.api, ccy)
+      oneDayFunding = df.mean() * 3 * 365
+      prevFunding = df[df.index[-1]].mean() * 3 * 365
+      estFunding = cl.bbtGetEstFunding1(self.api, ccy)
+      estFunding2 = cl.bbtGetEstFunding2(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
 
   ####
   # BN
@@ -494,9 +480,10 @@ class core:
     self.estFundingDict=dict()
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USD_PERP', 'fundingRate']
-      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
-      self.estFundingDict[ccy] = cl.bnGetEstFunding(self.api, ccy)
+      oneDayFunding = df.mean() * 3 * 365
+      prevFunding = df[df.index[-1]].mean() * 3 * 365
+      estFunding = cl.bnGetEstFunding(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
 
   #####
   # BNT
@@ -523,14 +510,12 @@ class core:
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict = dict()
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USDT', 'fundingRate']
-      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
-      self.estFundingDict[ccy] = cl.bntGetEstFunding(self.api, ccy)
+      oneDayFunding = df.mean() * 3 * 365
+      prevFunding = df[df.index[-1]].mean() * 3 * 365
+      estFunding = cl.bntGetEstFunding(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
 
   ####
   # DB
@@ -564,13 +549,11 @@ class core:
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict = dict()
     for ccy in self.validCcys:
-      self.oneDayFundingDict[ccy] = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
-      self.prevFundingDict[ccy] = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
-      self.estFundingDict[ccy] = cl.dbGetEstFunding(self.api, ccy)
+      oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
+      prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
+      estFunding = cl.dbGetEstFunding(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
 
   ####
   # KF
@@ -618,20 +601,17 @@ class core:
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict = dict()
-    self.estFunding2Dict = dict()
     for ccy in self.validCcys:
       if pmts is None:
-        self.oneDayFundingDict[ccy] = 0
-        self.prevFundingDict[ccy] = 0
+        oneDayFunding = 0
+        prevFunding = 0
       else:
         df = pmts.loc[pmts['Ccy'] == ccy, 'rate']
-        self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
-        self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
-      self.estFundingDict[ccy] = cl.kfGetEstFunding1(self.api, ccy)
-      self.estFunding2Dict[ccy] = cl.kfGetEstFunding2(self.api, ccy)
+        oneDayFunding = df.mean() * 3 * 365
+        prevFunding = df[df.index[-1]].mean() * 3 * 365
+      estFunding = cl.kfGetEstFunding1(self.api, ccy)
+      estFunding2 = cl.kfGetEstFunding2(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
 
   ####
   # KR
@@ -697,7 +677,7 @@ class core:
 ######
 cl.printHeader('CryptoReporter')
 if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
-  print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown!]')
+  print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown]')
   print()
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
