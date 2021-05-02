@@ -201,20 +201,11 @@ class core:
       prevFunding = s[-1] * mult
       return oneDayFunding,prevFunding
     #####
-    def bbClean(df):
-      for i in range(len(df)):
-        if 'Sell' in df.iloc[i]['order_id']:
-          df.loc[df.index[i], 'fee_rate'] *= -1
-      return df
-    #####
     if self.exch=='ftx':
       oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['future'] == ccy + '-PERP']['rate'],24*365)
-    elif self.exch == 'bb':
-      df = bbClean(self.payments[self.payments['symbol'] == ccy + 'USD'].copy())
-      oneDayFunding,prevFunding=calcFunding(df['fee_rate'],3*365)
-    elif self.exch =='bbt':
-      df = bbClean(self.payments[self.payments['symbol'] == ccy + 'USDT'].copy())
-      oneDayFunding, prevFunding = calcFunding(df['fee_rate'], 3 * 365)
+    elif self.exch in ['bb','bbt']:
+      oneDayFunding = self.oneDayFundingDict[ccy]
+      prevFunding = self.prevFundingDict[ccy]
     elif self.exch=='bn':
       oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['symbol'] == ccy + 'USD_PERP']['fundingRate'],3*365)
     elif self.exch=='bnt':
@@ -415,23 +406,28 @@ class core:
       pmts = pmts.append(getPayments(ccy))
     pmts = pmts[pmts['exec_type'] == 'Funding'].copy()
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
-    pmts['incomeUSD'] = -pmts['exec_fee']
+    pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
     for ccy in self.validCcys:
-      pmts.loc[ccy+'USD', 'incomeUSD'] *= self.spotDict[ccy]
+      ccy2=ccy+'USD'
+      pmts.loc[ccy2, 'incomeUSD'] = -pmts.loc[ccy2, 'exec_fee'] * self.spotDict[ccy]
     pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
     pmts = pmts.set_index('date')
-    self.payments = pmts
     #####
-    self.prevIncome = self.payments.loc[self.payments.index[-1]]['incomeUSD'].sum()
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
-    self.oneDayIncome = self.payments['incomeUSD'].sum()
+    self.oneDayIncome = pmts['incomeUSD'].sum()
+    self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
     self.nav=self.spots['SpotDeltaUSD'].sum()
     #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
     for ccy in self.validCcys:
+      df = pmts.loc[pmts['symbol'] == ccy + 'USD', 'fee_rate']
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
+      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
       self.estFundingDict[ccy] = cl.bbGetEstFunding1(self.api, ccy)
       self.estFunding2Dict[ccy] = cl.bbGetEstFunding2(self.api, ccy)
 
@@ -448,15 +444,15 @@ class core:
     for ccy in self.validCcys:
       pmts=pmts.append(pd.DataFrame(self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False))
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
+    pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
     pmts['incomeUSD'] = -pmts['exec_fee'] * self.spotDict['USDT']
     pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
     pmts = pmts.set_index('date').sort_index()
-    self.payments = pmts
     #####
-    self.prevIncome = self.payments.loc[self.payments.index[-1]]['incomeUSD'].sum()
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
-    self.oneDayIncome = self.payments['incomeUSD'].sum()
+    self.oneDayIncome = pmts['incomeUSD'].sum()
+    self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
     walletUSDT = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
     self.nav=float(walletUSDT['equity'])*self.spotDict['USDT']
@@ -464,9 +460,14 @@ class core:
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
     for ccy in self.validCcys:
+      df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
+      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
       self.estFundingDict[ccy] = cl.bbtGetEstFunding1(self.api, ccy)
       self.estFunding2Dict[ccy] = cl.bbtGetEstFunding2(self.api, ccy)
 
