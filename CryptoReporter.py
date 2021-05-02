@@ -201,9 +201,7 @@ class core:
       prevFunding = s[-1] * mult
       return oneDayFunding,prevFunding
     #####
-    if self.exch=='ftx':
-      oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['future'] == ccy + '-PERP']['rate'],24*365)
-    elif self.exch in ['bb','bbt']:
+    if self.exch in ['ftx','bb','bbt']:
       oneDayFunding = self.oneDayFundingDict[ccy]
       prevFunding = self.prevFundingDict[ccy]
     elif self.exch=='bn':
@@ -323,10 +321,10 @@ class core:
     pmts = pmts.sort_index()
     self.payments = pmts
     #####
-    self.prevIncome = -self.payments.loc[self.payments.index[-1]]['payment'].sum()
-    self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
-    self.oneDayIncome = -self.payments['payment'].sum()
+    self.oneDayIncome = -pmts['payment'].sum()
+    self.prevIncome = -pmts.loc[pmts.index[-1]]['payment'].sum()
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
     #####
     self.oneDayFlows=0
     self.flowsDict=dict()
@@ -343,9 +341,14 @@ class core:
     totalDelta = self.wallet.loc[self.validCcys, 'usdValue'].sum() + self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     self.freeCollateral = float(info['freeCollateral'])
-    #####    
+    #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict=dict()
     for ccy in self.validCcys:
+      df = pmts.loc[pmts['future'] == ccy + '-PERP', 'rate']
+      self.oneDayFundingDict[ccy] = df.mean() * 24 * 365
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 24 * 365
       self.estFundingDict[ccy] = cl.ftxGetEstFunding(self.api, ccy)
 
   def ftxPrintFlowsSummary(self,ccy):
@@ -426,8 +429,8 @@ class core:
     self.estFunding2Dict = dict()
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USD', 'fee_rate']
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.estFundingDict[ccy] = cl.bbGetEstFunding1(self.api, ccy)
       self.estFunding2Dict[ccy] = cl.bbGetEstFunding2(self.api, ccy)
 
@@ -466,8 +469,8 @@ class core:
     self.estFunding2Dict = dict()
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
-      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.estFundingDict[ccy] = cl.bbtGetEstFunding1(self.api, ccy)
       self.estFunding2Dict[ccy] = cl.bbtGetEstFunding2(self.api, ccy)
 
