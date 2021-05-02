@@ -76,7 +76,7 @@ CT_CONFIGS_DICT['KF_ETH_OK']=0 ### Off
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
@@ -123,7 +123,7 @@ CT_MAX_XRP = 10000                   # Hard limit
 
 CT_FTX_DISTANCE_TO_BEST_BPS=0        # Execution setting
 CT_BB_DISTANCE_TO_BEST_BPS=-5        # Execution setting
-CT_BBT_DISTANCE_TO_BEST_BPS=-1       # Execution setting
+CT_BBT_DISTANCE_TO_BEST_BPS=-2.5     # Execution setting
 CT_BN_DISTANCE_TO_BEST_BPS=0         # Execution setting
 CT_BNT_DISTANCE_TO_BEST_BPS=0        # Execution setting
 CT_DB_DISTANCE_TO_BEST_BPS=0         # Execution setting

@@ -196,24 +196,9 @@ class core:
       return termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
 
   def getFundingStr(self,ccy):
-    def calcFunding(s,mult):
-      oneDayFunding = s.mean() * mult
-      prevFunding = s[-1] * mult
-      return oneDayFunding,prevFunding
-    #####
-    if self.exch in ['ftx','bb','bbt','bn']:
-      oneDayFunding = self.oneDayFundingDict[ccy]
-      prevFunding = self.prevFundingDict[ccy]
-    elif self.exch=='bnt':
-      oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['symbol'] == ccy + 'USDT']['fundingRate'], 3 * 365)
-    elif self.exch=='db':
-      oneDayFunding = self.estFundingDict[ccy+'24H']
-      prevFunding = self.estFundingDict[ccy+'8H']
-    elif self.exch=='kf':
-      if self.payments is None:
-        oneDayFunding, prevFunding = 0,0
-      else:
-        oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['Ccy'] == ccy]['rate'],3*365)
+    #if self.exch in ['ftx','bb','bbt','bn','bnt','db','kf']:
+    oneDayFunding = self.oneDayFundingDict[ccy]
+    prevFunding = self.prevFundingDict[ccy]
     #####
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     if self.exch=='db':
@@ -528,11 +513,9 @@ class core:
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
       pmts=pmts.append(bnGetPayments(self.api,ccy,isBNT=True))
-    self.payments=pmts
     self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict,isBNT=True)
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
-
     #####
     walletUSDT = pd.DataFrame(self.api.fapiPrivate_get_account()['assets']).set_index('asset').loc['USDT']
     self.nav = float(walletUSDT['marginBalance'])*self.spotDict['USDT']
@@ -540,8 +523,13 @@ class core:
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict = dict()
     for ccy in self.validCcys:
+      df = pmts.loc[pmts['symbol'] == ccy + 'USDT', 'fundingRate']
+      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.estFundingDict[ccy] = cl.bntGetEstFunding(self.api, ccy)
 
   ####
@@ -576,34 +564,39 @@ class core:
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict = dict()
     for ccy in self.validCcys:
+      self.oneDayFundingDict[ccy] = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
+      self.prevFundingDict[ccy] = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
       self.estFundingDict[ccy] = cl.dbGetEstFunding(self.api, ccy)
-      self.estFundingDict[ccy+'24H'] = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
-      self.estFundingDict[ccy+'8H'] = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
 
   ####
   # KF
   ####
   def kfInit(self):
     def getPayments():
-      ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
-      self.api.get_account_log(ffn)
-      df = pd.read_csv(ffn, index_col=0, parse_dates=True)
-      df['date'] = [datetime.datetime.strptime(z, '%Y-%m-%d %H:%M:%S') for z in df['dateTime']]
-      df['date'] += pd.DateOffset(hours=8)  # Convert from UTC to HK Time
-      df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)]
-      df['Ccy']=df['collateral']
-      df.loc[df['Ccy']=='XBT','Ccy']='BTC'
-      df=df.set_index('Ccy',drop=False)
-      for ccy in self.validCcys:
-        df.loc[ccy, 'Spot'] = self.spotDict[ccy]
-      df['incomeUSD'] = df['realized funding'] * df['Spot']
-      prevIncome = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(hours=4)]['incomeUSD'].sum()
-      oneDayIncome=df['incomeUSD'].sum()
-      df=df[df['type']=='funding rate change'].set_index('date').sort_index()
-      df['rate'] = df['funding rate'] * df['Spot'] * 8
-      return df,prevIncome,oneDayIncome
+      if APOPHIS_IS_IP_WHITELIST:
+        ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
+        self.api.get_account_log(ffn)
+        df = pd.read_csv(ffn, index_col=0, parse_dates=True)
+        df['date'] = [datetime.datetime.strptime(z, '%Y-%m-%d %H:%M:%S') for z in df['dateTime']]
+        df['date'] += pd.DateOffset(hours=8)  # Convert from UTC to HK Time
+        df = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(days=1)]
+        df['Ccy']=df['collateral']
+        df.loc[df['Ccy']=='XBT','Ccy']='BTC'
+        df=df.set_index('Ccy',drop=False)
+        for ccy in self.validCcys:
+          df.loc[ccy, 'Spot'] = self.spotDict[ccy]
+        df['incomeUSD'] = df['realized funding'] * df['Spot']
+        oneDayIncome = df['incomeUSD'].sum()
+        prevIncome = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(hours=4)]['incomeUSD'].sum()
+        df=df[df['type']=='funding rate change'].set_index('date').sort_index()
+        df['rate'] = df['funding rate'] * df['Spot'] * 8
+        return df,oneDayIncome,prevIncome
+      else:
+        return None,0,0
     #####
     self.api = cl.kfApophisInit()
     accounts = self.api.query('accounts')['accounts']
@@ -619,18 +612,24 @@ class core:
       self.futures.loc[ccy,'FutDelta']=accounts['fi_'+ccy2+'usd']['balances']['pi_'+ccy2+'usd']/spotDict[ccy]
     self.calcFuturesDeltaUSD()
     #####
-    if APOPHIS_IS_IP_WHITELIST:
-      self.payments,self.prevIncome,self.oneDayIncome=getPayments()
-    else:
-      self.payments,self.prevIncome,self.oneDayIncome = None,0,0
-    self.prevAnnRet = self.prevIncome * 6 * 365 / self.futNotional
+    pmts,self.oneDayIncome,self.prevIncome=getPayments()
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    self.prevAnnRet = self.prevIncome * 6 * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict = dict()
     self.estFunding2Dict = dict()
     for ccy in self.validCcys:
+      if pmts is None:
+        self.oneDayFundingDict[ccy] = 0
+        self.prevFundingDict[ccy] = 0
+      else:
+        df = pmts.loc[pmts['Ccy'] == ccy, 'rate']
+        self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
+        self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.estFundingDict[ccy] = cl.kfGetEstFunding1(self.api, ccy)
       self.estFunding2Dict[ccy] = cl.kfGetEstFunding2(self.api, ccy)
 
