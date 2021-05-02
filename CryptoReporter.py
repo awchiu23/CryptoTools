@@ -171,9 +171,6 @@ class core:
       self.kfInit()
     elif self.exch=='kr':
       self.krInit()
-    if not self.exch == 'kr':
-      self.incomesStr = self.getIncomesStr()
-      self.liqStr = self.getLiqStr()
 
   def calcSpotDeltaUSD(self):
     for ccy in self.validCcys:
@@ -184,14 +181,14 @@ class core:
       self.futures.loc[ccy, 'FutDeltaUSD'] = self.futures.loc[ccy, 'FutDelta'] * self.spotDict[ccy]
     self.futNotional = self.futures['FutDeltaUSD'].abs().sum()
 
-  def getIncomesStr(self):
+  def makeIncomesStr(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
     if self.exch == 'db':
-      return termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue')
+      self.incomesStr = termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue')
     else:
       zPrev  = '4h' if self.exch == 'kf' else 'prev'
       z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-      return termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
+      self.incomesStr = termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
@@ -220,7 +217,7 @@ class core:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = prefix.rjust(40) + ' ' + body.ljust(27) + suffix
 
-  def getLiqStr(self):
+  def makeLiqStr(self):
     if self.exch in ['ftx','bbt','bnt']:
       z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '% (of spot)'
       zRet=termcolor.colored((self.exch.upper()+' liquidation (parallel shock): ').rjust(41) + z, 'red')
@@ -232,7 +229,7 @@ class core:
       for ccy in self.validCcys:
         zList.append('never' if (self.liqDict[ccy] <= 0 or self.liqDict[ccy] >= 10) else str(round(self.liqDict[ccy] * 100)) + '%')
       zRet = termcolor.colored((self.exch.upper() + ' liquidation ('+'/'.join(self.validCcys)+'): ').rjust(41) + '/'.join(zList) + ' (of spot)', 'red')
-    return zRet
+    self.liqStr = zRet
 
   def printAll(self):
     if self.exch=='dummy': return
@@ -325,6 +322,9 @@ class core:
       prevFunding = df[df.index[-1]].mean() * 24 * 365
       estFunding = cl.ftxGetEstFunding(self.api, ccy)
       self.makeFundingStr(ccy,oneDayFunding,prevFunding,estFunding)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   def ftxPrintFlowsSummary(self,ccy):
     d = self.flowsDict[ccy]
@@ -405,6 +405,9 @@ class core:
       estFunding = cl.bbGetEstFunding1(self.api, ccy)
       estFunding2 = cl.bbGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   #####
   # BBT
@@ -442,6 +445,9 @@ class core:
       estFunding = cl.bbtGetEstFunding1(self.api, ccy)
       estFunding2 = cl.bbtGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   ####
   # BN
@@ -484,6 +490,9 @@ class core:
       prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.bnGetEstFunding(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   #####
   # BNT
@@ -516,6 +525,9 @@ class core:
       prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.bntGetEstFunding(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   ####
   # DB
@@ -554,6 +566,9 @@ class core:
       prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
       estFunding = cl.dbGetEstFunding(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   ####
   # KF
@@ -612,6 +627,9 @@ class core:
       estFunding = cl.kfGetEstFunding1(self.api, ccy)
       estFunding2 = cl.kfGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr()
 
   ####
   # KR
