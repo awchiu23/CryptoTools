@@ -413,11 +413,11 @@ class core:
     pmts = pd.DataFrame()
     for ccy in self.validCcys:
       pmts = pmts.append(getPayments(ccy))
+    pmts = pmts[pmts['exec_type'] == 'Funding'].copy()
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
     pmts['incomeUSD'] = -pmts['exec_fee']
     for ccy in self.validCcys:
       pmts.loc[ccy+'USD', 'incomeUSD'] *= self.spotDict[ccy]
-    pmts = pmts[pmts['exec_type'] == 'Funding']
     pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
     pmts = pmts.set_index('date')
     self.payments = pmts
