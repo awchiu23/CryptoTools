@@ -465,7 +465,7 @@ def bbtGetEstFunding2(bb,ccy):
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
   # Do not use @retry
-  def getIsReduceOnly(bb, ccy, side, qty, cushionUSD=50000):
+  def getIsReduceOnly(bb, ccy, side, qty, cushionUSD=30000):
     df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
     oppSide = 'Sell' if side == 'BUY' else 'Buy'
     return (qty + cushionUSD / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])

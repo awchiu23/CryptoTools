@@ -43,9 +43,9 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
     df.loc[ccy2, 'incomeUSD'] = df.loc[ccy2, 'income'] * fx
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
   df = df.set_index('date')
-  prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
   oneDayIncome = df['incomeUSD'].sum()
-  return prevIncome, oneDayIncome
+  prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
+  return oneDayIncome, prevIncome
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -201,11 +201,9 @@ class core:
       prevFunding = s[-1] * mult
       return oneDayFunding,prevFunding
     #####
-    if self.exch in ['ftx','bb','bbt']:
+    if self.exch in ['ftx','bb','bbt','bn']:
       oneDayFunding = self.oneDayFundingDict[ccy]
       prevFunding = self.prevFundingDict[ccy]
-    elif self.exch=='bn':
-      oneDayFunding,prevFunding=calcFunding(self.payments[self.payments['symbol'] == ccy + 'USD_PERP']['fundingRate'],3*365)
     elif self.exch=='bnt':
       oneDayFunding, prevFunding = calcFunding(self.payments[self.payments['symbol'] == ccy + 'USDT']['fundingRate'], 3 * 365)
     elif self.exch=='db':
@@ -499,16 +497,20 @@ class core:
     pmts = pd.DataFrame()
     for ccy in self.validCcys:
       pmts = pmts.append(bnGetPayments(self.api,ccy))
-    self.payments = pmts
     #####
-    self.prevIncome,self.oneDayIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict)
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict)
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
+    self.oneDayFundingDict = dict()
+    self.prevFundingDict = dict()
     self.estFundingDict=dict()
     for ccy in self.validCcys:
+      df = pmts.loc[pmts['symbol'] == ccy + 'USD_PERP', 'fundingRate']
+      self.oneDayFundingDict[ccy] = df.mean() * 3 * 365
+      self.prevFundingDict[ccy] = df[df.index[-1]].mean() * 3 * 365
       self.estFundingDict[ccy] = cl.bnGetEstFunding(self.api, ccy)
 
   #####
@@ -527,9 +529,10 @@ class core:
     for ccy in self.validCcys:
       pmts=pmts.append(bnGetPayments(self.api,ccy,isBNT=True))
     self.payments=pmts
-    self.prevIncome,self.oneDayIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict,isBNT=True)
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict,isBNT=True)
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+
     #####
     walletUSDT = pd.DataFrame(self.api.fapiPrivate_get_account()['assets']).set_index('asset').loc['USDT']
     self.nav = float(walletUSDT['marginBalance'])*self.spotDict['USDT']
