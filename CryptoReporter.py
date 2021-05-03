@@ -42,9 +42,9 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
     fx = spotDict['USDT'] if isBNT else spotDict[ccy]
     df.loc[ccy2, 'incomeUSD'] = df.loc[ccy2, 'income'] * fx
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
-  df = df.set_index('date')
+  df = df.set_index('date').sort_index()
   oneDayIncome = df['incomeUSD'].sum()
-  prevIncome = df.loc[df.index[-1]]['incomeUSD'].sum()
+  prevIncome = df[df.index > df.index[-1] - pd.DateOffset(minutes=10)]['incomeUSD'].sum()
   return oneDayIncome, prevIncome
 
 def getNAVStr(name, nav):
