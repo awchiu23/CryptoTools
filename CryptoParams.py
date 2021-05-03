@@ -197,6 +197,5 @@ if os.environ.get('USERNAME')=='Simon':
   EXTERNAL_EUR_DELTA = sl.jLoad('EXTERNAL_EUR_DELTA')
   EXTERNAL_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
   #####
-  INT_CCY_DICT['MATIC'] = {'exch': ['ftx']}
   CR_QUOTE_CCY_DICT['MATIC']=6
-  CR_AG_CCY_DICT['MATIC']=0
+  INT_CCY_DICT['MATIC'] = {'exch': ['ftx']}
