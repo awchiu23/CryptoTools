@@ -92,8 +92,8 @@ CT_CONFIGS_DICT['SPOT_XRP_OK']=0
 CT_CONFIGS_DICT['FTX_XRP_OK']=0
 CT_CONFIGS_DICT['BB_XRP_OK']=0
 CT_CONFIGS_DICT['BN_XRP_OK']=0
-CT_CONFIGS_DICT['BNT_XRP_OK']=1
-CT_CONFIGS_DICT['KF_XRP_OK']=1
+CT_CONFIGS_DICT['BNT_XRP_OK']=0
+CT_CONFIGS_DICT['KF_XRP_OK']=0
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
@@ -142,7 +142,7 @@ APOPHIS_IS_IP_WHITELIST = True
 #################
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
-CR_QUOTE_CCY_DICT =dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                         # Values are nDigits for display
+CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                         # Values are nDigits for display
 CR_AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                                 # Borrow/lending cash flows are calculated for these
 CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})                      # Values are Kraken currency names
