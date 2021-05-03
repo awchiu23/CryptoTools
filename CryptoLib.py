@@ -202,7 +202,7 @@ def roundPrice(exch, price, ccy):
     elif ccy=='XRP':
       return round(price*40000)/40000
     else:
-      sys.exit(1)
+      return round(price,6)
   elif exch=='bb':
     if ccy=='BTC':
       return round(price*2)/2
@@ -298,7 +298,12 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
-  ccy=ticker[:3]
+  if '/' in ticker:
+    ccy=ticker.split('/')[0]
+  elif '-' in ticker:
+    ccy=ticker.split('-')[0]
+  else:
+    sys.exit(1)
   if ccy == 'BTC':
     qty = round(trade_qty, 3)
   elif ccy == 'ETH':
@@ -306,7 +311,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   elif ccy == 'XRP':
     qty = round(trade_qty)
   else:
-    sys.exit(1)
+    qty = round(trade_qty,6)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
     refPrice = ftxGetBid(ftx, ticker)
@@ -1290,14 +1295,19 @@ def ctRun(ccy,tgtBps,color):
           else:
             break
           if pos>=0:
-            del d[chosenLong+'SmartBasis']
+            if len(d.keys())<=2:
+              chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+              time.sleep(1)
+              continue # to next iteration in innermost While True loop
+            else:
+              del d[chosenLong+'SmartBasis']
           else:
             break
 
         # Check for too few candidates again
-        if len(d.keys()) < 2:
-          chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
-          continue  # to next iteration in While True loop
+        #if len(d.keys()) < 2:
+        #  chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+        #  continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:

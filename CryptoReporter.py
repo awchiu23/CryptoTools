@@ -8,14 +8,6 @@ import time
 import termcolor
 import sys
 
-#########
-# Configs
-#########
-QUOTE_CCY_DICT =dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                         # Values are nDigits for display
-AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
-FTX_FLOWS_CCYS = ['BTC','ETH','XRP','USD','USDT']                                                     # Borrow/lending cash flows are calculated for these
-KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})                      # Values are Kraken currency names
-
 ###########
 # Functions
 ###########
@@ -302,7 +294,7 @@ class core:
     #####
     self.oneDayFlows=0
     self.flowsDict=dict()
-    for ccy in FTX_FLOWS_CCYS:
+    for ccy in CR_FTX_FLOWS_CCYS:
       d=getBorrowsLoans(ccy)
       self.flowsDict[ccy]=d
       self.oneDayFlows+=d['oneDayFlows']
@@ -637,13 +629,13 @@ class core:
   def krInit(self):
     def getBal(bal, ccy):
       try:
-        return float(bal[KR_CCY_DICT[ccy]])
+        return float(bal[CR_KR_CCY_DICT[ccy]])
       except:
         return 0
     #####
     self.api = cl.krCCXTInit(self.n)
     bal = self.api.private_post_balance()['result']
-    for ccy in KR_CCY_DICT.keys():
+    for ccy in CR_KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
     #####
     positions = pd.DataFrame(self.api.private_post_openpositions()['result']).transpose().set_index('pair')
@@ -657,7 +649,7 @@ class core:
     self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
     if 'XXBTZEUR' in positions.index:
       self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
-    for ccy in KR_CCY_DICT.keys():
+    for ccy in CR_KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
     notional = positions['volNetUSD'].abs().sum()
     #####
@@ -675,7 +667,7 @@ class core:
     self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
 
   def krPrintBorrow(self, nav):
-    d=KR_CCY_DICT.copy()
+    d=CR_KR_CCY_DICT.copy()
     del d['EUR']
     zList=[]
     for ccy in d.keys():
@@ -700,7 +692,7 @@ if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
 spotDict['USD']=1
-for ccy in QUOTE_CCY_DICT.keys():
+for ccy in CR_QUOTE_CCY_DICT.keys():
   spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
 #####
 ftxCore = core('ftx',spotDict)
@@ -721,18 +713,18 @@ Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in ob
 #############
 # Aggregation
 #############
-agDf = pd.DataFrame({'Ccy': AG_CCY_DICT.keys(), 'SpotDelta': AG_CCY_DICT.values(), 'FutDelta':[0] * len(AG_CCY_DICT.keys())}).set_index('Ccy')
+agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'SpotDelta': CR_AG_CCY_DICT.values(), 'FutDelta': [0] * len(CR_AG_CCY_DICT.keys())}).set_index('Ccy')
 nav=0
 oneDayIncome=0
 for obj in objs:
   nav+=obj.nav
   oneDayIncome += obj.oneDayIncome
-  for ccy in AG_CCY_DICT.keys():
+  for ccy in CR_AG_CCY_DICT.keys():
     agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
     agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
 externalCoinsNAV=0
-for ccy in AG_CCY_DICT.keys():
-  externalCoinsNAV += AG_CCY_DICT[ccy] * spotDict[ccy]
+for ccy in CR_AG_CCY_DICT.keys():
+  externalCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
 externalUSDTNAV = EXTERNAL_USDT_DELTA * spotDict['USDT']
 externalEURNAV = EXTERNAL_EUR_DELTA*(spotDict['EUR']-EXTERNAL_EUR_REF)
 nav+=externalCoinsNAV+externalUSDTNAV+externalEURNAV
@@ -749,12 +741,12 @@ if externalEURNAV!=0: navStrList.append(getNAVStr('EUR ext',externalEURNAV))
 print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
 #####
 zList=[]
-for ccy in QUOTE_CCY_DICT.keys():
-  zList.append(ccy + '=' + str(round(spotDict[ccy], QUOTE_CCY_DICT[ccy])))
+for ccy in CR_QUOTE_CCY_DICT.keys():
+  zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
 print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
 print()
 #####
-for ccy in AG_CCY_DICT.keys():
+for ccy in CR_AG_CCY_DICT.keys():
   printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
 if CRYPTO_MODE>0:
   printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
@@ -768,7 +760,7 @@ ftxCore.ftxPrintBorrowLending('USDT',nav)
 print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
-  for ccy in FTX_FLOWS_CCYS:
+  for ccy in CR_FTX_FLOWS_CCYS:
     if not ccy in ['USD','USDT']:
       ftxCore.ftxPrintFlowsSummary(ccy)
   print()

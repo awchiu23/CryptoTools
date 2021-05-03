@@ -36,6 +36,9 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
 - Universe: USD, BTC, ETH, XRP
 
+## FTXTrader
+- This tool allows you to trade non-standard instruments on FTX
+
 ## KrakenAlerter
 - This tool is for monitoring differences of Kraken spots to FTX spots
 
@@ -46,5 +49,5 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
   3. Cash balances
 
 ## KrakenTrader
-- Execution tool for Kraken to trade BTC margined spot
+- This tool allows you to execution BTC margined spot in Kraken
 - Has ability to work hedges off other exchanges
