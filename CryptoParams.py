@@ -46,8 +46,8 @@ CT_CONFIGS_DICT['DB_BTC_OK']=0 ### Off
 CT_CONFIGS_DICT['KF_BTC_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-10
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-10
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
@@ -69,8 +69,8 @@ CT_CONFIGS_DICT['DB_ETH_OK']=1
 CT_CONFIGS_DICT['KF_ETH_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=-10
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=-10
+CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=10
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
@@ -82,17 +82,17 @@ CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 # XRP
 #####
 # 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_XRP_OK']=1
-CT_CONFIGS_DICT['FTX_XRP_OK']=1
-CT_CONFIGS_DICT['BB_XRP_OK']=0 ### Off
+CT_CONFIGS_DICT['SPOT_XRP_OK']=0
+CT_CONFIGS_DICT['FTX_XRP_OK']=0
+CT_CONFIGS_DICT['BB_XRP_OK']=1 ### Off
 CT_CONFIGS_DICT['BN_XRP_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_XRP_OK']=0 ### Off
+CT_CONFIGS_DICT['BNT_XRP_OK']=1 ### Off
 CT_CONFIGS_DICT['KF_XRP_OK']=0 ### Off
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=-15
 CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0 ### Off
+CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=15 ### Off
 CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0 ### Off
@@ -116,8 +116,8 @@ CT_MAX_ETH = 10                      # Hard limit
 CT_MAX_XRP = 10000                   # Hard limit
 
 CT_FTX_DISTANCE_TO_BEST_BPS=0        # Execution setting
-CT_BB_DISTANCE_TO_BEST_BPS=-5        # Execution setting
-CT_BBT_DISTANCE_TO_BEST_BPS=-2.5     # Execution setting
+CT_BB_DISTANCE_TO_BEST_BPS=-3        # Execution setting
+CT_BBT_DISTANCE_TO_BEST_BPS=-1.5     # Execution setting
 CT_BN_DISTANCE_TO_BEST_BPS=0         # Execution setting
 CT_BNT_DISTANCE_TO_BEST_BPS=0        # Execution setting
 CT_DB_DISTANCE_TO_BEST_BPS=0         # Execution setting
@@ -136,13 +136,13 @@ APOPHIS_IS_IP_WHITELIST = True
 #################
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
-CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quote currencies: values are nDigits for display
+CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quoted currencies: values are nDigits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                                    # Aggregated currencies: values are external deltas (# coins)
-CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                 # FTX flows currencies: borrow/lending cash flows are calculated for these
+CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                 # FTX flows currencies: borrow/lending cash flows are calculated for use in income calculations
 CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})      # Kraken currencies: values are Kraken currency names
-CR_EXTERNAL_USDT_DELTA = 0
-CR_EXTERNAL_EUR_DELTA = 0
-CR_EXTERNAL_EUR_REF = 0
+CR_EXT_DELTA_USDT = 0
+CR_EXT_DELTA_EUR = 0
+CR_EXT_DELTA_EUR_REF = 0
 
 ###########
 # Internals
@@ -157,7 +157,7 @@ INT_CCY_DICT['FTT']={'exch':['ftx']}
 # Smart Basis
 #############
 SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.3
+SMB_BASE_RATE = 0.2
 SMB_BASE_BASIS = SMB_BASE_RATE / 365
 SMB_USDT_COLLATERAL_COVERAGE = 1 / 5
 
@@ -190,7 +190,7 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   CR_QUOTE_CCY_DICT['MATIC'] = 6
   CR_AG_CCY_DICT = dict({'BTC': sl.jLoad('EXTERNAL_BTC_DELTA'), 'ETH': sl.jLoad('EXTERNAL_ETH_DELTA'), 'XRP': sl.jLoad('EXTERNAL_XRP_DELTA')})
-  CR_EXTERNAL_USDT_DELTA = sl.jLoad('EXTERNAL_USDT_DELTA')
-  CR_EXTERNAL_EUR_DELTA = sl.jLoad('EXTERNAL_EUR_DELTA')
-  CR_EXTERNAL_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
+  CR_EXT_DELTA_USDT = sl.jLoad('EXTERNAL_USDT_DELTA')
+  CR_EXT_DELTA_EUR = sl.jLoad('EXTERNAL_EUR_DELTA')
+  CR_EXT_DELTA_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
   INT_CCY_DICT['MATIC'] = {'exch': ['ftx']}
