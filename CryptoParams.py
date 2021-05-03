@@ -24,12 +24,6 @@ API_KEY_KR3 = ''
 API_SECRET_KR3 = ''
 API_KEY_KR4 = ''
 API_SECRET_KR4 = ''
-EXTERNAL_BTC_DELTA = 0
-EXTERNAL_ETH_DELTA = 0
-EXTERNAL_XRP_DELTA = 0
-EXTERNAL_USDT_DELTA = 0
-EXTERNAL_EUR_DELTA = 0
-EXTERNAL_EUR_REF = 0
 
 #############################################################################################
 
@@ -65,14 +59,14 @@ CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
 # ETH
 #####
 # 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_ETH_OK']=1
-CT_CONFIGS_DICT['FTX_ETH_OK']=1
-CT_CONFIGS_DICT['BB_ETH_OK']=1
-CT_CONFIGS_DICT['BBT_ETH_OK']=1
-CT_CONFIGS_DICT['BN_ETH_OK']=1
+CT_CONFIGS_DICT['SPOT_ETH_OK']=0
+CT_CONFIGS_DICT['FTX_ETH_OK']=0
+CT_CONFIGS_DICT['BB_ETH_OK']=0
+CT_CONFIGS_DICT['BBT_ETH_OK']=0
+CT_CONFIGS_DICT['BN_ETH_OK']=0
 CT_CONFIGS_DICT['BNT_ETH_OK']=1
 CT_CONFIGS_DICT['DB_ETH_OK']=1
-CT_CONFIGS_DICT['KF_ETH_OK']=1
+CT_CONFIGS_DICT['KF_ETH_OK']=0
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
@@ -80,7 +74,7 @@ CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=5
 CT_CONFIGS_DICT['DB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 
@@ -91,9 +85,9 @@ CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['SPOT_XRP_OK']=0
 CT_CONFIGS_DICT['FTX_XRP_OK']=0
 CT_CONFIGS_DICT['BB_XRP_OK']=0
-CT_CONFIGS_DICT['BN_XRP_OK']=0
+CT_CONFIGS_DICT['BN_XRP_OK']=1
 CT_CONFIGS_DICT['BNT_XRP_OK']=0
-CT_CONFIGS_DICT['KF_XRP_OK']=0
+CT_CONFIGS_DICT['KF_XRP_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
@@ -101,7 +95,7 @@ CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0
-CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=-10
 
 #############################################################################################
 
@@ -142,10 +136,13 @@ APOPHIS_IS_IP_WHITELIST = True
 #################
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
-CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})                         # Values are nDigits for display
-CR_AG_CCY_DICT = dict({'BTC': EXTERNAL_BTC_DELTA, 'ETH': EXTERNAL_ETH_DELTA, 'XRP': EXTERNAL_XRP_DELTA}) # Values are external deltas
-CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                                 # Borrow/lending cash flows are calculated for these
-CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})                      # Values are Kraken currency names
+CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quote currencies: values are nDigits for display
+CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                                    # Aggregated currencies: values are external deltas (# coins)
+CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                 # FTX flows currencies: borrow/lending cash flows are calculated for these
+CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})      # Kraken currencies: values are Kraken currency names
+CR_EXTERNAL_USDT_DELTA = 0
+CR_EXTERNAL_EUR_DELTA = 0
+CR_EXTERNAL_EUR_REF = 0
 
 ###########
 # Internals
@@ -190,12 +187,10 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR3 = sl.jLoad('API_SECRET_KR3')
   API_KEY_KR4 = sl.jLoad('API_KEY_KR4')
   API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
-  EXTERNAL_BTC_DELTA = sl.jLoad('EXTERNAL_BTC_DELTA')
-  EXTERNAL_ETH_DELTA = sl.jLoad('EXTERNAL_ETH_DELTA')
-  EXTERNAL_XRP_DELTA = sl.jLoad('EXTERNAL_XRP_DELTA')
-  EXTERNAL_USDT_DELTA = sl.jLoad('EXTERNAL_USDT_DELTA')
-  EXTERNAL_EUR_DELTA = sl.jLoad('EXTERNAL_EUR_DELTA')
-  EXTERNAL_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
+  CR_EXTERNAL_USDT_DELTA = sl.jLoad('EXTERNAL_USDT_DELTA')
+  CR_EXTERNAL_EUR_DELTA = sl.jLoad('EXTERNAL_EUR_DELTA')
+  CR_EXTERNAL_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
   #####
+  CR_AG_CCY_DICT = dict({'BTC': sl.jLoad('EXTERNAL_BTC_DELTA'), 'ETH': sl.jLoad('EXTERNAL_ETH_DELTA'), 'XRP': sl.jLoad('EXTERNAL_XRP_DELTA')})
   CR_QUOTE_CCY_DICT['MATIC']=6
   INT_CCY_DICT['MATIC'] = {'exch': ['ftx']}

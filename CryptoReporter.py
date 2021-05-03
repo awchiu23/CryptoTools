@@ -97,14 +97,14 @@ def printEURDeltas(krCores, spotDict):
   spotDelta=0
   for krCore in krCores:
     spotDelta+=krCore.spots.loc['EUR','SpotDelta']
-  if spotDelta == 0 and EXTERNAL_EUR_DELTA == 0: return
-  netDelta=spotDelta+EXTERNAL_EUR_DELTA
-  z='EUR ext/impl/net delta: '.rjust(41) + (str(round(EXTERNAL_EUR_DELTA/1000)) + 'K/' + str(round(spotDelta/1000)) + 'K/' + str(round(netDelta/1000))+'K').ljust(27) + \
-    '($' + str(round(EXTERNAL_EUR_DELTA * spotDict['EUR'] / 1000)) + 'K/$' + str(round(spotDelta * spotDict['EUR'] / 1000)) + 'K/$' + str(round(netDelta * spotDict['EUR'] / 1000)) + 'K)'
+  if spotDelta == 0 and CR_EXTERNAL_EUR_DELTA == 0: return
+  netDelta= spotDelta + CR_EXTERNAL_EUR_DELTA
+  z='EUR ext/impl/net delta: '.rjust(41) + (str(round(CR_EXTERNAL_EUR_DELTA / 1000)) + 'K/' + str(round(spotDelta / 1000)) + 'K/' + str(round(netDelta / 1000)) + 'K').ljust(27) + \
+    '($' + str(round(CR_EXTERNAL_EUR_DELTA * spotDict['EUR'] / 1000)) + 'K/$' + str(round(spotDelta * spotDict['EUR'] / 1000)) + 'K/$' + str(round(netDelta * spotDict['EUR'] / 1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
 def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
-  realDelta_USD=ftxCore.wallet.loc['USDT','usdValue']+EXTERNAL_USDT_DELTA*spotDict['USDT']
+  realDelta_USD= ftxCore.wallet.loc['USDT','usdValue'] + CR_EXTERNAL_USDT_DELTA * spotDict['USDT']
   implDelta_USD=0
   for core in usdtCoreList:
     realDelta_USD+=core.nav
@@ -725,8 +725,8 @@ for obj in objs:
 externalCoinsNAV=0
 for ccy in CR_AG_CCY_DICT.keys():
   externalCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
-externalUSDTNAV = EXTERNAL_USDT_DELTA * spotDict['USDT']
-externalEURNAV = EXTERNAL_EUR_DELTA*(spotDict['EUR']-EXTERNAL_EUR_REF)
+externalUSDTNAV = CR_EXTERNAL_USDT_DELTA * spotDict['USDT']
+externalEURNAV = CR_EXTERNAL_EUR_DELTA * (spotDict['EUR'] - CR_EXTERNAL_EUR_REF)
 nav+=externalCoinsNAV+externalUSDTNAV+externalEURNAV
 oneDayIncome+=ftxCore.oneDayFlows
 
