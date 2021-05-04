@@ -1144,7 +1144,7 @@ def caRun(ccy, color):
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     if CRYPTO_MODE>0:
-      exchList=INT_CCY_DICT[ccy]['exch']
+      exchList=SHARED_CCY_DICT[ccy]['futExch']
     else:
       exchList=['ftx','bb']
     for exch in exchList:
@@ -1248,7 +1248,7 @@ def ctRun(ccy,tgtBps,color):
       smartBasisDict['spotBasis'] = 0
 
       # Remove disabled instruments
-      for exch in INT_CCY_DICT[ccy]['exch']+['spot']:
+      for exch in SHARED_CCY_DICT[ccy]['futExch'] + ['spot']:
         if CT_CONFIGS_DICT[exch.upper() + '_' + ccy + '_OK'] == 0:
           del smartBasisDict[exch + 'SmartBasis']
           del smartBasisDict[exch+'Basis']

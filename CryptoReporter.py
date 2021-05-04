@@ -132,11 +132,11 @@ class core:
       self.name += str(n)
     #####
     self.validCcys = []
-    for ccy in INT_CCY_DICT.keys():
-      if exch in INT_CCY_DICT[ccy]['exch']:
+    for ccy in SHARED_CCY_DICT.keys():
+      if exch in SHARED_CCY_DICT[ccy]['futExch']:
         self.validCcys.append(ccy)
     #####
-    ccyList = list(INT_CCY_DICT.keys())
+    ccyList = list(SHARED_CCY_DICT.keys())
     if exch=='kr': ccyList.append('EUR')
     zeroes = [0] * len(ccyList)
     self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')

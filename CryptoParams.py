@@ -136,7 +136,7 @@ APOPHIS_IS_IP_WHITELIST = True
 #################
 CR_IS_SHOW_COIN_LENDING = False
 CR_N_KR_ACCOUNTS = 1
-CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quoted currencies; values are  # digits for display rounding
+CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                                    # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                 # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
 CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})      # Kraken currencies; values are Kraken currency names
@@ -144,14 +144,14 @@ CR_EXT_DELTA_USDT = 0
 CR_EXT_DELTA_EUR = 0
 CR_EXT_DELTA_EUR_REF = 0
 
-###########
-# Internals
-###########
-INT_CCY_DICT=dict() # Exch = Valid futures exchanges
-INT_CCY_DICT['BTC']={'exch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
-INT_CCY_DICT['ETH']={'exch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
-INT_CCY_DICT['XRP']={'exch':['ftx', 'bb', 'bn', 'bnt', 'kf']}
-INT_CCY_DICT['FTT']={'exch':['ftx']}
+########
+# Shared
+########
+SHARED_CCY_DICT=dict()
+SHARED_CCY_DICT['BTC']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
+SHARED_CCY_DICT['ETH']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
+SHARED_CCY_DICT['XRP']={'futExch':['ftx', 'bb', 'bn', 'bnt', 'kf']}
+SHARED_CCY_DICT['FTT']={'futExch':['ftx']}
 
 #############
 # Smart Basis
@@ -193,4 +193,4 @@ if os.environ.get('USERNAME')=='Simon':
   CR_EXT_DELTA_USDT = sl.jLoad('EXTERNAL_USDT_DELTA')
   CR_EXT_DELTA_EUR = sl.jLoad('EXTERNAL_EUR_DELTA')
   CR_EXT_DELTA_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
-  INT_CCY_DICT['MATIC'] = {'exch': ['ftx']}
+  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
