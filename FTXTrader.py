@@ -5,7 +5,7 @@ import time
 ########
 # Params
 ########
-nPrograms=40
+nPrograms=50
 targetUSD=1000
 
 ticker='MATIC'
