@@ -476,12 +476,19 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     return (qty + cushionUSD / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
   @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
-    result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data'][0]
-    if len(result)==0:
-      print(getCurrentTime() + ': [DEBUG: len(result)==0; orderId='+orderId+']')
-      result=dict()
-      result['orderStatus']='Filled'
-    return result
+    isDebugShown=False
+    while True:
+      result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data']
+      if result is None:
+        if not isDebugShown:
+          print(getCurrentTime() + ': [DEBUG: orderId='+orderId+'] ',end='')
+          isDebugShown=True
+        else:
+          print('.',end='')
+        time.sleep(1)
+      else:
+        if isDebugShown: print()
+        return result[0]
   @retry(wait_fixed=1000)
   def bbtGetFillPrice(bb, ticker, orderId):
     df = pd.DataFrame(bb.private_linear_get_trade_execution_list({'symbol': ticker})['result']['data'])
@@ -916,6 +923,25 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy):
   #####
   # Ccy-specific
   d['Ccy'] = ccy
+  validExchs=getValidExchs(ccy)
+  if 'ftx' in validExchs: d['ftxEstFunding'] = ftxGetEstFunding(ftx, ccy)
+  if 'bb' in validExchs:
+    d['bbEstFunding1'] = bbGetEstFunding1(bb, ccy)
+    d['bbEstFunding2'] = bbGetEstFunding2(bb, ccy)
+  if 'bbt' in validExchs:
+    d['bbtEstFunding1'] = bbtGetEstFunding1(bb, ccy)
+    d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)
+  if 'bn' in validExchs:  d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
+  if 'bnt' in validExchs: d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
+  if 'db' in validExchs:  d['dbEstFunding'] = dbGetEstFunding(db, ccy)
+  if 'kf' in validExchs:
+    kfTickers = kfGetTickers(kf)
+    d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
+    d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
+  return d
+  '''
+  # Ccy-specific
+  d['Ccy'] = ccy
   d['ftxEstFunding'] = ftxGetEstFunding(ftx, ccy)  
   d['bbEstFunding1'] = bbGetEstFunding1(bb, ccy)  
   d['bbEstFunding2'] = bbGetEstFunding2(bb, ccy)
@@ -930,6 +956,7 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy):
       d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)
       d['dbEstFunding'] = dbGetEstFunding(db, ccy)
   return d
+  '''
 
 #############################################################################################
 
@@ -1042,8 +1069,31 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
 #############################################################################################
 
 def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
-  ftxPrices = getPrices('ftx', ftx, ccy)
-  bbPrices = getPrices('bb', bb, ccy)
+  validExchs = getValidExchs(ccy)
+  objs=[]
+  if 'ftx' in validExchs:
+    ftxPrices = getPrices('ftx', ftx, ccy)
+    objs.append(ftxPrices)
+  if 'bb' in validExchs:
+    bbPrices = getPrices('bb', bb, ccy)
+    objs.append(bbPrices)
+  if 'bbt' in validExchs:
+    bbtPrices = getPrices('bbt', bb, ccy)
+    objs.append(bbtPrices)
+  if 'bn' in validExchs:
+    bnPrices = getPrices('bn', bn, ccy)
+    objs.append(bnPrices)
+  if 'bnt' in validExchs:
+    bntPrices = getPrices('bnt', bn, ccy)
+    objs.append(bntPrices)
+  if 'db' in validExchs:
+    dbPrices = getPrices('db', db, ccy)
+    objs.append(dbPrices)
+  if 'kf' in validExchs:
+    kfPrices = getPrices('kf', kf, ccy)
+    objs.append(kfPrices)
+
+  '''      
   objs = [ftxPrices, bbPrices]
   if CRYPTO_MODE>0:
     bnPrices = getPrices('bn', bn, ccy)
@@ -1054,52 +1104,40 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
       bbtPrices = getPrices('bbt', bb, ccy)
       dbPrices = getPrices('db', db, ccy)
       objs.extend([bbtPrices, dbPrices])
+  '''
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
-  if isSkipAdj:
-    ftxAdj=0    
-    bbAdj = 0
-    bnAdj=0    
-    bntAdj=0
-    kfAdj=0
-    if ccy!='XRP':
-      bbtAdj = 0
-      dbAdj = 0
-  else:
-    ftxAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_'+ccy+'_ADJ_BPS']) / 10000    
-    bbAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BB_'+ccy+'_ADJ_BPS']) / 10000
-    bnAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BN_'+ccy+'_ADJ_BPS']) / 10000    
-    bntAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_'+ccy+'_ADJ_BPS']) / 10000
-    kfAdj = (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['KF_'+ccy+'_ADJ_BPS']) / 10000
-    if ccy!='XRP':
-      bbtAdj = (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BBT_' + ccy + '_ADJ_BPS']) / 10000
-      dbAdj = (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['DB_' + ccy + '_ADJ_BPS']) / 10000
+  ftxAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_'+ccy+'_ADJ_BPS']) / 10000
+  bbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BB_'+ccy+'_ADJ_BPS']) / 10000
+  bbtAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BBT_' + ccy + '_ADJ_BPS']) / 10000
+  bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BN_'+ccy+'_ADJ_BPS']) / 10000
+  bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_'+ccy+'_ADJ_BPS']) / 10000
+  dbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['DB_' + ccy + '_ADJ_BPS']) / 10000
+  kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['KF_'+ccy+'_ADJ_BPS']) / 10000
   #####
   d = dict()
-  d['ftxBasis'] = ftxPrices.fut / ftxPrices.spot - 1  
-  d['ftxSmartBasis'] = ftxGetOneDayShortFutEdge(ftx,fundingDict, d['ftxBasis']) - oneDayShortSpotEdge + ftxAdj
-  #####
-  d['bbBasis'] = bbPrices.fut / ftxPrices.spot - 1  
-  d['bbSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, d['bbBasis']) - oneDayShortSpotEdge + bbAdj
-  #####
-  if CRYPTO_MODE>0:
+  if 'ftx' in validExchs:
+    d['ftxBasis'] = ftxPrices.fut / ftxPrices.spot - 1
+    d['ftxSmartBasis'] = ftxGetOneDayShortFutEdge(ftx,fundingDict, d['ftxBasis']) - oneDayShortSpotEdge + ftxAdj
+  if 'bb' in validExchs:
+    d['bbBasis'] = bbPrices.fut / ftxPrices.spot - 1
+    d['bbSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, d['bbBasis']) - oneDayShortSpotEdge + bbAdj
+  if 'bbt' in validExchs:
+    d['bbtBasis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
+    d['bbtSmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, d['bbtBasis']) - oneDayShortSpotEdge + bbtAdj
+  if 'bn' in validExchs:
     d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1
     d['bnSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, d['bnBasis']) - oneDayShortSpotEdge + bnAdj
-    #####
+  if 'bnt' in validExchs:
     d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
-    #####
+  if 'db' in validExchs:
+    d['dbBasis'] = dbPrices.fut / ftxPrices.spot - 1
+    d['dbSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, d['dbBasis']) - oneDayShortSpotEdge + dbAdj
+  if 'kf' in validExchs:
     d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
     d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
-    #####
-    if ccy!='XRP':
-      d['bbtBasis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
-      d['bbtSmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, d['bbtBasis']) - oneDayShortSpotEdge + bbtAdj
-      #####
-      d['dbBasis'] = dbPrices.fut / ftxPrices.spot - 1
-      d['dbSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, d['dbBasis']) - oneDayShortSpotEdge + dbAdj
-  #####
   return d
 
 #############################################################################################
@@ -1128,28 +1166,21 @@ def caRun(ccy, color):
   print('Column 1:'.ljust(col1N)+'USD marginal rate / USDT marginal rate')
   print('Columns 2+:'.ljust(col1N)+'Smart basis / raw basis (est. funding rate)')
   print()
-  ftx=ftxCCXTInit()
-  bb=bbCCXTInit()
-  if CRYPTO_MODE>0:
-    bn=bnCCXTInit()
-    db=dbCCXTInit()
-    kf=kfApophisInit()
-  else:
-    bn=None
-    db=None
-    kf=None
+  #####
+  validExchs=getValidExchs(ccy)
+  ftx=ftxCCXTInit() if 'ftx' in validExchs else None
+  bb=bbCCXTInit() if 'bb' in validExchs else None
+  bn=bnCCXTInit() if 'bn' in validExchs else None
+  db=dbCCXTInit() if 'db' in validExchs else None
+  kf=kfApophisInit() if 'kf' in validExchs else None
+  #####
   while True:
     fundingDict = getFundingDict(ftx,bb,bn,db,kf,ccy)
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
-    if CRYPTO_MODE>0:
-      exchList=SHARED_CCY_DICT[ccy]['futExch']
-    else:
-      exchList=['ftx','bb']
-    for exch in exchList:
-      isEst2 = exch in ['bb', 'bbt', 'kf']
-      process(exch, fundingDict, smartBasisDict, isEst2, color)
+    for exch in validExchs:
+      process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf'], color)
     print()
     if not ccy in ['BTC','ETH']: time.sleep(1)
 
@@ -1462,6 +1493,20 @@ def getOneDayDecayedMean(current,terminal,halfLifeHours,nMinutes=1440):
 def getPctElapsed(hoursInterval):
   utcNow = datetime.datetime.utcnow()
   return (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
+
+# Get valid currencies for a futures exchange
+def getValidCcys(futExch):
+  myL = []
+  for ccy in SHARED_CCY_DICT.keys():
+    if futExch in SHARED_CCY_DICT[ccy]['futExch']:
+      myL.append(ccy)
+  return myL
+
+# Get valid exchanges for a currency
+def getValidExchs(ccy):
+  myL = SHARED_CCY_DICT[ccy]['futExch']
+  if CRYPTO_MODE == 0: myL = ['ftx', 'bb'] if 'bb' in myL else ['ftx']
+  return myL
 
 # Print dictionary
 def printDict(d, indent=0, isSort=True):

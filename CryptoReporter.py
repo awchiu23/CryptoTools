@@ -131,10 +131,7 @@ class core:
       self.n = n
       self.name += str(n)
     #####
-    self.validCcys = []
-    for ccy in SHARED_CCY_DICT.keys():
-      if exch in SHARED_CCY_DICT[ccy]['futExch']:
-        self.validCcys.append(ccy)
+    self.validCcys = cl.getValidCcys(exch)
     #####
     ccyList = list(SHARED_CCY_DICT.keys())
     if exch=='kr': ccyList.append('EUR')
