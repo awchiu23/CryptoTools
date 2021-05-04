@@ -1,36 +1,19 @@
 import CryptoLib as cl
-import numpy as np
-import time
+from CryptoParams import *
 
 ########
 # Params
 ########
-nPrograms=50
-targetUSD=1000
-
-ticker='MATIC'
-isSpot=True
-isPerp=True
-sideSpot='BUY'
-sidePerp='SELL'
-
-######
-# Init
-######
-ftx = cl.ftxCCXTInit()
-tickerSpot=ticker+'/USD'
-tickerPerp=ticker+'-PERP'
-spot=cl.ftxGetMid(ftx,tickerSpot)
-qty=np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spot
+ccy='MATIC'
+notional=3000 # USD
+tgtBps=100
+color='cyan'
+CT_CONFIGS_DICT['SPOT_'+ccy+'_OK']=1
+CT_CONFIGS_DICT['FTX_'+ccy+'_OK']=1
+CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_'+ccy+'_ADJ_BPS']=-90 # Positive = eager to buy; Negative = eager to sell
 
 ######
 # Main
 ######
-cl.printHeader('FTXTrader')
-for n in range(nPrograms):
-  cl.printHeader('Program '+str(n+1))
-  if isSpot:
-    fill=cl.ftxRelOrder(sideSpot,ftx,tickerSpot, qty, maxChases=888)
-  if isPerp:
-    fill=cl.ftxRelOrder(sidePerp,ftx,tickerPerp, qty, maxChases=888)
-  time.sleep(2)
+cl.ctRun(ccy,tgtBps,color,ftxCcy=ccy,ftxNotional=notional)

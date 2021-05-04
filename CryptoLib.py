@@ -1157,7 +1157,7 @@ def caRun(ccy, color):
 ##############
 # CryptoTrader
 ##############
-def ctInit():
+def ctInit(ftxCcy=None,ftxNotional=None):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
@@ -1180,6 +1180,10 @@ def ctInit():
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
   notional_dict['XRP'] = trade_xrp_notional
+  if not (ftxCcy is None or ftxNotional is None):
+    spot=ftxGetMid(ftx,ftxCcy+'/USD')
+    qty_dict[ftxCcy]=np.min([ftxNotional, CT_MAX_NOTIONAL])/spot
+    notional_dict[ftxCcy]=qty_dict[ftxCcy] * spot
   printHeader('CryptoTrader')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
@@ -1228,9 +1232,9 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
-def ctRun(ccy,tgtBps,color):
-  ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
-  if not ccy in ['BTC', 'ETH', 'XRP']:
+def ctRun(ccy,tgtBps,color,ftxCcy=None,ftxNotional=None):
+  ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit(ftxCcy=ftxCcy,ftxNotional=ftxNotional)
+  if not ccy in qty_dict:
     print('Invalid ccy!')
     sys.exit(1)
   trade_qty = qty_dict[ccy]
