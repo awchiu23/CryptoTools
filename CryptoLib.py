@@ -939,24 +939,6 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy):
     d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
     d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
   return d
-  '''
-  # Ccy-specific
-  d['Ccy'] = ccy
-  d['ftxEstFunding'] = ftxGetEstFunding(ftx, ccy)  
-  d['bbEstFunding1'] = bbGetEstFunding1(bb, ccy)  
-  d['bbEstFunding2'] = bbGetEstFunding2(bb, ccy)
-  if CRYPTO_MODE>0:
-    d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
-    d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
-    kfTickers = kfGetTickers(kf)
-    d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
-    d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
-    if ccy!='XRP':
-      d['bbtEstFunding1'] = bbtGetEstFunding1(bb, ccy)
-      d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)
-      d['dbEstFunding'] = dbGetEstFunding(db, ccy)
-  return d
-  '''
 
 #############################################################################################
 
@@ -1092,50 +1074,36 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
   if 'kf' in validExchs:
     kfPrices = getPrices('kf', kf, ccy)
     objs.append(kfPrices)
-
-  '''      
-  objs = [ftxPrices, bbPrices]
-  if CRYPTO_MODE>0:
-    bnPrices = getPrices('bn', bn, ccy)
-    bntPrices = getPrices('bnt', bn, ccy)
-    kfPrices = getPrices('kf', kf, ccy)
-    objs.extend([bnPrices, bntPrices, kfPrices])
-    if ccy!='XRP':
-      bbtPrices = getPrices('bbt', bb, ccy)
-      dbPrices = getPrices('db', db, ccy)
-      objs.extend([bbtPrices, dbPrices])
-  '''
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
-  oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
-  ftxAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_'+ccy+'_ADJ_BPS']) / 10000
-  bbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BB_'+ccy+'_ADJ_BPS']) / 10000
-  bbtAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BBT_' + ccy + '_ADJ_BPS']) / 10000
-  bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BN_'+ccy+'_ADJ_BPS']) / 10000
-  bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_'+ccy+'_ADJ_BPS']) / 10000
-  dbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['DB_' + ccy + '_ADJ_BPS']) / 10000
-  kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_'+ccy+'_ADJ_BPS'] - CT_CONFIGS_DICT['KF_'+ccy+'_ADJ_BPS']) / 10000
-  #####
   d = dict()
+  oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   if 'ftx' in validExchs:
+    ftxAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_' + ccy + '_ADJ_BPS']) / 10000
     d['ftxBasis'] = ftxPrices.fut / ftxPrices.spot - 1
     d['ftxSmartBasis'] = ftxGetOneDayShortFutEdge(ftx,fundingDict, d['ftxBasis']) - oneDayShortSpotEdge + ftxAdj
   if 'bb' in validExchs:
+    bbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BB_' + ccy + '_ADJ_BPS']) / 10000
     d['bbBasis'] = bbPrices.fut / ftxPrices.spot - 1
     d['bbSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, d['bbBasis']) - oneDayShortSpotEdge + bbAdj
   if 'bbt' in validExchs:
+    bbtAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BBT_' + ccy + '_ADJ_BPS']) / 10000
     d['bbtBasis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['bbtSmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, d['bbtBasis']) - oneDayShortSpotEdge + bbtAdj
   if 'bn' in validExchs:
+    bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BN_' + ccy + '_ADJ_BPS']) / 10000
     d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1
     d['bnSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, d['bnBasis']) - oneDayShortSpotEdge + bnAdj
   if 'bnt' in validExchs:
+    bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_' + ccy + '_ADJ_BPS']) / 10000
     d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
   if 'db' in validExchs:
+    dbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['DB_' + ccy + '_ADJ_BPS']) / 10000
     d['dbBasis'] = dbPrices.fut / ftxPrices.spot - 1
     d['dbSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, d['dbBasis']) - oneDayShortSpotEdge + dbAdj
   if 'kf' in validExchs:
+    kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['KF_' + ccy + '_ADJ_BPS']) / 10000
     d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
     d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
   return d
