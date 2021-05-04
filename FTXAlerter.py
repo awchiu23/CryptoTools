@@ -3,7 +3,7 @@ import CryptoLib as cl
 ########
 # Params
 ########
-ccy='MATIC'
+ccy='DOGE'
 color='cyan'
 
 ######
