@@ -502,9 +502,11 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
-    walletUSDT = pd.DataFrame(self.api.fapiPrivate_get_account()['assets']).set_index('asset').loc['USDT']
-    self.nav = float(walletUSDT['marginBalance'])*self.spotDict['USDT']
-    cushion = float(walletUSDT['availableBalance'])*self.spotDict['USDT']
+    d=self.api.fapiPrivate_get_account()
+    mb = float(d['totalMarginBalance'])
+    mm = float(d['totalMaintMargin'])
+    self.nav = mb * self.spotDict['USDT']
+    cushion = (mb-mm) * self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
