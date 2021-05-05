@@ -491,12 +491,15 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
         return result[0]
   @retry(wait_fixed=1000)
   def bbtGetFillPrice(bb, ticker, orderId):
-    df = pd.DataFrame(bb.private_linear_get_trade_execution_list({'symbol': ticker})['result']['data'])
-    df = df[df['order_id'] == orderId]
-    dfSetFloat(df, ['exec_qty', 'exec_price'])
-    exec_qty_sum = df['exec_qty'].sum()
-    print(getCurrentTime()+': [DEBUG: exec_qty_sum: '+str(round(exec_qty_sum,6))+']')
-    return (df['exec_qty'] * df['exec_price']).sum() / exec_qty_sum
+    while True:
+      df = pd.DataFrame(bb.private_linear_get_trade_execution_list({'symbol': ticker})['result']['data'])
+      df = df[df['order_id'] == orderId]
+      dfSetFloat(df, ['exec_qty', 'exec_price'])
+      exec_qty_sum = df['exec_qty'].sum()
+      print(getCurrentTime() + ': [DEBUG: exec_qty_sum: ' + str(round(exec_qty_sum, 6)) + ']')
+      if exec_qty_sum > 0:
+        return (df['exec_qty'] * df['exec_price']).sum() / exec_qty_sum
+      time.sleep(1)
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
