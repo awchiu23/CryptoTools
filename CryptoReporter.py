@@ -329,7 +329,7 @@ class core:
     n = self.wallet.loc[ccy, 'usdValue']
     suffix = '($' + str(round(n/1000))+'K) '
     suffix += '(' + str(round(n/nav*100))+'%)'
-    print(('FTX '+ccy+' 24h/prev/est borrow rate: ').rjust(41) + ('/'.join(zList) + '% p.a. '+suffix).ljust(27))
+    print(('FTX '+ccy+' 24h/prev/est borrow rate: ').rjust(41) + ('/'.join(zList) + ' p.a. '+suffix).ljust(27))
 
   def ftxPrintCoinLending(self, ccy):
     estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
