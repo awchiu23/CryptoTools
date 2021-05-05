@@ -4,8 +4,8 @@ from CryptoParams import *
 ########
 # Params
 ########
-ccy='DOGE'
-notional=3000 # USD
+ccy='MATIC'
+notional=1000 # USD
 tgtBps=30
 color='cyan'
 CT_CONFIGS_DICT['SPOT_'+ccy+'_OK']=1

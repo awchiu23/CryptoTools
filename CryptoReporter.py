@@ -545,7 +545,8 @@ class core:
       self.futures.loc[ccy, 'FutDelta']=cl.dbGetFutPos(self.api,ccy)/spotDict[ccy]
     self.calcFuturesDeltaUSD()
     #####
-    self.oneDayIncome = getOneDayIncome('BTC', self.spotDict['BTC']) + getOneDayIncome('ETH', self.spotDict['ETH'])
+    for ccy in self.validCcys:
+      self.oneDayIncome += getOneDayIncome(ccy, self.spotDict[ccy])
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()

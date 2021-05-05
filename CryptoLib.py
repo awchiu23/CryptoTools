@@ -494,7 +494,9 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     df = pd.DataFrame(bb.private_linear_get_trade_execution_list({'symbol': ticker})['result']['data'])
     df = df[df['order_id'] == orderId]
     dfSetFloat(df, ['exec_qty', 'exec_price'])
-    return (df['exec_qty'] * df['exec_price']).sum() / df['exec_qty'].sum()
+    exec_qty_sum = df['exec_qty'].sum()
+    print(getCurrentTime()+': [DEBUG: exec_qty_sum: '+str(round(exec_qty_sum,6))+']')
+    return (df['exec_qty'] * df['exec_price']).sum() / exec_qty_sum
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
