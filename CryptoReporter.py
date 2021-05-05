@@ -243,24 +243,22 @@ class core:
       df2 = df2.set_index('time').sort_index()
       return df2
     ######
-    def getBorrowsLoans(ccy):
+    def makeFlows(ccy):
       start_time = getYest()
       borrows = cleanBorrows(ccy, pd.DataFrame(self.api.private_get_spot_margin_borrow_history({'limit': 1000, 'start_time': start_time})['result']))
       loans = cleanBorrows(ccy, pd.DataFrame(self.api.private_get_spot_margin_lending_history({'limit': 1000, 'start_time': start_time})['result']))
-      cl.dfSetFloat(borrows, 'cost')
+      cl.dfSetFloat(borrows, ['cost','rate'])
       cl.dfSetFloat(loans, 'proceeds')
       prevBorrow = borrows.iloc[-1]['cost'] if borrows.index[-1] == self.payments.index[-1] else 0
       prevLoan = loans.iloc[-1]['proceeds'] if loans.index[-1] == self.payments.index[-1] else 0
-      prevFlows = (prevLoan - prevBorrow) * self.spotDict[ccy]
       absBalance = abs(self.wallet.loc[ccy, 'total'])
-      prevFlowsAnnRet = prevFlows * 24 * 365 / absBalance
-      oneDayFlows = (loans['proceeds'].sum() - borrows['cost'].sum()) * self.spotDict[ccy]
-      oneDayFlowsAnnRet = oneDayFlows * 365 / absBalance
       d=dict()
-      d['prevFlows']=prevFlows
-      d['prevFlowsAnnRet']=prevFlowsAnnRet
-      d['oneDayFlows']=oneDayFlows
-      d['oneDayFlowsAnnRet']=oneDayFlowsAnnRet
+      d['oneDayFlows'] = (loans['proceeds'].sum() - borrows['cost'].sum()) * self.spotDict[ccy]
+      d['oneDayFlowsAnnRet'] = d['oneDayFlows'] * 365 / absBalance
+      d['oneDayBorrowRate'] = borrows['rate'].mean() * 24 * 365
+      d['prevFlows']=(prevLoan - prevBorrow) * self.spotDict[ccy]
+      d['prevFlowsAnnRet']=d['prevFlows'] * 24 * 365 / absBalance
+      d['prevBorrowRate'] = borrows.iloc[-1]['rate'] * 24 * 365 if borrows.index[-1] == self.payments.index[-1] else 0
       return d
     ######
     self.api = cl.ftxCCXTInit()
@@ -292,7 +290,7 @@ class core:
     self.oneDayFlows=0
     self.flowsDict=dict()
     for ccy in CR_FTX_FLOWS_CCYS:
-      d=getBorrowsLoans(ccy)
+      d=makeFlows(ccy)
       self.flowsDict[ccy]=d
       self.oneDayFlows+=d['oneDayFlows']
     #####
@@ -320,15 +318,19 @@ class core:
     z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
     z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
     print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
-  
-  def ftxPrintBorrowLending(self, ccy, nav):
-    estBorrow = cl.ftxGetEstBorrow(self.api,ccy)
-    estLending = cl.ftxGetEstLending(self.api,ccy)
+
+  # Replacement
+  def ftxPrintBorrow(self, ccy, nav):
+    d = self.flowsDict[ccy]
+    zList = []
+    zList.append(str(round(d['oneDayBorrowRate'] * 100))+'%')
+    zList.append(str(round(d['prevBorrowRate'] * 100)) + '%')
+    zList.append(str(round(cl.ftxGetEstBorrow(self.api,ccy) * 100)) + '%')
     n = self.wallet.loc[ccy, 'usdValue']
     suffix = '($' + str(round(n/1000))+'K) '
     suffix += '(' + str(round(n/nav*100))+'%)'
-    print(('FTX '+ccy+' est borrow/lending rate: ').rjust(41) + (str(round(estBorrow * 100)) + '%/' + str(round(estLending * 100))+ '% p.a. '+suffix).ljust(27))
-  
+    print(('FTX '+ccy+' 24h/prev/est borrow rate: ').rjust(41) + ('/'.join(zList) + '% p.a. '+suffix).ljust(27))
+
   def ftxPrintCoinLending(self, ccy):
     estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
     coinBalance = self.wallet.loc[ccy, 'usdValue']
@@ -755,8 +757,8 @@ print()
 #####
 ftxCore.ftxPrintFlowsSummary('USD')
 ftxCore.ftxPrintFlowsSummary('USDT')
-ftxCore.ftxPrintBorrowLending('USD',nav)
-ftxCore.ftxPrintBorrowLending('USDT',nav)
+ftxCore.ftxPrintBorrow('USD',nav)
+ftxCore.ftxPrintBorrow('USDT',nav)
 print()
 #####
 if CR_IS_SHOW_COIN_LENDING:
