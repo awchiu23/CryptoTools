@@ -188,11 +188,12 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_KR4 = sl.jLoad('API_KEY_KR4')
   API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   #####
+  CR_QUOTE_CCY_DICT['BNB'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 6
   CR_AG_CCY_DICT = dict({'BTC': sl.jLoad('EXTERNAL_BTC_DELTA'), 'ETH': sl.jLoad('EXTERNAL_ETH_DELTA'), 'XRP': sl.jLoad('EXTERNAL_XRP_DELTA')})
   CR_EXT_DELTA_USDT = sl.jLoad('EXTERNAL_USDT_DELTA')
   CR_EXT_DELTA_EUR = sl.jLoad('EXTERNAL_EUR_DELTA')
   CR_EXT_DELTA_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
-  #SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
+  SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
 
