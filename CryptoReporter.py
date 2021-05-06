@@ -404,6 +404,20 @@ class core:
   # BBT
   #####
   def bbtInit(self):
+    def getMM():
+      myL = []
+      for ccy in self.validCcys:
+        myL.extend(self.api.public_linear_get_risk_limit({'symbol': ccy + 'USDT'})['result'])
+      mmS = pd.DataFrame(myL).set_index('id')['maintain_margin']
+      df = self.api.private_linear_get_position_list()['result']
+      df = pd.DataFrame([pos['data'] for pos in df]).set_index('symbol').loc[[z + 'USDT' for z in self.validCcys]]
+      cl.dfSetFloat(df, 'position_value')
+      mmL = []
+      for i in range(len(df)):
+        mmL.append(float(mmS.loc[df.iloc[i]['risk_id']]))
+      df['mm'] = mmL
+      return (df['position_value'] * df['mm']).sum()
+    ######
     self.api = cl.bbCCXTInit()
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
@@ -425,7 +439,8 @@ class core:
     #####
     walletUSDT = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
     self.nav=float(walletUSDT['equity'])*self.spotDict['USDT']
-    cushion = (float(walletUSDT['equity']) - float(walletUSDT['occ_closing_fee']) - float(walletUSDT['occ_funding_fee']) - float(walletUSDT['position_margin']) * 5 / 5.5) * self.spotDict['USDT']
+    #cushion = (float(walletUSDT['equity']) - float(walletUSDT['occ_closing_fee']) - float(walletUSDT['occ_funding_fee']) - float(walletUSDT['position_margin']) * 5 / 5.5) * self.spotDict['USDT']
+    cushion=(float(walletUSDT['equity'])-getMM())*self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
