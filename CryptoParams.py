@@ -46,9 +46,9 @@ CT_CONFIGS_DICT['DB_BTC_OK']=0 ### Off
 CT_CONFIGS_DICT['KF_BTC_OK']=0 ### Off
 
 # Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=-15
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=-15
-CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=5
+CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS']=0
@@ -59,19 +59,19 @@ CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0 ### Off
 # ETH
 #####
 # 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_ETH_OK']=0
+CT_CONFIGS_DICT['SPOT_ETH_OK']=1
 CT_CONFIGS_DICT['FTX_ETH_OK']=0
 CT_CONFIGS_DICT['BB_ETH_OK']=1
-CT_CONFIGS_DICT['BBT_ETH_OK']=1
+CT_CONFIGS_DICT['BBT_ETH_OK']=0
 CT_CONFIGS_DICT['BN_ETH_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_ETH_OK']=1
+CT_CONFIGS_DICT['BNT_ETH_OK']=0
 CT_CONFIGS_DICT['DB_ETH_OK']=0 ### Off
 CT_CONFIGS_DICT['KF_ETH_OK']=0 ### Off
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=5
+CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=20
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
@@ -82,24 +82,24 @@ CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0 ### Off
 # XRP
 #####
 # 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_XRP_OK']=0
-CT_CONFIGS_DICT['FTX_XRP_OK']=0
+CT_CONFIGS_DICT['SPOT_XRP_OK']=1
+CT_CONFIGS_DICT['FTX_XRP_OK']=1
 CT_CONFIGS_DICT['BB_XRP_OK']=0 ### Off
 CT_CONFIGS_DICT['BN_XRP_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_XRP_OK']=1 ### Off
-CT_CONFIGS_DICT['KF_XRP_OK']=1
+CT_CONFIGS_DICT['BNT_XRP_OK']=0 ### Off
+CT_CONFIGS_DICT['KF_XRP_OK']=0 ### Off
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=20
 CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0 ### Off
-CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0 ### Off
 
 #############################################################################################
 
-CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
+CT_IS_NO_FUT_BUYS_WHEN_LONG = False   # Stop buying futures when position is long?
 CT_IS_HIGH_USD_RATE_PAUSE = True     # Trading of spot paused when spot rates >= 100%?
 CT_STREAK = 5                        # Number of observations through target before triggering
 CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of observations

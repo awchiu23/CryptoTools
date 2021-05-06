@@ -107,7 +107,7 @@ def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
   realDelta_USD= ftxCore.wallet.loc['USDT','usdValue'] + CR_EXT_DELTA_USDT * spotDict['USDT']
   implDelta_USD=0
   for core in usdtCoreList:
-    realDelta_USD+=core.nav
+    realDelta_USD+=core.deltaUSDT*spotDict['USDT']
     implDelta_USD-=core.futures['FutDeltaUSD'].sum()
   netDelta_USD=realDelta_USD+implDelta_USD
   realDelta=realDelta_USD/spotDict['USDT']
@@ -442,6 +442,7 @@ class core:
     cushion=(equity-getMM())*self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
+    self.deltaUSDT = equity
     #####
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
@@ -521,7 +522,9 @@ class core:
     d=self.api.fapiPrivate_get_account()
     mb = float(d['totalMarginBalance'])
     mm = float(d['totalMaintMargin'])
-    self.nav = mb * self.spotDict['USDT']
+    self.deltaUSDT = mb
+    self.deltaBNB = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB','walletBalance'])
+    self.nav = self.deltaUSDT * self.spotDict['USDT'] + self.deltaBNB * self.spotDict['BNB']
     cushion = (mb-mm) * self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
@@ -707,9 +710,11 @@ if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
   print()
 ftx=cl.ftxCCXTInit()
 spotDict=dict()
-spotDict['USD']=1
-for ccy in CR_QUOTE_CCY_DICT.keys():
+ccyList = list(CR_QUOTE_CCY_DICT.keys())
+if not 'BNB' in ccyList: ccyList.append('BNB')
+for ccy in ccyList:
   spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
+spotDict['USD']=1
 #####
 ftxCore = core('ftx',spotDict)
 bbCore = core('bb',spotDict)
