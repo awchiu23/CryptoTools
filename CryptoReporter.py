@@ -437,10 +437,9 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
-    walletUSDT = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
-    self.nav=float(walletUSDT['equity'])*self.spotDict['USDT']
-    #cushion = (float(walletUSDT['equity']) - float(walletUSDT['occ_closing_fee']) - float(walletUSDT['occ_funding_fee']) - float(walletUSDT['position_margin']) * 5 / 5.5) * self.spotDict['USDT']
-    cushion=(float(walletUSDT['equity'])-getMM())*self.spotDict['USDT']
+    equity = float(self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']['equity'])
+    self.nav=equity*self.spotDict['USDT']
+    cushion=(equity-getMM())*self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
     #####
