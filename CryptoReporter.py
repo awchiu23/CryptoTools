@@ -200,7 +200,7 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch in ['bbt','bnt']:
+    if self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB'):
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
@@ -522,9 +522,11 @@ class core:
     d=self.api.fapiPrivate_get_account()
     mb = float(d['totalMarginBalance'])
     mm = float(d['totalMaintMargin'])
+    bnbBal = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB', 'walletBalance'])
     self.deltaUSDT = mb
-    self.deltaBNB = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB','walletBalance'])
-    self.nav = self.deltaUSDT * self.spotDict['USDT'] + self.deltaBNB * self.spotDict['BNB']
+    self.spots.loc['BNB','SpotDelta'] = bnbBal
+    self.spots.loc['BNB','SpotDeltaUSD'] = bnbBal * self.spotDict['BNB']
+    self.nav = self.deltaUSDT * self.spotDict['USDT'] + bnbBal * self.spotDict['BNB']
     cushion = (mb-mm) * self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
