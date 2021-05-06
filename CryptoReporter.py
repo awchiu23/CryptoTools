@@ -323,8 +323,8 @@ class core:
   def ftxPrintBorrow(self, ccy, nav):
     d = self.flowsDict[ccy]
     zList = []
-    zList.append(str(round(d['oneDayBorrowRate'] * 100))+'%')
-    zList.append(str(round(d['prevBorrowRate'] * 100)) + '%')
+    zList.append('na' if d['oneDayBorrowRate'] == 0 else str(round(d['oneDayBorrowRate'] * 100))+'%')
+    zList.append('na' if d['prevBorrowRate'] == 0 else str(round(d['prevBorrowRate'] * 100))+'%')
     zList.append(str(round(cl.ftxGetEstBorrow(self.api,ccy) * 100)) + '%')
     n = self.wallet.loc[ccy, 'usdValue']
     suffix = '($' + str(round(n/1000))+'K) '
