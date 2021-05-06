@@ -88,7 +88,7 @@ def printAllDual(core1, core2):
 def printDeltas(ccy,spotDict,spotDelta,futDelta):
   spot = spotDict[ccy]
   netDelta=spotDelta+futDelta
-  nDigits=1 if ccy in ['BTC','ETH'] else None
+  nDigits=1 if ccy in ['BTC','ETH','BNB'] else None
   z=(ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))

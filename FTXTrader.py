@@ -16,4 +16,4 @@ CT_CONFIGS_DICT['FTX_'+ccy+'_ADJ_BPS']=-15   # Positive = eager to buy; Negative
 ######
 # Main
 ######
-cl.ctRun(ccy,tgtBps,color,ftxCcy=ccy,ftxNotional=notional)
+cl.ctRun(ccy, tgtBps, color, notional)

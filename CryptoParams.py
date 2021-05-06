@@ -37,11 +37,11 @@ CT_CONFIGS_DICT=dict()
 #####
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=1
-CT_CONFIGS_DICT['FTX_BTC_OK']=0
+CT_CONFIGS_DICT['FTX_BTC_OK']=1
 CT_CONFIGS_DICT['BB_BTC_OK']=1
 CT_CONFIGS_DICT['BBT_BTC_OK']=0
 CT_CONFIGS_DICT['BN_BTC_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_BTC_OK']=0
+CT_CONFIGS_DICT['BNT_BTC_OK']=1
 CT_CONFIGS_DICT['DB_BTC_OK']=0 ### Off
 CT_CONFIGS_DICT['KF_BTC_OK']=0 ### Off
 
@@ -194,6 +194,6 @@ if os.environ.get('USERNAME')=='Simon':
   CR_EXT_DELTA_USDT = sl.jLoad('EXTERNAL_USDT_DELTA')
   CR_EXT_DELTA_EUR = sl.jLoad('EXTERNAL_EUR_DELTA')
   CR_EXT_DELTA_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bn','bnt']}
+  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
 

@@ -219,6 +219,8 @@ def roundPrice(exch, price, ccy):
       return round(price,2)
     elif ccy=='XRP':
       return round(price,4)
+    elif ccy=='BNB':
+      return round(price,3)
     else:
       sys.exit(1)
   elif exch == 'bnt':
@@ -226,6 +228,8 @@ def roundPrice(exch, price, ccy):
       return round(price,2)
     elif ccy=='XRP':
       return round(price,4)
+    elif ccy=='BNB':
+      return round(price,3)
     else:
       sys.exit(1)
   elif exch =='kf':
@@ -306,7 +310,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     sys.exit(1)
   if ccy == 'BTC':
     qty = round(trade_qty, 3)
-  elif ccy == 'ETH':
+  elif ccy in ['ETH','BNB']:
     qty = round(trade_qty, 2)
   elif ccy == 'XRP':
     qty = round(trade_qty)
@@ -596,7 +600,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   if ccy=='BTC':
     qty=round(trade_notional/100)
-  elif ccy in ['ETH','XRP']:
+  elif ccy in ['ETH','XRP','BNB']:
     qty=round(trade_notional/10)
   else:
     sys.exit(1)
@@ -651,7 +655,9 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   # Do not use @retry
   def roundQty(ccy,qty):
     if ccy=='XRP':
-      return round(qty)
+      return round(qty,1)
+    elif ccy=='BNB':
+      return round(qty,2)
     else:
       return round(qty,3)
   @retry(wait_fixed=1000)
@@ -1142,8 +1148,8 @@ def caRun(ccy, color):
   #####
   validExchs=getValidExchs(ccy)
   ftx=ftxCCXTInit() if 'ftx' in validExchs else None
-  bb=bbCCXTInit() if 'bb' in validExchs else None
-  bn=bnCCXTInit() if 'bn' in validExchs else None
+  bb=bbCCXTInit() if ('bb' in validExchs or 'bbt' in validExchs) else None
+  bn=bnCCXTInit() if ('bn' in validExchs or 'bnt' in validExchs) else None
   db=dbCCXTInit() if 'db' in validExchs else None
   kf=kfApophisInit() if 'kf' in validExchs else None
   #####
@@ -1162,7 +1168,7 @@ def caRun(ccy, color):
 ##############
 # CryptoTrader
 ##############
-def ctInit(ftxCcy=None,ftxNotional=None):
+def ctInit(ccy=None, notional=None):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
@@ -1185,10 +1191,10 @@ def ctInit(ftxCcy=None,ftxNotional=None):
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
   notional_dict['XRP'] = trade_xrp_notional
-  if not (ftxCcy is None or ftxNotional is None):
-    spot=ftxGetMid(ftx,ftxCcy+'/USD')
-    qty_dict[ftxCcy]=np.min([ftxNotional, CT_MAX_NOTIONAL])/spot
-    notional_dict[ftxCcy]=qty_dict[ftxCcy] * spot
+  if not (ccy is None or notional is None):
+    spot=ftxGetMid(ftx, ccy + '/USD')
+    qty_dict[ccy]= np.min([notional, CT_MAX_NOTIONAL]) / spot
+    notional_dict[ccy]= qty_dict[ccy] * spot
   printHeader('CryptoTrader')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
@@ -1237,8 +1243,11 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
-def ctRun(ccy,tgtBps,color,ftxCcy=None,ftxNotional=None):
-  ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit(ftxCcy=ftxCcy,ftxNotional=ftxNotional)
+def ctRun(ccy, tgtBps, color, notional=None):
+  if notional is None:
+    ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
+  else:
+    ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit(ccy, notional)
   if not ccy in qty_dict:
     print('Invalid ccy!')
     sys.exit(1)
@@ -1311,11 +1320,6 @@ def ctRun(ccy,tgtBps,color,ftxCcy=None,ftxNotional=None):
               del d[chosenLong+'SmartBasis']
           else:
             break
-
-        # Check for too few candidates again
-        #if len(d.keys()) < 2:
-        #  chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
-        #  continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:
