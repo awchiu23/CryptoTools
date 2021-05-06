@@ -83,10 +83,10 @@ CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0 ### Off
 #####
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_XRP_OK']=0
-CT_CONFIGS_DICT['FTX_XRP_OK']=1
+CT_CONFIGS_DICT['FTX_XRP_OK']=0
 CT_CONFIGS_DICT['BB_XRP_OK']=0 ### Off
 CT_CONFIGS_DICT['BN_XRP_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_XRP_OK']=0 ### Off
+CT_CONFIGS_DICT['BNT_XRP_OK']=1 ### Off
 CT_CONFIGS_DICT['KF_XRP_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
