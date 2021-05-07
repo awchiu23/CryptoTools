@@ -76,10 +76,11 @@ def printAllDual(core1, core2):
   else:
     n=120
     print(core1.incomesStr.ljust(n+9) + core2.incomesStr)
-    for ccy in sorted(set(core1.validCcys).intersection(core2.validCcys)):
-      print(core1.fundingStrDict[ccy].ljust(n) + core2.fundingStrDict[ccy])
-    for ccy in sorted(np.setdiff1d(core1.validCcys, core2.validCcys)):  # In core1 but not core2
-      print(core1.fundingStrDict[ccy])
+    for ccy in core1.validCcys:
+      if ccy in core2.validCcys:
+        print(core1.fundingStrDict[ccy].ljust(n) + core2.fundingStrDict[ccy])
+      else:
+        print(core1.fundingStrDict[ccy].ljust(n))
     for ccy in sorted(np.setdiff1d(core2.validCcys, core1.validCcys)):  # In core2 but not core1
       print(''.ljust(n) + core2.fundingStrDict[ccy])
     print(core1.liqStr.ljust(n+9) + core2.liqStr)
@@ -472,7 +473,7 @@ class core:
     cl.dfSetFloat(futs, ['positionAmt','liquidationPrice','markPrice'])
     for ccy in self.validCcys:
       ccy2=ccy+'USD_PERP'
-      mult=100 if ccy=='BTC' else 10 # ETH and XRP are 10 multipliers
+      mult=100 if ccy=='BTC' else 10 # Only BTC is 100 multiplier
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']*mult/self.spotDict[ccy]
       self.liqDict[ccy] = futs.loc[ccy2,'liquidationPrice'] / futs.loc[ccy2,'markPrice']
     self.calcFuturesDeltaUSD()
