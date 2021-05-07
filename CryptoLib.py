@@ -1427,6 +1427,11 @@ def ctRun(ccy, tgtBps, color, notional=None):
 #####
 # Etc
 #####
+# Add unique item to list
+def appendUnique(myList,item):
+  if item not in myList:
+    myList.append(item)
+
 # Cache items in memory
 def cache(mode,key,value=None):
   if not hasattr(cache, 'cacheDict'):

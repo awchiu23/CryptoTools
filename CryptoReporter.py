@@ -135,7 +135,8 @@ class core:
     self.validCcys = cl.getValidCcys(exch)
     #####
     ccyList = list(SHARED_CCY_DICT.keys())
-    if exch=='kr': ccyList.append('EUR')
+    cl.appendUnique(ccyList, 'USDT')
+    cl.appendUnique(ccyList, 'EUR')
     zeroes = [0] * len(ccyList)
     self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')
     self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
@@ -163,11 +164,11 @@ class core:
       self.krInit()
 
   def calcSpotDeltaUSD(self):
-    for ccy in self.validCcys:
+    for ccy in self.spots.index:
       self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
 
   def calcFuturesDeltaUSD(self):
-    for ccy in self.validCcys:
+    for ccy in self.spots.index:
       self.futures.loc[ccy, 'FutDeltaUSD'] = self.futures.loc[ccy, 'FutDelta'] * self.spotDict[ccy]
     self.futNotional = self.futures['FutDeltaUSD'].abs().sum()
 
