@@ -105,18 +105,22 @@ def printEURDeltas(krCores, spotDict):
   print(termcolor.colored(z,'red'))
 
 def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
-  realDelta_USD= ftxCore.wallet.loc['USDT','usdValue'] + CR_EXT_DELTA_USDT * spotDict['USDT']
-  implDelta_USD=0
+  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
+  futDeltaUSD = ftxCore.futures.loc['USDT','FutDeltaUSD']
+  implDeltaUSD=0
   for core in usdtCoreList:
-    realDelta_USD+=core.deltaUSDT*spotDict['USDT']
-    implDelta_USD-=core.futures['FutDeltaUSD'].sum()
-  netDelta_USD=realDelta_USD+implDelta_USD
-  realDelta=realDelta_USD/spotDict['USDT']
-  implDelta=implDelta_USD/spotDict['USDT']
-  netDelta=realDelta+implDelta
-  z1=str(round(realDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'+str(round(netDelta/1000))+'K'
-  z2='($'+str(round(realDelta_USD/1000))+'K/$'+str(round(implDelta_USD/1000))+'K/$'+ str(round(netDelta_USD/1000))+'K)'
-  print(termcolor.colored('USDT real/impl/net delta: '.rjust(41)+z1.ljust(27)+z2, 'red'))
+    spotDeltaUSD+=core.spots.loc['USDT','SpotDeltaUSD']
+    implDeltaUSD-=core.futures['FutDeltaUSD'].sum()
+  netDeltaUSD=spotDeltaUSD+futDeltaUSD+implDeltaUSD
+  #####
+  spotDelta=spotDeltaUSD/spotDict['USDT']
+  futDelta=futDeltaUSD/spotDict['USDT']
+  implDelta=implDeltaUSD/spotDict['USDT']
+  netDelta=netDeltaUSD/spotDict['USDT']
+  #####
+  z1=str(round(spotDelta/1000))+'K/'+str(round(futDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'+str(round(netDelta/1000))+'K'
+  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'+str(round(futDeltaUSD/1000))+'K/$'+str(round(implDeltaUSD/1000))+'K/$'+ str(round(netDeltaUSD/1000))+'K)'
+  print(termcolor.colored('USDT spot/fut/impl/net delta: '.rjust(41)+z1.ljust(27)+z2, 'red'))
 
 ####################################################################################################
 
@@ -265,14 +269,18 @@ class core:
     ######
     self.api = cl.ftxCCXTInit()
     self.wallet = cl.ftxGetWallet(ftx)
-    for ccy in self.validCcys:
+    ccys=self.validCcys.copy()
+    cl.appendUnique(ccys,'USDT')
+    for ccy in ccys:
       self.spots.loc[ccy,'SpotDelta'] = self.wallet.loc[ccy,'total']
     self.calcSpotDeltaUSD()
     ######
     info = self.api.private_get_account()['result']
     futs = pd.DataFrame(info['positions']).set_index('future')
     cl.dfSetFloat(futs, 'size')
-    for ccy in self.validCcys:
+    ccys=self.validCcys.copy()
+    if 'USDT-PERP' in futs.index: cl.appendUnique(ccys,'USDT')
+    for ccy in ccys:
       ccy2=ccy+'-PERP'
       mult = -1 if futs.loc[ccy2, 'side']=='sell' else 1
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
@@ -444,7 +452,8 @@ class core:
     cushion=(equity-getMM())*self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
-    self.deltaUSDT = equity
+    self.spots.loc['USDT','SpotDelta']=equity
+    self.calcSpotDeltaUSD()
     #####
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
@@ -524,11 +533,10 @@ class core:
     d=self.api.fapiPrivate_get_account()
     mb = float(d['totalMarginBalance'])
     mm = float(d['totalMaintMargin'])
-    bnbBal = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB', 'walletBalance'])
-    self.deltaUSDT = mb
-    self.spots.loc['BNB','SpotDelta'] = bnbBal
-    self.spots.loc['BNB','SpotDeltaUSD'] = bnbBal * self.spotDict['BNB']
-    self.nav = self.deltaUSDT * self.spotDict['USDT'] + bnbBal * self.spotDict['BNB']
+    self.spots.loc['USDT','SpotDelta'] = mb
+    self.spots.loc['BNB','SpotDelta'] = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB', 'walletBalance'])
+    self.calcSpotDeltaUSD()
+    self.nav = self.spots.loc[['USDT','BNB'],'SpotDeltaUSD'].sum()
     cushion = (mb-mm) * self.spotDict['USDT']
     totalDelta = self.futures['FutDeltaUSD'].sum()
     self.liq = 1 - cushion / totalDelta
