@@ -411,6 +411,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
     refPrice = bbGetAsk(bb, ccy)
     limitPrice=getLimitPrice('bb',refPrice,ccy,side)
     orderId = bb.create_limit_sell_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
+  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
   nChases=0
   while True:
@@ -441,7 +442,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
         refTime = time.time()
         newLimitPrice=getLimitPrice('bb',refPrice,ccy,side)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
-          print(getCurrentTime() + ': [DEBUG: replace order; price=' + str(limitPrice)+'->'+str(newLimitPrice) + '; nChases=' + str(nChases) + ']')
+          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
             bb.v2_private_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': limitPrice})
@@ -480,18 +481,15 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     return (qty + cushionUSD / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
   @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
-    isDebugShown=False
+    isEllipsisShown=False
     while True:
       result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data']
       if result is None:
-        if not isDebugShown:
-          print(getCurrentTime() + ': [DEBUG: orderId='+orderId+'] ',end='')
-          isDebugShown=True
-        else:
-          print('.',end='')
+        print('.', end='')
+        isEllipsisShown = True
         time.sleep(1)
       else:
-        if isDebugShown: print()
+        if isEllipsisShown: print()
         return result[0]
   @retry(wait_fixed=1000)
   def bbtGetFillPrice(bb, ticker, orderId):
@@ -516,9 +514,9 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     refPrice = bbtGetAsk(bb, ccy)
   limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
   isReduceOnly=getIsReduceOnly(bb, ccy, side, qty)
-  print(getCurrentTime() + ': [DEBUG: isReduceOnly: '+str(isReduceOnly)+']')
   orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel',
                                                'reduce_only':bool(isReduceOnly),'close_on_trigger':False})['result']['order_id']
+  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ', end='')
   refTime = time.time()
   nChases=0
   while True:
@@ -549,7 +547,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
         refTime = time.time()
         newLimitPrice=getLimitPrice('bbt',refPrice,ccy,side)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
-          print(getCurrentTime() + ': [DEBUG: replace order; price=' + str(limitPrice)+'->'+str(newLimitPrice) + '; nChases=' + str(nChases) + ']')
+          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice)+'->'+str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
             bb.private_linear_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': limitPrice})
