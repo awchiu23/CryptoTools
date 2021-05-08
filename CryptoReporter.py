@@ -67,7 +67,6 @@ def getCores():
     bntCore = None
     dbCore = None
     kfCore = None
-    krCores = None
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   return ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
 
