@@ -713,101 +713,103 @@ class core:
 
 ####################################################################################################
 
-######
-# Init
-######
-cl.printHeader('CryptoReporter')
-if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
-  print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown]')
-  print()
-ftx=cl.ftxCCXTInit()
-spotDict=dict()
-ccyList = list(CR_QUOTE_CCY_DICT.keys())
-if not 'BNB' in ccyList: ccyList.append('BNB')
-for ccy in ccyList:
-  spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
-spotDict['USD']=1
-#####
-ftxCore = core('ftx',spotDict)
-bbCore = core('bb',spotDict)
-objs=[ftxCore,bbCore]
-krCores=[]
-if CRYPTO_MODE>0:
-  bbtCore = core('bbt', spotDict)
-  bnCore = core('bn', spotDict)
-  bntCore = core('bnt', spotDict)
-  dbCore = core('db', spotDict)
-  kfCore = core('kf', spotDict)
-  for i in range(CR_N_KR_ACCOUNTS):
-    krCores.append(core('kr',spotDict,n=i+1))
-  objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
-Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
+if __name__ == '__main__':
 
-#############
-# Aggregation
-#############
-agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'SpotDelta': CR_AG_CCY_DICT.values(), 'FutDelta': [0] * len(CR_AG_CCY_DICT.keys())}).set_index('Ccy')
-nav=0
-oneDayIncome=0
-for obj in objs:
-  nav+=obj.nav
-  oneDayIncome += obj.oneDayIncome
+  ######
+  # Init
+  ######
+  cl.printHeader('CryptoReporter')
+  if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
+    print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown]')
+    print()
+  ftx=cl.ftxCCXTInit()
+  spotDict=dict()
+  ccyList = list(CR_QUOTE_CCY_DICT.keys())
+  if not 'BNB' in ccyList: ccyList.append('BNB')
+  for ccy in ccyList:
+    spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
+  spotDict['USD']=1
+  #####
+  ftxCore = core('ftx',spotDict)
+  bbCore = core('bb',spotDict)
+  objs=[ftxCore,bbCore]
+  krCores=[]
+  if CRYPTO_MODE>0:
+    bbtCore = core('bbt', spotDict)
+    bnCore = core('bn', spotDict)
+    bntCore = core('bnt', spotDict)
+    dbCore = core('db', spotDict)
+    kfCore = core('kf', spotDict)
+    for i in range(CR_N_KR_ACCOUNTS):
+      krCores.append(core('kr',spotDict,n=i+1))
+    objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
+  Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
+
+  #############
+  # Aggregation
+  #############
+  agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'SpotDelta': CR_AG_CCY_DICT.values(), 'FutDelta': [0] * len(CR_AG_CCY_DICT.keys())}).set_index('Ccy')
+  nav=0
+  oneDayIncome=0
+  for obj in objs:
+    nav+=obj.nav
+    oneDayIncome += obj.oneDayIncome
+    for ccy in CR_AG_CCY_DICT.keys():
+      agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
+      agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
+  extCoinsNAV=0
   for ccy in CR_AG_CCY_DICT.keys():
-    agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
-    agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
-extCoinsNAV=0
-for ccy in CR_AG_CCY_DICT.keys():
-  extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
-extUSDTNAV = CR_EXT_DELTA_USDT * spotDict['USDT']
-extEURNAV = CR_EXT_DELTA_EUR * (spotDict['EUR'] - CR_EXT_DELTA_EUR_REF)
-nav+= extCoinsNAV + extUSDTNAV + extEURNAV
-oneDayIncome+=ftxCore.oneDayFlows
+    extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
+  extUSDTNAV = CR_EXT_DELTA_USDT * spotDict['USDT']
+  extEURNAV = CR_EXT_DELTA_EUR * (spotDict['EUR'] - CR_EXT_DELTA_EUR_REF)
+  nav+= extCoinsNAV + extUSDTNAV + extEURNAV
+  oneDayIncome+=ftxCore.oneDayFlows
 
-########
-# Output
-########
-navStrList=[]
-for obj in objs:
-  navStrList.append(getNAVStr(obj.name,obj.nav))
-if extCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext', extCoinsNAV))
-if extEURNAV!=0: navStrList.append(getNAVStr('EUR ext', extEURNAV))
-print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
-#####
-zList=[]
-for ccy in CR_QUOTE_CCY_DICT.keys():
-  zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
-print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
-print()
-#####
-for ccy in CR_AG_CCY_DICT.keys():
-  printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
-if CRYPTO_MODE>0:
-  printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
-  printEURDeltas(krCores, spotDict)
-print()
-#####
-ftxCore.ftxPrintFlowsSummary('USD')
-ftxCore.ftxPrintFlowsSummary('USDT')
-ftxCore.ftxPrintBorrow('USD',nav)
-ftxCore.ftxPrintBorrow('USDT',nav)
-print()
-#####
-if CR_IS_SHOW_COIN_LENDING:
-  for ccy in CR_FTX_FLOWS_CCYS:
-    if not ccy in ['USD','USDT']:
-      ftxCore.ftxPrintFlowsSummary(ccy)
+  ########
+  # Output
+  ########
+  navStrList=[]
+  for obj in objs:
+    navStrList.append(getNAVStr(obj.name,obj.nav))
+  if extCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext', extCoinsNAV))
+  if extEURNAV!=0: navStrList.append(getNAVStr('EUR ext', extEURNAV))
+  print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
+  #####
+  zList=[]
+  for ccy in CR_QUOTE_CCY_DICT.keys():
+    zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
+  print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
   print()
-#####
-ftxCore.printAll()
-if CRYPTO_MODE>0:
-  printAllDual(bbCore, bbtCore)
-  printAllDual(bnCore, bntCore)
-  dbCore.printAll()
-  kfCore.printAll()
-  krPrintAll(krCores, nav)
-else:
-  bbCore.printAll()
-#####
-if '-f' in sys.argv:
-  while True:
-    time.sleep(1)
+  #####
+  for ccy in CR_AG_CCY_DICT.keys():
+    printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
+  if CRYPTO_MODE>0:
+    printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
+    printEURDeltas(krCores, spotDict)
+  print()
+  #####
+  ftxCore.ftxPrintFlowsSummary('USD')
+  ftxCore.ftxPrintFlowsSummary('USDT')
+  ftxCore.ftxPrintBorrow('USD',nav)
+  ftxCore.ftxPrintBorrow('USDT',nav)
+  print()
+  #####
+  if CR_IS_SHOW_COIN_LENDING:
+    for ccy in CR_FTX_FLOWS_CCYS:
+      if not ccy in ['USD','USDT']:
+        ftxCore.ftxPrintFlowsSummary(ccy)
+    print()
+  #####
+  ftxCore.printAll()
+  if CRYPTO_MODE>0:
+    printAllDual(bbCore, bbtCore)
+    printAllDual(bnCore, bntCore)
+    dbCore.printAll()
+    kfCore.printAll()
+    krPrintAll(krCores, nav)
+  else:
+    bbCore.printAll()
+  #####
+  if '-f' in sys.argv:
+    while True:
+      time.sleep(1)
