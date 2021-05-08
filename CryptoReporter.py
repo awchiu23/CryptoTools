@@ -39,6 +39,31 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   prevIncome = df[df.index > df.index[-1] - pd.DateOffset(minutes=10)]['incomeUSD'].sum()
   return oneDayIncome, prevIncome
 
+def getCores():
+  ftx=cl.ftxCCXTInit()
+  spotDict=dict()
+  ccyList = list(CR_QUOTE_CCY_DICT.keys())
+  if not 'BNB' in ccyList: ccyList.append('BNB')
+  for ccy in ccyList:
+    spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
+  spotDict['USD']=1
+  #####
+  ftxCore = core('ftx',spotDict)
+  bbCore = core('bb',spotDict)
+  objs=[ftxCore,bbCore]
+  krCores=[]
+  if CRYPTO_MODE>0:
+    bbtCore = core('bbt', spotDict)
+    bnCore = core('bn', spotDict)
+    bntCore = core('bnt', spotDict)
+    dbCore = core('db', spotDict)
+    kfCore = core('kf', spotDict)
+    for i in range(CR_N_KR_ACCOUNTS):
+      krCores.append(core('kr',spotDict,n=i+1))
+    objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
+  Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
+  return ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
+
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
 
@@ -722,28 +747,7 @@ if __name__ == '__main__':
   if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
     print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown]')
     print()
-  ftx=cl.ftxCCXTInit()
-  spotDict=dict()
-  ccyList = list(CR_QUOTE_CCY_DICT.keys())
-  if not 'BNB' in ccyList: ccyList.append('BNB')
-  for ccy in ccyList:
-    spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
-  spotDict['USD']=1
-  #####
-  ftxCore = core('ftx',spotDict)
-  bbCore = core('bb',spotDict)
-  objs=[ftxCore,bbCore]
-  krCores=[]
-  if CRYPTO_MODE>0:
-    bbtCore = core('bbt', spotDict)
-    bnCore = core('bn', spotDict)
-    bntCore = core('bnt', spotDict)
-    dbCore = core('db', spotDict)
-    kfCore = core('kf', spotDict)
-    for i in range(CR_N_KR_ACCOUNTS):
-      krCores.append(core('kr',spotDict,n=i+1))
-    objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
-  Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
+  ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs = getCores()
 
   #############
   # Aggregation
