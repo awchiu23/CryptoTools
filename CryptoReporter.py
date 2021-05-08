@@ -575,7 +575,7 @@ class core:
     self.calcSpotDeltaUSD()
     #####
     for ccy in self.validCcys:
-      self.futures.loc[ccy, 'FutDelta']=cl.dbGetFutPos(self.api,ccy)/spotDict[ccy]
+      self.futures.loc[ccy, 'FutDelta']=cl.dbGetFutPos(self.api,ccy)/self.spotDict[ccy]
     self.calcFuturesDeltaUSD()
     #####
     for ccy in self.validCcys:
@@ -630,7 +630,7 @@ class core:
     #####
     for ccy in self.validCcys:
       ccy2 = 'xbt' if ccy == 'BTC' else ccy.lower()
-      self.futures.loc[ccy,'FutDelta']=accounts['fi_'+ccy2+'usd']['balances']['pi_'+ccy2+'usd']/spotDict[ccy]
+      self.futures.loc[ccy,'FutDelta']=accounts['fi_'+ccy2+'usd']['balances']['pi_'+ccy2+'usd']/self.spotDict[ccy]
     self.calcFuturesDeltaUSD()
     #####
     pmts,self.oneDayIncome,self.prevIncome=getPayments()
