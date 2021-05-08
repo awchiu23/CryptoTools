@@ -449,7 +449,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
           except:
             break
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; price='+str(limitPrice)+'; nChases=' + str(nChases)+']')
+          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases)+'; price='+str(limitPrice)+']')
     time.sleep(1)
   fill=bbGetFillPrice(bb, ticker, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -554,7 +554,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
           except:
             break
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; price='+str(limitPrice)+'; nChases=' + str(nChases)+']')
+          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
     time.sleep(1)
   fill=bbtGetFillPrice(bb, ticker, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
