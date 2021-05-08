@@ -61,6 +61,13 @@ def getCores():
     for i in range(CR_N_KR_ACCOUNTS):
       krCores.append(core('kr',spotDict,n=i+1))
     objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
+  else:
+    bbtCore = None
+    bnCore = None
+    bntCore = None
+    dbCore = None
+    kfCore = None
+    krCores = None
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   return ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
 
