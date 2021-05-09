@@ -731,12 +731,16 @@ class core:
   def krPrintBorrow(self, nav):
     d=CR_KR_CCY_DICT.copy()
     del d['EUR']
-    zList=[]
+    z1List=[]
+    z2List=[]
     for ccy in d.keys():
-      zList.append('$'+str(round(self.spots.loc[ccy,'SpotDeltaUSD']/1000))+'K')
+      n = self.spots.loc[ccy,'SpotDeltaUSD']
+      if n>=500: # Strip out small quantities
+        z1List.append(ccy)
+        z2List.append('$'+str(round(n/1000))+'K')
     zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
-    suffix='(spot '+'/'.join(d.keys())+': '
-    suffix+='/'.join(zList)
+    suffix='(spot delta '+'/'.join(z1List)+': '
+    suffix+='/'.join(z2List)
     suffix+='; XXBTZUSD/XXBTZEUR: $'
     suffix += str(round(self.mdbUSDDf.loc['USD', 'MDBU'] / 1000)) + 'K/$'
     suffix += str(round(self.mdbUSDDf.loc['EUR', 'MDBU'] / 1000)) + 'K)'
