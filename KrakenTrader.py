@@ -13,7 +13,7 @@ targetUSD=5000
 account=1                # which Kraken account to use
 side='BUY'               # 'BUY', 'SELL'
 pair='XXBTZEUR'          # 'XXBTZUSD','XXBTZEUR'
-hedgeExchange='ftxspot'  # 'ftxspot', 'ftxperp', 'bb', 'bbt', 'bn', 'kf', 'none'
+hedgeExchange='ftxspot'  # 'ftxspot', 'ftxperp', 'bb', 'bbt', 'bn', 'bnt', 'kf', 'none'
 isMargin=True            # Margin trading?
 
 ###########
@@ -155,6 +155,10 @@ for n in range(nPrograms):
     krExec(side, kr, pair, trade_qty, isMargin)
     bn = cl.bnCCXTInit()
     fill=cl.bnRelOrder(oppSide, bn, ccy, trade_notional, maxChases=888)
+  elif hedgeExchange == 'bnt':
+    krExec(side, kr, pair, trade_qty, isMargin)
+    bn = cl.bnCCXTInit()
+    fill = cl.bntRelOrder(oppSide, bn, ccy, trade_qty, maxChases=888)
   elif hedgeExchange=='kf':
     krExec(side, kr, pair, trade_qty, isMargin)
     kf = cl.kfApophisInit()
