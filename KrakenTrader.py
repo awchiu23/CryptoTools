@@ -7,13 +7,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=50
+nPrograms=10
 targetUSD=5000
 
 account=1                # which Kraken account to use
 side='BUY'               # 'BUY', 'SELL'
-pair='XXBTZUSD'          # 'XXBTZUSD','XXBTZEUR'
-hedgeExchange='ftxperp'       # 'ftxspot', 'ftxperp', 'bb', 'bn', 'kf', 'none'
+pair='XXBTZEUR'          # 'XXBTZUSD','XXBTZEUR'
+hedgeExchange='ftxspot'  # 'ftxspot', 'ftxperp', 'bb', 'bbt', 'bn', 'kf', 'none'
 isMargin=True            # Margin trading?
 
 ###########
@@ -146,6 +146,10 @@ for n in range(nPrograms):
   elif hedgeExchange=='bb':
     bb = cl.bbCCXTInit()
     fill=cl.bbRelOrder(oppSide, bb, ccy, trade_notional, maxChases=888)
+    krExec(side, kr, pair, trade_qty, isMargin)
+  elif hedgeExchange=='bbt':
+    bb=cl.bbCCXTInit()
+    fill = cl.bbtRelOrder(oppSide, bb, ccy, trade_qty, maxChases=888)
     krExec(side, kr, pair, trade_qty, isMargin)
   elif hedgeExchange=='bn':
     krExec(side, kr, pair, trade_qty, isMargin)
