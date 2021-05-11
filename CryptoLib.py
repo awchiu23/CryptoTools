@@ -212,6 +212,15 @@ def roundPrice(exch, price, ccy):
       return round(price,4)
     else:
       sys.exit(1)
+  elif exch=='bbt':
+    if ccy=='BTC':
+      return round(price*2)/2
+    elif ccy=='ETH':
+      return round(price*20)/20
+    elif ccy=='LTC':
+      return round(price,2)
+    else:
+      sys.exit(1)
   elif exch == 'bn':
     if ccy=='BTC':
       return round(price,1)
@@ -232,6 +241,13 @@ def roundPrice(exch, price, ccy):
       return round(price,3)
     else:
       sys.exit(1)
+  elif exch=='db':
+    if ccy == 'BTC':
+      return round(price * 2) / 2
+    elif ccy == 'ETH':
+      return round(price * 20) / 20
+    else:
+      sys.exit(1)
   elif exch =='kf':
     if ccy == 'BTC':
       return round(price * 2) / 2
@@ -242,12 +258,24 @@ def roundPrice(exch, price, ccy):
     else:
       sys.exit(1)
   else:
-    if ccy=='BTC':
-      return round(price*2)/2
-    elif ccy=='ETH':
-      return round(price*20)/20
+    sys.exit(1)
+
+def roundQty(exch, qty, ccy):
+  if exch=='ftx':
+    if ccy == 'BTC':
+      return round(qty, 4)
+    elif ccy == 'ETH':
+      return round(qty, 3)
+    elif ccy == 'LTC':
+      return round(qty, 2)
+    elif ccy == 'BNB':
+      return round(qty,1)
+    elif ccy == 'XRP':
+      return round(qty)
     else:
-      sys.exit(1)
+      return round(qty, 6)
+  else:
+    sys.exit(1)
 
 #############################################################################################
 
@@ -308,14 +336,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     ccy=ticker.split('-')[0]
   else:
     sys.exit(1)
-  if ccy == 'BTC':
-    qty = round(trade_qty, 3)
-  elif ccy in ['ETH','BNB']:
-    qty = round(trade_qty, 2)
-  elif ccy == 'XRP':
-    qty = round(trade_qty)
-  else:
-    qty = round(trade_qty,6)
+  qty=roundQty('ftx',trade_qty,ccy)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
     refPrice = ftxGetBid(ftx, ticker)

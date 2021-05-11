@@ -106,6 +106,21 @@ def printAllDual(core1, core2):
     core1.printAll()
   else:
     n=120
+    print(core1.incomesStr.ljust(n + 9) + core2.incomesStr)
+    list1 = list(core1.fundingStrDict.values())
+    list2 = list(core2.fundingStrDict.values())
+    list1.append(core1.liqStr.ljust(n+9))
+    list2.append(core2.liqStr)
+    for i in range(min(len(list1),len(list2))):
+      print(list1[i].ljust(n) + list2[i])
+    if len(list1)>len(list2):
+      for i in range(len(list2),len(list1)):
+        print(list1[i].ljust(n))
+    elif len(list2)>len(list1):
+      for i in range(len(list1),len(list2)):
+        print(''.ljust(n) + list2[i])
+    print()
+    '''
     print(core1.incomesStr.ljust(n+9) + core2.incomesStr)
     for ccy in core1.validCcys:
       if ccy in core2.validCcys:
@@ -116,11 +131,12 @@ def printAllDual(core1, core2):
       print(''.ljust(n) + core2.fundingStrDict[ccy])
     print(core1.liqStr.ljust(n+9) + core2.liqStr)
     print()
+    '''
 
 def printDeltas(ccy,spotDict,spotDelta,futDelta):
   spot = spotDict[ccy]
   netDelta=spotDelta+futDelta
-  nDigits=1 if ccy in ['BTC','ETH','BNB'] else None
+  nDigits=None if ccy in ['XRP'] else 1
   z=(ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
@@ -818,8 +834,7 @@ if __name__ == '__main__':
   if CRYPTO_MODE>0:
     printAllDual(bbCore, bbtCore)
     printAllDual(bnCore, bntCore)
-    dbCore.printAll()
-    kfCore.printAll()
+    printAllDual(kfCore, dbCore)
     krPrintAll(krCores, nav)
   else:
     bbCore.printAll()

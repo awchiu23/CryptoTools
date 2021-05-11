@@ -82,12 +82,12 @@ CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0 ### Off
 # XRP
 #####
 # 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_XRP_OK']=1
+CT_CONFIGS_DICT['SPOT_XRP_OK']=0
 CT_CONFIGS_DICT['FTX_XRP_OK']=1
 CT_CONFIGS_DICT['BB_XRP_OK']=0
 CT_CONFIGS_DICT['BN_XRP_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_XRP_OK']=0 ### At limit
-CT_CONFIGS_DICT['KF_XRP_OK']=0 ### Off
+CT_CONFIGS_DICT['BNT_XRP_OK']=1 ### At limit
+CT_CONFIGS_DICT['KF_XRP_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
@@ -95,7 +95,7 @@ CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0 ### At limit
-CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0 ### Off
+CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
 
 #############################################################################################
 
@@ -189,11 +189,13 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   #####
   CR_QUOTE_CCY_DICT['BNB'] = 2
+  CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 6
-  CR_AG_CCY_DICT = dict({'BTC': sl.jLoad('EXTERNAL_BTC_DELTA'), 'ETH': sl.jLoad('EXTERNAL_ETH_DELTA'), 'XRP': sl.jLoad('EXTERNAL_XRP_DELTA'), 'BNB':0})
+  CR_AG_CCY_DICT = dict({'BTC': sl.jLoad('EXTERNAL_BTC_DELTA'), 'ETH': sl.jLoad('EXTERNAL_ETH_DELTA'), 'XRP': sl.jLoad('EXTERNAL_XRP_DELTA'), 'BNB':0, 'LTC':0})
   CR_EXT_DELTA_USDT = sl.jLoad('EXTERNAL_USDT_DELTA')
   CR_EXT_DELTA_EUR = sl.jLoad('EXTERNAL_EUR_DELTA')
   CR_EXT_DELTA_EUR_REF = sl.jLoad('EXTERNAL_EUR_REF')
   SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bn','bnt']}
+  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
 
