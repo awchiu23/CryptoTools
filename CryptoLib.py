@@ -55,12 +55,12 @@ def ftxCCXTInit():
 
 def bbCCXTInit():
   api = ccxt.bybit({'apiKey': API_KEY_BB, 'secret': API_SECRET_BB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
-  api.options['recvWindow']=10000
+  api.options['recvWindow']=20000
   return api
 
 def bnCCXTInit():
   api = ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
-  api.options['recvWindow']=10000
+  api.options['recvWindow']=20000
   return api
 
 def dbCCXTInit():
