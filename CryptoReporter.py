@@ -28,6 +28,7 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
     df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000})).set_index('symbol')
   cl.dfSetFloat(df, 'income')
   suffix = 'USDT' if isBNT else 'USD_PERP'
+  validCcys=list(set(z.replace(suffix,'') for z in df.index).intersection(validCcys)) # Remove currencies without cashflows
   df = df.loc[[z + suffix for z in validCcys]]
   for ccy in validCcys:
     ccy2 = ccy + suffix
