@@ -169,7 +169,6 @@ SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
 import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
-  if 'COLAB' in os.environ: APOPHIS_IS_IP_WHITELIST=False
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
   API_KEY_BB = sl.jLoad('API_KEY_BB')
@@ -199,4 +198,3 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bn','bnt']}
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
-  
