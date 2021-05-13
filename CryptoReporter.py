@@ -716,50 +716,62 @@ class core:
     for ccy in CR_KR_CCY_DICT.keys():
       self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
     #####
-    positions = pd.DataFrame(self.api.private_post_openpositions()['result']).transpose().set_index('pair')
-    if not all([z in ['XXBTZUSD', 'XXBTZEUR'] for z in positions.index]):
-      print('Invalid Kraken pair detected!')
-      sys.exit(1)
-    cl.dfSetFloat(positions, ['vol', 'vol_closed', 'time'])
-    positions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in positions['time']]
-    positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
-    positions['volNetUSD'] = positions['volNetBTC'] * self.spotDict['BTC']
-    self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
-    if 'XXBTZEUR' in positions.index:
-      self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+    openPos=self.api.private_post_openpositions()['result']
+    if len(openPos)==0:
+      self.mdbUSDDf = pd.DataFrame([['USD', 0], ['EUR', 0]], columns=['Ccy', 'MDBU']).set_index('Ccy')
+      self.oneDayIncome = 0
+      self.oneDayAnnRet = 0
+    else:
+      positions = pd.DataFrame(openPos).transpose().set_index('pair')
+      if not all([z in ['XXBTZUSD', 'XXBTZEUR'] for z in positions.index]):
+        print('Invalid Kraken pair detected!')
+        sys.exit(1)
+      cl.dfSetFloat(positions, ['vol', 'vol_closed', 'time'])
+      positions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in positions['time']]
+      positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
+      positions['volNetUSD'] = positions['volNetBTC'] * self.spotDict['BTC']
+      self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
+      if 'XXBTZEUR' in positions.index:
+        self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+      notional = positions['volNetUSD'].abs().sum()
+      #####
+      # mdbUSD=Margin Delta BTC in USD
+      xxbtzeur_volNetUSD_sum = positions.loc['XXBTZEUR', 'volNetUSD'].sum() if 'XXBTZEUR' in positions.index else 0
+      self.mdbUSDDf = pd.DataFrame([['USD', positions.loc['XXBTZUSD', 'volNetUSD'].sum()], ['EUR', xxbtzeur_volNetUSD_sum]], columns=['Ccy', 'MDBU']).set_index('Ccy')
+      #####
+      self.oneDayIncome = -self.mdbUSDDf['MDBU'].sum() * 0.0006
+      self.oneDayAnnRet = self.oneDayIncome * 365 / notional
+    #####
     for ccy in CR_KR_CCY_DICT.keys():
-      self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
-    notional = positions['volNetUSD'].abs().sum()
-    #####
-    # mdbUSD=Margin Delta BTC in USD
-    xxbtzeur_volNetUSD_sum = positions.loc['XXBTZEUR', 'volNetUSD'].sum() if 'XXBTZEUR' in positions.index else 0
-    self.mdbUSDDf = pd.DataFrame([['USD', positions.loc['XXBTZUSD', 'volNetUSD'].sum()], ['EUR', xxbtzeur_volNetUSD_sum]], columns=['Ccy', 'MDBU']).set_index('Ccy')
-    #####
-    self.oneDayIncome = -self.mdbUSDDf['MDBU'].sum() * 0.0006
-    self.oneDayAnnRet = self.oneDayIncome * 365 / notional
-    #####
+      self.spots.loc[ccy, 'SpotDeltaUSD'] = self.spots.loc[ccy, 'SpotDelta'] * self.spotDict[ccy]
     tradeBal = self.api.private_post_tradebalance()['result']
     self.nav = float(tradeBal['eb'])+float(tradeBal['n'])
     #####
     freeMargin = float(tradeBal['mf'])
-    self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
+    if self.spots.loc['BTC', 'SpotDeltaUSD'] == 0:
+      self.liqBTC = 0
+    else:
+      self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
 
   def krPrintBorrow(self, nav):
-    d=CR_KR_CCY_DICT.copy()
-    del d['EUR']
+    zPctNAV = '(' + str(round(-self.mdbUSDDf['MDBU'].sum() / nav * 100)) + '%)'
     z1List=[]
     z2List=[]
+    d = CR_KR_CCY_DICT.copy()
+    del d['EUR']
     for ccy in d.keys():
       n = self.spots.loc[ccy,'SpotDeltaUSD']
       if n>=500: # Strip out small quantities
         z1List.append(ccy)
         z2List.append('$'+str(round(n/1000))+'K')
-    zPctNAV = '('+str(round(-self.mdbUSDDf['MDBU'].sum() / nav*100))+'%)'
-    suffix='(spot delta '+'/'.join(z1List)+': '
-    suffix+='/'.join(z2List)
-    suffix+='; XXBTZUSD/XXBTZEUR: $'
-    suffix += str(round(self.mdbUSDDf.loc['USD', 'MDBU'] / 1000)) + 'K/$'
-    suffix += str(round(self.mdbUSDDf.loc['EUR', 'MDBU'] / 1000)) + 'K)'
+    if len(z1List)==0 and len(z2List)==0:
+      suffix=''
+    else:
+      suffix='(spot delta '+'/'.join(z1List)+': '
+      suffix+='/'.join(z2List)
+      suffix+='; XXBTZUSD/XXBTZEUR: $'
+      suffix += str(round(self.mdbUSDDf.loc['USD', 'MDBU'] / 1000)) + 'K/$'
+      suffix += str(round(self.mdbUSDDf.loc['EUR', 'MDBU'] / 1000)) + 'K)'
     print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
 
 ####################################################################################################
