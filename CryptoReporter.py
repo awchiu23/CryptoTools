@@ -40,6 +40,7 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   return oneDayIncome, prevIncome
 
 def getCores():
+  isOk=True
   ftx=cl.ftxCCXTInit()
   spotDict=dict()
   ccyList = list(CR_QUOTE_CCY_DICT.keys())
@@ -67,8 +68,15 @@ def getCores():
     bntCore = None
     dbCore = None
     kfCore = None
-  Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
-  return ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
+  try:
+    Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
+  except:
+    for obj in objs:
+      if not obj.isDone:
+        print ('[WARNING: Corrupted results for '+obj.name+'!]\n')
+    isOk = False
+    pass
+  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -120,18 +128,6 @@ def printAllDual(core1, core2):
       for i in range(len(list1),len(list2)):
         print(''.ljust(n) + list2[i])
     print()
-    '''
-    print(core1.incomesStr.ljust(n+9) + core2.incomesStr)
-    for ccy in core1.validCcys:
-      if ccy in core2.validCcys:
-        print(core1.fundingStrDict[ccy].ljust(n) + core2.fundingStrDict[ccy])
-      else:
-        print(core1.fundingStrDict[ccy].ljust(n))
-    for ccy in sorted(np.setdiff1d(core2.validCcys, core1.validCcys)):  # In core2 but not core1
-      print(''.ljust(n) + core2.fundingStrDict[ccy])
-    print(core1.liqStr.ljust(n+9) + core2.liqStr)
-    print()
-    '''
 
 def printDeltas(ccy,spotDict,spotDelta,futDelta):
   spot = spotDict[ccy]
@@ -176,6 +172,7 @@ def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
 #########
 class core:
   def __init__(self, exch, spotDict, n=None):
+    self.isDone = False
     self.exch = exch
     self.name = exch.upper()
     self.spotDict = spotDict
@@ -193,7 +190,10 @@ class core:
     self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
     self.oneDayIncome = 0
     self.nav = 0
+    self.incomesStr = ''
     self.fundingStrDict=dict()
+    self.liqDict=dict()
+    self.liqStr = ''
 
   def run(self):
     if self.exch=='dummy': return
@@ -369,6 +369,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone=True
 
   def ftxPrintFlowsSummary(self,ccy):
     d = self.flowsDict[ccy]
@@ -416,7 +417,6 @@ class core:
       self.spots.loc[ccy,'SpotDelta']=self.wallet.loc[ccy,'equity']
     self.calcSpotDeltaUSD()
     #####
-    self.liqDict=dict()
     futs = self.api.v2_private_get_position_list()['result']
     futs = pd.DataFrame([pos['data'] for pos in futs]).set_index('symbol')
     cl.dfSetFloat(futs, ['size','liq_price','position_value','unrealised_pnl'])
@@ -456,6 +456,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone = True
 
   #####
   # BBT
@@ -512,6 +513,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone = True
 
   ####
   # BN
@@ -525,7 +527,6 @@ class core:
       self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'balance']+bal.loc[ccy,'crossUnPnl']
     self.calcSpotDeltaUSD()
     #####
-    self.liqDict = dict()
     futs = pd.DataFrame(self.api.dapiPrivate_get_positionrisk()).set_index('symbol')
     cl.dfSetFloat(futs, ['positionAmt','liquidationPrice','markPrice'])
     for ccy in self.validCcys:
@@ -557,6 +558,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone = True
 
   #####
   # BNT
@@ -597,6 +599,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone = True
 
   ####
   # DB
@@ -614,7 +617,6 @@ class core:
         return 0
     #####
     self.api = cl.dbCCXTInit()
-    self.liqDict = dict()
     for ccy in self.validCcys:
       acSum=self.api.private_get_get_account_summary({'currency': ccy})['result']
       self.spots.loc[ccy,'SpotDelta']=float(acSum['equity'])
@@ -639,6 +641,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone = True
 
   ####
   # KF
@@ -668,7 +671,6 @@ class core:
     #####
     self.api = cl.kfApophisInit()
     accounts = self.api.query('accounts')['accounts']
-    self.liqDict = dict()
     for ccy in self.validCcys:
       ccy2 = 'xbt' if ccy=='BTC' else ccy.lower()
       self.spots.loc[ccy,'SpotDelta'] = accounts['fi_'+ccy2+'usd']['auxiliary']['pv'] + accounts['cash']['balances'][ccy2]
@@ -700,6 +702,7 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    self.isDone = True
 
   ####
   # KR
@@ -752,6 +755,7 @@ class core:
       self.liqBTC = 0
     else:
       self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
+    self.isDone = True
 
   def krPrintBorrow(self, nav):
     zPctNAV = '(' + str(round(-self.mdbUSDDf['MDBU'].sum() / nav * 100)) + '%)'
@@ -783,9 +787,8 @@ if __name__ == '__main__':
   ######
   cl.printHeader('CryptoReporter')
   if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
-    print('[ERROR: IP is not whitelisted for Apophis, therefore KF incomes are not shown]')
-    print()
-  ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs = getCores()
+    print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
+  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs = getCores()
 
   #############
   # Aggregation
