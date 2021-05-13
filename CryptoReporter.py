@@ -51,19 +51,18 @@ def getCores():
   #####
   ftxCore = core('ftx',spotDict)
   bbCore = core('bb',spotDict)
-  objs=[ftxCore,bbCore]
+  bbtCore = core('bbt', spotDict)
+  objs=[ftxCore,bbCore,bbtCore]
   krCores=[]
   if CRYPTO_MODE>0:
-    bbtCore = core('bbt', spotDict)
     bnCore = core('bn', spotDict)
     bntCore = core('bnt', spotDict)
     dbCore = core('db', spotDict)
     kfCore = core('kf', spotDict)
     for i in range(CR_N_KR_ACCOUNTS):
       krCores.append(core('kr',spotDict,n=i+1))
-    objs.extend([bbtCore, bnCore, bntCore, dbCore, kfCore] + krCores)
+    objs.extend([bnCore, bntCore, dbCore, kfCore] + krCores)
   else:
-    bbtCore = None
     bnCore = None
     bntCore = None
     dbCore = None
@@ -846,13 +845,11 @@ if __name__ == '__main__':
     print()
   #####
   ftxCore.printAll()
+  printAllDual(bbCore, bbtCore)
   if CRYPTO_MODE>0:
-    printAllDual(bbCore, bbtCore)
     printAllDual(bnCore, bntCore)
     printAllDual(kfCore, dbCore)
     if CR_N_KR_ACCOUNTS>0: krPrintAll(krCores, nav)
-  else:
-    bbCore.printAll()
   #####
   if '-f' in sys.argv:
     while True:
