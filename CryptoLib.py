@@ -1509,8 +1509,13 @@ def getValidCcys(futExch):
 # Get valid exchanges for a currency
 def getValidExchs(ccy):
   myL = SHARED_CCY_DICT[ccy]['futExch']
-  if CRYPTO_MODE == 0: myL = ['ftx', 'bb'] if 'bb' in myL else ['ftx']
-  return myL
+  if CRYPTO_MODE > 0:
+    return myL
+  else:
+    myL2=[]
+    for ccy2 in ['ftx','bb','bbt']:
+      if ccy2 in myL: myL2.append(ccy2)
+    return myL2
 
 # Print dictionary
 def printDict(d, indent=0, isSort=True):
