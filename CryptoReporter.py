@@ -847,7 +847,7 @@ if __name__ == '__main__':
     printAllDual(bbCore, bbtCore)
     printAllDual(bnCore, bntCore)
     printAllDual(kfCore, dbCore)
-    krPrintAll(krCores, nav)
+    if CR_N_KR_ACCOUNTS>0: krPrintAll(krCores, nav)
   else:
     bbCore.printAll()
   #####

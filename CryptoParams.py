@@ -135,7 +135,7 @@ APOPHIS_IS_IP_WHITELIST = True
 # Crypto Reporter
 #################
 CR_IS_SHOW_COIN_LENDING = False
-CR_N_KR_ACCOUNTS = 1
+CR_N_KR_ACCOUNTS = 0
 CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                                    # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP', 'USD', 'USDT']                                 # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
