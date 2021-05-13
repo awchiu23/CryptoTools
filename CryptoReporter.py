@@ -830,6 +830,8 @@ if __name__ == '__main__':
   if CRYPTO_MODE>0:
     printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
     printEURDeltas(krCores, spotDict)
+  else:
+    printUSDTDeltas(ftxCore, spotDict, [bbtCore])
   print()
   #####
   ftxCore.ftxPrintFlowsSummary('USD')
