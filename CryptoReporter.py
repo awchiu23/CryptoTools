@@ -821,6 +821,7 @@ if __name__ == '__main__':
   #####
   zList=[]
   for ccy in CR_QUOTE_CCY_DICT.keys():
+    if ccy=='EUR' and (CRYPTO_MODE==0 or CR_N_KR_ACCOUNTS==0): continue # Skip showing EUR when user has no KR
     zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
   print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
   print()

@@ -65,7 +65,7 @@ CT_CONFIGS_DICT['BB_ETH_OK']=0 ### Off
 CT_CONFIGS_DICT['BBT_ETH_OK']=1 ### Stretched
 CT_CONFIGS_DICT['BN_ETH_OK']=0 ### Off
 CT_CONFIGS_DICT['BNT_ETH_OK']=1
-CT_CONFIGS_DICT['DB_ETH_OK']=0 ### Off
+CT_CONFIGS_DICT['DB_ETH_OK']=1 ### Off
 CT_CONFIGS_DICT['KF_ETH_OK']=0 ### Off
 
 # Positive = eager to buy; Negative = eager to sell
