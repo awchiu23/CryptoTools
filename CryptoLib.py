@@ -217,6 +217,8 @@ def roundPrice(exch, price, ccy):
       return round(price*2)/2
     elif ccy=='ETH':
       return round(price*20)/20
+    elif ccy=='XRP':
+      return round(price,4)
     elif ccy=='LTC':
       return round(price,2)
     else:
