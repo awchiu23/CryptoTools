@@ -43,7 +43,7 @@ CT_CONFIGS_DICT['BBT_BTC_OK']=1
 CT_CONFIGS_DICT['BN_BTC_OK']=0 ### Off
 CT_CONFIGS_DICT['BNT_BTC_OK']=1
 CT_CONFIGS_DICT['DB_BTC_OK']=0 ### Off
-CT_CONFIGS_DICT['KF_BTC_OK']=1
+CT_CONFIGS_DICT['KF_BTC_OK']=0
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=5
@@ -150,7 +150,7 @@ CR_EXT_DELTA_EUR_REF = 0
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
 SHARED_CCY_DICT['ETH']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'db', 'kf']}
-SHARED_CCY_DICT['XRP']={'futExch':['ftx', 'bb', 'bn', 'bnt', 'kf']}
+SHARED_CCY_DICT['XRP']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'kf']}
 SHARED_CCY_DICT['FTT']={'futExch':['ftx']}
 
 #############

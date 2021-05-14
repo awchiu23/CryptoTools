@@ -482,7 +482,9 @@ class core:
     #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
-      pmts=pmts.append(pd.DataFrame(self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type':'Funding', 'limit': 1000})['result']['data']).set_index('symbol',drop=False))
+      data = self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
+      if not data is None:
+        pmts = pmts.append(pd.DataFrame(data).set_index('symbol', drop=False))
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
     pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
     pmts['incomeUSD'] = -pmts['exec_fee'] * self.spotDict['USDT']
@@ -504,8 +506,12 @@ class core:
     #####
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
-      oneDayFunding = df.mean() * 3 * 365
-      prevFunding = df[df.index[-1]].mean() * 3 * 365
+      if len(df) == 0:
+        oneDayFunding = 0
+        prevFunding = 0
+      else:
+        oneDayFunding = df.mean() * 3 * 365
+        prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.bbtGetEstFunding1(self.api, ccy)
       estFunding2 = cl.bbtGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
