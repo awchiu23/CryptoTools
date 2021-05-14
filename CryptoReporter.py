@@ -70,11 +70,16 @@ def getCores():
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
-    for obj in objs:
-      if not obj.isDone:
-        print ('[WARNING: Corrupted results for '+obj.name+'!]\n')
+    print('[WARNING: Parallel run failed!  Rerunning in serial ....]')
     isOk = False
-    pass
+    for obj in objs:
+      try:
+        obj.run()
+      except:
+        pass
+      if not obj.isDone:
+        print('[WARNING: Corrupted results for ' + obj.name + '!]')
+    print()
   return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
 
 def getNAVStr(name, nav):
@@ -187,6 +192,8 @@ class core:
     zeroes = [0] * len(ccyList)
     self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')
     self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
+    self.oneDayFlows = 0
+    self.flowsDict = dict()
     self.oneDayIncome = 0
     self.nav = 0
     self.incomesStr = ''
@@ -273,12 +280,15 @@ class core:
     self.liqStr = zRet
 
   def printAll(self):
-    if self.exch=='dummy': return
-    print(self.incomesStr)
-    for ccy in self.validCcys:
-      print(self.fundingStrDict[ccy])
-    print(self.liqStr)
-    print()
+    try:
+      if self.exch=='dummy': return
+      print(self.incomesStr)
+      for ccy in self.validCcys:
+        print(self.fundingStrDict[ccy])
+      print(self.liqStr)
+      print()
+    except:
+      pass
 
   #####
   # FTX
@@ -343,8 +353,6 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
     #####
-    self.oneDayFlows=0
-    self.flowsDict=dict()
     for ccy in CR_FTX_FLOWS_CCYS:
       d=makeFlows(ccy)
       self.flowsDict[ccy]=d
@@ -371,22 +379,28 @@ class core:
     self.isDone=True
 
   def ftxPrintFlowsSummary(self,ccy):
-    d = self.flowsDict[ccy]
-    z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
-    z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
-    print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+    try:
+      d = self.flowsDict[ccy]
+      z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
+      z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
+      print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+    except:
+      pass
 
   # Replacement
   def ftxPrintBorrow(self, ccy, nav):
-    d = self.flowsDict[ccy]
-    zList = []
-    zList.append('na' if d['oneDayBorrowRate'] == 0 else str(round(d['oneDayBorrowRate'] * 100))+'%')
-    zList.append('na' if d['prevBorrowRate'] == 0 else str(round(d['prevBorrowRate'] * 100))+'%')
-    zList.append(str(round(cl.ftxGetEstBorrow(self.api,ccy) * 100)) + '%')
-    n = self.wallet.loc[ccy, 'usdValue']
-    suffix = '($' + str(round(n/1000))+'K) '
-    suffix += '(' + str(round(n/nav*100))+'%)'
-    print(('FTX '+ccy+' 24h/prev/est borrow rate: ').rjust(41) + ('/'.join(zList) + ' p.a. '+suffix).ljust(27))
+    try:
+      d = self.flowsDict[ccy]
+      zList = []
+      zList.append('na' if d['oneDayBorrowRate'] == 0 else str(round(d['oneDayBorrowRate'] * 100))+'%')
+      zList.append('na' if d['prevBorrowRate'] == 0 else str(round(d['prevBorrowRate'] * 100))+'%')
+      zList.append(str(round(cl.ftxGetEstBorrow(self.api,ccy) * 100)) + '%')
+      n = self.wallet.loc[ccy, 'usdValue']
+      suffix = '($' + str(round(n/1000))+'K) '
+      suffix += '(' + str(round(n/nav*100))+'%)'
+      print(('FTX '+ccy+' 24h/prev/est borrow rate: ').rjust(41) + ('/'.join(zList) + ' p.a. '+suffix).ljust(27))
+    except:
+      pass
 
   def ftxPrintCoinLending(self, ccy):
     estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
