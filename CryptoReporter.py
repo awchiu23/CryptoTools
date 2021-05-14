@@ -673,7 +673,7 @@ class core:
     for ccy in self.validCcys:
       ccy2 = 'xbt' if ccy=='BTC' else ccy.lower()
       self.spots.loc[ccy,'SpotDelta'] = accounts['fi_'+ccy2+'usd']['auxiliary']['pv'] + accounts['cash']['balances'][ccy2]
-      self.liqDict[ccy] = accounts['fi_' + ccy2 + 'usd']['triggerEstimates']['im'] / self.spotDict[ccy]
+      self.liqDict[ccy] = accounts['fi_' + ccy2 + 'usd']['triggerEstimates']['mm'] / self.spotDict[ccy]
     self.calcSpotDeltaUSD()
     #####
     for ccy in self.validCcys:
