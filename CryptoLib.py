@@ -215,7 +215,7 @@ def roundPrice(exch, price, ccy):
   elif exch=='bbt':
     if ccy=='BTC':
       return round(price*2)/2
-    elif ccy=='ETH':
+    elif ccy in ['BCH','ETH']:
       return round(price*20)/20
     elif ccy=='XRP':
       return round(price,4)
@@ -235,7 +235,7 @@ def roundPrice(exch, price, ccy):
     else:
       sys.exit(1)
   elif exch == 'bnt':
-    if ccy in ['BTC','ETH','LTC']:
+    if ccy in ['BTC','ETH','BCH','LTC']:
       return round(price,2)
     elif ccy=='XRP':
       return round(price,4)
@@ -266,7 +266,7 @@ def roundQty(exch, qty, ccy):
   if exch=='ftx':
     if ccy == 'BTC':
       return round(qty, 4)
-    elif ccy == 'ETH':
+    elif ccy in ['BCH','ETH']:
       return round(qty, 3)
     elif ccy == 'LTC':
       return round(qty, 2)
@@ -352,7 +352,13 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   else:
     refPrice = ftxGetAsk(ftx, ticker)
   limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
-  orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+
+  try:
+    orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+  except ccxt.RateLimitExceeded:
+    print('FTX rate limit exceeded!')
+    sys.exit(1)
+
   refTime = time.time()
   nChases=0
   while True:
