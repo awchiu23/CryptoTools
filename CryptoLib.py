@@ -365,7 +365,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
       time.sleep(3)
     except:
       print(getCurrentTime()+': FTX general error!')
-      sys.exit(1)
+      time.sleep(3)
   if not isOk:
     sys.exit(1)
   #####
