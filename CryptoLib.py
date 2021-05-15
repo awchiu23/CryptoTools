@@ -1,6 +1,7 @@
 ################
 # Crypto Library
 ################
+import CryptoLib
 from CryptoParams import *
 from joblib import Parallel, delayed
 import pandas as pd
@@ -352,13 +353,22 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
   else:
     refPrice = ftxGetAsk(ftx, ticker)
   limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
-
-  try:
-    orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
-  except ccxt.RateLimitExceeded:
-    print('FTX rate limit exceeded!')
+  #####
+  isOk=False
+  for i in range(3):
+    try:
+      orderId = ftx.private_post_orders({'market': ticker, 'side': side.lower(), 'price': limitPrice, 'type': 'limit', 'size': qty})['result']['id']
+      isOk=True
+      break
+    except ccxt.RateLimitExceeded:
+      print(getCurrentTime()+': FTX rate limit exceeded!')
+      time.sleep(3)
+    except:
+      print(getCurrentTime()+': FTX general error!')
+      sys.exit(1)
+  if not isOk:
     sys.exit(1)
-
+  #####
   refTime = time.time()
   nChases=0
   while True:

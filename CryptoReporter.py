@@ -868,9 +868,9 @@ if __name__ == '__main__':
     print()
   #####
   ftxCore.printAll()
-  printAllDual(bbCore, bbtCore)
+  printAllDual(bbtCore, bbCore)
   if CRYPTO_MODE>0:
-    printAllDual(bnCore, bntCore)
+    printAllDual(bntCore, bnCore)
     printAllDual(kfCore, dbCore)
     if CR_N_KR_ACCOUNTS>0: krPrintAll(krCores, nav)
   #####
