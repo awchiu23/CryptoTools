@@ -172,19 +172,19 @@ def kfGetAsk(kf, ccy):
 
 def getLimitPrice(exch,price,ccy,side):
   if exch == 'ftx':
-    distanceToBestBps = CT_FTX_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']
   elif exch == 'bb':
-    distanceToBestBps = CT_BB_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']
   elif exch == 'bbt':
-    distanceToBestBps = CT_BBT_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']
   elif exch == 'bn':
-    distanceToBestBps = CT_BN_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']
   elif exch == 'bnt':
-    distanceToBestBps = CT_BNT_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']
   elif exch == 'db':
-    distanceToBestBps = CT_DB_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['DB_DISTANCE_TO_BEST_BPS']
   elif exch == 'kf':
-    distanceToBestBps = CT_KF_DISTANCE_TO_BEST_BPS
+    distanceToBestBps = CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']
   else:
     sys.exit(1)
   if side == 'BUY':
@@ -368,7 +368,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
       newRefPrice=ftxGetBid(ftx,ticker)
     else:
       newRefPrice=ftxGetAsk(ftx,ticker)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
@@ -457,7 +457,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
       newRefPrice=bbGetBid(bb,ccy)
     else:
       newRefPrice=bbGetAsk(bb,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice = newRefPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker, orderId)
@@ -562,7 +562,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
       newRefPrice=bbtGetBid(bb,ccy)
     else:
       newRefPrice=bbtGetAsk(bb,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice = newRefPrice
       nChases+=1
       orderStatus = bbtGetOrder(bb, ticker, orderId)
@@ -654,7 +654,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
       newRefPrice=bnGetBid(bn,ccy)
     else:
       newRefPrice=bnGetAsk(bn,ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_MAX_WAIT_TIME):
+    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       orderStatus,leavesQty=bnCancelOrder(bn,ticker,orderId)
@@ -726,7 +726,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
       newRefPrice=bntGetBid(bn,ccy)
     else:
       newRefPrice=bntGetAsk(bn,ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_MAX_WAIT_TIME):
+    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       orderStatus,leavesQty=bntCancelOrder(bn,ticker,orderId)
@@ -801,7 +801,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
       newRefPrice=dbGetBid(db,ccy)
     else:
       newRefPrice=dbGetAsk(db,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice = newRefPrice
       nChases+=1
       orderStatus = dbGetOrder(db, orderId)
@@ -906,7 +906,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
       newRefPrice=kfGetBid(kf,ccy)
     else:
       newRefPrice=kfGetAsk(kf,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_MAX_WAIT_TIME):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       orderStatus = kfGetOrderStatus(kf, orderId)
@@ -1021,7 +1021,7 @@ def ftxGetOneDayShortFutEdge(ftx, fundingDict, basis):
     cache('w',keySnap,fundingDict['ftxEstFunding'])
   d=ftxGetFuture(ftx,fundingDict['Ccy'])
   snapFundingRate=(float(d['mark']) / float(d['index']) - 1)*365
-  smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r',keySnap), CT_K)
+  smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r',keySnap), CT_CONFIGS_DICT['EMA_K'])
   cache('w',keySnap,smoothedSnapFundingRate)
   return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate, fundingDict['ftxEstFunding'])
 
@@ -1057,7 +1057,7 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
     cache('w',keyPremIndex,fundingDict['bntEstFunding'] / 365 / 3)
   d = bn.fapiPublic_get_premiumindex({'symbol': fundingDict['Ccy'] + 'USDT'})
   premIndex = float(d['markPrice']) / float(d['indexPrice']) - 1
-  smoothedPremIndex = getEMANow(premIndex, cache('r',keyPremIndex), CT_K)
+  smoothedPremIndex = getEMANow(premIndex, cache('r',keyPremIndex), CT_CONFIGS_DICT['EMA_K'])
   cache('w',keyPremIndex,smoothedPremIndex)
   smoothedSnapFundingRate = (smoothedPremIndex + np.clip(0.0001 - smoothedPremIndex, -0.0005, 0.0005))*365*3
   return getOneDayShortFutEdge(8, basis,smoothedSnapFundingRate, fundingDict['bntEstFunding'], pctElapsedPower=2) - getOneDayUSDTCollateralBleed(fundingDict)
@@ -1079,9 +1079,9 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
   mid=kfGetMid(kfTickers,fundingDict['Ccy'])
   premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'],isIndex=True), 'last'] - 1, -0.008, 0.008)
   snapFundingRate = premIndexClipped * 365 * 3
-  smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r', keySnap), CT_K)
+  smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r', keySnap), CT_CONFIGS_DICT['EMA_K'])
   cache('w', keySnap, smoothedSnapFundingRate)
-  smoothedEst2Rate = getEMANow(fundingDict['kfEstFunding2'], cache('r', keyEst2), CT_K)
+  smoothedEst2Rate = getEMANow(fundingDict['kfEstFunding2'], cache('r', keyEst2), CT_CONFIGS_DICT['EMA_K'])
   cache('w', keyEst2, smoothedEst2Rate)
   return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
@@ -1203,9 +1203,9 @@ def ctInit(ccy=None, notional=None):
   spotBTC=ftxGetMid(ftx,'BTC/USD')
   spotETH=ftxGetMid(ftx,'ETH/USD')
   spotXRP=ftxGetMid(ftx,'XRP/USD')
-  trade_btc = np.min([np.min([CT_TRADE_BTC_NOTIONAL, CT_MAX_NOTIONAL]) / spotBTC, CT_MAX_BTC])
-  trade_eth = np.min([np.min([CT_TRADE_ETH_NOTIONAL, CT_MAX_NOTIONAL]) / spotETH, CT_MAX_ETH])
-  trade_xrp = np.min([np.min([CT_TRADE_XRP_NOTIONAL, CT_MAX_NOTIONAL]) / spotXRP, CT_MAX_XRP])
+  trade_btc = np.min([np.min([CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotBTC, CT_CONFIGS_DICT['MAX_BTC']])
+  trade_eth = np.min([np.min([CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotETH, CT_CONFIGS_DICT['MAX_ETH']])
+  trade_xrp = np.min([np.min([CT_CONFIGS_DICT['TRADE_XRP_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotXRP, CT_CONFIGS_DICT['MAX_XRP']])
   trade_btc_notional = trade_btc * spotBTC
   trade_eth_notional = trade_eth * spotETH
   trade_xrp_notional = trade_xrp * spotXRP
@@ -1219,7 +1219,7 @@ def ctInit(ccy=None, notional=None):
   notional_dict['XRP'] = trade_xrp_notional
   if not (ccy is None or notional is None):
     spot=ftxGetMid(ftx, ccy + '/USD')
-    qty_dict[ccy]= np.min([notional, CT_MAX_NOTIONAL]) / spot
+    qty_dict[ccy]= np.min([notional, CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spot
     notional_dict[ccy]= qty_dict[ccy] * spot
   printHeader('CryptoTrader')
   print('Qtys:     ', qty_dict)
@@ -1280,7 +1280,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
   trade_qty = qty_dict[ccy]
   trade_notional = notional_dict[ccy]
   realizedSlippageBps = []
-  for i in range(CT_NPROGRAMS):
+  for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
     chosenLong = ''
     chosenShort = ''
@@ -1297,7 +1297,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
           del smartBasisDict[exch+'Basis']
 
       # Remove spots when high spot rate
-      if CT_IS_HIGH_USD_RATE_PAUSE and fundingDict['ftxEstMarginalUSD'] >= 1:
+      if CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] and fundingDict['ftxEstMarginalUSD'] >= 1:
         for key in filterDict(smartBasisDict, 'spot'):
           del smartBasisDict[key]
 
@@ -1319,7 +1319,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
           smartBasisBps=(d[keyMax]-d[keyMin])*10000
           chosenLong = keyMin[:len(keyMin) - 10]
           chosenShort = keyMax[:len(keyMax) - 10]
-          if not CT_IS_NO_FUT_BUYS_WHEN_LONG:
+          if not CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG']:
             break
           if chosenLong=='ftx':
             pos=ftxGetFutPos(ftx,ccy)
@@ -1366,8 +1366,8 @@ def ctRun(ccy, tgtBps, color, notional=None):
         continue # to next iteration in While True Loop
       basisBps      = (smartBasisDict[chosenShort+'Basis']      - smartBasisDict[chosenLong+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
-      prevSmartBasis= prevSmartBasis[-CT_STREAK:]
-      isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_STREAK_BPS_RANGE
+      prevSmartBasis= prevSmartBasis[-CT_CONFIGS_DICT['STREAK']:]
+      isStable= (np.max(prevSmartBasis)-np.min(prevSmartBasis)) <= CT_CONFIGS_DICT['STREAK_RANGE_BPS']
 
       # If target reached ....
       if smartBasisBps>=tgtBps:
@@ -1381,7 +1381,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
       z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), color)
       print(z + ctGetSuffix(tgtBps, realizedSlippageBps))
 
-      if abs(status) >= CT_STREAK and isStable:
+      if abs(status) >= CT_CONFIGS_DICT['STREAK'] and isStable:
         print()
         speak('Go')
         completedLegs = 0
@@ -1436,7 +1436,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
 
         if isCancelled:
-          status=(min(abs(status),CT_STREAK)-1)*np.sign(status)
+          status=(min(abs(status),CT_CONFIGS_DICT['STREAK'])-1)*np.sign(status)
           print()
           speak('Cancelled')
           continue # to next iteration in While True loop

@@ -83,12 +83,12 @@ CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0 ### Off
 #####
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_XRP_OK']=1
-CT_CONFIGS_DICT['FTX_XRP_OK']=1
+CT_CONFIGS_DICT['FTX_XRP_OK']=0
 CT_CONFIGS_DICT['BB_XRP_OK']=0 ### Off
-CT_CONFIGS_DICT['BBT_XRP_OK']=1
+CT_CONFIGS_DICT['BBT_XRP_OK']=0
 CT_CONFIGS_DICT['BN_XRP_OK']=0 ### Off
-CT_CONFIGS_DICT['BNT_XRP_OK']=1
-CT_CONFIGS_DICT['KF_XRP_OK']=0
+CT_CONFIGS_DICT['BNT_XRP_OK']=0
+CT_CONFIGS_DICT['KF_XRP_OK']=1
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS']=0
@@ -97,34 +97,34 @@ CT_CONFIGS_DICT['BB_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS']=0
 CT_CONFIGS_DICT['BN_XRP_ADJ_BPS']=0 ### Off
 CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS']=0
-CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
+CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=-18
 
 #############################################################################################
 
-CT_IS_NO_FUT_BUYS_WHEN_LONG = True   # Stop buying futures when position is long?
-CT_IS_HIGH_USD_RATE_PAUSE = True     # Trading of spot paused when spot rates >= 100%?
-CT_STREAK = 5                        # Number of observations through target before triggering
-CT_STREAK_BPS_RANGE = 10             # Max number of allowed bps for range of observations
-CT_NPROGRAMS = 50                    # Number of programs (each program being a pair of trades)
-CT_K = 2/(60 * 15 / 4 + 1)           # EMA smoothing parameter
+CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False   # Stop buying futures when position is long?
+CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
+CT_CONFIGS_DICT['STREAK'] = 5                        # Number of observations through target before triggering
+CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 10             # Max number of allowed bps for range of observations
+CT_CONFIGS_DICT['NPROGRAMS'] = 50                    # Number of programs (each program being a pair of trades)
+CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 4 + 1)       # EMA smoothing parameter
 
-CT_TRADE_BTC_NOTIONAL = 5000         # Per trade notional
-CT_TRADE_ETH_NOTIONAL = 5000         # Per trade notional
-CT_TRADE_XRP_NOTIONAL = 5000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 5000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 5000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_XRP_NOTIONAL'] = 5000         # Per trade notional
 
-CT_MAX_NOTIONAL = 50000              # Hard limit
-CT_MAX_BTC = 0.5                     # Hard limit
-CT_MAX_ETH = 10                      # Hard limit
-CT_MAX_XRP = 10000                   # Hard limit
+CT_CONFIGS_DICT['MAX_NOTIONAL'] = 50000              # Hard limit
+CT_CONFIGS_DICT['MAX_BTC'] = 0.5                     # Hard limit
+CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Hard limit
+CT_CONFIGS_DICT['MAX_XRP'] = 10000                   # Hard limit
 
-CT_FTX_DISTANCE_TO_BEST_BPS=0        # Execution setting
-CT_BB_DISTANCE_TO_BEST_BPS=-3        # Execution setting
-CT_BBT_DISTANCE_TO_BEST_BPS=-3       # Execution setting
-CT_BN_DISTANCE_TO_BEST_BPS=0         # Execution setting
-CT_BNT_DISTANCE_TO_BEST_BPS=0        # Execution setting
-CT_DB_DISTANCE_TO_BEST_BPS=0         # Execution setting
-CT_KF_DISTANCE_TO_BEST_BPS=0         # Execution setting
-CT_MAX_WAIT_TIME=10                  # Execution setting
+CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=0        # Execution setting
+CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=-3        # Execution setting
+CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=-3       # Execution setting
+CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']=0         # Execution setting
+CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']=0        # Execution setting
+CT_CONFIGS_DICT['DB_DISTANCE_TO_BEST_BPS']=0         # Execution setting
+CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']=0         # Execution setting
+CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
 #############################################################################################
 

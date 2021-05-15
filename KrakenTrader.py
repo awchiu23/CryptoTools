@@ -108,8 +108,8 @@ def getBal(bal, ccy):
 ftx = cl.ftxCCXTInit()
 spotBTC=cl.ftxGetMid(ftx,'BTC/USD')
 spotETH=cl.ftxGetMid(ftx,'ETH/USD')
-trade_btc = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotBTC, cl.CT_MAX_BTC])
-trade_eth = np.min([np.min([targetUSD, cl.CT_MAX_NOTIONAL]) / spotETH, cl.CT_MAX_ETH])
+trade_btc = np.min([np.min([targetUSD, cl.CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotBTC, cl.CT_CONFIGS_DICT['MAX_BTC']])
+trade_eth = np.min([np.min([targetUSD, cl.CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotETH, cl.CT_CONFIGS_DICT['MAX_ETH']])
 trade_btc_notional = trade_btc * spotBTC
 trade_eth_notional = trade_eth * spotETH
 if pair in ['XXBTZUSD', 'XXBTZEUR']:
