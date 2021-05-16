@@ -32,6 +32,11 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Please set **CRYPTOTOOLS_MODE** to 0 in CryptoParams.  The tool will then work across FTX and Bybit
 - For more advanced users, please speak with me directly
 
+---
+
+## BBTUtil
+- This tool lets you drill down into BBT's risk numbers
+
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
 - Universe: USD, BTC, ETH, XRP
