@@ -1,7 +1,6 @@
 ################
 # Crypto Library
 ################
-import CryptoLib
 from CryptoParams import *
 from joblib import Parallel, delayed
 import pandas as pd
@@ -11,6 +10,7 @@ import sys
 import time
 import operator
 import termcolor
+import traceback
 import ccxt
 import apophis
 from retrying import retry
@@ -364,8 +364,8 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
       print(getCurrentTime()+': FTX rate limit exceeded!')
       time.sleep(3)
     except:
-      print(getCurrentTime()+': FTX general error!')
-      time.sleep(3)
+      print(traceback.print_exc())
+      sys.exit(1)
   if not isOk:
     sys.exit(1)
   #####
