@@ -207,11 +207,11 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['FTX_BTC_OK'] = 0
+  CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 0
-  CT_CONFIGS_DICT['BNT_BTC_OK'] = 1 # No margin
+  CT_CONFIGS_DICT['BNT_BTC_OK'] = 0 # No margin
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 15
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
   #####
@@ -229,7 +229,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = -5
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
-  CT_CONFIGS_DICT['SPOT_XRP_OK'] = 0
+  CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
   CT_CONFIGS_DICT['FTX_XRP_OK'] = 1
   CT_CONFIGS_DICT['BBT_XRP_OK'] = 1
   CT_CONFIGS_DICT['BNT_XRP_OK'] = 1 # No margin
