@@ -475,20 +475,6 @@ class core:
   # BBT
   #####
   def bbtInit(self):
-    def getMM():
-      myL = []
-      for ccy in self.validCcys:
-        myL.extend(self.api.public_linear_get_risk_limit({'symbol': ccy + 'USDT'})['result'])
-      mmS = pd.DataFrame(myL).set_index('id')['maintain_margin']
-      df = self.api.private_linear_get_position_list()['result']
-      df = pd.DataFrame([pos['data'] for pos in df]).set_index('symbol').loc[[z + 'USDT' for z in self.validCcys]]
-      cl.dfSetFloat(df, 'position_value')
-      mmL = []
-      for i in range(len(df)):
-        mmL.append(float(mmS.loc[df.iloc[i]['risk_id']]))
-      df['mm'] = mmL
-      return (df['position_value'] * df['mm']).sum()
-    ######
     self.api = cl.bbCCXTInit()
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
@@ -510,13 +496,22 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
-    equity = float(self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']['equity'])
-    self.nav=equity*self.spotDict['USDT']
-    cushion=(equity-getMM())*self.spotDict['USDT']
-    totalDelta = self.futures['FutDeltaUSD'].sum()
-    self.liq = 1 - cushion / totalDelta
-    self.spots.loc['USDT','SpotDelta']=equity
+    wb = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
+    equity = float(wb['equity'])
+    self.nav = equity * self.spotDict['USDT']
+    self.spots.loc['USDT', 'SpotDelta'] = equity
     self.calcSpotDeltaUSD()
+    #####
+    # Liquidation (parallel shock) calc
+    wallet_balance = float(wb['wallet_balance'])
+    riskDf=cl.bbtGetRiskDf(self.api,self.validCcys,self.spotDict)
+    increment = -0.01 if riskDf['delta_value'].sum() >= 0 else 0.01
+    for i in range(100):
+      riskDf['unrealised_pnl_sim'] = riskDf['unrealised_pnl'] + riskDf['delta_value'] * i * increment
+      ab = wallet_balance - riskDf['im_value'].sum() + riskDf['unrealised_pnl_sim'].clip(None, 0).sum()
+      riskDf['cushion'] = ab + riskDf['im_value'] - riskDf['mm_value'] + riskDf['unrealised_pnl_sim'].clip(0, None)
+      if riskDf['cushion'].min() < 0: break
+    self.liq = 1 + i * increment
     #####
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']

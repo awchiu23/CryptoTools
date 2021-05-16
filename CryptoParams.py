@@ -218,18 +218,21 @@ if os.environ.get('USERNAME')=='Simon':
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
   CT_CONFIGS_DICT['FTX_ETH_OK'] = 1
-  CT_CONFIGS_DICT['BBT_ETH_OK'] = 0 # Suspended
+  CT_CONFIGS_DICT['BBT_ETH_OK'] = 1 # Suspended
   CT_CONFIGS_DICT['BNT_ETH_OK'] = 0 # No margin
   CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 15
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
   #####
+  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
+  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
+  #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
-  CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
-  CT_CONFIGS_DICT['FTX_XRP_OK'] = 1
+  CT_CONFIGS_DICT['SPOT_XRP_OK'] = 0
+  CT_CONFIGS_DICT['FTX_XRP_OK'] = 0
   CT_CONFIGS_DICT['BBT_XRP_OK'] = 1
-  CT_CONFIGS_DICT['BNT_XRP_OK'] = 0 # No margin
+  CT_CONFIGS_DICT['BNT_XRP_OK'] = 1 # No margin
   CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0

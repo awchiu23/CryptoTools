@@ -520,14 +520,16 @@ def bbtGetEstFunding2(bb,ccy):
   return float(bb.private_linear_get_funding_predicted_funding({'symbol': ccy+'USDT'})['result']['predicted_funding_rate'])* 3 * 365
 
 def bbtGetRiskDf(bb,ccys,spotDict):
-  # Get dictionary of risk_id -> mm%
-  riskDict = dict()
+  # Get dictionaries of risk_id -> im/mm
+  imDict = dict()
+  mmDict = dict()
   for ccy in ccys:
     riskLimit=bb.public_linear_get_risk_limit({'symbol': ccy + 'USDT'})['result']
     for i in range(len(riskLimit)):
-      riskDict[riskLimit[i]['id']]=float(riskLimit[i]['maintain_margin'])
+      imDict[riskLimit[i]['id']]=float(riskLimit[i]['starting_margin'])
+      mmDict[riskLimit[i]['id']]=float(riskLimit[i]['maintain_margin'])
 
-  # Set up master df
+  # Set up risk df
   positionList = bb.private_linear_get_position_list()['result']
   positionList = pd.DataFrame([pos['data'] for pos in positionList]).set_index('symbol')
   dfSetFloat(positionList, ['size', 'position_value', 'liq_price','unrealised_pnl'])
@@ -535,20 +537,26 @@ def bbtGetRiskDf(bb,ccys,spotDict):
   for ccy in ccys:
     tmp=positionList.loc[ccy + 'USDT'].set_index('side')
     position_value = tmp.loc['Buy', 'position_value'] - tmp.loc['Sell', 'position_value']
+    unrealised_pnl = tmp['unrealised_pnl'].sum()
     dominantSide='Buy' if tmp.loc['Buy', 'size'] >= tmp.loc['Sell', 'size'] else 'Sell'
+    spot_price = spotDict[ccy]/spotDict['USDT']
     liq_price = tmp.loc[dominantSide, 'liq_price']
-    liq = liq_price / (spotDict[ccy]/spotDict['USDT'])
-    unrealised_pnl = tmp.loc[dominantSide, 'unrealised_pnl']
-    mm = riskDict[tmp.loc[dominantSide, 'risk_id']]
+    liq = liq_price / spot_price
+    im = imDict[tmp.loc[dominantSide, 'risk_id']]
+    mm = mmDict[tmp.loc[dominantSide, 'risk_id']]
     df=df.append({'ccy':ccy,
                     'position_value':position_value,
+                    'spot_price':spot_price,
                     'liq_price':liq_price,
                     'liq':liq,
                     'unrealised_pnl':unrealised_pnl,
+                    'im':im,
                     'mm': mm}, ignore_index=True)
   df=df.set_index('ccy')
+  df['im_value']=(df['position_value']*df['im']).abs()
   df['mm_value']=(df['position_value']*df['mm']).abs()
-  return df[['position_value','liq_price','liq','unrealised_pnl','mm','mm_value']]
+  df['delta_value']=df['position_value']+df['unrealised_pnl']
+  return df[['position_value','delta_value','spot_price','liq_price','liq','unrealised_pnl','im','mm','im_value','mm_value']]
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
   # Do not use @retry
