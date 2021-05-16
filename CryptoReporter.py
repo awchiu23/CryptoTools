@@ -507,7 +507,7 @@ class core:
     riskDf=cl.bbtGetRiskDf(self.api,self.validCcys,self.spotDict)
     increment = -0.01 if riskDf['delta_value'].sum() >= 0 else 0.01
     for i in range(100):
-      riskDf['unrealised_pnl_sim'] = riskDf['unrealised_pnl'] + riskDf['delta_value'] * i * increment
+      riskDf['unrealised_pnl_sim'] = riskDf['unrealised_pnl'] + riskDf['delta_value'] * (i+1) * increment
       ab = wallet_balance - riskDf['im_value'].sum() + riskDf['unrealised_pnl_sim'].clip(None, 0).sum()
       riskDf['cushion'] = ab + riskDf['im_value'] - riskDf['mm_value'] + riskDf['unrealised_pnl_sim'].clip(0, None)
       if riskDf['cushion'].min() < 0: break
