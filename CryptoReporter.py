@@ -57,15 +57,13 @@ def getCores():
   if CRYPTO_MODE>0:
     bnCore = core('bn', spotDict)
     bntCore = core('bnt', spotDict)
-    dbCore = core('db', spotDict)
     kfCore = core('kf', spotDict)
     for i in range(CR_N_KR_ACCOUNTS):
       krCores.append(core('kr',spotDict,n=i+1))
-    objs.extend([bnCore, bntCore, dbCore, kfCore] + krCores)
+    objs.extend([bnCore, bntCore, kfCore] + krCores)
   else:
     bnCore = None
     bntCore = None
-    dbCore = None
     kfCore = None
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
@@ -80,7 +78,7 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, krCores, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -213,8 +211,6 @@ class core:
       self.bnInit()
     elif self.exch=='bnt':
       self.bntInit()
-    elif self.exch=='db':
-      self.dbInit()
     elif self.exch=='kf':
       self.kfInit()
     elif self.exch=='kr':
@@ -231,19 +227,13 @@ class core:
 
   def makeIncomesStr(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
-    if self.exch == 'db':
-      self.incomesStr = termcolor.colored('DB 24h funding income: '.rjust(41) + z1, 'blue')
-    else:
-      zPrev  = '4h' if self.exch == 'kf' else 'prev'
-      z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-      self.incomesStr = termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
+    zPrev  = '4h' if self.exch == 'kf' else 'prev'
+    z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
+    self.incomesStr = termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
-    if self.exch=='db':
-      prefix+='8h'
-    else:
-      prefix+='prev'
+    prefix+='prev'
     prefix+='/est'
     if self.exch in ['bb','bbt','kf']:
       prefix += '1/est2'
@@ -616,48 +606,6 @@ class core:
     self.isDone = True
 
   ####
-  # DB
-  ####
-  def dbInit(self):
-    def getOneDayIncome(ccy, spot):
-      df = pd.DataFrame(self.api.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
-      if len(df) == 0: return 0
-      cl.dfSetFloat(df, 'funding')
-      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
-      df = df.set_index('date').sort_index()
-      if df.index[-1] >= (datetime.datetime.now() - pd.DateOffset(days=1)):
-        return df['funding'].iloc[-1] * spot
-      else:
-        return 0
-    #####
-    self.api = cl.dbCCXTInit()
-    for ccy in self.validCcys:
-      acSum=self.api.private_get_get_account_summary({'currency': ccy})['result']
-      self.spots.loc[ccy,'SpotDelta']=float(acSum['equity'])
-      self.liqDict[ccy] = float(acSum['estimated_liquidation_ratio']) 
-    self.calcSpotDeltaUSD()
-    #####
-    for ccy in self.validCcys:
-      self.futures.loc[ccy, 'FutDelta']=cl.dbGetFutPos(self.api,ccy)/self.spotDict[ccy]
-    self.calcFuturesDeltaUSD()
-    #####
-    for ccy in self.validCcys:
-      self.oneDayIncome += getOneDayIncome(ccy, self.spotDict[ccy])
-    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-    #####
-    self.nav = self.spots['SpotDeltaUSD'].sum()
-    #####
-    for ccy in self.validCcys:
-      oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
-      prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
-      estFunding = cl.dbGetEstFunding(self.api, ccy)
-      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
-    #####
-    self.makeIncomesStr()
-    self.makeLiqStr()
-    self.isDone = True
-
-  ####
   # KF
   ####
   def kfInit(self):
@@ -802,7 +750,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, krCores, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, krCores, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -866,7 +814,7 @@ if __name__ == '__main__':
   printAllDual(bbtCore, bbCore)
   if CRYPTO_MODE>0:
     printAllDual(bntCore, bnCore)
-    printAllDual(kfCore, dbCore)
+    kfCore.printAll()
     if CR_N_KR_ACCOUNTS>0: krPrintAll(krCores, nav)
   #####
   if '-f' in sys.argv:

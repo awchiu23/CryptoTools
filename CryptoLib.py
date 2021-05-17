@@ -37,8 +37,6 @@ class getPrices:
       self.fut = bnGetMid(self.api,self.ccy)
     elif self.exch == 'bnt':
       self.fut = bntGetMid(self.api,self.ccy)
-    elif self.exch == 'db':
-      self.fut =  dbGetMid(self.api,self.ccy)
     elif self.exch == 'kf':
       self.kfTickers = kfGetTickers(self.api)
       self.fut = kfGetMid(self.kfTickers,self.ccy)
@@ -63,9 +61,6 @@ def bnCCXTInit():
   api = ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
   api.options['recvWindow']=50000
   return api
-
-def dbCCXTInit():
-  return ccxt.deribit({'apiKey': API_KEY_DB, 'secret': API_SECRET_DB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
@@ -145,19 +140,6 @@ def bntGetBid(bn, ccy):
 def bntGetAsk(bn, ccy):
   return float(bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})['askPrice'])
 
-@retry(wait_fixed=1000)
-def dbGetMid(db,ccy):
-  d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
-  return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
-
-@retry(wait_fixed=1000)
-def dbGetBid(db, ccy):
-  return float(db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']['best_bid_price'])
-
-@retry(wait_fixed=1000)
-def dbGetAsk(db, ccy):
-  return float(db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']['best_ask_price'])
-
 # Do not use @retry
 def kfGetMid(kfTickers, ccy):
   ticker=kfCcyToSymbol(ccy)
@@ -182,8 +164,6 @@ def getLimitPrice(exch,price,ccy,side):
     distanceToBestBps = CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']
   elif exch == 'bnt':
     distanceToBestBps = CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']
-  elif exch == 'db':
-    distanceToBestBps = CT_CONFIGS_DICT['DB_DISTANCE_TO_BEST_BPS']
   elif exch == 'kf':
     distanceToBestBps = CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']
   else:
@@ -202,6 +182,8 @@ def roundPrice(exch, price, ccy):
       return round(price,1)
     elif ccy=='XRP':
       return round(price*40000)/40000
+    elif ccy=='SOL':
+      return round(price * 400) / 400
     else:
       return round(price,6)
   elif exch=='bb':
@@ -242,13 +224,6 @@ def roundPrice(exch, price, ccy):
       return round(price,4)
     elif ccy=='BNB':
       return round(price,3)
-    else:
-      sys.exit(1)
-  elif exch=='db':
-    if ccy == 'BTC':
-      return round(price * 2) / 2
-    elif ccy == 'ETH':
-      return round(price * 20) / 20
     else:
       sys.exit(1)
   elif exch =='kf':
@@ -796,90 +771,6 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
 #############################################################################################
 
 ####
-# DB
-####
-@retry(wait_fixed=1000)
-def dbGetFutPos(db,ccy):
-  return float(db.private_get_get_position({'instrument_name': ccy + '-PERPETUAL'})['result']['size'])
-
-@retry(wait_fixed=1000)
-def dbGetEstFunding(db,ccy,mins=15):
-  now=datetime.datetime.now()
-  start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
-  end_timestamp = int(datetime.datetime.timestamp(now))*1000
-  return float(db.public_get_get_funding_rate_value({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])*(60/mins)*24*365
-
-def dbRelOrder(side,db,ccy,trade_notional,maxChases=0):
-  @retry(wait_fixed=1000)
-  def dbGetOrder(db,orderId):
-    return db.private_get_get_order_state({'order_id': orderId})['result']
-  # Do not use @retry
-  def dbEditOrder(db, orderId, trade_notional, limitPrice):
-    if dbGetOrder(db, orderId)['order_state'] == 'filled':
-      return False
-    try:
-      db.private_get_edit({'order_id': orderId, 'amount': trade_notional, 'price': limitPrice})
-      return True
-    except:
-      return False
-  #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
-  if ccy=='BTC':
-    trade_notional=round(trade_notional,-1)
-  elif ccy=='ETH':
-    trade_notional=round(trade_notional)
-  else:
-    sys.exit(1)
-  ticker = ccy + '-PERPETUAL'
-  print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
-  if side=='BUY':
-    refPrice = dbGetBid(db, ccy)
-    limitPrice = getLimitPrice('db', refPrice, ccy, side)
-    orderId=db.private_get_buy({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
-  else:
-    refPrice = dbGetAsk(db, ccy)
-    limitPrice = getLimitPrice('db', refPrice, ccy, side)
-    orderId=db.private_get_sell({'instrument_name':ticker,'amount':trade_notional,'type':'limit','price':limitPrice})['result']['order']['order_id']
-  refTime = time.time()
-  nChases=0
-  while True:
-    if dbGetOrder(db, orderId)['order_state']=='filled':
-      break
-    if side=='BUY':
-      newRefPrice=dbGetBid(db,ccy)
-    else:
-      newRefPrice=dbGetAsk(db,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
-      refPrice = newRefPrice
-      nChases+=1
-      orderStatus = dbGetOrder(db, orderId)
-      if orderStatus['order_state'] == 'filled':
-        break
-      if nChases>maxChases and float(orderStatus['filled_amount'])==0:
-        mult = .98 if side == 'BUY' else 1.02
-        farPrice = roundPrice('db', refPrice * mult, ccy)
-        if not dbEditOrder(db, orderId, trade_notional, farPrice):
-          break
-        if float(dbGetOrder(db, orderId)['filled_amount'])==0:
-          db.private_get_cancel({'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
-          return 0
-      else:
-        refTime = time.time()
-        newLimitPrice = getLimitPrice('db', refPrice, ccy, side)
-        if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
-          limitPrice=newLimitPrice
-          if not dbEditOrder(db, orderId, trade_notional, limitPrice):
-            break
-    time.sleep(1)
-  fill=float(dbGetOrder(db, orderId)['average_price'])
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
-
-#############################################################################################
-
-####
 # KF
 ####
 def kfCcyToSymbol(ccy,isIndex=False):
@@ -992,7 +883,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,db,kf,ccy):
+def getFundingDict(ftx,bb,bn,kf,ccy):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -1019,7 +910,6 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy):
     d['bbtEstFunding2'] = bbtGetEstFunding2(bb, ccy)
   if 'bn' in validExchs:  d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
   if 'bnt' in validExchs: d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
-  if 'db' in validExchs:  d['dbEstFunding'] = dbGetEstFunding(db, ccy)
   if 'kf' in validExchs:
     kfTickers = kfGetTickers(kf)
     d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
@@ -1112,12 +1002,6 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
   return getOneDayShortFutEdge(8, basis,smoothedSnapFundingRate, fundingDict['bntEstFunding'], pctElapsedPower=2) - getOneDayUSDTCollateralBleed(fundingDict)
 
 @retry(wait_fixed=1000)
-def dbGetOneDayShortFutEdge(fundingDict, basis):
-  edge = basis - getOneDayDecayedValues(basis, SMB_BASE_BASIS, SMB_HALF_LIFE_HOURS)[-1] # basis
-  edge += getOneDayDecayedMean(fundingDict['dbEstFunding'], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365 # funding
-  return edge
-
-@retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
   keySnap='kfEMASnap'+fundingDict['Ccy']
   keyEst2='kfEMAEst2'+fundingDict['Ccy']
@@ -1136,7 +1020,7 @@ def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
 
 #############################################################################################
 
-def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
+def getSmartBasisDict(ftx, bb, bn, kf, ccy, fundingDict, isSkipAdj=False):
   validExchs = getValidExchs(ccy)
   objs=[]
   if 'ftx' in validExchs:
@@ -1154,9 +1038,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
   if 'bnt' in validExchs:
     bntPrices = getPrices('bnt', bn, ccy)
     objs.append(bntPrices)
-  if 'db' in validExchs:
-    dbPrices = getPrices('db', db, ccy)
-    objs.append(dbPrices)
   if 'kf' in validExchs:
     kfPrices = getPrices('kf', kf, ccy)
     objs.append(kfPrices)
@@ -1184,10 +1065,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
     bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_' + ccy + '_ADJ_BPS']) / 10000
     d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
-  if 'db' in validExchs:
-    dbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['DB_' + ccy + '_ADJ_BPS']) / 10000
-    d['dbBasis'] = dbPrices.fut / ftxPrices.spot - 1
-    d['dbSmartBasis'] = dbGetOneDayShortFutEdge(fundingDict, d['dbBasis']) - oneDayShortSpotEdge + dbAdj
   if 'kf' in validExchs:
     kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['KF_' + ccy + '_ADJ_BPS']) / 10000
     d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
@@ -1225,12 +1102,11 @@ def caRun(ccy, color):
   ftx=ftxCCXTInit() if 'ftx' in validExchs else None
   bb=bbCCXTInit() if ('bb' in validExchs or 'bbt' in validExchs) else None
   bn=bnCCXTInit() if ('bn' in validExchs or 'bnt' in validExchs) else None
-  db=dbCCXTInit() if 'db' in validExchs else None
   kf=kfApophisInit() if 'kf' in validExchs else None
   #####
   while True:
-    fundingDict = getFundingDict(ftx,bb,bn,db,kf,ccy)
-    smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
+    fundingDict = getFundingDict(ftx,bb,bn,kf,ccy)
+    smartBasisDict = getSmartBasisDict(ftx,bb,bn,kf,ccy, fundingDict, isSkipAdj=True)
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
@@ -1247,7 +1123,6 @@ def ctInit(ccy=None, notional=None):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
-  db = dbCCXTInit()
   kf = kfApophisInit()
   spotBTC=ftxGetMid(ftx,'BTC/USD')
   spotETH=ftxGetMid(ftx,'ETH/USD')
@@ -1274,7 +1149,7 @@ def ctInit(ccy=None, notional=None):
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
-  return ftx,bb,bn,db,kf,qty_dict,notional_dict
+  return ftx,bb,bn,kf,qty_dict,notional_dict
 
 def ctGetSuffix(tgtBps, realizedSlippageBps):
   z= termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'red')
@@ -1320,9 +1195,9 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
 
 def ctRun(ccy, tgtBps, color, notional=None):
   if notional is None:
-    ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit()
+    ftx, bb, bn, kf, qty_dict, notional_dict = ctInit()
   else:
-    ftx, bb, bn, db, kf, qty_dict, notional_dict = ctInit(ccy, notional)
+    ftx, bb, bn, kf, qty_dict, notional_dict = ctInit(ccy, notional)
   if not ccy in qty_dict:
     print('Invalid ccy!')
     sys.exit(1)
@@ -1334,8 +1209,8 @@ def ctRun(ccy, tgtBps, color, notional=None):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, db, kf, ccy)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict)
+      fundingDict=getFundingDict(ftx, bb, bn, kf, ccy)
+      smartBasisDict = getSmartBasisDict(ftx, bb, bn, kf, ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
       smartBasisDict['spotBasis'] = 0
 
@@ -1380,8 +1255,6 @@ def ctRun(ccy, tgtBps, color, notional=None):
             pos=bnGetFutPos(bn,ccy)
           elif chosenLong=='bnt':
             pos=bntGetFutPos(bn, ccy)
-          elif chosenLong=='db':
-            pos=dbGetFutPos(db,ccy)
           elif chosenLong=='kf':
             pos=kfGetFutPos(kf,ccy)
           else:
@@ -1452,12 +1325,6 @@ def ctRun(ccy, tgtBps, color, notional=None):
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kf' == chosenShort and not isCancelled:
           shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'db' == chosenLong and not isCancelled:
-          longFill = dbRelOrder('BUY', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'db' == chosenShort and not isCancelled:
-          shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' == chosenLong and not isCancelled:
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
