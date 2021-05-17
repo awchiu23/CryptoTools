@@ -182,6 +182,8 @@ def roundPrice(exch, price, ccy):
       return round(price,1)
     elif ccy=='XRP':
       return round(price*40000)/40000
+    elif ccy=='AAVE':
+      return round(price,2)
     elif ccy=='SOL':
       return round(price * 400) / 400
     else:
@@ -198,7 +200,7 @@ def roundPrice(exch, price, ccy):
   elif exch=='bbt':
     if ccy=='BTC':
       return round(price*2)/2
-    elif ccy in ['BCH','ETH']:
+    elif ccy in ['ETH','AAVE','BCH']:
       return round(price*20)/20
     elif ccy=='XRP':
       return round(price,4)
@@ -218,7 +220,7 @@ def roundPrice(exch, price, ccy):
     else:
       sys.exit(1)
   elif exch == 'bnt':
-    if ccy in ['BTC','ETH','BCH','LTC']:
+    if ccy in ['BTC','ETH','AAVE','BCH','LTC']:
       return round(price,2)
     elif ccy=='XRP':
       return round(price,4)
@@ -242,18 +244,18 @@ def roundQty(exch, qty, ccy):
   if exch=='ftx':
     if ccy == 'BTC':
       return round(qty, 4)
-    elif ccy in ['BCH','ETH']:
+    elif ccy in ['ETH','BCH']:
       return round(qty, 3)
-    elif ccy == 'LTC':
+    elif ccy == 'XRP':
+      return round(qty)
+    elif ccy in ['AAVE','LTC']:
       return round(qty, 2)
     elif ccy == 'BNB':
       return round(qty,1)
-    elif ccy == 'XRP':
-      return round(qty)
     else:
       return round(qty, 6)
   elif exch=='bnt':
-    if ccy=='XRP':
+    if ccy in ['AAVE','XRP']:
       return round(qty,1)
     elif ccy=='BNB':
       return round(qty,2)
