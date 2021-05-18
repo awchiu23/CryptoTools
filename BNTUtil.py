@@ -26,8 +26,8 @@ cl.printHeader('BNTUtil')
 ccys=cl.getValidCcys('bnt')
 df=bntGetRiskDf(bn,ccys)
 df['liq']=df['liquidationPrice']/df['markPrice']
-df=df[['positionAmt','markPrice','liquidationPrice','liq','unRealizedProfit']]
-cols = ['positionAmt','unRealizedProfit']
+df=df[['notional','markPrice','liquidationPrice','liq','unRealizedProfit']]
+cols = ['notional','unRealizedProfit']
 cols2 = ['markPrice','liquidationPrice']
 df[cols]=df[cols].astype(int)
 df[cols2]=df[cols2].round(2)
