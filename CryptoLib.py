@@ -184,6 +184,8 @@ def roundPrice(exch, price, ccy):
       return round(price*40000)/40000
     elif ccy=='AAVE':
       return round(price,2)
+    elif ccy=='LINK':
+      return round(price * 2000) / 2000
     elif ccy=='SOL':
       return round(price * 400) / 400
     else:
@@ -204,6 +206,8 @@ def roundPrice(exch, price, ccy):
       return round(price*20)/20
     elif ccy=='XRP':
       return round(price,4)
+    elif ccy=='LINK':
+      return round(price,3)
     elif ccy=='LTC':
       return round(price,2)
     else:
@@ -224,7 +228,7 @@ def roundPrice(exch, price, ccy):
       return round(price,2)
     elif ccy=='XRP':
       return round(price,4)
-    elif ccy=='BNB':
+    elif ccy in ['BNB','LINK']:
       return round(price,3)
     else:
       sys.exit(1)
@@ -250,14 +254,14 @@ def roundQty(exch, qty, ccy):
       return round(qty)
     elif ccy in ['AAVE','LTC']:
       return round(qty, 2)
-    elif ccy == 'BNB':
+    elif ccy in ['BNB','LINK']:
       return round(qty,1)
     else:
       return round(qty, 6)
   elif exch=='bnt':
     if ccy in ['AAVE','XRP']:
       return round(qty,1)
-    elif ccy=='BNB':
+    elif ccy==['BNB','LINK']:
       return round(qty,2)
     else:
       return round(qty,3)

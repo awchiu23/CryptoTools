@@ -104,7 +104,7 @@ CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 4 + 1)       # EMA smoothing parameter
 
 CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 5000         # Per trade notional
 CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 5000         # Per trade notional
-CT_CONFIGS_DICT['TRADE_XRP_NOTIONAL'] = 5000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_XRP_NOTIONAL'] = 3000         # Per trade notional
 
 CT_CONFIGS_DICT['MAX_NOTIONAL'] = 50000              # Hard limit
 CT_CONFIGS_DICT['MAX_BTC'] = 0.5                     # Hard limit
@@ -185,45 +185,41 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   #####
   CR_QUOTE_CCY_DICT['LTC'] = 2
+  CR_QUOTE_CCY_DICT['LINK'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 2
-  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'LTC':0})
-  CR_EXT_DELTA_USDT = 0
+  CR_AG_CCY_DICT = dict({'BTC': 1.31999, 'ETH': 0, 'XRP': 0, 'LTC':0}) #kr
+  CR_EXT_DELTA_USDT = 1000000 #bb
   CR_EXT_DELTA_EUR = 125000*0
   CR_EXT_DELTA_EUR_REF = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
+  SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
-  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
+  CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
   CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
-  CT_CONFIGS_DICT['BBT_BTC_OK'] = 0
-  CT_CONFIGS_DICT['BNT_BTC_OK'] = 0
+  CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
+  CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 15
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
-  #####
-  CT_CONFIGS_DICT['KF_BTC_OK'] = 0
-  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 0
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
   CT_CONFIGS_DICT['FTX_ETH_OK'] = 1
-  CT_CONFIGS_DICT['BBT_ETH_OK'] = 0
-  CT_CONFIGS_DICT['BNT_ETH_OK'] = 0
+  CT_CONFIGS_DICT['BBT_ETH_OK'] = 1
+  CT_CONFIGS_DICT['BNT_ETH_OK'] = 1
   CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 15
+  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
-  #####
-  CT_CONFIGS_DICT['KF_ETH_OK'] = 0
-  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
@@ -234,4 +230,3 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
-
