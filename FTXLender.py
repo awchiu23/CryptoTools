@@ -8,7 +8,7 @@ import termcolor
 ########
 isRunNow=False            # Run once and stop? Otherwise loop continuously and run one minute before every reset
 isManageCoins=True        # Also manage coins in addition to USD?
-coinsList=['BTC','ETH','XRP','LTC','AAVE','MATIC']
+coinsList=['BTC','ETH','XRP','LTC','MATIC']
 
 minRate=0.05              # Minimum rate for all loans
 usdLendingRatio=2/3       # Percentage of USD to lend out
