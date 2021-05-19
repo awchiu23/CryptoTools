@@ -11,8 +11,8 @@ isManageCoins=True        # Also manage coins in addition to USD?
 coinsList=['BTC','ETH','XRP','LTC','AAVE','MATIC']
 
 minRate=0.05              # Minimum rate for all loans
-usdLendingRatio=0.5       # Percentage of USD to lend out
-coinLendingRatio=0.5      # Percentage of coins to lend out
+usdLendingRatio=2/3       # Percentage of USD to lend out
+coinLendingRatio=2/3      # Percentage of coins to lend out
 
 ###########
 # Functions
