@@ -11,8 +11,8 @@ isRunNow=False            # Run once and stop? Otherwise loop continuously and r
 isManageCoins=True        # Also manage coins in addition to USD?
 
 minRate=0.03              # Minimum rate for all loans
-usdLendingRatio=.8        # Percentage of USD to lend out
-coinLendingRatio=.8       # Percentage of coins to lend out
+usdLendingRatio=.5        # Percentage of USD to lend out
+coinLendingRatio=.98      # Percentage of coins to lend out
 
 coinsList=CR_FTX_FLOWS_CCYS.copy()
 coinsList.remove('USD')
