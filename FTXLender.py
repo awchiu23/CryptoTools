@@ -1,4 +1,5 @@
 import CryptoLib as cl
+from CryptoParams import *
 import pandas as pd
 import datetime
 import termcolor
@@ -8,11 +9,14 @@ import termcolor
 ########
 isRunNow=False            # Run once and stop? Otherwise loop continuously and run one minute before every reset
 isManageCoins=True        # Also manage coins in addition to USD?
-coinsList=['BTC','ETH','XRP','LTC','MATIC']
 
 minRate=0.05              # Minimum rate for all loans
-usdLendingRatio=2/3       # Percentage of USD to lend out
-coinLendingRatio=2/3      # Percentage of coins to lend out
+usdLendingRatio=1/2       # Percentage of USD to lend out
+coinLendingRatio=1/2      # Percentage of coins to lend out
+
+coinsList=CR_FTX_FLOWS_CCYS.copy()
+coinsList.remove('USD')
+coinsList.remove('USDT')
 
 ###########
 # Functions

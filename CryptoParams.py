@@ -111,7 +111,7 @@ CT_CONFIGS_DICT['MAX_BTC'] = 0.5                     # Hard limit
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Hard limit
 CT_CONFIGS_DICT['MAX_XRP'] = 10000                   # Hard limit
 
-CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=0        # Execution setting
+CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=-1       # Execution setting
 CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=-3        # Execution setting
 CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=-3       # Execution setting
 CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']=0         # Execution setting
@@ -143,10 +143,10 @@ CR_EXT_DELTA_EUR_REF = 0
 # Shared
 ########
 SHARED_CCY_DICT=dict()
-SHARED_CCY_DICT['BTC']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'kf']}
-SHARED_CCY_DICT['ETH']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'kf']}
-SHARED_CCY_DICT['XRP']={'futExch':['ftx', 'bb', 'bbt', 'bn', 'bnt', 'kf']}
-SHARED_CCY_DICT['FTT']={'futExch':['ftx']}
+SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
+SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
+SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
+SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 
 #############
 # Smart Basis
@@ -185,21 +185,20 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   #####
   CR_QUOTE_CCY_DICT['LTC'] = 2
-  CR_QUOTE_CCY_DICT['LINK'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 2
-  CR_AG_CCY_DICT = dict({'BTC': 1.31999, 'ETH': 0, 'XRP': 0, 'LTC':0}) #kr
-  CR_EXT_DELTA_USDT = 1000000 #bb
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'LTC':0})
+  CR_FTX_FLOWS_CCYS.extend(['LTC','MATIC'])
+  CR_EXT_DELTA_USDT = 0
   CR_EXT_DELTA_EUR = 125000*0
   CR_EXT_DELTA_EUR_REF = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
-  CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
+  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
