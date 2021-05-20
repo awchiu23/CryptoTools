@@ -40,6 +40,14 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   return oneDayIncome, prevIncome
 
 def getCores():
+  def processCore(exch,spotDict,objs):
+    if SHARED_EXCH_DICT[exch]==1:
+      myCore=core(exch,spotDict)
+    else:
+      myCore=core('dummy',spotDict)
+    objs.append(myCore)
+    return myCore
+  #####
   isOk=True
   ftx=cl.ftxCCXTInit()
   spotDict=dict()
@@ -49,22 +57,18 @@ def getCores():
     spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
   spotDict['USD']=1
   #####
-  ftxCore = core('ftx',spotDict)
-  bbCore = core('bb',spotDict)
-  bbtCore = core('bbt', spotDict)
-  objs=[ftxCore,bbCore,bbtCore]
-  krCores=[]
-  if CRYPTO_MODE>0:
-    bnCore = core('bn', spotDict)
-    bntCore = core('bnt', spotDict)
-    kfCore = core('kf', spotDict)
-    for i in range(CR_N_KR_ACCOUNTS):
+  objs = []
+  ftxCore=processCore('ftx',spotDict,objs)
+  bbCore=processCore('bb',spotDict,objs)
+  bbtCore=processCore('bbt',spotDict,objs)
+  bnCore=processCore('bn',spotDict,objs)
+  bntCore=processCore('bnt',spotDict,objs)
+  kfCore=processCore('kf',spotDict,objs)
+  krCores = []
+  if SHARED_EXCH_DICT['kr'] >= 1:
+    for i in range(SHARED_EXCH_DICT['kr']):
       krCores.append(core('kr',spotDict,n=i+1))
-    objs.extend([bnCore, bntCore, kfCore] + krCores)
-  else:
-    bnCore = None
-    bntCore = None
-    kfCore = None
+    objs.extend(krCores)
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
@@ -744,11 +748,16 @@ class core:
 
 if __name__ == '__main__':
 
+
+
+
+
+
   ######
   # Init
   ######
   cl.printHeader('CryptoReporter')
-  if CRYPTO_MODE>0 and not APOPHIS_IS_IP_WHITELIST:
+  if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_IS_IP_WHITELIST:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
   _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, krCores, spotDict, objs = getCores()
 
@@ -777,25 +786,25 @@ if __name__ == '__main__':
   ########
   navStrList=[]
   for obj in objs:
-    navStrList.append(getNAVStr(obj.name,obj.nav))
+    if obj.name!='DUMMY': navStrList.append(getNAVStr(obj.name,obj.nav))
   if extCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext', extCoinsNAV))
   if extEURNAV!=0: navStrList.append(getNAVStr('EUR ext', extEURNAV))
   print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
   #####
   zList=[]
   for ccy in CR_QUOTE_CCY_DICT.keys():
-    if ccy=='EUR' and (CRYPTO_MODE==0 or CR_N_KR_ACCOUNTS==0): continue # Skip showing EUR when user has no KR
+    if ccy=='EUR' and SHARED_EXCH_DICT['kr']==0: continue # Skip showing EUR when user has no KR
     zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
   print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
   print()
   #####
   for ccy in CR_AG_CCY_DICT.keys():
     printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
-  if CRYPTO_MODE>0:
-    printUSDTDeltas(ftxCore, spotDict, [bbtCore, bntCore])
-    printEURDeltas(krCores, spotDict)
-  else:
-    printUSDTDeltas(ftxCore, spotDict, [bbtCore])
+  usdtCores=[]
+  if SHARED_EXCH_DICT['bbt']==1: usdtCores.append(bbtCore)
+  if SHARED_EXCH_DICT['bnt'] == 1: usdtCores.append(bntCore)
+  printUSDTDeltas(ftxCore, spotDict, usdtCores)
+  if SHARED_EXCH_DICT['kr']>=1: printEURDeltas(krCores, spotDict)
   print()
   #####
   ftxCore.ftxPrintFlowsSummary('USD')
@@ -812,10 +821,9 @@ if __name__ == '__main__':
   #####
   ftxCore.printAll()
   printAllDual(bbtCore, bbCore)
-  if CRYPTO_MODE>0:
-    printAllDual(bntCore, bnCore)
-    kfCore.printAll()
-    if CR_N_KR_ACCOUNTS>0: krPrintAll(krCores, nav)
+  printAllDual(bntCore, bnCore)
+  kfCore.printAll()
+  if SHARED_EXCH_DICT['kr']>0: krPrintAll(krCores, nav)
   #####
   if '-f' in sys.argv:
     while True:
