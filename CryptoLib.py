@@ -1443,7 +1443,7 @@ def getValidExchs(ccy):
     return myL
   else:
     myL2=[]
-    for ccy2 in ['ftx','bb','bbt']:
+    for ccy2 in ['ftx','bbt','bb']:
       if ccy2 in myL: myL2.append(ccy2)
     return myL2
 
