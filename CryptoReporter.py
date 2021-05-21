@@ -307,13 +307,13 @@ class core:
       cl.dfSetFloat(loans, 'proceeds')
       prevBorrow = borrows.iloc[-1]['cost'] if borrows.index[-1] == self.payments.index[-1] else 0
       prevLoan = loans.iloc[-1]['proceeds'] if loans.index[-1] == self.payments.index[-1] else 0
-      absBalance = abs(self.wallet.loc[ccy, 'total'])
+      absBalUSD = abs(self.wallet.loc[ccy, 'total']*self.spotDict[ccy])
       d=dict()
       d['oneDayFlows'] = (loans['proceeds'].sum() - borrows['cost'].sum()) * self.spotDict[ccy]
-      d['oneDayFlowsAnnRet'] = d['oneDayFlows'] * 365 / absBalance
+      d['oneDayFlowsAnnRet'] = d['oneDayFlows'] * 365 / absBalUSD
       d['oneDayBorrowRate'] = borrows['rate'].mean() * 24 * 365
       d['prevFlows']=(prevLoan - prevBorrow) * self.spotDict[ccy]
-      d['prevFlowsAnnRet']=d['prevFlows'] * 24 * 365 / absBalance
+      d['prevFlowsAnnRet']=d['prevFlows'] * 24 * 365 / absBalUSD
       d['prevBorrowRate'] = borrows.iloc[-1]['rate'] * 24 * 365 if borrows.index[-1] == self.payments.index[-1] else 0
       return d
     ######
@@ -347,7 +347,10 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
     #####
-    for ccy in CR_FTX_FLOWS_CCYS:
+    flowsCcy=CR_FTX_FLOWS_CCYS
+    cl.appendUnique(flowsCcy,'USD')
+    cl.appendUnique(flowsCcy,'USDT')
+    for ccy in flowsCcy:
       d=makeFlows(ccy)
       self.flowsDict[ccy]=d
       self.oneDayFlows+=d['oneDayFlows']
