@@ -149,7 +149,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 # Smart Basis
 #############
 SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.1
+SMB_BASE_RATE = 0.05
 SMB_BASE_BASIS = SMB_BASE_RATE / 365
 SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
 
@@ -193,7 +193,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
-  CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
+  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
@@ -219,7 +219,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
   #####
   CT_CONFIGS_DICT['KF_ETH_OK'] = 1
-  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = -10
+  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = -5
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1

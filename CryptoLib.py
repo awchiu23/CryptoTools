@@ -953,7 +953,12 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
-  edge+= getOneDayDecayedMean(snapFundingRate, SMB_BASE_RATE, SMB_HALF_LIFE_HOURS, nMinutes=nMinutes) / 365 * (nMinutes / 1440)
+
+  # setup for half life hours
+  halfLifeHours=SMB_HALF_LIFE_HOURS
+  if isKF: halfLifeHours/=2 # Adjustment for instability around KF's funding rates
+
+  edge+= getOneDayDecayedMean(snapFundingRate, SMB_BASE_RATE, halfLifeHours, nMinutes=nMinutes) / 365 * (nMinutes / 1440)
 
   return edge
 
