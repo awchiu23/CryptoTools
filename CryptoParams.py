@@ -129,13 +129,11 @@ APOPHIS_IS_IP_WHITELIST = True
 # Crypto Reporter
 #################
 CR_IS_SHOW_COIN_LENDING = False
-CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4, 'EUR':4})        # Quoted currencies; values are # digits for display rounding
-CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                                    # Aggregated currencies; values are external deltas (# coins)
-CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP']                                                # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
-CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'EUR': 'ZEUR'})      # Kraken currencies; values are Kraken currency names
+CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4})     # Quoted currencies; values are # digits for display rounding
+CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                        # Aggregated currencies; values are external deltas (# coins)
+CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP']                                    # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
+CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP'})         # Kraken currencies; values are Kraken currency names
 CR_EXT_DELTA_USDT = 0
-CR_EXT_DELTA_EUR = 0
-CR_EXT_DELTA_EUR_REF = 0
 
 ########
 # Shared
@@ -152,7 +150,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 # Smart Basis
 #############
 SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.15
+SMB_BASE_RATE = 0.1
 SMB_BASE_BASIS = SMB_BASE_RATE / 365
 SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
 
@@ -187,18 +185,16 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 2
-  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'LTC':0}) #ftx->kr; #bb withdraw
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'LTC':0})
   CR_FTX_FLOWS_CCYS.extend(['LTC','MATIC'])
   CR_EXT_DELTA_USDT = 0
-  CR_EXT_DELTA_EUR = 125000*0
-  CR_EXT_DELTA_EUR_REF = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
-  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
+  CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
@@ -211,6 +207,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
   ###
   CT_CONFIGS_DICT['KF_BTC_OK'] = 0
+  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 0
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
@@ -221,6 +218,9 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
+  #####
+  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
+  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = -10
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
@@ -234,3 +234,5 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   #CT_CONFIGS_DICT['BB_XRP_OK']=1
   #####
+  #CR_IS_SHOW_COIN_LENDING = True
+  SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'bb': 1, 'bn': 1, 'kf': 1, 'kr': 2})

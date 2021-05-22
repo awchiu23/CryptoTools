@@ -143,16 +143,6 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
-def printEURDeltas(krCores, spotDict):
-  spotDelta=0
-  for krCore in krCores:
-    spotDelta+=krCore.spots.loc['EUR','SpotDelta']
-  if spotDelta == 0 and CR_EXT_DELTA_EUR == 0: return
-  netDelta= spotDelta + CR_EXT_DELTA_EUR
-  z='EUR ext/impl/net delta: '.rjust(41) + (str(round(CR_EXT_DELTA_EUR / 1000)) + 'K/' + str(round(spotDelta / 1000)) + 'K/' + str(round(netDelta / 1000)) + 'K').ljust(27) + \
-    '($' + str(round(CR_EXT_DELTA_EUR * spotDict['EUR'] / 1000)) + 'K/$' + str(round(spotDelta * spotDict['EUR'] / 1000)) + 'K/$' + str(round(netDelta * spotDict['EUR'] / 1000)) + 'K)'
-  print(termcolor.colored(z,'red'))
-
 def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
   spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
   futDeltaUSD = ftxCore.futures.loc['USDT','FutDeltaUSD']
@@ -190,7 +180,6 @@ class core:
     #####
     ccyList = list(SHARED_CCY_DICT.keys())
     cl.appendUnique(ccyList, 'USDT')
-    cl.appendUnique(ccyList, 'EUR')
     zeroes = [0] * len(ccyList)
     self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')
     self.futures = pd.DataFrame({'Ccy':ccyList, 'FutDelta': zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
@@ -690,12 +679,12 @@ class core:
     #####
     openPos=self.api.private_post_openpositions()['result']
     if len(openPos)==0:
-      self.mdbUSDDf = pd.DataFrame([['USD', 0], ['EUR', 0]], columns=['Ccy', 'MDBU']).set_index('Ccy')
+      self.mdbUSD=0 # Margin Delta BTC in USD
       self.oneDayIncome = 0
       self.oneDayAnnRet = 0
     else:
       positions = pd.DataFrame(openPos).transpose().set_index('pair')
-      if not all([z in ['XXBTZUSD', 'XXBTZEUR'] for z in positions.index]):
+      if not all([z == 'XXBTZUSD' for z in positions.index]):
         print('Invalid Kraken pair detected!')
         sys.exit(1)
       cl.dfSetFloat(positions, ['vol', 'vol_closed', 'time'])
@@ -703,19 +692,13 @@ class core:
       positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
       positions['volNetUSD'] = positions['volNetBTC'] * self.spotDict['BTC']
       self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
-      if 'XXBTZEUR' in positions.index:
-        self.spots.loc['EUR','SpotDelta'] -= positions.loc['XXBTZEUR', 'volNetBTC'].sum() * float(self.api.public_get_ticker({'pair': 'XXBTZEUR'})['result']['XXBTZEUR']['c'][0])
+      self.mdbUSD=positions['volNetUSD'].sum()
       notional = positions['volNetUSD'].abs().sum()
       #####
-      # mdbUSD=Margin Delta BTC in USD
-      xxbtzeur_volNetUSD_sum = positions.loc['XXBTZEUR', 'volNetUSD'].sum() if 'XXBTZEUR' in positions.index else 0
-      self.mdbUSDDf = pd.DataFrame([['USD', positions.loc['XXBTZUSD', 'volNetUSD'].sum()], ['EUR', xxbtzeur_volNetUSD_sum]], columns=['Ccy', 'MDBU']).set_index('Ccy')
-      #####
-      self.oneDayIncome = -self.mdbUSDDf['MDBU'].sum() * 0.0006
+      self.oneDayIncome = -self.mdbUSD * 0.0006
       self.oneDayAnnRet = self.oneDayIncome * 365 / notional
     #####
-    for ccy in CR_KR_CCY_DICT.keys():
-      self.spots.loc[ccy, 'SpotDeltaUSD'] = self.spots.loc[ccy, 'SpotDelta'] * self.spotDict[ccy]
+    self.calcSpotDeltaUSD()
     tradeBal = self.api.private_post_tradebalance()['result']
     self.nav = float(tradeBal['eb'])+float(tradeBal['n'])
     #####
@@ -727,12 +710,10 @@ class core:
     self.isDone = True
 
   def krPrintBorrow(self, nav):
-    zPctNAV = '(' + str(round(-self.mdbUSDDf['MDBU'].sum() / nav * 100)) + '%)'
+    zPctNAV = '(' + str(round(-self.mdbUSD / nav * 100)) + '%)'
     z1List=[]
     z2List=[]
-    d = CR_KR_CCY_DICT.copy()
-    del d['EUR']
-    for ccy in d.keys():
+    for ccy in CR_KR_CCY_DICT.keys():
       n = self.spots.loc[ccy,'SpotDeltaUSD']
       if n>=500: # Strip out small quantities
         z1List.append(ccy)
@@ -742,10 +723,9 @@ class core:
     else:
       suffix='(spot delta '+'/'.join(z1List)+': '
       suffix+='/'.join(z2List)
-      suffix+='; XXBTZUSD/XXBTZEUR: $'
-      suffix += str(round(self.mdbUSDDf.loc['USD', 'MDBU'] / 1000)) + 'K/$'
-      suffix += str(round(self.mdbUSDDf.loc['EUR', 'MDBU'] / 1000)) + 'K)'
-    print(('KR' + str(self.n) + ' USD/EUR est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSDDf['MDBU'].sum()/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
+      suffix+='; XXBTZUSD: $'
+      suffix += str(round(self.mdbUSD / 1000)) + 'K/$'
+    print(('KR' + str(self.n) + ' USD est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSD/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
 
 ####################################################################################################
 
@@ -774,8 +754,7 @@ if __name__ == '__main__':
   for ccy in CR_AG_CCY_DICT.keys():
     extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
   extUSDTNAV = CR_EXT_DELTA_USDT * spotDict['USDT']
-  extEURNAV = CR_EXT_DELTA_EUR * (spotDict['EUR'] - CR_EXT_DELTA_EUR_REF)
-  nav+= extCoinsNAV + extUSDTNAV + extEURNAV
+  nav+= extCoinsNAV + extUSDTNAV
   oneDayIncome+=ftxCore.oneDayFlows
 
   ########
@@ -785,12 +764,10 @@ if __name__ == '__main__':
   for obj in objs:
     if obj.name!='DUMMY': navStrList.append(getNAVStr(obj.name,obj.nav))
   if extCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext', extCoinsNAV))
-  if extEURNAV!=0: navStrList.append(getNAVStr('EUR ext', extEURNAV))
   print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
   #####
   zList=[]
   for ccy in CR_QUOTE_CCY_DICT.keys():
-    if ccy=='EUR' and SHARED_EXCH_DICT['kr']==0: continue # Skip showing EUR when user has no KR
     zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
   print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
   print()
@@ -801,7 +778,6 @@ if __name__ == '__main__':
   if SHARED_EXCH_DICT['bbt']==1: usdtCores.append(bbtCore)
   if SHARED_EXCH_DICT['bnt'] == 1: usdtCores.append(bntCore)
   printUSDTDeltas(ftxCore, spotDict, usdtCores)
-  if SHARED_EXCH_DICT['kr']>=1: printEURDeltas(krCores, spotDict)
   print()
   #####
   ftxCore.ftxPrintFlowsSummary('USD')
