@@ -12,7 +12,6 @@ targetUSD=3000
 
 account=1                # which Kraken account to use
 side='SELL'              # 'BUY', 'SELL'
-pair='XXBTZUSD'          # 'XXBTZUSD','XXBTZEUR'
 hedgeExchange='ftxspot'  # 'ftxspot', 'ftxperp', 'bb', 'bbt', 'bn', 'bnt', 'kf', 'none'
 isMargin=True            # Margin trading?
 
@@ -91,10 +90,7 @@ def krRelOrder(side,kr,pair,trade_qty,lev,maxChases=0):
 
 def krExec(side,kr,pair,qty,isMargin):
   lev=5 if isMargin else 1
-  fill = krRelOrder(side, kr, pair, qty, lev, maxChases=888)
-  if pair == 'XXBTZEUR':
-    spotEUR = cl.ftxGetMid(ftx,'EUR/USD')
-    print(cl.getCurrentTime() + ': Filled at ' + str(round(fill * spotEUR)) + ' in USD; f/x=' + str(round(spotEUR, 4)))
+  krRelOrder(side, kr, pair, qty, lev, maxChases=888)
 
 def getBal(bal, ccy):
   try:
@@ -107,22 +103,13 @@ def getBal(bal, ccy):
 ######
 ftx = cl.ftxCCXTInit()
 spotBTC=cl.ftxGetMid(ftx,'BTC/USD')
-spotETH=cl.ftxGetMid(ftx,'ETH/USD')
 trade_btc = np.min([np.min([targetUSD, cl.CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotBTC, cl.CT_CONFIGS_DICT['MAX_BTC']])
-trade_eth = np.min([np.min([targetUSD, cl.CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotETH, cl.CT_CONFIGS_DICT['MAX_ETH']])
 trade_btc_notional = trade_btc * spotBTC
-trade_eth_notional = trade_eth * spotETH
-if pair in ['XXBTZUSD', 'XXBTZEUR']:
-  ccy='BTC'
-  trade_qty=trade_btc
-  trade_notional=trade_btc_notional
-elif pair in ['XETHZUSD','XETHZEUR']:
-  ccy='ETH'
-  trade_qty=trade_eth
-  trade_notional=trade_eth_notional
-else:
-  sys.exit(1)
 #####
+ccy='BTC'
+pair = 'XXBTZUSD'
+trade_qty=trade_btc
+trade_notional=trade_btc_notional
 if side == 'BUY':
   oppSide = 'SELL'
 elif side == 'SELL':
@@ -170,8 +157,5 @@ for n in range(nPrograms):
     sys.exit(1)
   time.sleep(2)
 
-bal = kr.private_post_balance()['result']
-spotDeltaUSD = getBal(bal, 'ZUSD')
-spotDeltaEUR = getBal(bal, 'ZEUR')
-print(cl.getCurrentTime()+': Cash balances post trade: $'+str(round(spotDeltaUSD))+' / €'+str(round(spotDeltaEUR)))
+print(cl.getCurrentTime()+': Cash balances post trade: $'+str(round(getBal(kr.private_post_balance()['result'], 'ZUSD'))))
 cl.speak('KrakenTrader has completed')

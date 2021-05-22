@@ -231,8 +231,3 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
-  #####
-  #CT_CONFIGS_DICT['BB_XRP_OK']=1
-  #####
-  #CR_IS_SHOW_COIN_LENDING = True
-  SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'bb': 1, 'bn': 1, 'kf': 1, 'kr': 2})
