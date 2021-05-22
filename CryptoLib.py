@@ -889,7 +889,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,kf,ccy):
+def getFundingDict(ftx,bb,bn,kf,ccy,isRateLimit=False):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -920,6 +920,11 @@ def getFundingDict(ftx,bb,bn,kf,ccy):
     kfTickers = kfGetTickers(kf)
     d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
     d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
+  if isRateLimit:
+    if ccy in ['BTC', 'ETH']:
+      time.sleep(1)
+    else:
+      time.sleep(2)
   return d
 
 #############################################################################################
@@ -1116,17 +1121,13 @@ def caRun(ccy, color):
   kf=kfApophisInit() if 'kf' in validExchs else None
   #####
   while True:
-    fundingDict = getFundingDict(ftx,bb,bn,kf,ccy)
+    fundingDict = getFundingDict(ftx,bb,bn,kf,ccy,isRateLimit=True)
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,kf,ccy, fundingDict, isSkipAdj=True)
     print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
       process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf'], color)
     print()
-    if ccy in ['BTC','ETH']:
-      time.sleep(1)
-    else:
-      time.sleep(2)
 
 #############################################################################################
 
@@ -1223,7 +1224,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, kf, ccy)
+      fundingDict=getFundingDict(ftx, bb, bn, kf, ccy, isRateLimit=True)
       smartBasisDict = getSmartBasisDict(ftx, bb, bn, kf, ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
       smartBasisDict['spotBasis'] = 0
@@ -1399,6 +1400,12 @@ def cache(mode,key,value=None):
       return cache.cacheDict[key]
     except:
       return None
+
+# Delay in CryptoTools based on currency choices
+def ccyDelay(ccy, base=0):
+  if not ccy in ['BTC','ETH']:
+    base+=1
+  time.sleep(base)
 
 # Cast column of dataframe to float
 def dfSetFloat(df,colName):
