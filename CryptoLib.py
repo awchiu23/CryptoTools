@@ -1037,18 +1037,18 @@ def getSmartBasisDict(ftx, bb, bn, kf, ccy, fundingDict, isSkipAdj=False):
   if 'ftx' in validExchs:
     ftxPrices = getPrices('ftx', ftx, ccy)
     objs.append(ftxPrices)
-  if 'bb' in validExchs:
-    bbPrices = getPrices('bb', bb, ccy)
-    objs.append(bbPrices)
   if 'bbt' in validExchs:
     bbtPrices = getPrices('bbt', bb, ccy)
     objs.append(bbtPrices)
-  if 'bn' in validExchs:
-    bnPrices = getPrices('bn', bn, ccy)
-    objs.append(bnPrices)
   if 'bnt' in validExchs:
     bntPrices = getPrices('bnt', bn, ccy)
     objs.append(bntPrices)
+  if 'bb' in validExchs:
+    bbPrices = getPrices('bb', bb, ccy)
+    objs.append(bbPrices)
+  if 'bn' in validExchs:
+    bnPrices = getPrices('bn', bn, ccy)
+    objs.append(bnPrices)
   if 'kf' in validExchs:
     kfPrices = getPrices('kf', kf, ccy)
     objs.append(kfPrices)
@@ -1123,7 +1123,10 @@ def caRun(ccy, color):
     for exch in validExchs:
       process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf'], color)
     print()
-    if not ccy in ['BTC','ETH']: time.sleep(1)
+    if ccy in ['BTC','ETH']:
+      time.sleep(1)
+    else:
+      time.sleep(2)
 
 #############################################################################################
 

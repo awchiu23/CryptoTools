@@ -15,8 +15,6 @@ usdLendingRatio=.5        # Percentage of USD to lend out
 coinLendingRatio=.5       # Percentage of coins to lend out
 
 coinsList=CR_FTX_FLOWS_CCYS.copy()
-coinsList.remove('USD')
-coinsList.remove('USDT')
 
 ###########
 # Functions
