@@ -139,7 +139,6 @@ CR_EXT_DELTA_USDT = 0
 # Shared
 ########
 SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'bb':1,'bn':1,'kf':1,'kr':0})
-
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
