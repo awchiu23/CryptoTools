@@ -96,8 +96,8 @@ CT_CONFIGS_DICT['KF_XRP_ADJ_BPS']=0
 
 CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = True   # Stop buying futures when position is long?
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
-CT_CONFIGS_DICT['STREAK'] = 5                        # Number of observations through target before triggering
-CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 10             # Max number of allowed bps for range of observations
+CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
+CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps for range of observations
 CT_CONFIGS_DICT['NPROGRAMS'] = 50                    # Number of programs (each program being a pair of trades)
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
@@ -184,7 +184,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 2
-  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 150900, 'LTC':0}) #bb
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 77.7, 'XRP': 0, 'LTC':0}) #eth:bb
   CR_FTX_FLOWS_CCYS.extend(['LTC','MATIC'])
   CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
@@ -206,7 +206,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
   ###
   CT_CONFIGS_DICT['KF_BTC_OK'] = 1
-  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = -5
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
@@ -218,6 +218,8 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
   #####
+  #CT_CONFIGS_DICT['BB_ETH_OK'] = 0
+  #CT_CONFIGS_DICT['BB_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['KF_ETH_OK'] = 0
   CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
   #####

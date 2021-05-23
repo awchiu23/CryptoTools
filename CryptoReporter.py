@@ -729,7 +729,7 @@ class core:
       suffix='(spot delta '+'/'.join(z1List)+': '
       suffix+='/'.join(z2List)
       suffix+='; XXBTZUSD: $'
-      suffix += str(round(self.mdbUSD / 1000)) + 'K/$'
+      suffix += str(round(self.mdbUSD / 1000)) + 'K)'
     print(('KR' + str(self.n) + ' USD est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSD/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
 
 ####################################################################################################
