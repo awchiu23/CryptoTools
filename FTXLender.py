@@ -12,7 +12,7 @@ isManageCoins=True        # Also manage coins in addition to USD?
 
 minRate=0.05              # Minimum rate for all loans
 usdLendingRatio=.5        # Percentage of USD to lend out
-coinLendingRatio=.5       # Percentage of coins to lend out
+coinLendingRatio=.8       # Percentage of coins to lend out
 
 coinsList=CR_FTX_FLOWS_CCYS.copy()
 
