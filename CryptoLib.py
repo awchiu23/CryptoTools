@@ -188,7 +188,7 @@ def roundPrice(exch, price, ccy):
       return round(price * 2000) / 2000
     elif ccy=='SOL':
       return round(price * 400) / 400
-    else:
+    else: # MATIC and others
       return round(price,6)
   elif exch=='bb':
     if ccy=='BTC':
@@ -230,6 +230,8 @@ def roundPrice(exch, price, ccy):
       return round(price,4)
     elif ccy in ['BNB','LINK']:
       return round(price,3)
+    elif ccy == 'MATIC':
+      return round(price,5)
     else:
       sys.exit(1)
   elif exch =='kf':
@@ -256,6 +258,8 @@ def roundQty(exch, qty, ccy):
       return round(qty, 2)
     elif ccy in ['BNB','LINK']:
       return round(qty,1)
+    elif ccy == 'MATIC':
+      return round(qty,-1)
     else:
       return round(qty, 6)
   elif exch=='bnt':
@@ -263,6 +267,8 @@ def roundQty(exch, qty, ccy):
       return round(qty,1)
     elif ccy==['BNB','LINK']:
       return round(qty,2)
+    elif ccy=='MATIC':
+      return round(qty)
     else:
       return round(qty,3)
   else:
