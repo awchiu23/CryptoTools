@@ -184,7 +184,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 2
-  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 77.7, 'XRP': 0, 'LTC':0}) #eth:bb
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 250.0006+311.2299, 'XRP': 0, 'LTC':0}) # ETH: CB 250.0006; Ledger 311.2299
   CR_FTX_FLOWS_CCYS.extend(['LTC','MATIC'])
   CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
@@ -200,7 +200,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 5
   CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
@@ -218,10 +218,8 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
   #####
-  #CT_CONFIGS_DICT['BB_ETH_OK'] = 0
-  #CT_CONFIGS_DICT['BB_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['KF_ETH_OK'] = 0
-  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
+  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 5
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
@@ -233,5 +231,5 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
   #####
-  #CT_CONFIGS_DICT['BB_XRP_OK'] = 0
-  #CT_CONFIGS_DICT['BB_XRP_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
+  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0

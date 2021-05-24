@@ -939,31 +939,25 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
   # gain on projected basis mtm after 1 day
   edge=basis-getOneDayDecayedValues(basis, SMB_BASE_BASIS, SMB_HALF_LIFE_HOURS)[-1]
 
-  # gain on coupon from elapsed time
-  if isKF: # Special mod for kf
-    pctElapsed=1
-  else:
-    pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
-  edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
-  hoursAccountedFor=hoursInterval*pctElapsed
-
   # gain on coupon from previous reset
+  hoursAccountedFor=0
   if not prevFundingRate is None:
-    if isKF: # Special mod for kf
-      pctCaptured=1-getPctElapsed(hoursInterval)
+    if isKF:
+      pctToCapture = 1 - getPctElapsed(hoursInterval)
     else:
-      pctCaptured=1
-    edge+=prevFundingRate/365/(24/hoursInterval)*pctCaptured
-    hoursAccountedFor+=hoursInterval*pctCaptured
+      pctToCapture = 1
+    edge += prevFundingRate / 365 / (24 / hoursInterval) * pctToCapture
+    hoursAccountedFor += hoursInterval * pctToCapture
+
+  # gain on coupon from elapsed time; ignore for kf as est unreliable
+  if not isKF:
+    pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
+    edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
+    hoursAccountedFor+=hoursInterval*pctElapsed
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
-
-  # setup for half life hours
-  halfLifeHours=SMB_HALF_LIFE_HOURS
-  if isKF: halfLifeHours/=2 # Adjustment for instability around KF's funding rates
-
-  edge+= getOneDayDecayedMean(snapFundingRate, SMB_BASE_RATE, halfLifeHours, nMinutes=nMinutes) / 365 * (nMinutes / 1440)
+  edge+= getOneDayDecayedMean(snapFundingRate, SMB_BASE_RATE, SMB_HALF_LIFE_HOURS, nMinutes=nMinutes) / 365 * (nMinutes / 1440)
 
   return edge
 
@@ -1020,19 +1014,19 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
 @retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
   keySnap='kfEMASnap'+fundingDict['Ccy']
-  keyEst2='kfEMAEst2'+fundingDict['Ccy']
+  #keyEst2='kfEMAEst2'+fundingDict['Ccy']
   if cache('r',keySnap) is None:
     cache('w',keySnap,fundingDict['kfEstFunding2'])
-  if cache('r',keyEst2) is None:
-    cache('w',keyEst2,fundingDict['kfEstFunding2'])
+  #if cache('r',keyEst2) is None:
+  #  cache('w',keyEst2,fundingDict['kfEstFunding2'])
   mid=kfGetMid(kfTickers,fundingDict['Ccy'])
   premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'],isIndex=True), 'last'] - 1, -0.008, 0.008)
   snapFundingRate = premIndexClipped * 365 * 3
   smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r', keySnap), CT_CONFIGS_DICT['EMA_K'])
   cache('w', keySnap, smoothedSnapFundingRate)
-  smoothedEst2Rate = getEMANow(fundingDict['kfEstFunding2'], cache('r', keyEst2), CT_CONFIGS_DICT['EMA_K'])
-  cache('w', keyEst2, smoothedEst2Rate)
-  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, smoothedEst2Rate, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
+  #smoothedEst2Rate = getEMANow(fundingDict['kfEstFunding2'], cache('r', keyEst2), CT_CONFIGS_DICT['EMA_K'])
+  #cache('w', keyEst2, smoothedEst2Rate)
+  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, None, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
 #############################################################################################
 

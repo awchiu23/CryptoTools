@@ -768,7 +768,7 @@ if __name__ == '__main__':
   navStrList=[]
   for obj in objs:
     if obj.name!='DUMMY': navStrList.append(getNAVStr(obj.name,obj.nav))
-  if extCoinsNAV!=0: navStrList.append(getNAVStr('Coins ext', extCoinsNAV))
+  if extCoinsNAV!=0: navStrList.append(getNAVStr('Ext Coins', extCoinsNAV))
   print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
   #####
   zList=[]
