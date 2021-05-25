@@ -182,6 +182,8 @@ def roundPrice(exch, price, ccy):
       return round(price,1)
     elif ccy=='XRP':
       return round(price*40000)/40000
+    elif ccy=='FTT':
+      return round(price,3)
     elif ccy=='AAVE':
       return round(price,2)
     elif ccy=='LINK':
@@ -256,7 +258,7 @@ def roundQty(exch, qty, ccy):
       return round(qty)
     elif ccy in ['AAVE','LTC']:
       return round(qty, 2)
-    elif ccy in ['BNB','LINK']:
+    elif ccy in ['FTT','BNB','LINK']:
       return round(qty,1)
     elif ccy == 'MATIC':
       return round(qty,-1)
