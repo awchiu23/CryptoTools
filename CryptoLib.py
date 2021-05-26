@@ -647,6 +647,31 @@ def bnGetFutPos(bn,ccy):
 def bnGetEstFunding(bn, ccy):
   return float(bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]['lastFundingRate'])*3*365
 
+def bnGetIsolatedMarginDf(bn):
+  df=pd.DataFrame()
+  for i in bn.sapi_get_margin_isolated_account()['assets']:
+    symbol=i['baseAsset']['asset']
+    qty=float(i['baseAsset']['netAsset'])
+    symbolColl=i['quoteAsset']['asset']
+    qtyColl = float(i['quoteAsset']['totalAsset'])
+    if symbolColl== 'BTC':
+      qtyBTC = qtyColl
+      qtyUSDT = 0
+    elif symbolColl== 'USDT':
+      qtyBTC = 0
+      qtyUSDT = qtyColl
+    else:
+      sys.exit(1)
+    liq = float(i['liquidatePrice']) / float(i['indexPrice'])
+    if qty!=0:
+      df=df.append({'symbol':symbol,
+                    'qty':qty,
+                    'collateralBTC':qtyBTC,
+                    'collateralUSDT':qtyUSDT,
+                    'liq':liq}, ignore_index=True)
+  df=df[['symbol','qty','collateralBTC','collateralUSDT','liq']].set_index('symbol')
+  return df
+
 def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):

@@ -129,6 +129,7 @@ APOPHIS_IS_IP_WHITELIST = True
 # Crypto Reporter
 #################
 CR_IS_SHOW_COIN_LENDING = False
+CR_IS_SHOW_BN_ISOLATED_MARGIN = False
 CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4})     # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                        # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP']                                    # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
@@ -183,13 +184,14 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 4
-  CR_AG_CCY_DICT = dict({'BTC': 29.9266, 'ETH': 0, 'XRP': 0, 'FTT':-3500, 'LTC':0, 'MATIC':-200000}) # BTC: binance margins; FTX/MATIC: binance borrows
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'FTT':0, 'LTC':0, 'MATIC':0}) # BTC: isoM collaterals; FTX/MATIC: binance borrows
   CR_FTX_FLOWS_CCYS.extend(['LTC','MATIC'])
   CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
+  CR_IS_SHOW_BN_ISOLATED_MARGIN = True
   # CR_IS_SHOW_COIN_LENDING = True
   #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
@@ -202,7 +204,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
   ###
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
@@ -214,7 +216,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
   #####
-  CT_CONFIGS_DICT['KF_ETH_OK'] = 0
+  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
   CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
@@ -226,7 +228,4 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
-  #####
-  CT_CONFIGS_DICT['KF_XRP_OK'] = 0
-  CT_CONFIGS_DICT['KF_XRP_ADJ_BPS'] = 0
 

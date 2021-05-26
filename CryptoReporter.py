@@ -148,8 +148,8 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
-def printUSDTDeltas(ftxCore,spotDict,usdtCoreList):
-  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
+def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
+  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + bnCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
   futDeltaUSD = ftxCore.futures.loc['USDT','FutDeltaUSD']
   implDeltaUSD=0
   for core in usdtCoreList:
@@ -247,7 +247,11 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB'):
+    if CR_IS_SHOW_BN_ISOLATED_MARGIN and self.exch == 'bn' and ccy == 'BTC':
+      collUSD = self.imDf['collateralBTC'].sum() * self.spotDict['BTC']
+      spotDeltaUSD -= collUSD
+      suffix = '(spot/fut/coll/net delta: $' + str(round(spotDeltaUSD / 1000)) + 'K/$' + str(round(futDeltaUSD / 1000)) + 'K/$' + str(round(collUSD / 1000)) + 'K/$' + str(round(netDeltaUSD / 1000)) + 'K)'
+    elif self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB'):
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
@@ -530,6 +534,14 @@ class core:
     bal = bal.set_index('asset').loc[self.validCcys]
     for ccy in self.validCcys:
       self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'balance']+bal.loc[ccy,'crossUnPnl']
+    #####
+    if CR_IS_SHOW_BN_ISOLATED_MARGIN:
+      self.imDf = cl.bnGetIsolatedMarginDf(self.api)
+      for ccy in self.imDf.index:
+        self.spots.loc[ccy, 'SpotDelta'] += self.imDf.loc[ccy, 'qty']
+      self.spots.loc['USDT', 'SpotDelta'] += self.imDf['collateralUSDT'].sum()
+      self.spots.loc['BTC', 'SpotDelta'] += self.imDf['collateralBTC'].sum()
+    #####
     self.calcSpotDeltaUSD()
     #####
     futs = pd.DataFrame(self.api.dapiPrivate_get_positionrisk()).set_index('symbol')
@@ -563,6 +575,15 @@ class core:
     #####
     self.makeIncomesStr()
     self.makeLiqStr()
+    #####
+    if CR_IS_SHOW_BN_ISOLATED_MARGIN:
+      self.liqStr=self.liqStr.replace('(of spot)','')
+      zList=[]
+      for ccy in self.imDf.index:
+        liq = self.imDf.loc[ccy,'liq']
+        zList.append('never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%')
+      self.liqStr+=termcolor.colored('/ ('+'/'.join(self.imDf.index)+'): ' + '/'.join(zList) + ' (of spot)', 'red')
+    #####
     self.isDone = True
 
   #####
@@ -782,7 +803,7 @@ if __name__ == '__main__':
   usdtCores=[]
   if SHARED_EXCH_DICT['bbt']==1: usdtCores.append(bbtCore)
   if SHARED_EXCH_DICT['bnt'] == 1: usdtCores.append(bntCore)
-  printUSDTDeltas(ftxCore, spotDict, usdtCores)
+  printUSDTDeltas(ftxCore, bnCore, spotDict, usdtCores)
   print()
   #####
   ftxCore.ftxPrintFlowsSummary('USD')
