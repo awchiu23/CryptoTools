@@ -582,7 +582,7 @@ class core:
       for ccy in self.imDf.index:
         liq = self.imDf.loc[ccy,'liq']
         zList.append('never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%')
-      self.liqStr+=termcolor.colored('/ ('+'/'.join(self.imDf.index)+'): ' + '/'.join(zList) + ' (of spot)', 'red')
+      self.liqStr+=termcolor.colored('; ('+'/'.join(self.imDf.index)+'): ' + '/'.join(zList) + ' (of spot)', 'red')
     #####
     self.isDone = True
 
