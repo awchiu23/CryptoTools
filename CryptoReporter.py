@@ -149,22 +149,32 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
   print(termcolor.colored(z,'red'))
 
 def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
-  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + bnCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
+  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
   futDeltaUSD = ftxCore.futures.loc['USDT','FutDeltaUSD']
   implDeltaUSD=0
   for core in usdtCoreList:
     spotDeltaUSD+=core.spots.loc['USDT','SpotDeltaUSD']
     implDeltaUSD-=core.futures['FutDeltaUSD'].sum()
-  netDeltaUSD=spotDeltaUSD+futDeltaUSD+implDeltaUSD
+  imDeltaUSD = bnCore.spots.loc['USDT', 'SpotDeltaUSD']
+  netDeltaUSD=spotDeltaUSD+futDeltaUSD+imDeltaUSD+implDeltaUSD
   #####
   spotDelta=spotDeltaUSD/spotDict['USDT']
   futDelta=futDeltaUSD/spotDict['USDT']
   implDelta=implDeltaUSD/spotDict['USDT']
+  imDelta=imDeltaUSD/spotDict['USDT']
   netDelta=netDeltaUSD/spotDict['USDT']
   #####
-  z1=str(round(spotDelta/1000))+'K/'+str(round(futDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'+str(round(netDelta/1000))+'K'
-  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'+str(round(futDeltaUSD/1000))+'K/$'+str(round(implDeltaUSD/1000))+'K/$'+ str(round(netDeltaUSD/1000))+'K)'
-  print(termcolor.colored('USDT spot/fut/impl/net delta: '.rjust(41)+z1.ljust(27)+z2, 'red'))
+  zLabel = 'spot/fut/impl/'
+  z1=str(round(spotDelta/1000))+'K/'+str(round(futDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'
+  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'+str(round(futDeltaUSD/1000))+'K/$'+str(round(implDeltaUSD/1000))+'K/$'
+  if imDelta!=0:
+    zLabel += 'im/'
+    z1+= str(round(imDelta / 1000)) + 'K/'
+    z2+= str(round(imDeltaUSD / 1000)) + 'K/$'
+  zLabel += 'net delta: '
+  z1 += str(round(netDelta / 1000)) + 'K'
+  z2 += str(round(netDeltaUSD/1000))+'K)'
+  print(termcolor.colored(('USDT '+zLabel).rjust(41)+z1.ljust(27)+z2, 'red'))
 
 ####################################################################################################
 
