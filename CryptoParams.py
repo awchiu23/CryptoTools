@@ -252,7 +252,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
   ###
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
