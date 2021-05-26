@@ -248,9 +248,9 @@ class core:
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
     if CR_IS_SHOW_BN_ISOLATED_MARGIN and self.exch == 'bn' and ccy == 'BTC':
-      collUSD = self.imDf['collateralBTC'].sum() * self.spotDict['BTC']
-      spotDeltaUSD -= collUSD
-      suffix = '(spot/fut/coll/net delta: $' + str(round(spotDeltaUSD / 1000)) + 'K/$' + str(round(futDeltaUSD / 1000)) + 'K/$' + str(round(collUSD / 1000)) + 'K/$' + str(round(netDeltaUSD / 1000)) + 'K)'
+      imUSD = self.imDf['collateralBTC'].sum() * self.spotDict['BTC']
+      spotDeltaUSD -= imUSD
+      suffix = '(spot/fut/im/net delta: $' + str(round(spotDeltaUSD / 1000)) + 'K/$' + str(round(futDeltaUSD / 1000)) + 'K/$' + str(round(imUSD / 1000)) + 'K/$' + str(round(netDeltaUSD / 1000)) + 'K)'
     elif self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB'):
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
