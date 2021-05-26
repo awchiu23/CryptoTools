@@ -560,6 +560,7 @@ def bnGetFutPos(bn,ccy):
 def bnGetEstFunding(bn, ccy):
   return float(bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]['lastFundingRate'])*3*365
 
+@retry(wait_fixed=1000)
 def bnGetIsolatedMarginDf(bn):
   df=pd.DataFrame()
   for i in bn.sapi_get_margin_isolated_account()['assets']:
