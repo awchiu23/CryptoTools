@@ -175,104 +175,17 @@ def getLimitPrice(exch,price,ccy,side):
   return roundPrice(exch, price * mult, ccy)
 
 def roundPrice(exch, price, ccy):
-  if exch=='ftx':
-    if ccy=='BTC':
-      return round(price)
-    elif ccy=='ETH':
-      return round(price,1)
-    elif ccy=='XRP':
-      return round(price*40000)/40000
-    elif ccy=='FTT':
-      return round(price,3)
-    elif ccy=='AAVE':
-      return round(price,2)
-    elif ccy=='LINK':
-      return round(price * 2000) / 2000
-    elif ccy=='SOL':
-      return round(price * 400) / 400
-    else: # MATIC and others
-      return round(price,6)
-  elif exch=='bb':
-    if ccy=='BTC':
-      return round(price*2)/2
-    elif ccy=='ETH':
-      return round(price*20)/20
-    elif ccy=='XRP':
-      return round(price,4)
-    else:
-      sys.exit(1)
-  elif exch=='bbt':
-    if ccy=='BTC':
-      return round(price*2)/2
-    elif ccy in ['ETH','AAVE','BCH']:
-      return round(price*20)/20
-    elif ccy=='XRP':
-      return round(price,4)
-    elif ccy=='LINK':
-      return round(price,3)
-    elif ccy=='LTC':
-      return round(price,2)
-    else:
-      sys.exit(1)
-  elif exch == 'bn':
-    if ccy=='BTC':
-      return round(price,1)
-    elif ccy=='ETH':
-      return round(price,2)
-    elif ccy=='XRP':
-      return round(price,4)
-    elif ccy=='BNB':
-      return round(price,3)
-    else:
-      sys.exit(1)
-  elif exch == 'bnt':
-    if ccy in ['BTC','ETH','AAVE','BCH','LTC']:
-      return round(price,2)
-    elif ccy=='XRP':
-      return round(price,4)
-    elif ccy in ['BNB','LINK']:
-      return round(price,3)
-    elif ccy == 'MATIC':
-      return round(price,5)
-    else:
-      sys.exit(1)
-  elif exch =='kf':
-    if ccy == 'BTC':
-      return round(price * 2) / 2
-    elif ccy=='ETH':
-      return round(price * 20) / 20
-    elif ccy=='XRP':
-      return round(price, 4)
-    else:
-      sys.exit(1)
+  method, param = CT_CONFIGS_DICT['ROUND_PRICE_'+exch.upper()].get(ccy, [0, 6])
+  if method == 0:
+    return round(price, param)
   else:
-    sys.exit(1)
+    return round(price * param) / param
 
 def roundQty(exch, qty, ccy):
   if exch=='ftx':
-    if ccy == 'BTC':
-      return round(qty, 4)
-    elif ccy in ['ETH','BCH']:
-      return round(qty, 3)
-    elif ccy == 'XRP':
-      return round(qty)
-    elif ccy in ['AAVE','LTC']:
-      return round(qty, 2)
-    elif ccy in ['FTT','BNB','LINK']:
-      return round(qty,1)
-    elif ccy == 'MATIC':
-      return round(qty,-1)
-    else:
-      return round(qty, 6)
+    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_FTX'].get(ccy, 6))
   elif exch=='bnt':
-    if ccy in ['AAVE','XRP']:
-      return round(qty,1)
-    elif ccy==['BNB','LINK']:
-      return round(qty,2)
-    elif ccy=='MATIC':
-      return round(qty)
-    else:
-      return round(qty,3)
+    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_BNT'].get(ccy, 3))
   else:
     sys.exit(1)
 

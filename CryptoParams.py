@@ -120,6 +120,54 @@ CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
 #############################################################################################
 
+CT_CONFIGS_DICT['ROUND_PRICE_FTX']=dict({'BTC':[0,None],
+                                         'ETH':[0,1],
+                                         'XRP':[1,40000],
+                                         'FTT':[0,3],
+                                         'AAVE':[0,2],
+                                         'DOGE':[1,2e6],
+                                         'LINK':[1,2000],
+                                         'SOL':[1,400]})
+CT_CONFIGS_DICT['ROUND_PRICE_BB']=dict({'BTC':[1,2],
+                                        'ETH':[1,20],
+                                        'XRP':[0,4]})
+CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],
+                                         'ETH':[1,20],
+                                         'XRP':[0,4],
+                                         'LTC':[0,2],
+                                         'AAVE':[1,20],
+                                         'BCH':[1,20],
+                                         'LINK':[0,3]})
+CT_CONFIGS_DICT['ROUND_PRICE_BN']=dict({'BTC':[0,1],
+                                        'ETH':[0,2],
+                                        'XRP':[0,4],
+                                        'BNB':[0,3]})
+CT_CONFIGS_DICT['ROUND_PRICE_BNT']=dict({'BTC':[0,2],
+                                         'ETH':[0,2],
+                                         'XRP':[0,4],
+                                         'AAVE':[0,2],
+                                         'BCH':[0,2],
+                                         'LTC':[0,2],
+                                         'BNB':[0,3],
+                                         'LINK':[0,3],
+                                         'DOGE':[0,5],
+                                         'MATIC':[0,5]})
+CT_CONFIGS_DICT['ROUND_PRICE_KF']=dict({'BTC':[1,2],
+                                        'ETH':[1,20],
+                                        'XRP':[0,4]})
+CT_CONFIGS_DICT['ROUND_QTY_FTX']=dict({'BTC':4, 'ETH':3, 'XRP':None,
+                                       'MATIC':-1,
+                                       'DOGE':None,
+                                       'FTT':1, 'BNB':1, 'LINK':1,
+                                       'AAVE':2, 'LTC':2,
+                                       'BCH':3})
+CT_CONFIGS_DICT['ROUND_QTY_BNT']=dict({'XRP':1,
+                                       'DOGE':None,'MATIC':None,
+                                       'AAVE':1,
+                                       'BNB':2,'LINK':2})
+
+#############################################################################################
+
 ##########################
 # Apophis (Kraken Futures)
 ##########################
