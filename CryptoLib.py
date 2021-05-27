@@ -584,7 +584,7 @@ def bnGetIsolatedMarginDf(bn,spotDict):
         sys.exit(1)
       liq = float(i['liquidatePrice']) / float(i['indexPrice'])
       #############
-      df2 = pd.DataFrame(bn.sapi_get_margin_interesthistory({'isolatedSymbol': symbol, 'startTime': getYest() * 1000})['rows'])
+      df2 = pd.DataFrame(bn.sapi_get_margin_interesthistory({'isolatedSymbol': symbol, 'size': 100, 'startTime': getYest() * 1000})['rows'])
       dfSetFloat(df2, ['interestAccuredTime','principal','interest','interestRate'])
       df2['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df2['interestAccuredTime']]
       df2 = df2.set_index('date').sort_index()
