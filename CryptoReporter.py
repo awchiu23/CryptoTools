@@ -39,6 +39,9 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   prevIncome = df[df.index > df.index[-1] - pd.DateOffset(minutes=10)]['incomeUSD'].sum()
   return oneDayIncome, prevIncome
 
+def fmtLiq(liq):
+  return 'never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%'
+
 def getCores():
   def processCore(exch,spotDict,objs):
     if SHARED_EXCH_DICT[exch]==1:
@@ -97,20 +100,11 @@ def krPrintAll(krCores,nav):
   for krCore in krCores:
     zList.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
     prefixList.append('KR' + str(krCore.n))
-  print(termcolor.colored(('/'.join(prefixList) + ' 24h rollover fees: ').rjust(41) + ' / '.join(zList), 'blue'))
+  print(termcolor.colored(('/'.join(prefixList) + ' 24h rollover fees: ').rjust(37) + ' / '.join(zList), 'blue'))
   #####
   # Borrows
   for krCore in krCores:
     krCore.krPrintBorrow(nav)
-  #####
-  # Liq
-  zList = []
-  prefixList = []
-  for krCore in krCores:
-    zList.append('never' if (krCore.liqBTC <= 0 or krCore.liqBTC > 10) else str(round(krCore.liqBTC * 100)) + '%')
-    prefixList.append('KR' + str(krCore.n))
-  print(termcolor.colored(('/'.join(prefixList) + ' liquidation (BTC): ').rjust(41) + '/'.join(zList) + ' (of spot)', 'red'))
-  print()
 
 def printAllDual(core1, core2):
   if core1.exch == 'dummy' and core2.exch == 'dummy': return
@@ -120,10 +114,10 @@ def printAllDual(core1, core2):
     core1.printAll()
   else:
     n=120
-    print(core1.incomesStr.ljust(n + 9) + core2.incomesStr)
+    print(core1.incomesStr.ljust(n) + core2.incomesStr)
     list1 = list(core1.fundingStrDict.values())
     list2 = list(core2.fundingStrDict.values())
-    list1.append(core1.liqStr.ljust(n+9))
+    list1.append(core1.liqStr.ljust(n))
     list2.append(core2.liqStr)
     for i in range(min(len(list1),len(list2))):
       print(list1[i].ljust(n) + list2[i])
@@ -144,7 +138,7 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
     nDigits=None
   else:
     nDigits=1
-  z=(ccy+' spot/fut/net delta: ').rjust(41)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
+  z=(ccy+' spot/fut/net delta: ').rjust(37)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(termcolor.colored(z,'red'))
 
@@ -174,7 +168,7 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   zLabel += 'net delta: '
   z1 += str(round(netDelta / 1000)) + 'K'
   z2 += str(round(netDeltaUSD/1000))+'K)'
-  print(termcolor.colored(('USDT '+zLabel).rjust(41)+z1.ljust(27)+z2, 'red'))
+  print(termcolor.colored(('USDT '+zLabel).rjust(37)+z1.ljust(27)+z2, 'red'))
 
 ####################################################################################################
 
@@ -237,15 +231,19 @@ class core:
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
     zPrev  = '4h' if self.exch == 'kf' else 'prev'
     z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-    self.incomesStr = termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(41) + z1 + ' / ' + z2, 'blue')
+    self.incomesStr = termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
+    if self.exch in ['bb','bbt','bn','bnt','kf']:
+      liqStr = termcolor.colored(fmtLiq(self.liqDict[ccy]).rjust(5),'red')
+    else:
+      liqStr = ''.rjust(5)
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     prefix+='prev'
     prefix+='/est'
     if self.exch in ['bb','bbt','kf']:
       prefix += '1/est2'
-    prefix += ' funding rate:'
+    prefix += ':'
     #####
     body = str(round(oneDayFunding * 100)) + '%/'
     body += str(round(prevFunding * 100)) + '%/'
@@ -257,7 +255,7 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if CR_IS_SHOW_BN_ISOLATED_MARGIN and self.exch == 'bn' and ccy == 'BTC':
+    if CR_IS_ENABLE_BN_ISOLATED_MARGIN and self.exch == 'bn' and ccy == 'BTC':
       imUSD = self.imDf['collateralBTC'].sum() * self.spotDict['BTC']
       spotDeltaUSD -= imUSD
       suffix = '(spot/fut/im/net delta: $' + str(round(spotDeltaUSD / 1000)) + 'K/$' + str(round(futDeltaUSD / 1000)) + 'K/$' + str(round(imUSD / 1000)) + 'K/$' + str(round(netDeltaUSD / 1000)) + 'K)'
@@ -265,20 +263,14 @@ class core:
       suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
-    self.fundingStrDict[ccy] = prefix.rjust(40) + ' ' + body.ljust(27) + suffix
+    self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
   def makeLiqStr(self):
-    if self.exch in ['ftx','bbt','bnt']:
-      z = 'never' if (self.liq <= 0 or self.liq > 10) else str(round(self.liq * 100)) + '% (of spot)'
-      zRet=termcolor.colored((self.exch.upper()+' liquidation (parallel shock): ').rjust(41) + z, 'red')
-      if self.exch=='ftx':
-        z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
-        zRet+='\n'+termcolor.colored('FTX margin fraction/free collateral: '.rjust(41) + z, 'red')
-    else:
-      zList=[]
-      for ccy in self.validCcys:
-        zList.append('never' if (self.liqDict[ccy] <= 0 or self.liqDict[ccy] >= 10) else str(round(self.liqDict[ccy] * 100)) + '%')
-      zRet = termcolor.colored((self.exch.upper() + ' liquidation ('+'/'.join(self.validCcys)+'): ').rjust(41) + '/'.join(zList) + ' (of spot)', 'red')
+    z = fmtLiq(self.liq)
+    zRet=termcolor.colored((self.exch.upper()+' liq (parallel): ').rjust(37) + z, 'red')
+    if self.exch=='ftx':
+      z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
+      zRet+='\n'+termcolor.colored('FTX margin fraction/free collateral: '.rjust(37) + z, 'red')
     self.liqStr = zRet
 
   def printAll(self):
@@ -287,7 +279,7 @@ class core:
       print(self.incomesStr)
       for ccy in self.validCcys:
         print(self.fundingStrDict[ccy])
-      print(self.liqStr)
+      if self.liqStr!='': print(self.liqStr)
       print()
     except:
       pass
@@ -355,7 +347,7 @@ class core:
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
     #####
-    flowsCcy=CR_FTX_FLOWS_CCYS
+    flowsCcy=CR_FTX_FLOWS_CCYS.copy()
     cl.appendUnique(flowsCcy,'USD')
     cl.appendUnique(flowsCcy,'USDT')
     for ccy in flowsCcy:
@@ -388,7 +380,7 @@ class core:
       d = self.flowsDict[ccy]
       z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
       z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
-      print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(41) + z1 + ' / ' + z2, 'blue'))
+      print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(37) + z1 + ' / ' + z2, 'blue'))
     except:
       pass
 
@@ -403,14 +395,9 @@ class core:
       n = self.wallet.loc[ccy, 'usdValue']
       suffix = '($' + str(round(n/1000))+'K) '
       suffix += '(' + str(round(n/nav*100))+'%)'
-      print(('FTX '+ccy+' 24h/prev/est borrow rate: ').rjust(41) + ('/'.join(zList) + ' p.a. '+suffix).ljust(27))
+      print(('FTX '+ccy+' 24h/prev/est: ').rjust(37) + ('/'.join(zList) + ' p.a. '+suffix).ljust(27))
     except:
       pass
-
-  def ftxPrintCoinLending(self, ccy):
-    estLending = float(pd.DataFrame(self.api.private_get_spot_margin_lending_rates()['result']).set_index('coin').loc[ccy, 'estimate']) * 24 * 365
-    coinBalance = self.wallet.loc[ccy, 'usdValue']
-    print(('FTX '+ccy+' est lending rate: ').rjust(41) + str(round(estLending * 100)) + '% p.a. ($' + str(round(coinBalance/1000)) + 'K)')
 
   ####
   # BB
@@ -473,7 +460,6 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr()
     self.isDone = True
 
   #####
@@ -481,8 +467,10 @@ class core:
   #####
   def bbtInit(self):
     self.api = cl.bbCCXTInit()
+    riskDf = cl.bbtGetRiskDf(self.api, self.validCcys, self.spotDict)
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
+      self.liqDict[ccy] = riskDf.loc[ccy,'liq']
     self.calcFuturesDeltaUSD()
     #####
     pmts=pd.DataFrame()
@@ -507,9 +495,8 @@ class core:
     self.spots.loc['USDT', 'SpotDelta'] = equity
     self.calcSpotDeltaUSD()
     #####
-    # Liquidation (parallel shock) calc
+    # Liquidation (parallel) calc
     wallet_balance = float(wb['wallet_balance'])
-    riskDf=cl.bbtGetRiskDf(self.api,self.validCcys,self.spotDict)
     increment = -0.01 if riskDf['delta_value'].sum() >= 0 else 0.01
     for i in range(100):
       riskDf['unrealised_pnl_sim'] = riskDf['unrealised_pnl'] + riskDf['delta_value'] * (i+1) * increment
@@ -545,12 +532,14 @@ class core:
     for ccy in self.validCcys:
       self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'balance']+bal.loc[ccy,'crossUnPnl']
     #####
-    if CR_IS_SHOW_BN_ISOLATED_MARGIN:
-      self.imDf = cl.bnGetIsolatedMarginDf(self.api)
-      for ccy in self.imDf.index:
-        self.spots.loc[ccy, 'SpotDelta'] += self.imDf.loc[ccy, 'qty'].sum()
-      self.spots.loc['USDT', 'SpotDelta'] += self.imDf['collateralUSDT'].sum()
-      self.spots.loc['BTC', 'SpotDelta'] += self.imDf['collateralBTC'].sum()
+    if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
+      self.imDf = cl.bnGetIsolatedMarginDf(self.api,self.spotDict)
+      df=self.imDf.set_index('symbolAsset',drop=False)
+      for i in range(len(df)):
+        self.spots.loc[df.iloc[i]['symbolAsset'], 'SpotDelta'] += df.iloc[i]['qty']
+      self.spots.loc['USDT', 'SpotDelta'] += df['collateralUSDT'].sum()
+      self.spots.loc['BTC', 'SpotDelta'] += df['collateralBTC'].sum()
+      self.oneDayFlows += self.imDf['oneDayFlows'].sum()
     #####
     self.calcSpotDeltaUSD()
     #####
@@ -584,15 +573,6 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr()
-    #####
-    if CR_IS_SHOW_BN_ISOLATED_MARGIN:
-      self.liqStr=self.liqStr.replace('(of spot)','')
-      zList=[]
-      for ccy in self.imDf.index:
-        liq = self.imDf.loc[ccy,'liq']
-        zList.append('never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%')
-      self.liqStr+=termcolor.colored('  ('+'/'.join(self.imDf.index)+'): ' + '/'.join(zList) + ' (of spot)', 'red')
     #####
     self.isDone = True
 
@@ -601,11 +581,13 @@ class core:
   #####
   def bntInit(self):
     self.api = cl.bnCCXTInit()
+    riskDf = cl.bntGetRiskDf(self.api, self.validCcys)
     futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk()).set_index('symbol')
     cl.dfSetFloat(futs, ['positionAmt'])
     for ccy in self.validCcys:
       ccy2=ccy+'USDT'
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']
+      self.liqDict[ccy] = riskDf.loc[ccy+'USDT', 'liq']
     self.calcFuturesDeltaUSD()
     #####
     pmts=pd.DataFrame()
@@ -636,6 +618,13 @@ class core:
     self.makeIncomesStr()
     self.makeLiqStr()
     self.isDone = True
+
+  def bnPrintAllFlowsSummary(self):
+    for symbol in self.imDf.index:
+      z1 = '$' + str(round(self.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(self.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
+      z2 = '$' + str(round(self.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(self.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
+      print(termcolor.colored(fmtLiq(self.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
+      print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue'))
 
   ####
   # KF
@@ -698,7 +687,6 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr()
     self.isDone = True
 
   ####
@@ -749,6 +737,7 @@ class core:
     self.isDone = True
 
   def krPrintBorrow(self, nav):
+    liqStr = termcolor.colored(fmtLiq(self.liqBTC).rjust(5), 'red')
     zPctNAV = '(' + str(round(-self.mdbUSD / nav * 100)) + '%)'
     z1List=[]
     z2List=[]
@@ -764,7 +753,7 @@ class core:
       suffix+='/'.join(z2List)
       suffix+='; XXBTZUSD: $'
       suffix += str(round(self.mdbUSD / 1000)) + 'K)'
-    print(('KR' + str(self.n) + ' USD est borrow rate: ').rjust(41) + ('22% p.a. ($' + str(round(-self.mdbUSD/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
+    print(liqStr+('KR' + str(self.n) + ' USD est borrow rate: ').rjust(32) + ('22% p.a. ($' + str(round(-self.mdbUSD/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
 
 ####################################################################################################
 
@@ -794,7 +783,7 @@ if __name__ == '__main__':
     extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
   extUSDTNAV = CR_EXT_DELTA_USDT * spotDict['USDT']
   nav+= extCoinsNAV + extUSDTNAV
-  oneDayIncome+=ftxCore.oneDayFlows
+  oneDayIncome+=ftxCore.oneDayFlows+bnCore.oneDayFlows
 
   ########
   # Output
@@ -803,12 +792,12 @@ if __name__ == '__main__':
   for obj in objs:
     if obj.name!='DUMMY': navStrList.append(getNAVStr(obj.name,obj.nav))
   if extCoinsNAV!=0: navStrList.append(getNAVStr('Ext Coins', extCoinsNAV))
-  print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(42)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
+  print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(38)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
   #####
   zList=[]
   for ccy in CR_QUOTE_CCY_DICT.keys():
     zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
-  print(termcolor.colored('24h income: $'.rjust(42)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
+  print(termcolor.colored('24h income: $'.rjust(38)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
   print()
   #####
   for ccy in CR_AG_CCY_DICT.keys():
@@ -825,10 +814,13 @@ if __name__ == '__main__':
   ftxCore.ftxPrintBorrow('USDT',nav)
   print()
   #####
-  if CR_IS_SHOW_COIN_LENDING:
+  if CR_IS_SHOW_FTX_COIN_FLOWS:
     for ccy in CR_FTX_FLOWS_CCYS:
-      if not ccy in ['USD','USDT']:
-        ftxCore.ftxPrintFlowsSummary(ccy)
+      ftxCore.ftxPrintFlowsSummary(ccy)
+    print()
+  #####
+  if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
+    bnCore.bnPrintAllFlowsSummary()
     print()
   #####
   ftxCore.printAll()

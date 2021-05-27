@@ -421,6 +421,7 @@ def bbtGetEstFunding1(bb,ccy):
 def bbtGetEstFunding2(bb,ccy):
   return float(bb.private_linear_get_funding_predicted_funding({'symbol': ccy+'USDT'})['result']['predicted_funding_rate'])* 3 * 365
 
+@retry(wait_fixed=1000)
 def bbtGetRiskDf(bb,ccys,spotDict):
   # Get dictionaries of risk_id -> im/mm
   imDict = dict()
@@ -561,29 +562,50 @@ def bnGetEstFunding(bn, ccy):
   return float(bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]['lastFundingRate'])*3*365
 
 @retry(wait_fixed=1000)
-def bnGetIsolatedMarginDf(bn):
+def bnGetIsolatedMarginDf(bn,spotDict):
+  def getYest():
+    return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
+  #####
   df=pd.DataFrame()
   for i in bn.sapi_get_margin_isolated_account()['assets']:
-    symbol=i['baseAsset']['asset']
     qty=float(i['baseAsset']['netAsset'])
-    symbolColl=i['quoteAsset']['asset']
-    qtyColl = float(i['quoteAsset']['totalAsset'])
-    if symbolColl== 'BTC':
-      qtyBTC = qtyColl
-      qtyUSDT = 0
-    elif symbolColl== 'USDT':
-      qtyBTC = 0
-      qtyUSDT = qtyColl
-    else:
-      sys.exit(1)
-    liq = float(i['liquidatePrice']) / float(i['indexPrice'])
     if qty!=0:
+      symbol = i['symbol']
+      symbolAsset = i['baseAsset']['asset']
+      symbolColl=i['quoteAsset']['asset']
+      qtyColl = float(i['quoteAsset']['totalAsset'])
+      if symbolColl== 'BTC':
+        qtyBTC = qtyColl
+        qtyUSDT = 0
+      elif symbolColl== 'USDT':
+        qtyBTC = 0
+        qtyUSDT = qtyColl
+      else:
+        sys.exit(1)
+      liq = float(i['liquidatePrice']) / float(i['indexPrice'])
+      #############
+      df2 = pd.DataFrame(bn.sapi_get_margin_interesthistory({'isolatedSymbol': symbol, 'startTime': getYest() * 1000})['rows'])
+      dfSetFloat(df2, ['interestAccuredTime','principal','interest','interestRate'])
+      df2['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df2['interestAccuredTime']]
+      df2 = df2.set_index('date').sort_index()
+      principal = df2['principal'][-1] * spotDict[symbolAsset]
+      oneDayFlows = -df2['interest'].sum() * spotDict[symbolAsset]
+      oneDayFlowsAnnRet = oneDayFlows * 365 / principal
+      prevFlows = -df2['interest'][-1] * spotDict[symbolAsset]
+      prevFlowsAnnRet = prevFlows * 24 * 365 / principal
+      #############
       df=df.append({'symbol':symbol,
+                    'symbolAsset':symbolAsset,
+                    'symbolColl':symbolColl,
                     'qty':qty,
                     'collateralBTC':qtyBTC,
                     'collateralUSDT':qtyUSDT,
-                    'liq':liq}, ignore_index=True)
-  df=df[['symbol','qty','collateralBTC','collateralUSDT','liq']].set_index('symbol')
+                    'liq':liq,
+                    'oneDayFlows':oneDayFlows,
+                    'oneDayFlowsAnnRet':oneDayFlowsAnnRet,
+                    'prevFlows':prevFlows,
+                    'prevFlowsAnnRet':prevFlowsAnnRet}, ignore_index=True)
+  df=df[['symbol','symbolAsset','symbolColl','qty','collateralBTC','collateralUSDT','liq','oneDayFlows','oneDayFlowsAnnRet','prevFlows','prevFlowsAnnRet']].set_index('symbol')
   return df
 
 def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
@@ -661,6 +683,15 @@ def bntGetFutPos(bn, ccy):
 @retry(wait_fixed=1000)
 def bntGetEstFunding(bn, ccy):
   return float(bn.fapiPublic_get_premiumindex({'symbol': ccy + 'USDT'})['lastFundingRate']) * 3 * 365
+
+@retry(wait_fixed=1000)
+def bntGetRiskDf(bn,ccys):
+  positionRisk = pd.DataFrame(bn.fapiPrivate_get_positionrisk()).set_index('symbol').loc[[z + 'USDT' for z in ccys]]
+  cols = ['positionAmt','entryPrice','markPrice','unRealizedProfit','liquidationPrice','notional']
+  df=positionRisk[cols].copy()
+  dfSetFloat(df,cols)
+  df['liq'] = df['liquidationPrice'] / df['markPrice']
+  return df
 
 def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
   @retry(wait_fixed=1000)

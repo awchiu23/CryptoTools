@@ -177,8 +177,8 @@ APOPHIS_IS_IP_WHITELIST = True
 #################
 # Crypto Reporter
 #################
-CR_IS_SHOW_COIN_LENDING = False
-CR_IS_SHOW_BN_ISOLATED_MARGIN = False
+CR_IS_SHOW_FTX_COIN_FLOWS = False
+CR_IS_ENABLE_BN_ISOLATED_MARGIN = False
 CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'XRP':4, 'FTT':1, 'USDT':4})     # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0})                        # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH', 'XRP']                                    # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
@@ -243,8 +243,8 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  CR_IS_SHOW_BN_ISOLATED_MARGIN = True
-  # CR_IS_SHOW_COIN_LENDING = True
+  #CR_IS_SHOW_FTX_COIN_FLOWS = True
+  CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
   #####
