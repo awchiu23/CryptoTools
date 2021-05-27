@@ -167,6 +167,34 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   z2 += str(round(netDeltaUSD/1000))+'K)'
   print(termcolor.colored(('USDT '+zLabel).rjust(37)+z1.ljust(27)+z2, 'red'))
 
+def printFlows(ftxCore,bnCore,nav):
+  def getSuffix(ftxCore,ccy,nav):
+    return '(' + str(round(ftxCore.wallet.loc[ccy, 'usdValue'] / nav * 100)) + '%)'
+  #####
+  print(ftxCore.flowsDict['USD'])
+  print(ftxCore.flowsDict['USDT'])
+  print(ftxCore.flowsDict['USD2']+getSuffix(ftxCore,'USD',nav))
+  print(ftxCore.flowsDict['USDT2']+getSuffix(ftxCore,'USDT',nav))
+  print()
+  #####
+  isPrinted=False
+  for ccy in CR_FTX_FLOWS_CCYS:
+    z = ftxCore.flowsDict[ccy]
+    if not z is None:
+      isPrinted=True
+      print(z)
+  #####
+  if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
+    isPrinted=True
+    for symbol in bnCore.imDf.index:
+      z1 = '$' + str(round(bnCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
+      z2 = '$' + str(round(bnCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
+      z3 = ' ($' + str(round(bnCore.imDf.loc[symbol,'qty']*bnCore.spotDict[bnCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
+      print(termcolor.colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
+      print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
+  #####
+  if isPrinted: print()
+
 ####################################################################################################
 
 #########
@@ -349,8 +377,19 @@ class core:
     cl.appendUnique(flowsCcy,'USDT')
     for ccy in flowsCcy:
       d=makeFlows(ccy)
-      self.flowsDict[ccy]=d
-      self.oneDayFlows+=d['oneDayFlows']
+      self.oneDayFlows += d['oneDayFlows']
+      if d['oneDayFlows']==0 and d['prevFlows']==0 and not ccy in ['USD','USDT']:
+        self.flowsDict[ccy]=None
+      else:
+        z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
+        z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
+        self.flowsDict[ccy]=termcolor.colored(('FTX 24h/prev ' + ccy + ' flows: ').rjust(37) + z1 + ' / ' + z2, 'blue')
+      if ccy in ['USD','USDT']: # Extra info for USD/USDT
+        zList = []
+        zList.append('na' if d['oneDayBorrowRate'] == 0 else str(round(d['oneDayBorrowRate'] * 100)) + '%')
+        zList.append('na' if d['prevBorrowRate'] == 0 else str(round(d['prevBorrowRate'] * 100)) + '%')
+        zList.append(str(round(cl.ftxGetEstBorrow(self.api, ccy) * 100)) + '%')
+        self.flowsDict[ccy+'2'] = ('FTX ' + ccy + ' 24h/prev/est: ').rjust(37) + '/'.join(zList) + ' p.a. ($' + str(round(self.wallet.loc[ccy, 'usdValue'] / 1000)) + 'K) '
     #####
     self.nav = self.wallet['usdValue'].sum()
     self.mf = float(info['marginFraction'])
@@ -371,30 +410,6 @@ class core:
     self.makeIncomesStr()
     self.makeLiqStr()
     self.isDone=True
-
-  def ftxPrintFlowsSummary(self,ccy):
-    try:
-      d = self.flowsDict[ccy]
-      z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
-      z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
-      print(termcolor.colored(('FTX 24h/prev '+ccy+' flows: ').rjust(37) + z1 + ' / ' + z2, 'blue'))
-    except:
-      pass
-
-  # Replacement
-  def ftxPrintBorrow(self, ccy, nav):
-    try:
-      d = self.flowsDict[ccy]
-      zList = []
-      zList.append('na' if d['oneDayBorrowRate'] == 0 else str(round(d['oneDayBorrowRate'] * 100))+'%')
-      zList.append('na' if d['prevBorrowRate'] == 0 else str(round(d['prevBorrowRate'] * 100))+'%')
-      zList.append(str(round(cl.ftxGetEstBorrow(self.api,ccy) * 100)) + '%')
-      n = self.wallet.loc[ccy, 'usdValue']
-      suffix = '($' + str(round(n/1000))+'K) '
-      suffix += '(' + str(round(n/nav*100))+'%)'
-      print(('FTX '+ccy+' 24h/prev/est: ').rjust(37) + ('/'.join(zList) + ' p.a. '+suffix).ljust(27))
-    except:
-      pass
 
   ####
   # BB
@@ -616,14 +631,6 @@ class core:
     self.makeLiqStr()
     self.isDone = True
 
-  def bnPrintAllFlowsSummary(self):
-    for symbol in self.imDf.index:
-      z1 = '$' + str(round(self.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(self.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
-      z2 = '$' + str(round(self.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(self.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
-      z3 = ' ($' + str(round(self.imDf.loc[symbol,'qty']*self.spotDict[self.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
-      print(termcolor.colored(fmtLiq(self.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
-      print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
-
   ####
   # KF
   ####
@@ -806,20 +813,7 @@ if __name__ == '__main__':
   printUSDTDeltas(ftxCore, bnCore, spotDict, usdtCores)
   print()
   #####
-  ftxCore.ftxPrintFlowsSummary('USD')
-  ftxCore.ftxPrintFlowsSummary('USDT')
-  ftxCore.ftxPrintBorrow('USD',nav)
-  ftxCore.ftxPrintBorrow('USDT',nav)
-  print()
-  #####
-  if CR_IS_SHOW_FTX_COIN_FLOWS:
-    for ccy in CR_FTX_FLOWS_CCYS:
-      ftxCore.ftxPrintFlowsSummary(ccy)
-    print()
-  #####
-  if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
-    bnCore.bnPrintAllFlowsSummary()
-    print()
+  printFlows(ftxCore, bnCore, nav)
   #####
   ftxCore.printAll()
   printAllDual(bbtCore, bbCore)
