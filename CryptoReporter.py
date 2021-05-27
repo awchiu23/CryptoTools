@@ -270,7 +270,7 @@ class core:
     zRet=termcolor.colored((self.exch.upper()+' liq (parallel): ').rjust(37) + z, 'red')
     if self.exch=='ftx':
       z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
-      zRet+='\n'+termcolor.colored('FTX margin fraction/free collateral: '.rjust(37) + z, 'red')
+      zRet+='\n'+termcolor.colored('FTX mf/free coll: '.rjust(37) + z, 'red')
     self.liqStr = zRet
 
   def printAll(self):
