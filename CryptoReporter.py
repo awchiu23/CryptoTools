@@ -548,7 +548,7 @@ class core:
     if CR_IS_SHOW_BN_ISOLATED_MARGIN:
       self.imDf = cl.bnGetIsolatedMarginDf(self.api)
       for ccy in self.imDf.index:
-        self.spots.loc[ccy, 'SpotDelta'] += self.imDf.loc[ccy, 'qty']
+        self.spots.loc[ccy, 'SpotDelta'] += self.imDf.loc[ccy, 'qty'].sum()
       self.spots.loc['USDT', 'SpotDelta'] += self.imDf['collateralUSDT'].sum()
       self.spots.loc['BTC', 'SpotDelta'] += self.imDf['collateralBTC'].sum()
     #####
