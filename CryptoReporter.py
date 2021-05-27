@@ -653,7 +653,7 @@ class core:
         df.loc[df['Ccy']=='XBT','Ccy']='BTC'
         df=df.set_index('Ccy',drop=False)
         for ccy in self.validCcys:
-          df.loc[ccy, 'Spot'] = self.spotDict[ccy]
+          if ccy in df.index: df.loc[ccy, 'Spot'] = self.spotDict[ccy]
         df['incomeUSD'] = df['realized funding'] * df['Spot']
         oneDayIncome = df['incomeUSD'].sum()
         prevIncome = df[df['date'] >= datetime.datetime.now() - pd.DateOffset(hours=4)]['incomeUSD'].sum()
@@ -673,7 +673,10 @@ class core:
     #####
     for ccy in self.validCcys:
       ccy2 = 'xbt' if ccy == 'BTC' else ccy.lower()
-      self.futures.loc[ccy,'FutDelta']=accounts['fi_'+ccy2+'usd']['balances']['pi_'+ccy2+'usd']/self.spotDict[ccy]
+      bal = accounts['fi_' + ccy2 + 'usd']['balances']
+      symbol = 'pi_' + ccy2 + 'usd'
+      if symbol in bal:
+        self.futures.loc[ccy, 'FutDelta'] = bal[symbol] / self.spotDict[ccy]
     self.calcFuturesDeltaUSD()
     #####
     pmts,self.oneDayIncome,self.prevIncome=getPayments()
@@ -683,13 +686,13 @@ class core:
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
     for ccy in self.validCcys:
-      if pmts is None:
-        oneDayFunding = 0
-        prevFunding = 0
-      else:
+      oneDayFunding = 0
+      prevFunding = 0
+      if not pmts is None:
         df = pmts.loc[pmts['Ccy'] == ccy, 'rate']
-        oneDayFunding = df.mean() * 3 * 365
-        prevFunding = df[df.index[-1]].mean() * 3 * 365
+        if len(df) > 0:
+          oneDayFunding = df.mean() * 3 * 365
+          prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.kfGetEstFunding1(self.api, ccy)
       estFunding2 = cl.kfGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
