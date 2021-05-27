@@ -239,7 +239,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'LTC': 'XLTC'})
   CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt','kf']}
-  SHARED_CCY_DICT['LINK'] = {'futExch': ['bbt', 'bnt']}
+  SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
