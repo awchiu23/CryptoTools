@@ -12,9 +12,9 @@ import sys
 ###########
 def bnGetPayments(bn, ccy, isBNT=False):
   if isBNT:
-    df = pd.DataFrame(bn.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': getYest() * 1000}))
+    df = pd.DataFrame(bn.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': cl.getYest() * 1000}))
   else:
-    df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': getYest() * 1000}))
+    df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': cl.getYest() * 1000}))
   cl.dfSetFloat(df, 'fundingRate')
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
   df = df.set_index('date').sort_index()
@@ -22,9 +22,9 @@ def bnGetPayments(bn, ccy, isBNT=False):
 
 def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   if isBNT:
-    df = pd.DataFrame(bn.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000})).set_index('symbol')
+    df = pd.DataFrame(bn.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000})).set_index('symbol')
   else:
-    df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': getYest() * 1000})).set_index('symbol')
+    df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000})).set_index('symbol')
   cl.dfSetFloat(df, 'income')
   suffix = 'USDT' if isBNT else 'USD_PERP'
   validCcys=list(set(z.replace(suffix,'') for z in df.index).intersection(validCcys)) # Remove currencies without cashflows
@@ -89,9 +89,6 @@ def getCores():
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
-
-def getYest():
-  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
 
 def krPrintAll(krCores,nav):
   # Incomes
@@ -300,7 +297,7 @@ class core:
       return df2
     ######
     def makeFlows(ccy):
-      start_time = getYest()
+      start_time = cl.getYest()
       borrows = cleanBorrows(ccy, pd.DataFrame(self.api.private_get_spot_margin_borrow_history({'limit': 1000, 'start_time': start_time})['result']))
       loans = cleanBorrows(ccy, pd.DataFrame(self.api.private_get_spot_margin_lending_history({'limit': 1000, 'start_time': start_time})['result']))
       cl.dfSetFloat(borrows, ['cost','rate'])
@@ -336,7 +333,7 @@ class core:
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
     self.calcFuturesDeltaUSD()
     ######
-    pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': getYest()})['result'])
+    pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': cl.getYest()})['result'])
     pmts = pmts.set_index('future', drop=False).loc[[z+'-PERP' for z in self.validCcys]].set_index('time')
     cl.dfSetFloat(pmts, ['payment', 'rate'])
     pmts = pmts.sort_index()
@@ -408,7 +405,7 @@ class core:
       df = pd.DataFrame()
       while True:
         n += 1
-        tl = self.api.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': getYest() * 1000, 'limit': 1000, 'page': n})['result']['trade_list']
+        tl = self.api.v2_private_get_execution_list({'symbol': ccy + 'USD', 'start_time': cl.getYest() * 1000, 'limit': 1000, 'page': n})['result']['trade_list']
         if tl is None:
           break
         else:
@@ -475,7 +472,7 @@ class core:
     #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
-      data = self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
+      data = self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
       if not data is None:
         pmts = pmts.append(pd.DataFrame(data).set_index('symbol', drop=False))
     cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
@@ -623,8 +620,9 @@ class core:
     for symbol in self.imDf.index:
       z1 = '$' + str(round(self.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(self.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
       z2 = '$' + str(round(self.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(self.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
+      z3 = ' ($' + str(round(self.imDf.loc[symbol,'qty']*self.spotDict[self.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
       print(termcolor.colored(fmtLiq(self.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
-      print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue'))
+      print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
 
   ####
   # KF

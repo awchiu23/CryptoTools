@@ -563,9 +563,6 @@ def bnGetEstFunding(bn, ccy):
 
 @retry(wait_fixed=1000)
 def bnGetIsolatedMarginDf(bn,spotDict):
-  def getYest():
-    return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
-  #####
   df=pd.DataFrame()
   for i in bn.sapi_get_margin_isolated_account()['assets']:
     qty=float(i['baseAsset']['netAsset'])
@@ -1430,6 +1427,10 @@ def getValidExchs(ccy):
     if SHARED_EXCH_DICT[futExch]==1:
       myL.append(futExch)
   return myL
+
+# Get yesterday's timestamp
+def getYest():
+  return int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(days=1))))
 
 # Print dictionary
 def printDict(d, indent=0, isSort=True):
