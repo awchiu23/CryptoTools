@@ -234,7 +234,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 3
-  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 85, 'XRP': 0, 'FTT':0, 'LTC':0, 'DOGE':0, 'LINK':0, 'MATIC':0})
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'FTT':0, 'LTC':0, 'DOGE':0, 'LINK':0, 'MATIC':0})
   CR_FTX_FLOWS_CCYS.extend(['LTC','DOGE','LINK','MATIC'])
   CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'LTC': 'XLTC'})
   CR_EXT_DELTA_USDT = 0
@@ -245,7 +245,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
-  CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
+  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
@@ -254,7 +254,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 5
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
   #####
@@ -287,8 +287,8 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
   #####
-  CT_CONFIGS_DICT['BB_XRP_OK'] = 0
-  CT_CONFIGS_DICT['BB_XRP_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BB_XRP_OK'] = 1
+  CT_CONFIGS_DICT['BB_XRP_ADJ_BPS'] = 20
   #####
   CT_CONFIGS_DICT['KF_XRP_OK'] = 1
   CT_CONFIGS_DICT['KF_XRP_ADJ_BPS'] = 0
