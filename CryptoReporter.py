@@ -299,11 +299,12 @@ class core:
 
   def makeLiqStr(self):
     z = fmtLiq(self.liq)
-    zRet=colored((self.exch.upper()+' liq (parallel): ').rjust(37) + z, 'red')
     if self.exch=='ftx':
-      z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
-      zRet+='\n'+colored('FTX mf/free coll: '.rjust(37) + z, 'red')
-    self.liqStr = zRet
+      z2 = (self.exch.upper() + ' liq/mf/fc: ').rjust(37) + z + '/'
+      z2 += str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
+      self.liqStr = colored(z2,'red')
+    else:
+      self.liqStr = colored((self.exch.upper() + ' liq: ').rjust(37) + z, 'red')
 
   def printAll(self):
     try:
