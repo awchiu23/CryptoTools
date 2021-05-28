@@ -171,29 +171,33 @@ def printFlows(ftxCore,bnCore,nav):
   def getSuffix(ftxCore,ccy,nav):
     return '(' + str(round(ftxCore.wallet.loc[ccy, 'usdValue'] / nav * 100)) + '%)'
   #####
-  print(ftxCore.flowsDict['USD'])
-  print(ftxCore.flowsDict['USDT'])
-  print(ftxCore.flowsDict['USD2']+getSuffix(ftxCore,'USD',nav))
-  print(ftxCore.flowsDict['USDT2']+getSuffix(ftxCore,'USDT',nav))
-  print()
-  #####
-  isPrinted=False
-  for ccy in CR_FTX_FLOWS_CCYS:
-    z = ftxCore.flowsDict[ccy]
-    if not z is None:
+  try:
+    print(ftxCore.flowsDict['USD'])
+    print(ftxCore.flowsDict['USDT'])
+    print(ftxCore.flowsDict['USD2']+getSuffix(ftxCore,'USD',nav))
+    print(ftxCore.flowsDict['USDT2']+getSuffix(ftxCore,'USDT',nav))
+    print()
+    #####
+    isPrinted=False
+    for ccy in CR_FTX_FLOWS_CCYS:
+      z = ftxCore.flowsDict[ccy]
+      if not z is None:
+        isPrinted=True
+        print(z)
+    #####
+    if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
       isPrinted=True
-      print(z)
+      for symbol in bnCore.imDf.index:
+        z1 = '$' + str(round(bnCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
+        z2 = '$' + str(round(bnCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
+        z3 = ' ($' + str(round(bnCore.imDf.loc[symbol,'qty']*bnCore.spotDict[bnCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
+        print(termcolor.colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
+        print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
+    #####
+    if isPrinted: print()
   #####
-  if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
-    isPrinted=True
-    for symbol in bnCore.imDf.index:
-      z1 = '$' + str(round(bnCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
-      z2 = '$' + str(round(bnCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
-      z3 = ' ($' + str(round(bnCore.imDf.loc[symbol,'qty']*bnCore.spotDict[bnCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
-      print(termcolor.colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
-      print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
-  #####
-  if isPrinted: print()
+  except:
+    pass
 
 ####################################################################################################
 
