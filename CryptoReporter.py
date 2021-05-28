@@ -577,8 +577,12 @@ class core:
       pmts = pmts.append(bnGetPayments(self.api,ccy))
     #####
     self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict)
-    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    if self.futNotional==0:
+      self.oneDayAnnRet=0
+      self.prevAnnRet=0
+    else:
+      self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+      self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####

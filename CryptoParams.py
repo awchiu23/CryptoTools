@@ -101,8 +101,8 @@ CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps
 CT_CONFIGS_DICT['NPROGRAMS'] = 50                    # Number of programs (each program being a pair of trades)
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
-CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 5000         # Per trade notional
-CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 5000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 6000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 6000         # Per trade notional
 CT_CONFIGS_DICT['TRADE_XRP_NOTIONAL'] = 3000         # Per trade notional
 
 CT_CONFIGS_DICT['MAX_NOTIONAL'] = 50000              # Hard limit
@@ -234,13 +234,13 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 3
-  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 26.89, 'XRP': 72000, 'FTT':0, 'LTC':0, 'DOGE':0, 'LINK':0, 'MATIC':0}) #bb
+  CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'FTT':0, 'LTC':0, 'LINK':0, 'MATIC':0})
   CR_FTX_FLOWS_CCYS.extend(['LTC','DOGE','LINK','MATIC'])
   CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'LTC': 'XLTC'})
-  CR_EXT_DELTA_USDT = 0
+  CR_EXT_DELTA_USDT = 250000 # bb
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt','kf']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bnt']}
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
@@ -258,7 +258,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
   #####
-  CT_CONFIGS_DICT['KF_BTC_OK'] = 1
+  CT_CONFIGS_DICT['KF_BTC_OK'] = 0
   CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 5
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
@@ -271,9 +271,6 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
   #####
-  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
-  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
-  #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
   CT_CONFIGS_DICT['FTX_XRP_OK'] = 1
@@ -283,6 +280,4 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
-  #####
-  CT_CONFIGS_DICT['KF_XRP_OK'] = 1
-  CT_CONFIGS_DICT['KF_XRP_ADJ_BPS'] = 0
+
