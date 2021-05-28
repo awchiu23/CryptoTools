@@ -39,6 +39,9 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   prevIncome = df[df.index > df.index[-1] - pd.DateOffset(minutes=10)]['incomeUSD'].sum()
   return oneDayIncome, prevIncome
 
+def colored(text, color):
+  return termcolor.colored(text,color)
+
 def fmtLiq(liq):
   return 'never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%'
 
@@ -97,7 +100,7 @@ def krPrintAll(krCores,nav):
   for krCore in krCores:
     zList.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
     prefixList.append('KR' + str(krCore.n))
-  print(termcolor.colored(('/'.join(prefixList) + ' 24h rollover fees: ').rjust(37) + ' / '.join(zList), 'blue'))
+  print(colored(('/'.join(prefixList) + ' 24h rollover fees: ').rjust(37) + ' / '.join(zList), 'blue'))
   #####
   # Borrows
   for krCore in krCores:
@@ -137,7 +140,7 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
     nDigits=1
   z=(ccy+' spot/fut/net delta: ').rjust(37)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
-  print(termcolor.colored(z,'red'))
+  print(colored(z,'red'))
 
 def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
@@ -165,7 +168,7 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   zLabel += 'net delta: '
   z1 += str(round(netDelta / 1000)) + 'K'
   z2 += str(round(netDeltaUSD/1000))+'K)'
-  print(termcolor.colored(('USDT '+zLabel).rjust(37)+z1.ljust(27)+z2, 'red'))
+  print(colored(('USDT '+zLabel).rjust(37)+z1.ljust(27)+z2, 'red'))
 
 def printFlows(ftxCore,bnCore,nav):
   def getSuffix(ftxCore,ccy,nav):
@@ -191,8 +194,8 @@ def printFlows(ftxCore,bnCore,nav):
         z1 = '$' + str(round(bnCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
         z2 = '$' + str(round(bnCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
         z3 = ' ($' + str(round(bnCore.imDf.loc[symbol,'qty']*bnCore.spotDict[bnCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
-        print(termcolor.colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
-        print(termcolor.colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
+        print(colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
+        print(colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
     #####
     if isPrinted: print()
   #####
@@ -260,11 +263,11 @@ class core:
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
     zPrev  = '4h' if self.exch == 'kf' else 'prev'
     z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-    self.incomesStr = termcolor.colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
+    self.incomesStr = colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
     if self.exch in ['bb','bbt','bn','bnt','kf']:
-      liqStr = termcolor.colored(fmtLiq(self.liqDict[ccy]).rjust(5),'red')
+      liqStr = colored(fmtLiq(self.liqDict[ccy]).rjust(5),'red')
     else:
       liqStr = ''.rjust(5)
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
@@ -296,10 +299,10 @@ class core:
 
   def makeLiqStr(self):
     z = fmtLiq(self.liq)
-    zRet=termcolor.colored((self.exch.upper()+' liq (parallel): ').rjust(37) + z, 'red')
+    zRet=colored((self.exch.upper()+' liq (parallel): ').rjust(37) + z, 'red')
     if self.exch=='ftx':
       z = str(round(self.mf * 100, 1)) + '% (vs. ' + str(round(self.mmReq * 100, 1)) + '% limit) / $' + str(round(self.freeCollateral))
-      zRet+='\n'+termcolor.colored('FTX mf/free coll: '.rjust(37) + z, 'red')
+      zRet+='\n'+colored('FTX mf/free coll: '.rjust(37) + z, 'red')
     self.liqStr = zRet
 
   def printAll(self):
@@ -387,7 +390,7 @@ class core:
       else:
         z1 = '$' + str(round(d['oneDayFlows'])) + ' (' + str(round(d['oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
         z2 = '$' + str(round(d['prevFlows'])) + ' (' + str(round(d['prevFlowsAnnRet'] * 100)) + '% p.a.)'
-        self.flowsDict[ccy]=termcolor.colored(('FTX 24h/prev ' + ccy + ' flows: ').rjust(37) + z1 + ' / ' + z2, 'blue')
+        self.flowsDict[ccy]=colored(('FTX 24h/prev ' + ccy + ' flows: ').rjust(37) + z1 + ' / ' + z2, 'blue')
       if ccy in ['USD','USDT']: # Extra info for USD/USDT
         zList = []
         zList.append('na' if d['oneDayBorrowRate'] == 0 else str(round(d['oneDayBorrowRate'] * 100)) + '%')
@@ -746,7 +749,7 @@ class core:
     self.isDone = True
 
   def krPrintBorrow(self, nav):
-    liqStr = termcolor.colored(fmtLiq(self.liqBTC).rjust(5), 'red')
+    liqStr = colored(fmtLiq(self.liqBTC).rjust(5), 'red')
     zPctNAV = '(' + str(round(-self.mdbUSD / nav * 100)) + '%)'
     z1List=[]
     z2List=[]
@@ -801,12 +804,12 @@ if __name__ == '__main__':
   for obj in objs:
     if obj.name!='DUMMY': navStrList.append(getNAVStr(obj.name,obj.nav))
   if extCoinsNAV!=0: navStrList.append(getNAVStr('Ext Coins', extCoinsNAV))
-  print(termcolor.colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(38)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
+  print(colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(38)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
   #####
   zList=[]
   for ccy in CR_QUOTE_CCY_DICT.keys():
     zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
-  print(termcolor.colored('24h income: $'.rjust(38)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
+  print(colored('24h income: $'.rjust(38)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
   print()
   #####
   for ccy in CR_AG_CCY_DICT.keys():
