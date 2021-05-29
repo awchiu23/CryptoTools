@@ -138,7 +138,7 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
     nDigits=None
   else:
     nDigits=1
-  z=(ccy+' spot/fut/net delta: ').rjust(37)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
+  z=(ccy+' spot/fut/net: ').rjust(37)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
     '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
   print(colored(z,'red'))
 
@@ -267,9 +267,10 @@ class core:
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
     if self.exch in ['bb','bbt','bn','bnt','kf']:
-      liqStr = colored(fmtLiq(self.liqDict[ccy]).rjust(5),'red')
+      z = fmtLiq(self.liqDict[ccy])
     else:
-      liqStr = ''.rjust(5)
+      z = ''
+    liqStr = colored(z.rjust(5),'red')
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
     prefix+='prev'
     prefix+='/est'
@@ -290,11 +291,11 @@ class core:
     if CR_IS_ENABLE_BN_ISOLATED_MARGIN and self.exch == 'bn' and ccy == 'BTC':
       imUSD = self.imDf['collateralBTC'].sum() * self.spotDict['BTC']
       spotDeltaUSD -= imUSD
-      suffix = '(spot/fut/im/net delta: $' + str(round(spotDeltaUSD / 1000)) + 'K/$' + str(round(futDeltaUSD / 1000)) + 'K/$' + str(round(imUSD / 1000)) + 'K/$' + str(round(netDeltaUSD / 1000)) + 'K)'
+      suffix = '(spot/fut/im/net: $' + str(round(spotDeltaUSD / 1000)) + 'K/$' + str(round(futDeltaUSD / 1000)) + 'K/$' + str(round(imUSD / 1000)) + 'K/$' + str(round(netDeltaUSD / 1000)) + 'K)'
     elif self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB'):
-      suffix = '(fut delta: $' + str(round(futDeltaUSD / 1000)) + 'K)'
+      suffix = '(fut: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
-      suffix = '(spot/fut/net delta: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
+      suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
   def makeLiqStr(self):
@@ -827,10 +828,9 @@ if __name__ == '__main__':
   #####
   printFlows(ftxCore, bnCore, nav)
   #####
-  ftxCore.printAll()
+  printAllDual(ftxCore, kfCore)
   printAllDual(bbtCore, bbCore)
   printAllDual(bntCore, bnCore)
-  kfCore.printAll()
   if SHARED_EXCH_DICT['kr']>0: krPrintAll(krCores, nav)
   #####
   if '-f' in sys.argv:

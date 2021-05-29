@@ -231,22 +231,20 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   #####
   CR_QUOTE_CCY_DICT['LTC'] = 2
-  CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 2
   CR_QUOTE_CCY_DICT['MATIC'] = 3
   CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'XRP': 0, 'FTT':0, 'LTC':0, 'LINK':0, 'MATIC':0})
-  CR_FTX_FLOWS_CCYS.extend(['LTC','DOGE','LINK','MATIC'])
+  CR_FTX_FLOWS_CCYS.extend(['LTC','LINK','MATIC'])
   CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH', 'XRP': 'XXRP', 'LTC': 'XLTC'})
-  CR_EXT_DELTA_USDT = 250000 # bb
+  CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt','kf']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
-  #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
+  CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
