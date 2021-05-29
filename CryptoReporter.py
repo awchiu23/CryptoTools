@@ -168,7 +168,7 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
     zLabel += 'im/'
     z1+= str(round(imDelta / 1000)) + 'K/'
     z2+= str(round(imDeltaUSD / 1000)) + 'K/$'
-  zLabel += 'net delta: '
+  zLabel += 'net: '
   z1 += str(round(netDelta / 1000)) + 'K'
   z2 += str(round(netDeltaUSD/1000))+'K)'
   print(colored(('USDT '+zLabel).rjust(37)+z1.ljust(27)+z2, 'red'))
