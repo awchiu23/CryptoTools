@@ -40,7 +40,7 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   return oneDayIncome, prevIncome
 
 def colored(text, color):
-  if IS_NO_COLOR:
+  if '--nocolor' in sys.argv:
     return text
   else:
     return termcolor.colored(text,color)
@@ -783,7 +783,6 @@ if __name__ == '__main__':
   # Init
   ######
   cl.printHeader('CryptoReporter')
-  IS_NO_COLOR = '--nocolor' in sys.argv
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_IS_IP_WHITELIST:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
   _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, krCores, spotDict, objs = getCores()
