@@ -24,7 +24,9 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
   if isBNT:
     df = pd.DataFrame(bn.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000})).set_index('symbol')
   else:
-    df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000})).set_index('symbol')
+    df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000}))
+    if len(df) == 0: return 0, 0
+    df = df.set_index('symbol')
   cl.dfSetFloat(df, 'income')
   suffix = 'USDT' if isBNT else 'USD_PERP'
   validCcys=list(set(z.replace(suffix,'') for z in df.index).intersection(validCcys)) # Remove currencies without cashflows
