@@ -244,7 +244,7 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
-  CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
+  #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
@@ -252,9 +252,9 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = -10
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
   #####
   CT_CONFIGS_DICT['KF_BTC_OK'] = 0
   CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 5
@@ -265,9 +265,9 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_OK'] = 1
   CT_CONFIGS_DICT['BNT_ETH_OK'] = 1
   CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = -10
-  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = -5
   #####
   # XRP: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_XRP_OK'] = 1
@@ -276,6 +276,6 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BNT_XRP_OK'] = 1
   CT_CONFIGS_DICT['SPOT_XRP_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_XRP_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BBT_XRP_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BNT_XRP_ADJ_BPS'] = -5
 

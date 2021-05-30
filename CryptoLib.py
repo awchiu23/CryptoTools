@@ -989,18 +989,13 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
 @retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
   keySnap='kfEMASnap'+fundingDict['Ccy']
-  #keyEst2='kfEMAEst2'+fundingDict['Ccy']
   if cache('r',keySnap) is None:
     cache('w',keySnap,fundingDict['kfEstFunding2'])
-  #if cache('r',keyEst2) is None:
-  #  cache('w',keyEst2,fundingDict['kfEstFunding2'])
   mid=kfGetMid(kfTickers,fundingDict['Ccy'])
   premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'],isIndex=True), 'last'] - 1, -0.008, 0.008)
   snapFundingRate = premIndexClipped * 365 * 3
   smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r', keySnap), CT_CONFIGS_DICT['EMA_K'])
   cache('w', keySnap, smoothedSnapFundingRate)
-  #smoothedEst2Rate = getEMANow(fundingDict['kfEstFunding2'], cache('r', keyEst2), CT_CONFIGS_DICT['EMA_K'])
-  #cache('w', keyEst2, smoothedEst2Rate)
   return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, None, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
 #############################################################################################
@@ -1092,7 +1087,7 @@ def caRun(ccy, color):
   while True:
     fundingDict = getFundingDict(ftx,bb,bn,kf,ccy,isRateLimit=True)
     smartBasisDict = getSmartBasisDict(ftx,bb,bn,kf,ccy, fundingDict, isSkipAdj=True)
-    print(datetime.datetime.today().strftime('%H:%M:%S').ljust(10),end='')
+    print(getCurrentTime(isCondensed=True).ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
       process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf'], color)
@@ -1135,19 +1130,19 @@ def ctInit(ccy=None, notional=None):
   print()
   return ftx,bb,bn,kf,qty_dict,notional_dict
 
-def ctGetSuffix(tgtBps, realizedSlippageBps):
-  z= termcolor.colored('Target: ' + str(round(tgtBps)) + 'bps', 'red')
+def ctGetSuffix(i, tgtBps, realizedSlippageBps):
+  z= 'Program '+str(i+1) + ' / Target = '+str(round(tgtBps)) + 'bps'
   if len(realizedSlippageBps) > 0:
-    z += ''.ljust(15) + termcolor.colored('Avg realized slippage:  ' + str(round(np.mean(realizedSlippageBps))) + 'bps', 'red')
-  return z
+    z += ' / Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps'
+  return termcolor.colored(z,'red')
 
 def ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color):
-  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), color) + ctGetSuffix(tgtBps, realizedSlippageBps))
+  print((getCurrentTime() + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), color) + ctGetSuffix(i,tgtBps, realizedSlippageBps))
   chosenLong = ''
   return chosenLong
 
 def ctStreakEnded(i, tgtBps, realizedSlippageBps, color):
-  print(('Program ' + str(i + 1) + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), color) + ctGetSuffix(tgtBps, realizedSlippageBps))
+  print((getCurrentTime() + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), color) + ctGetSuffix(i,tgtBps, realizedSlippageBps))
   prevSmartBasis = []
   chosenLong = ''
   chosenShort = ''
@@ -1173,7 +1168,7 @@ def ctProcessFill(fill, completedLegs, isCancelled):
 
 def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   s= -((shortFill/longFill-1)*10000 - obsBasisBps)
-  print(getCurrentTime() +   ': '+ termcolor.colored('Realized slippage:      '+str(round(s))+'bps','red'))
+  print(getCurrentTime() +   ': '+ termcolor.colored('Realized slippage = '+str(round(s))+'bps','red'))
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
@@ -1255,9 +1250,9 @@ def ctRun(ccy, tgtBps, color, notional=None):
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:
-          z = ('Program ' + str(i + 1) + ':').ljust(23)
+          z = (getCurrentTime() + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),color)
-          z += ctGetSuffix(tgtBps, realizedSlippageBps)
+          z += ctGetSuffix(i,tgtBps, realizedSlippageBps)
           print(z)
           chosenLong = ''
           continue # to next iteration in While True loop
@@ -1283,9 +1278,9 @@ def ctRun(ccy, tgtBps, color, notional=None):
         continue # to next iteration in While True Loop
 
       # Chosen long/short legs
-      z = ('Program ' + str(i + 1) + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
+      z = (getCurrentTime() + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
       z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), color)
-      print(z + ctGetSuffix(tgtBps, realizedSlippageBps))
+      print(z + ctGetSuffix(i,tgtBps, realizedSlippageBps))
 
       if abs(status) >= CT_CONFIGS_DICT['STREAK'] and isStable:
         print()
@@ -1393,8 +1388,11 @@ def filterDict(d, keyword):
   return d2
 
 # Get current time
-def getCurrentTime():
-  return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+def getCurrentTime(isCondensed=False):
+  if isCondensed:
+    return datetime.datetime.today().strftime('%H:%M:%S')
+  else:
+    return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
 # Get values over next 1440 minutes (one day) with exponential decay features
 def getOneDayDecayedValues(current,terminal,halfLifeHours):
