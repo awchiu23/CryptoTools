@@ -13,6 +13,9 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - Library for accessing Kraken futures
 ---
 
+## CryptoReporter
+- This tool is for monitoring NAVs, positions and risks across multiple exchanges
+
 ## *Alerter
 - These tools are for monitoring smart basis (as well as raw basis) of various futures
 - Raw basis: premium of future vs. FTX spot
@@ -25,9 +28,6 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 ## *Trader
 - Automated trading of spot and futures
 - If interested, please speak with me directly
-
-## CryptoReporter
-- This tool is for monitoring NAVs, positions and risks across multiple exchanges
 
 ---
 
