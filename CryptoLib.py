@@ -79,7 +79,7 @@ def ftxGetMid(ftx, name):
 @retry(wait_fixed=1000)
 def ftxGetBid(ftx,ticker):
   return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['bid'])
-  
+
 @retry(wait_fixed=1000)
 def ftxGetAsk(ftx,ticker):
   return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])

@@ -173,7 +173,7 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   zLabel += 'net: '
   z1 += str(round(netDelta / 1000)) + 'K'
   z2 += str(round(netDeltaUSD/1000))+'K)'
-  print(colored(('USDT '+zLabel).rjust(37)+z1.ljust(27)+z2, 'red'))
+  print(colored(('USDT '+zLabel).rjust(37)+(z1+' ').ljust(27)+z2, 'red'))
 
 def printFlows(ftxCore,bnCore,nav):
   def getSuffix(ftxCore,ccy,nav):
