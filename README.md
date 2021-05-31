@@ -41,7 +41,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
 
 ## KrakenAlerter
-- This tool is for monitoring differences of Kraken spots to FTX spots
+- This tool is for monitoring differences between Kraken and FTX for BTC spot
 
 ## KrakenTrader
 - This tool allows you to execute BTC margined spot in Kraken
