@@ -44,12 +44,6 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 ## KrakenAlerter
 - This tool is for monitoring differences of Kraken spots to FTX spots
 
-## KrakenUtil
-- This tool provides the following information from your Kraken accounts:
-  1. 24H borrow fees
-  2. Auto liquidation dates (365-day windows)
-  3. Cash balances
-
 ## KrakenTrader
 - This tool allows you to execute BTC margined spot in Kraken
 - Has ability to work hedges off other exchanges
