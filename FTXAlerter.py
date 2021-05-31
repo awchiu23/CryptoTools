@@ -5,7 +5,7 @@ from CryptoParams import *
 # Params
 ########
 ccy='MATIC'
-color='cyan'
+color='green'
 
 SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
 

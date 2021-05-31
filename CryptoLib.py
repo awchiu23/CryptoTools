@@ -1105,21 +1105,16 @@ def ctInit(ccy=None, notional=None):
   kf = kfApophisInit()
   spotBTC=ftxGetMid(ftx,'BTC/USD')
   spotETH=ftxGetMid(ftx,'ETH/USD')
-  spotXRP=ftxGetMid(ftx,'XRP/USD')
   trade_btc = np.min([np.min([CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotBTC, CT_CONFIGS_DICT['MAX_BTC']])
   trade_eth = np.min([np.min([CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotETH, CT_CONFIGS_DICT['MAX_ETH']])
-  trade_xrp = np.min([np.min([CT_CONFIGS_DICT['TRADE_XRP_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotXRP, CT_CONFIGS_DICT['MAX_XRP']])
   trade_btc_notional = trade_btc * spotBTC
   trade_eth_notional = trade_eth * spotETH
-  trade_xrp_notional = trade_xrp * spotXRP
   qty_dict = dict()
   qty_dict['BTC'] = trade_btc
   qty_dict['ETH'] = trade_eth
-  qty_dict['XRP'] = trade_xrp
   notional_dict = dict()
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
-  notional_dict['XRP'] = trade_xrp_notional
   if not (ccy is None or notional is None):
     spot=ftxGetMid(ftx, ccy + '/USD')
     qty_dict[ccy]= np.min([notional, CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spot
