@@ -45,4 +45,3 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 
 ## KrakenTrader
 - This tool allows you to execute BTC margined spot in Kraken
-- Has ability to work hedges off other exchanges
