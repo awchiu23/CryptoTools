@@ -223,7 +223,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
+  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
@@ -231,13 +231,13 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = -5
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -5
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 5 ### ax to unwind
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 5 ### ax to unwind
+  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -10 ### ax to unwind
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 5 ### ax to unwind
   #####
-  CT_CONFIGS_DICT['KF_BTC_OK'] = 0
-  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_BTC_OK'] = 1
+  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 5 ### ax to unwind
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
@@ -249,4 +249,3 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = -5
   CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = -5
   #####
-  CR_AG_CCY_DICT['BTC'] = 5.88199

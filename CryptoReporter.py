@@ -163,13 +163,20 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   imDelta=imDeltaUSD/spotDict['USDT']
   netDelta=netDeltaUSD/spotDict['USDT']
   #####
-  zLabel = 'spot/fut/impl/'
-  z1=str(round(spotDelta/1000))+'K/'+str(round(futDelta/1000))+'K/'+str(round(implDelta/1000))+'K/'
-  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'+str(round(futDeltaUSD/1000))+'K/$'+str(round(implDeltaUSD/1000))+'K/$'
+  zLabel = 'spot/'
+  z1=str(round(spotDelta/1000))+'K/'
+  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'
+  if futDelta!=0:
+    zLabel += 'fut/'
+    z1+=str(round(futDelta/1000))+'K/'
+    z2+=str(round(futDeltaUSD/1000))+'K/$'
+  zLabel += 'impl/'
+  z1+=str(round(implDelta/1000))+'K/'
+  z2+=str(round(implDeltaUSD/1000)) + 'K/$'
   if imDelta!=0:
     zLabel += 'im/'
-    z1+= str(round(imDelta / 1000)) + 'K/'
-    z2+= str(round(imDeltaUSD / 1000)) + 'K/$'
+    z1+= str(round(imDelta/1000))+'K/'
+    z2+= str(round(imDeltaUSD/1000))+'K/$'
   zLabel += 'net: '
   z1 += str(round(netDelta / 1000)) + 'K'
   z2 += str(round(netDeltaUSD/1000))+'K)'
