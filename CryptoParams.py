@@ -158,13 +158,12 @@ CR_IS_ENABLE_BN_ISOLATED_MARGIN = False
 CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'FTT':1, 'USDT':4})  # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0})                      # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
-CR_KR_CCY_DICT = dict({'BTC': 'XXBT', 'ETH': 'XETH'})            # Kraken currencies; values are Kraken currency names
 CR_EXT_DELTA_USDT = 0
 
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'bb':1,'bn':1,'kf':1,'kr':0})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'bb':1,'bn':1,'kf':1})
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
@@ -215,8 +214,6 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['FTT'] = 0
   CR_FTX_FLOWS_CCYS.extend(['LTC','LINK','XRP'])
-  CR_KR_CCY_DICT['LTC'] = 'XLTC'
-  CR_KR_CCY_DICT['XRP']='XXRP'
   CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx', 'bbt', 'bnt']}
@@ -227,11 +224,11 @@ if os.environ.get('USERNAME')=='Simon':
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
-  CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
+  CT_CONFIGS_DICT['SPOT_BTC_OK'] = 0
   CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 5 ### ax to unwind
+  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 5 ### ax to unwind
   CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -10 ### ax to unwind
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 5 ### ax to unwind
@@ -247,5 +244,4 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = -5
   CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = -5
-  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = -5
-  #####
+  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = -5  

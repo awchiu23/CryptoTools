@@ -924,7 +924,7 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
     edge += prevFundingRate / 365 / (24 / hoursInterval) * pctToCapture
     hoursAccountedFor += hoursInterval * pctToCapture
 
-  # gain on coupon from elapsed time; ignore for kf as est unreliable
+  # gain on coupon from elapsed time; ignore for kf as est2 unreliable
   if not isKF:
     pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
     edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed

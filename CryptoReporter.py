@@ -75,11 +75,6 @@ def getCores():
   bnCore=processCore('bn',spotDict,objs)
   bntCore=processCore('bnt',spotDict,objs)
   kfCore=processCore('kf',spotDict,objs)
-  krCores = []
-  if SHARED_EXCH_DICT['kr'] >= 1:
-    for i in range(SHARED_EXCH_DICT['kr']):
-      krCores.append(core('kr',spotDict,n=i+1))
-    objs.extend(krCores)
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
@@ -93,23 +88,10 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, krCores, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
-
-def krPrintAll(krCores,nav):
-  # Incomes
-  zList = []
-  prefixList = []
-  for krCore in krCores:
-    zList.append('$' + str(round(krCore.oneDayIncome)) + ' (' + str(round(krCore.oneDayAnnRet * 100)) + '% p.a.)')
-    prefixList.append('KR' + str(krCore.n))
-  print(colored(('/'.join(prefixList) + ' 24h rollover fees: ').rjust(37) + ' / '.join(zList), 'blue'))
-  #####
-  # Borrows
-  for krCore in krCores:
-    krCore.krPrintBorrow(nav)
 
 def printAllDual(core1, core2):
   if core1.exch == 'dummy' and core2.exch == 'dummy': return
@@ -259,8 +241,6 @@ class core:
       self.bntInit()
     elif self.exch=='kf':
       self.kfInit()
-    elif self.exch=='kr':
-      self.krInit()
 
   def calcSpotDeltaUSD(self):
     for ccy in self.spots.index:
@@ -719,72 +699,6 @@ class core:
     self.makeIncomesStr()
     self.isDone = True
 
-  ####
-  # KR
-  ####
-  def krInit(self):
-    def getBal(bal, ccy):
-      try:
-        return float(bal[CR_KR_CCY_DICT[ccy]])
-      except:
-        return 0
-    #####
-    self.api = cl.krCCXTInit(self.n)
-    bal = self.api.private_post_balance()['result']
-    for ccy in CR_KR_CCY_DICT.keys():
-      self.spots.loc[ccy,'SpotDelta']=getBal(bal,ccy)
-    #####
-    openPos=self.api.private_post_openpositions()['result']
-    if len(openPos)==0:
-      self.mdbUSD=0 # Margin Delta BTC in USD
-      self.oneDayIncome = 0
-      self.oneDayAnnRet = 0
-    else:
-      positions = pd.DataFrame(openPos).transpose().set_index('pair')
-      if not all([z == 'XXBTZUSD' for z in positions.index]):
-        print('Invalid Kraken pair detected!')
-        sys.exit(1)
-      cl.dfSetFloat(positions, ['vol', 'vol_closed', 'time'])
-      positions['date'] = [datetime.datetime.fromtimestamp(int(ts)) for ts in positions['time']]
-      positions['volNetBTC'] = positions['vol'] - positions['vol_closed']
-      positions['volNetUSD'] = positions['volNetBTC'] * self.spotDict['BTC']
-      self.spots.loc['BTC','SpotDelta'] += positions['volNetBTC'].sum()
-      self.mdbUSD=positions['volNetUSD'].sum()
-      notional = positions['volNetUSD'].abs().sum()
-      #####
-      self.oneDayIncome = -self.mdbUSD * 0.0006
-      self.oneDayAnnRet = self.oneDayIncome * 365 / notional
-    #####
-    self.calcSpotDeltaUSD()
-    tradeBal = self.api.private_post_tradebalance()['result']
-    self.nav = float(tradeBal['eb'])+float(tradeBal['n'])
-    #####
-    freeMargin = float(tradeBal['mf'])
-    if self.spots.loc['BTC', 'SpotDeltaUSD'] == 0:
-      self.liqBTC = 0
-    else:
-      self.liqBTC = 1 - freeMargin / self.spots.loc['BTC','SpotDeltaUSD']
-    self.isDone = True
-
-  def krPrintBorrow(self, nav):
-    liqStr = colored(fmtLiq(self.liqBTC).rjust(5), 'red')
-    zPctNAV = '(' + str(round(-self.mdbUSD / nav * 100)) + '%)'
-    z1List=[]
-    z2List=[]
-    for ccy in CR_KR_CCY_DICT.keys():
-      n = self.spots.loc[ccy,'SpotDeltaUSD']
-      if n>=500: # Strip out small quantities
-        z1List.append(ccy)
-        z2List.append('$'+str(round(n/1000))+'K')
-    if len(z1List)==0 and len(z2List)==0:
-      suffix=''
-    else:
-      suffix='(spot delta '+'/'.join(z1List)+': '
-      suffix+='/'.join(z2List)
-      suffix+='; XXBTZUSD: $'
-      suffix += str(round(self.mdbUSD / 1000)) + 'K)'
-    print(liqStr+('KR' + str(self.n) + ' USD est borrow rate: ').rjust(32) + ('22% p.a. ($' + str(round(-self.mdbUSD/1000)) + 'K) '+zPctNAV).ljust(27)+suffix)
-
 ####################################################################################################
 
 if __name__ == '__main__':
@@ -794,7 +708,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_IS_IP_WHITELIST:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, krCores, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -843,7 +757,6 @@ if __name__ == '__main__':
   printAllDual(ftxCore, kfCore)
   printAllDual(bbtCore, bbCore)
   printAllDual(bntCore, bnCore)
-  if SHARED_EXCH_DICT['kr']>0: krPrintAll(krCores, nav)
   #####
   if '-f' in sys.argv:
     while True:
