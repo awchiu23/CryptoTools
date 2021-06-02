@@ -1069,7 +1069,7 @@ def caRun(ccy, color):
     z += ')'
     print(termcolor.colored(z.ljust(n), color), end='')
   #####
-  printHeader(ccy+'Alerter')
+  printHeader(ccy+'a')
   col1N = 20
   print('Column 1:'.ljust(col1N)+'USD marginal rate / USDT marginal rate')
   print('Columns 2+:'.ljust(col1N)+'Smart basis / raw basis (est. funding rate)')
@@ -1095,7 +1095,7 @@ def caRun(ccy, color):
 ##############
 # CryptoTrader
 ##############
-def ctInit(ccy=None, notional=None):
+def ctInit(ccy, notional=None):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
@@ -1116,7 +1116,7 @@ def ctInit(ccy=None, notional=None):
     spot=ftxGetMid(ftx, ccy + '/USD')
     qty_dict[ccy]= np.min([notional, CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spot
     notional_dict[ccy]= qty_dict[ccy] * spot
-  printHeader('CryptoTrader')
+  printHeader(ccy+'t')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
@@ -1166,7 +1166,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
 
 def ctRun(ccy, tgtBps, color, notional=None):
   if notional is None:
-    ftx, bb, bn, kf, qty_dict, notional_dict = ctInit()
+    ftx, bb, bn, kf, qty_dict, notional_dict = ctInit(ccy)
   else:
     ftx, bb, bn, kf, qty_dict, notional_dict = ctInit(ccy, notional)
   if not ccy in qty_dict:

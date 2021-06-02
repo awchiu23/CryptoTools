@@ -192,16 +192,19 @@ if os.environ.get('USERNAME')=='Simon':
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['XRP'] = 4
+  #CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['FTT'] = 0
   CR_FTX_FLOWS_CCYS.extend(['LTC','XRP','MATIC'])
-  CR_EXT_DELTA_USDT = 0
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
+  #SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
+  #####
+  #CR_EXT_DELTA_USDT = 0
   #####
   #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
   #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #

@@ -16,7 +16,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 ## CryptoReporter
 - This tool is for monitoring NAVs, positions and risks across multiple exchanges
 
-## *Alerter
+## *a
 - These tools are for monitoring smart basis (as well as raw basis) of various futures
 - Raw basis: premium of future vs. FTX spot
 - Smart basis: same but adjusted for these extras:
@@ -25,7 +25,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 	- Accrued funding payments
 	- Future funding payments
 
-## *Trader
+## *t
 - Automated trading of spot and futures
 - If interested, please speak with me directly
 
