@@ -65,9 +65,6 @@ def bnCCXTInit():
 def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
-def krCCXTInit(n=1):
-  return ccxt.kraken({'apiKey': globals()['API_KEY_KR'+str(n)], 'secret': globals()['API_SECRET_KR'+str(n)], 'enableRateLimit': False})
-
 ########
 # Prices
 ########

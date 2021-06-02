@@ -13,14 +13,6 @@ API_KEY_BN = ''
 API_SECRET_BN = ''
 API_KEY_KF = ''
 API_SECRET_KF = ''
-API_KEY_KR1 = ''
-API_SECRET_KR1 = ''
-API_KEY_KR2 = ''
-API_SECRET_KR2 = ''
-API_KEY_KR3 = ''
-API_SECRET_KR3 = ''
-API_KEY_KR4 = ''
-API_SECRET_KR4 = ''
 
 #############################################################################################
 
@@ -35,20 +27,20 @@ CT_CONFIGS_DICT=dict()
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_BTC_OK']=0
 CT_CONFIGS_DICT['FTX_BTC_OK']=0
-CT_CONFIGS_DICT['BB_BTC_OK']=0
 CT_CONFIGS_DICT['BBT_BTC_OK']=0
-CT_CONFIGS_DICT['BN_BTC_OK']=0
 CT_CONFIGS_DICT['BNT_BTC_OK']=0
 CT_CONFIGS_DICT['KF_BTC_OK']=0
+CT_CONFIGS_DICT['BB_BTC_OK']=0
+CT_CONFIGS_DICT['BN_BTC_OK']=0
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
 
 #####
 # ETH
@@ -56,20 +48,20 @@ CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
 # 0=Disabled; 1=Enabled
 CT_CONFIGS_DICT['SPOT_ETH_OK']=0
 CT_CONFIGS_DICT['FTX_ETH_OK']=0
-CT_CONFIGS_DICT['BB_ETH_OK']=0
 CT_CONFIGS_DICT['BBT_ETH_OK']=0
-CT_CONFIGS_DICT['BN_ETH_OK']=0
 CT_CONFIGS_DICT['BNT_ETH_OK']=0
 CT_CONFIGS_DICT['KF_ETH_OK']=0
+CT_CONFIGS_DICT['BB_ETH_OK']=0
+CT_CONFIGS_DICT['BN_ETH_OK']=0
 
 # Positive = eager to buy; Negative = eager to sell
 CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
 CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
+CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
 
 #############################################################################################
 
@@ -88,11 +80,11 @@ CT_CONFIGS_DICT['MAX_BTC'] = 0.5                     # Hard limit
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Hard limit
 
 CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=-1       # Execution setting
-CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=-3        # Execution setting
 CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=-3       # Execution setting
-CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']=0         # Execution setting
 CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']=0        # Execution setting
 CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']=0         # Execution setting
+CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=-3        # Execution setting
+CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']=0         # Execution setting
 CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
 #############################################################################################
@@ -105,9 +97,6 @@ CT_CONFIGS_DICT['ROUND_PRICE_FTX']=dict({'BTC':[0,None],
                                          'DOGE':[1,2e6],
                                          'LINK':[1,2000],
                                          'SOL':[1,400]})
-CT_CONFIGS_DICT['ROUND_PRICE_BB']=dict({'BTC':[1,2],
-                                        'ETH':[1,20],
-                                        'XRP':[0,4]})
 CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],
                                          'ETH':[1,20],
                                          'XRP':[0,4],
@@ -115,10 +104,6 @@ CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],
                                          'AAVE':[1,20],
                                          'BCH':[1,20],
                                          'LINK':[0,3]})
-CT_CONFIGS_DICT['ROUND_PRICE_BN']=dict({'BTC':[0,1],
-                                        'ETH':[0,2],
-                                        'XRP':[0,4],
-                                        'BNB':[0,3]})
 CT_CONFIGS_DICT['ROUND_PRICE_BNT']=dict({'BTC':[0,2],
                                          'ETH':[0,2],
                                          'XRP':[0,4],
@@ -133,6 +118,13 @@ CT_CONFIGS_DICT['ROUND_PRICE_KF']=dict({'BTC':[1,2],
                                         'ETH':[1,20],
                                         'XRP':[0,4],
                                         'LTC':[0,2]})
+CT_CONFIGS_DICT['ROUND_PRICE_BB']=dict({'BTC':[1,2],
+                                        'ETH':[1,20],
+                                        'XRP':[0,4]})
+CT_CONFIGS_DICT['ROUND_PRICE_BN']=dict({'BTC':[0,1],
+                                        'ETH':[0,2],
+                                        'XRP':[0,4],
+                                        'BNB':[0,3]})
 CT_CONFIGS_DICT['ROUND_QTY_FTX']=dict({'BTC':4, 'ETH':3, 'XRP':None,
                                        'MATIC':-1,
                                        'DOGE':None,
@@ -163,10 +155,10 @@ CR_EXT_DELTA_USDT = 0
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'bb':1,'bn':1,'kf':1})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'kf':1,'bb':1,'bn':1})
 SHARED_CCY_DICT=dict()
-SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
-SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb', 'bn', 'kf']}
+SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb', 'bn']}
+SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb', 'bn']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 
 #############
@@ -196,14 +188,6 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
-  API_KEY_KR1 = sl.jLoad('API_KEY_KR1')
-  API_SECRET_KR1 = sl.jLoad('API_SECRET_KR1')
-  API_KEY_KR2 = sl.jLoad('API_KEY_KR2')
-  API_SECRET_KR2 = sl.jLoad('API_SECRET_KR2')
-  API_KEY_KR3 = sl.jLoad('API_KEY_KR3')
-  API_SECRET_KR3 = sl.jLoad('API_SECRET_KR3')
-  API_KEY_KR4 = sl.jLoad('API_KEY_KR4')
-  API_SECRET_KR4 = sl.jLoad('API_SECRET_KR4')
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   CR_QUOTE_CCY_DICT['LTC'] = 2
