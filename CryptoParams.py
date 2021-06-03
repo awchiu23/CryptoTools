@@ -165,19 +165,19 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
+  CR_AG_CCY_DICT['FTT'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_AG_CCY_DICT['FTT'] = 0
   CR_FTX_FLOWS_CCYS.extend(['DOGE','LTC','XRP','MATIC'])
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt', 'bnt']}
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  CR_AG_CCY_DICT['BTC']=3.68275
-  CR_AG_CCY_DICT['ETH']=15.2125
+  #CR_AG_CCY_DICT['BTC']=3.68275
+  #CR_AG_CCY_DICT['ETH']=15.2125
   #CR_EXT_DELTA_USDT = 0
   #####
   #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
@@ -189,9 +189,9 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -5 # ax to unwind
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -10 # ax to unwind
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
@@ -199,6 +199,6 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['BBT_ETH_OK'] = 1
   CT_CONFIGS_DICT['BNT_ETH_OK'] = 1
   CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = -5
