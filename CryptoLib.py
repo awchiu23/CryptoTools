@@ -179,10 +179,11 @@ def roundPrice(exch, price, ccy):
     return round(price * param) / param
 
 def roundQty(exch, qty, ccy):
+  DEFAULT_NDIGITS = 3
   if exch=='ftx':
-    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_FTX'].get(ccy, 6))
+    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_FTX'].get(ccy, DEFAULT_NDIGITS))
   elif exch=='bnt':
-    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_BNT'].get(ccy, 3))
+    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_BNT'].get(ccy, DEFAULT_NDIGITS))
   else:
     sys.exit(1)
 
