@@ -1210,6 +1210,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
 
         # Pick pair to trade
         while True:
+          dCopy = d.copy()
           keyMax=max(d.items(), key=operator.itemgetter(1))[0]
           keyMin=min(d.items(), key=operator.itemgetter(1))[0]
           smartBasisBps=(d[keyMax]-d[keyMin])*10000
@@ -1234,6 +1235,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
           if pos>=0:
             if len(d.keys())<=2:
               chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+              d = dCopy.copy()
               time.sleep(1)
               continue # to next iteration in innermost While True loop
             else:

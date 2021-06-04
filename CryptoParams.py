@@ -160,23 +160,20 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
-  CR_QUOTE_CCY_DICT['LTC'] = 2
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['FTT'] = 0
-  CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP','DOGE','MATIC'])
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb']}
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=3.68275
+  #CR_AG_CCY_DICT['BTC']=15.38156153
   #CR_AG_CCY_DICT['ETH']=15.2125
   #CR_EXT_DELTA_USDT = 0
   #####
@@ -185,13 +182,13 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
+  CT_CONFIGS_DICT['FTX_BTC_OK'] = 0
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = -5
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -8 # tendency to be cheap
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 8
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 8
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
