@@ -187,10 +187,10 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
   CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['BNT_BTC_OK'] = 0
+  CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 15
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -2 # ax to unwind
+  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = -5
+  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = -8 # tendency to be cheap
   CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = -5
   #####
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell

@@ -453,7 +453,7 @@ class core:
     pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
     for ccy in self.validCcys:
       ccy2=ccy+'USD'
-      pmts.loc[ccy2, 'incomeUSD'] = -pmts.loc[ccy2, 'exec_fee'] * self.spotDict[ccy]
+      if ccy2 in pmts.index: pmts.loc[ccy2, 'incomeUSD'] = -pmts.loc[ccy2, 'exec_fee'] * self.spotDict[ccy]
     pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
     pmts = pmts.set_index('date')
     #####
@@ -466,8 +466,12 @@ class core:
     #####
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USD', 'fee_rate']
-      oneDayFunding = df.mean() * 3 * 365
-      prevFunding = df[df.index[-1]].mean() * 3 * 365
+      if len(df) == 0:
+        oneDayFunding = 0
+        prevFunding = 0
+      else:
+        oneDayFunding = df.mean() * 3 * 365
+        prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.bbGetEstFunding1(self.api, ccy)
       estFunding2 = cl.bbGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
