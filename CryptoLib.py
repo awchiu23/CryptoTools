@@ -1209,8 +1209,8 @@ def ctRun(ccy, tgtBps, color, notional=None):
       if chosenLong=='':
 
         # Pick pair to trade
+        isTooFewCandidates = False
         while True:
-          dCopy = d.copy()
           keyMax=max(d.items(), key=operator.itemgetter(1))[0]
           keyMin=min(d.items(), key=operator.itemgetter(1))[0]
           smartBasisBps=(d[keyMax]-d[keyMin])*10000
@@ -1234,14 +1234,17 @@ def ctRun(ccy, tgtBps, color, notional=None):
             break
           if pos>=0:
             if len(d.keys())<=2:
-              chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
-              d = dCopy.copy()
-              time.sleep(1)
-              continue # to next iteration in innermost While True loop
+              isTooFewCandidates=True
+              break
             else:
               del d[chosenLong+'SmartBasis']
           else:
             break
+
+        # If too few candidates ....
+        if isTooFewCandidates:
+          chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+          continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:

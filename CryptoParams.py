@@ -72,18 +72,18 @@ CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps
 CT_CONFIGS_DICT['NPROGRAMS'] = 50                    # Number of programs (each program being a pair of trades)
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
-CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 6000         # Per trade notional
-CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 6000         # Per trade notional
+CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 10000        # Per trade notional
+CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 10000        # Per trade notional
 
 CT_CONFIGS_DICT['MAX_NOTIONAL'] = 50000              # Hard limit
 CT_CONFIGS_DICT['MAX_BTC'] = 0.5                     # Hard limit
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Hard limit
 
 CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=-1       # Execution setting
-CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=-3       # Execution setting
+CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=-1       # Execution setting
 CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']=0        # Execution setting
 CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']=0         # Execution setting
-CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=-3        # Execution setting
+CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=-1        # Execution setting
 CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']=0         # Execution setting
 CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
@@ -159,43 +159,49 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
-  CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
-  CR_AG_CCY_DICT['FTT'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'bb']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=15.38156153
+  #CR_AG_CCY_DICT['BTC']=36.33
   #CR_AG_CCY_DICT['ETH']=15.2125
   #CR_EXT_DELTA_USDT = 0
   #####
-  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # **************************************** #
-  #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False    # **************************************** #
+  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False
+  #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False
+  CT_CONFIGS_DICT['NPROGRAMS'] = 100
   #####
   # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['FTX_BTC_OK'] = 0
+  CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
   CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
   CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
+  CT_CONFIGS_DICT['KF_BTC_OK'] = 1
   CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
   CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 8
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 8
-  #####
+  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 0
+  ###
   # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
   CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
-  CT_CONFIGS_DICT['FTX_ETH_OK'] = 0
+  CT_CONFIGS_DICT['FTX_ETH_OK'] = 1
   CT_CONFIGS_DICT['BBT_ETH_OK'] = 1
   CT_CONFIGS_DICT['BNT_ETH_OK'] = 1
-  CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
+  CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 3
   CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 15
-  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 15
+  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
+  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
+  #####
+  CT_CONFIGS_DICT['BB_ETH_OK'] = 1
+  CT_CONFIGS_DICT['BB_ETH_ADJ_BPS'] = -3
