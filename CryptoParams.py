@@ -161,17 +161,13 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   CT_CONFIGS_DICT['NPROGRAMS'] = 100
   #####
+  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_QUOTE_CCY_DICT['DOGE'] = 4
-  CR_QUOTE_CCY_DICT['MATIC'] = 4
+  CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
-  SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'kf': 1, 'bb': 1, 'bn': 0})
-  del SHARED_CCY_DICT['FTT']
+  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP'])
+  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb']}
-  SHARED_CCY_DICT['FTT'] = {'futExch': ['ftx']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
-  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=0
