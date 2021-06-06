@@ -159,49 +159,21 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
+  CT_CONFIGS_DICT['NPROGRAMS'] = 100
+  #####
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_AG_CCY_DICT['DOGE'] = 0
-  CR_AG_CCY_DICT['MATIC'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
+  SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'kf': 1, 'bb': 1, 'bn': 0})
+  del SHARED_CCY_DICT['FTT']
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt']}
-  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
+  SHARED_CCY_DICT['FTT'] = {'futExch': ['ftx']}
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
+  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=36.33
-  #CR_AG_CCY_DICT['ETH']=15.2125
+  #CR_AG_CCY_DICT['BTC']=0
+  #CR_AG_CCY_DICT['ETH']=0
   #CR_EXT_DELTA_USDT = 0
-  #####
-  #CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False
-  #CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = False
-  CT_CONFIGS_DICT['NPROGRAMS'] = 100
-  #####
-  # BTC: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
-  CT_CONFIGS_DICT['SPOT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['FTX_BTC_OK'] = 1
-  CT_CONFIGS_DICT['BBT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['BNT_BTC_OK'] = 1
-  CT_CONFIGS_DICT['KF_BTC_OK'] = 1
-  CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['KF_BTC_ADJ_BPS'] = 0
-  ###
-  # ETH: 0=Disabled; 1=Enabled / Positive = eager to buy; Negative = eager to sell
-  CT_CONFIGS_DICT['SPOT_ETH_OK'] = 1
-  CT_CONFIGS_DICT['FTX_ETH_OK'] = 1
-  CT_CONFIGS_DICT['BBT_ETH_OK'] = 1
-  CT_CONFIGS_DICT['BNT_ETH_OK'] = 1
-  CT_CONFIGS_DICT['KF_ETH_OK'] = 1
-  CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS'] = 3
-  CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS'] = 0
-  CT_CONFIGS_DICT['KF_ETH_ADJ_BPS'] = 0
-  #####
-  CT_CONFIGS_DICT['BB_ETH_OK'] = 1
-  CT_CONFIGS_DICT['BB_ETH_ADJ_BPS'] = -3
