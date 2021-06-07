@@ -69,7 +69,7 @@ CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = True   # Stop buying futures when 
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
 CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
 CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps for range of observations
-CT_CONFIGS_DICT['NPROGRAMS'] = 50                    # Number of programs (each program being a pair of trades)
+CT_CONFIGS_DICT['NPROGRAMS'] = 100                   # Number of programs (each program being a pair of trades)
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
 CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 10000        # Per trade notional
@@ -159,17 +159,19 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
-  CT_CONFIGS_DICT['NPROGRAMS'] = 100
-  #####
   CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['XRP'] = 4
+  CR_QUOTE_CCY_DICT['DOGE'] = 4
+  CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP'])
+  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP','DOGE','MATIC'])
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
+  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=0
-  #CR_AG_CCY_DICT['ETH']=0
+  #CR_AG_CCY_DICT['ETH']=185
   #CR_EXT_DELTA_USDT = 0
