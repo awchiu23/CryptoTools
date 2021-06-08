@@ -1024,27 +1024,27 @@ def getSmartBasisDict(ftx, bb, bn, kf, ccy, fundingDict, isSkipAdj=False):
   d = dict()
   oneDayShortSpotEdge = getOneDayShortSpotEdge(fundingDict)
   if 'ftx' in validExchs:
-    ftxAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['FTX_' + ccy + '_ADJ_BPS']) / 10000
+    ftxAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['FTX_' + ccy][1]) / 10000
     d['ftxBasis'] = ftxPrices.fut / ftxPrices.spot - 1
     d['ftxSmartBasis'] = ftxGetOneDayShortFutEdge(ftx,fundingDict, d['ftxBasis']) - oneDayShortSpotEdge + ftxAdj
   if 'bb' in validExchs:
-    bbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BB_' + ccy + '_ADJ_BPS']) / 10000
+    bbAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BB_' + ccy][1]) / 10000
     d['bbBasis'] = bbPrices.fut / ftxPrices.spot - 1
     d['bbSmartBasis'] = bbGetOneDayShortFutEdge(bb,fundingDict, d['bbBasis']) - oneDayShortSpotEdge + bbAdj
   if 'bbt' in validExchs:
-    bbtAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BBT_' + ccy + '_ADJ_BPS']) / 10000
+    bbtAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BBT_' + ccy][1]) / 10000
     d['bbtBasis'] = bbtPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['bbtSmartBasis'] = bbtGetOneDayShortFutEdge(bb, fundingDict, d['bbtBasis']) - oneDayShortSpotEdge + bbtAdj
   if 'bn' in validExchs:
-    bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BN_' + ccy + '_ADJ_BPS']) / 10000
+    bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BN_' + ccy][1]) / 10000
     d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1
     d['bnSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, d['bnBasis']) - oneDayShortSpotEdge + bnAdj
   if 'bnt' in validExchs:
-    bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['BNT_' + ccy + '_ADJ_BPS']) / 10000
+    bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BNT_' + ccy][1]) / 10000
     d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
   if 'kf' in validExchs:
-    kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy + '_ADJ_BPS'] - CT_CONFIGS_DICT['KF_' + ccy + '_ADJ_BPS']) / 10000
+    kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['KF_' + ccy][1]) / 10000
     d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
     d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
   return d
@@ -1123,6 +1123,22 @@ def ctInit(ccy, notional=None):
   print()
   return ftx,bb,bn,kf,qty_dict,notional_dict
 
+def ctGetFutPos(ftx, bb, bn, kf, exch, ccy):
+  if exch == 'ftx':
+    return ftxGetFutPos(ftx, ccy)
+  elif exch == 'bb':
+    return bbGetFutPos(bb, ccy)
+  elif exch == 'bbt':
+    return bbtGetFutPos(bb, ccy)
+  elif exch == 'bn':
+    return bnGetFutPos(bn, ccy)
+  elif exch == 'bnt':
+    return bntGetFutPos(bn, ccy)
+  elif exch == 'kf':
+    return kfGetFutPos(kf, ccy)
+  else:
+    return None
+
 def ctGetSuffix(i, tgtBps, realizedSlippageBps):
   z= 'Program '+str(i+1) + ' / Target = '+str(round(tgtBps)) + 'bps'
   if len(realizedSlippageBps) > 0:
@@ -1188,7 +1204,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
 
       # Remove disabled instruments
       for exch in SHARED_CCY_DICT[ccy]['futExch'] + ['spot']:
-        if CT_CONFIGS_DICT[exch.upper() + '_' + ccy + '_OK'] == 0:
+        if CT_CONFIGS_DICT[exch.upper() + '_' + ccy][0] == 0:
           del smartBasisDict[exch + 'SmartBasis']
           del smartBasisDict[exch+'Basis']
 
@@ -1216,30 +1232,31 @@ def ctRun(ccy, tgtBps, color, notional=None):
           smartBasisBps=(d[keyMax]-d[keyMin])*10000
           chosenLong = keyMin[:len(keyMin) - 10]
           chosenShort = keyMax[:len(keyMax) - 10]
-          if not CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG']:
-            break
-          if chosenLong=='ftx':
-            pos=ftxGetFutPos(ftx,ccy)
-          elif chosenLong=='bb':
-            pos=bbGetFutPos(bb,ccy)
-          elif chosenLong=='bbt':
-            pos=bbtGetFutPos(bb,ccy)
-          elif chosenLong=='bn':
-            pos=bnGetFutPos(bn,ccy)
-          elif chosenLong=='bnt':
-            pos=bntGetFutPos(bn, ccy)
-          elif chosenLong=='kf':
-            pos=kfGetFutPos(kf,ccy)
-          else:
-            break
-          if pos>=0:
-            if len(d.keys())<=2:
-              isTooFewCandidates=True
-              break
-            else:
+          #####
+          maxPosLong = 1e9
+          dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
+          if len(dLong) > 2: maxPosLong = dLong[2]
+          if CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG']: maxPosLong=min(0,maxPosLong)
+          #####
+          maxPosShort = 1e9
+          dShort = CT_CONFIGS_DICT[chosenShort.upper() + '_' + ccy]
+          if len(dShort) > 2: maxPosShort = dShort[2]
+          #####
+          posLong = ctGetFutPos(ftx, bb, bn, kf, chosenLong, ccy)
+          posShort = ctGetFutPos(ftx, bb, bn, kf, chosenShort, ccy)
+          if not posLong is None:
+            if posLong>=maxPosLong:
               del d[chosenLong+'SmartBasis']
-          else:
-            break
+              continue
+          if not posShort is None:
+            if posShort<=-maxPosShort:
+              del d[chosenShort+'SmartBasis']
+              continue
+          if len(d.keys())<=2:
+            isTooFewCandidates=True
+          break
+
+        ###############
 
         # If too few candidates ....
         if isTooFewCandidates:

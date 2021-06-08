@@ -21,49 +21,27 @@ API_SECRET_KF = ''
 ###############
 CT_CONFIGS_DICT=dict()
 
-#####
-# BTC
-#####
-# 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_BTC_OK']=0
-CT_CONFIGS_DICT['FTX_BTC_OK']=0
-CT_CONFIGS_DICT['BBT_BTC_OK']=0
-CT_CONFIGS_DICT['BNT_BTC_OK']=0
-CT_CONFIGS_DICT['KF_BTC_OK']=0
-CT_CONFIGS_DICT['BB_BTC_OK']=0
-CT_CONFIGS_DICT['BN_BTC_OK']=0
+# [Enabled? (0 = disabled; 1 = enabled),
+#  Axe (+ve = eager to buy; -ve = eager to sell),
+#  Optional: Max abs position]
 
-# Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['BBT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['BNT_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['KF_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_BTC_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_BTC_ADJ_BPS']=0
+CT_CONFIGS_DICT['SPOT_BTC']=[0,0]
+CT_CONFIGS_DICT['FTX_BTC']=[0,0]
+CT_CONFIGS_DICT['BBT_BTC']=[0,0]
+CT_CONFIGS_DICT['BNT_BTC']=[0,0]
+CT_CONFIGS_DICT['KF_BTC']=[0,0]
+CT_CONFIGS_DICT['BB_BTC']=[0,0]
+CT_CONFIGS_DICT['BN_BTC']=[0,0]
 
-#####
-# ETH
-#####
-# 0=Disabled; 1=Enabled
-CT_CONFIGS_DICT['SPOT_ETH_OK']=0
-CT_CONFIGS_DICT['FTX_ETH_OK']=0
-CT_CONFIGS_DICT['BBT_ETH_OK']=0
-CT_CONFIGS_DICT['BNT_ETH_OK']=0
-CT_CONFIGS_DICT['KF_ETH_OK']=0
-CT_CONFIGS_DICT['BB_ETH_OK']=0
-CT_CONFIGS_DICT['BN_ETH_OK']=0
+CT_CONFIGS_DICT['SPOT_ETH']=[0,0]
+CT_CONFIGS_DICT['FTX_ETH']=[0,0]
+CT_CONFIGS_DICT['BBT_ETH']=[0,0]
+CT_CONFIGS_DICT['BNT_ETH']=[0,0]
+CT_CONFIGS_DICT['KF_ETH']=[0,0]
+CT_CONFIGS_DICT['BB_ETH']=[0,0]
+CT_CONFIGS_DICT['BN_ETH']=[0,0]
 
-# Positive = eager to buy; Negative = eager to sell
-CT_CONFIGS_DICT['SPOT_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['FTX_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BBT_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BNT_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['KF_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BB_ETH_ADJ_BPS']=0
-CT_CONFIGS_DICT['BN_ETH_ADJ_BPS']=0
-
-#############################################################################################
+##########################
 
 CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = True   # Stop buying futures when position is long?
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
@@ -161,17 +139,13 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_QUOTE_CCY_DICT['DOGE'] = 4
-  CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP','DOGE','MATIC'])
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx']}
-  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
+  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP'])
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=0
-  #CR_AG_CCY_DICT['ETH']=185
+  #CR_AG_CCY_DICT['BTC']=3.1
+  #CR_AG_CCY_DICT['ETH']=40.322
   #CR_EXT_DELTA_USDT = 0
