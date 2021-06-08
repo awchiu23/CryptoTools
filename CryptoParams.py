@@ -23,7 +23,7 @@ CT_CONFIGS_DICT=dict()
 
 # [Enabled? (0 = disabled; 1 = enabled),
 #  Axe (+ve = eager to buy; -ve = eager to sell),
-#  Optional: Max abs position]
+#  Optional: Max abs position USD]
 
 CT_CONFIGS_DICT['SPOT_BTC']=[0,0]
 CT_CONFIGS_DICT['FTX_BTC']=[0,0]

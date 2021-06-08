@@ -1113,27 +1113,32 @@ def ctInit(ccy, notional=None):
   notional_dict = dict()
   notional_dict['BTC'] = trade_btc_notional
   notional_dict['ETH'] = trade_eth_notional
-  if not (ccy is None or notional is None):
-    spot=ftxGetMid(ftx, ccy + '/USD')
+  if ccy=='BTC':
+    spot=spotBTC
+  elif ccy=='ETH':
+    spot=spotETH
+  else:
+    spot=ftxGetMid(ftx,ccy+'/USD')
+  if not notional is None:
     qty_dict[ccy]= np.min([notional, CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spot
     notional_dict[ccy]= qty_dict[ccy] * spot
   printHeader(ccy+'t')
   print('Qtys:     ', qty_dict)
   print('Notionals:', notional_dict)
   print()
-  return ftx,bb,bn,kf,qty_dict,notional_dict
+  return ftx,bb,bn,kf,qty_dict,notional_dict,spot
 
-def ctGetFutPos(ftx, bb, bn, kf, exch, ccy):
+def ctGetFutPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
   if exch == 'ftx':
-    return ftxGetFutPos(ftx, ccy)
+    return ftxGetFutPos(ftx, ccy) * spot
   elif exch == 'bb':
     return bbGetFutPos(bb, ccy)
   elif exch == 'bbt':
-    return bbtGetFutPos(bb, ccy)
+    return bbtGetFutPos(bb, ccy) * spot
   elif exch == 'bn':
     return bnGetFutPos(bn, ccy)
   elif exch == 'bnt':
-    return bntGetFutPos(bn, ccy)
+    return bntGetFutPos(bn, ccy) * spot
   elif exch == 'kf':
     return kfGetFutPos(kf, ccy)
   else:
@@ -1183,12 +1188,9 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
 
 def ctRun(ccy, tgtBps, color, notional=None):
   if notional is None:
-    ftx, bb, bn, kf, qty_dict, notional_dict = ctInit(ccy)
+    ftx, bb, bn, kf, qty_dict, notional_dict, spot = ctInit(ccy)
   else:
-    ftx, bb, bn, kf, qty_dict, notional_dict = ctInit(ccy, notional)
-  if not ccy in qty_dict:
-    print('Invalid ccy!')
-    sys.exit(1)
+    ftx, bb, bn, kf, qty_dict, notional_dict, spot = ctInit(ccy, notional)
   trade_qty = qty_dict[ccy]
   trade_notional = notional_dict[ccy]
   realizedSlippageBps = []
@@ -1233,23 +1235,23 @@ def ctRun(ccy, tgtBps, color, notional=None):
           chosenLong = keyMin[:len(keyMin) - 10]
           chosenShort = keyMax[:len(keyMax) - 10]
           #####
-          maxPosLong = 1e9
+          maxPosUSDLong = 1e9
           dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
-          if len(dLong) > 2: maxPosLong = dLong[2]
-          if CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG']: maxPosLong=min(0,maxPosLong)
+          if len(dLong) > 2: maxPosUSDLong = dLong[2]
+          if CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG']: maxPosUSDLong=min(0,maxPosUSDLong)
           #####
-          maxPosShort = 1e9
+          maxPosUSDShort = 1e9
           dShort = CT_CONFIGS_DICT[chosenShort.upper() + '_' + ccy]
-          if len(dShort) > 2: maxPosShort = dShort[2]
+          if len(dShort) > 2: maxPosUSDShort = dShort[2]
           #####
-          posLong = ctGetFutPos(ftx, bb, bn, kf, chosenLong, ccy)
-          posShort = ctGetFutPos(ftx, bb, bn, kf, chosenShort, ccy)
-          if not posLong is None:
-            if posLong>=maxPosLong:
+          posUSDLong = ctGetFutPosUSD(ftx, bb, bn, kf, chosenLong, ccy, spot)
+          posUSDShort = ctGetFutPosUSD(ftx, bb, bn, kf, chosenShort, ccy, spot)
+          if not posUSDLong is None:
+            if posUSDLong>=maxPosUSDLong:
               del d[chosenLong+'SmartBasis']
               continue
-          if not posShort is None:
-            if posShort<=-maxPosShort:
+          if not posUSDShort is None:
+            if posUSDShort<=-maxPosUSDShort:
               del d[chosenShort+'SmartBasis']
               continue
           if len(d.keys())<2:
