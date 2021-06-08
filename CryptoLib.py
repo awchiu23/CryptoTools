@@ -1136,7 +1136,13 @@ def ctGetFutPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
   elif exch == 'bbt':
     return bbtGetFutPos(bb, ccy) * spot
   elif exch == 'bn':
-    return bnGetFutPos(bn, ccy)
+    if ccy == 'BTC':
+      mult = 100
+    elif ccy in ['ETH', 'XRP', 'BNB']:
+      mult = 10
+    else:
+      sys.exit(1)
+    return bnGetFutPos(bn, ccy) * mult
   elif exch == 'bnt':
     return bntGetFutPos(bn, ccy) * spot
   elif exch == 'kf':
