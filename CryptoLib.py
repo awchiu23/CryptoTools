@@ -626,12 +626,8 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
     sys.exit(1)
   ticker=ccy+'USD_PERP'
   print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
-  if ccy=='BTC':
-    qty=round(trade_notional/100)
-  elif ccy in ['ETH','XRP','BNB']:
-    qty=round(trade_notional/10)
-  else:
-    sys.exit(1)
+  mult=100 if ccy=='BTC' else 10
+  qty=round(trade_notional/mult)
   if side == 'BUY':
     refPrice = bnGetBid(bn, ccy)
   else:
@@ -1136,12 +1132,7 @@ def ctGetFutPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
   elif exch == 'bbt':
     return bbtGetFutPos(bb, ccy) * spot
   elif exch == 'bn':
-    if ccy == 'BTC':
-      mult = 100
-    elif ccy in ['ETH', 'XRP', 'BNB']:
-      mult = 10
-    else:
-      sys.exit(1)
+    mult = 100 if ccy == 'BTC' else 10
     return bnGetFutPos(bn, ccy) * mult
   elif exch == 'bnt':
     return bntGetFutPos(bn, ccy) * spot
