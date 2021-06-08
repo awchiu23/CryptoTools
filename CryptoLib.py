@@ -1252,7 +1252,7 @@ def ctRun(ccy, tgtBps, color, notional=None):
             if posShort<=-maxPosShort:
               del d[chosenShort+'SmartBasis']
               continue
-          if len(d.keys())<=2:
+          if len(d.keys())<2:
             isTooFewCandidates=True
           break
 
