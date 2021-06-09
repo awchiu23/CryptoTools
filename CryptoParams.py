@@ -21,28 +21,6 @@ API_SECRET_KF = ''
 ###############
 CT_CONFIGS_DICT=dict()
 
-# [Enabled? (0 = disabled; 1 = enabled),
-#  Axe (+ve = eager to buy; -ve = eager to sell),
-#  Optional: Max abs position USD]
-
-CT_CONFIGS_DICT['SPOT_BTC']=[0,0]
-CT_CONFIGS_DICT['FTX_BTC']=[0,0]
-CT_CONFIGS_DICT['BBT_BTC']=[0,0]
-CT_CONFIGS_DICT['BNT_BTC']=[0,0]
-CT_CONFIGS_DICT['KF_BTC']=[0,0]
-CT_CONFIGS_DICT['BB_BTC']=[0,0]
-CT_CONFIGS_DICT['BN_BTC']=[0,0]
-
-CT_CONFIGS_DICT['SPOT_ETH']=[0,0]
-CT_CONFIGS_DICT['FTX_ETH']=[0,0]
-CT_CONFIGS_DICT['BBT_ETH']=[0,0]
-CT_CONFIGS_DICT['BNT_ETH']=[0,0]
-CT_CONFIGS_DICT['KF_ETH']=[0,0]
-CT_CONFIGS_DICT['BB_ETH']=[0,0]
-CT_CONFIGS_DICT['BN_ETH']=[0,0]
-
-##########################
-
 CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = True   # Stop buying futures when position is long?
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
 CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
@@ -50,12 +28,9 @@ CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps
 CT_CONFIGS_DICT['NPROGRAMS'] = 100                   # Number of programs (each program being a pair of trades)
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
-CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'] = 10000        # Per trade notional
-CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'] = 10000        # Per trade notional
-
-CT_CONFIGS_DICT['MAX_NOTIONAL'] = 50000              # Hard limit
-CT_CONFIGS_DICT['MAX_BTC'] = 0.5                     # Hard limit
-CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Hard limit
+CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit in USD
+CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins
+CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins
 
 CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=-1       # Execution setting
 CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=-1       # Execution setting
@@ -147,5 +122,6 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=3.1
-  CR_AG_CCY_DICT['ETH']=33.32 #ftx->kr1
-  CR_EXT_DELTA_USDT = 340000 #bb->ftx
+  #CR_AG_CCY_DICT['ETH']=33.32 #ftx->kr1
+  #CR_AG_CCY_DICT['LTC']=1217.1373
+  CR_EXT_DELTA_USDT = 100000 #bb:ftx

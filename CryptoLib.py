@@ -1092,37 +1092,22 @@ def caRun(ccy, color):
 ##############
 # CryptoTrader
 ##############
-def ctInit(ccy, notional=None):
+def ctInit(ccy, notional):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
   kf = kfApophisInit()
-  spotBTC=ftxGetMid(ftx,'BTC/USD')
-  spotETH=ftxGetMid(ftx,'ETH/USD')
-  trade_btc = np.min([np.min([CT_CONFIGS_DICT['TRADE_BTC_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotBTC, CT_CONFIGS_DICT['MAX_BTC']])
-  trade_eth = np.min([np.min([CT_CONFIGS_DICT['TRADE_ETH_NOTIONAL'], CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spotETH, CT_CONFIGS_DICT['MAX_ETH']])
-  trade_btc_notional = trade_btc * spotBTC
-  trade_eth_notional = trade_eth * spotETH
-  qty_dict = dict()
-  qty_dict['BTC'] = trade_btc
-  qty_dict['ETH'] = trade_eth
-  notional_dict = dict()
-  notional_dict['BTC'] = trade_btc_notional
-  notional_dict['ETH'] = trade_eth_notional
-  if ccy=='BTC':
-    spot=spotBTC
-  elif ccy=='ETH':
-    spot=spotETH
-  else:
-    spot=ftxGetMid(ftx,ccy+'/USD')
-  if not notional is None:
-    qty_dict[ccy]= np.min([notional, CT_CONFIGS_DICT['MAX_NOTIONAL']]) / spot
-    notional_dict[ccy]= qty_dict[ccy] * spot
+  spot = ftxGetMid(ftx, ccy+'/USD')
+  maxNotional = CT_CONFIGS_DICT['MAX_NOTIONAL_USD']
+  if ccy in ['BTC','ETH']:
+    maxNotional = min(maxNotional, CT_CONFIGS_DICT['MAX_'+ccy]*spot)
+  notional = min(notional, maxNotional)
+  qty = notional / spot
   printHeader(ccy+'t')
-  print('Qtys:     ', qty_dict)
-  print('Notionals:', notional_dict)
+  print('Qty:      ', round(qty,6))
+  print('Notional: ', notional)
   print()
-  return ftx,bb,bn,kf,qty_dict,notional_dict,spot
+  return ftx,bb,bn,kf,qty,notional,spot
 
 def ctGetFutPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
   if exch == 'ftx':
@@ -1183,13 +1168,8 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
-def ctRun(ccy, tgtBps, color, notional=None):
-  if notional is None:
-    ftx, bb, bn, kf, qty_dict, notional_dict, spot = ctInit(ccy)
-  else:
-    ftx, bb, bn, kf, qty_dict, notional_dict, spot = ctInit(ccy, notional)
-  trade_qty = qty_dict[ccy]
-  trade_notional = notional_dict[ccy]
+def ctRun(ccy, tgtBps, color, notional):
+  ftx, bb, bn, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
