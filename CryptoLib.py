@@ -690,7 +690,6 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
     return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
   # Do not use @retry
   def bntPlaceOrder(bn, ticker, side, qty, limitPrice):
-    print(getCurrentTime() + ': [DEBUG: place order; qty=' + str(qty)+' price=' + str(limitPrice) + ']')
     return bn.fapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
   # Do not use @retry
   def bntCancelOrder(bn, ticker, orderId):
