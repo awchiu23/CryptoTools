@@ -1168,7 +1168,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   realizedSlippageBps.append(s)
   return realizedSlippageBps
 
-def ctRun(ccy, tgtBps, color, notional):
+def ctRun(ccy, notional, tgtBps, color):
   ftx, bb, bn, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
