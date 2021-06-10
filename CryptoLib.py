@@ -1205,6 +1205,9 @@ def ctRun(ccy, notional, tgtBps, color):
         # Pick pair to trade
         isTooFewCandidates = False
         while True:
+          if len(d.keys()) < 2:
+            isTooFewCandidates=True
+            break
           keyMax=max(d.items(), key=operator.itemgetter(1))[0]
           keyMin=min(d.items(), key=operator.itemgetter(1))[0]
           smartBasisBps=(d[keyMax]-d[keyMin])*10000
@@ -1230,8 +1233,6 @@ def ctRun(ccy, notional, tgtBps, color):
             if posUSDShort<=-maxPosUSDShort:
               del d[chosenShort+'SmartBasis']
               continue
-          if len(d.keys())<2:
-            isTooFewCandidates=True
           break
 
         ###############
