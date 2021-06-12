@@ -72,13 +72,13 @@ APOPHIS_IS_IP_WHITELIST = True
 CR_IS_ENABLE_BN_ISOLATED_MARGIN = False
 CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'FTT':1, 'USDT':4})  # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0})                      # Aggregated currencies; values are external deltas (# coins)
-CR_EXT_DELTA_USDT = 0
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
+CR_EXT_DELTA_USDT = 0
 
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'kf':1,'bb':1,'bn':1,'db':1})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'kf':1,'bb':1,'bn':1})
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb', 'bn']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb', 'bn']}
