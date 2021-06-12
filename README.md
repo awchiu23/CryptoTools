@@ -38,7 +38,7 @@ I created these tools for my crypto arbitrage trading activities.  Enjoy!
 - This tool lets you drill down into BNT's risk numbers
 
 ## DEFIUtil
-- This tool is for monitoring DEFI projects; currently these are outside the scope of CryptoReporter
+- This tool is for monitoring DEFI projects
 
 ## FTXLender
 - This tools runs on a loop and automatically modifies your loan sizes one minute before every reset
