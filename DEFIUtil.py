@@ -52,7 +52,7 @@ def dbPrintProjects():
       reward_symbol = reward['optimized_symbol']
       reward_qty = reward['amount']
       reward_usd = reward_qty * reward['price']
-      print(f'{coin_1}({coin_1_qty:,.0f}) / {coin_2}({coin_2_qty:,.0f})       Reward: {reward_qty:.0f} {reward_symbol} (${reward_usd:.0f})       APR: {APR:.0%}')
+      print(f'{coin_1}({coin_1_qty:,.0f}) / {coin_2}({coin_2_qty:,.0f})       Rewards: {reward_qty:.0f} {reward_symbol} (${reward_usd:.0f})       APR: {APR:.0%}')
 
 ##################################
 # Simon's section -- please ignore
