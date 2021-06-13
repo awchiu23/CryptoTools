@@ -1,16 +1,24 @@
 import CryptoLib as cl
 import pandas as pd
 import requests
+import termcolor
+import sys
 
 ########
 # Params
 ########
-NETWORKS = ['ETH','MATIC']
 ADDRESS = '' # Put your wallet address here
+NETWORKS = ['ETH','MATIC']
 
 ###########
 # Functions
 ###########
+def colored(text, color):
+  if '--nocolor' in sys.argv:
+    return text
+  else:
+    return termcolor.colored(text,color)
+
 def dbGetWalletDf():
   df=pd.DataFrame()
   for network in NETWORKS:
@@ -24,7 +32,7 @@ def dbGetWalletDf():
     df=df.append(df2[['network','qty','spot','usdValue']])
   return df
 
-def dbGetStakedNAV():
+def dbGetProjectsNAV():
   url = 'https://api.debank.com/user/addr?addr=' + ADDRESS
   headers = {'User-Agent': 'Mozilla/5.0'}
   return pd.DataFrame(requests.get(url, headers=headers).json()['data']['projects'])['net_usd_value'].sum()
@@ -44,7 +52,7 @@ def dbPrintProjects():
       reward_symbol = reward['optimized_symbol']
       reward_qty = reward['amount']
       reward_usd = reward_qty * reward['price']
-      print(f'{coin_1}({coin_1_qty:,.0f})/{coin_2}({coin_2_qty:,.0f})     Reward: {reward_qty:.1f} {reward_symbol} (${reward_usd:.0f})     APR: {APR:.0%}')
+      print(f'{coin_1}({coin_1_qty:,.0f}) / {coin_2}({coin_2_qty:,.0f})       Reward: {reward_qty:.0f} {reward_symbol} (${reward_usd:.0f})       APR: {APR:.0%}')
 
 ##################################
 # Simon's section -- please ignore
@@ -58,15 +66,15 @@ if os.environ.get('USERNAME')=='Simon':
 # Main
 ######
 cl.printHeader('DEFIUtil')
-df=dbGetWalletDf()
-print(df)
-print()
+walletDf=dbGetWalletDf()
+walletNAV=walletDf['usdValue'].sum()
+stakedNAV=dbGetProjectsNAV()
+nav=walletNAV+stakedNAV
 
-walletNAV=df['usdValue'].sum()
-stakedNAV=dbGetStakedNAV()
-print('Wallet NAV: $'+str(round(walletNAV)))
-print('Staked NAV: $'+str(round(stakedNAV)))
-print('Total NAV:  $'+str(round(walletNAV+stakedNAV)))
-print()
+print(colored('NAV as of '+cl.getCurrentTime()+': $'+str(round(nav))+' (Wallet: $'+str(round(walletNAV/1000))+'K / Projects: $'+str(round(stakedNAV/1000))+'K)','blue'))
 
+cl.printHeader('Wallet')
+print(walletDf)
+
+cl.printHeader('Projects')
 dbPrintProjects()
