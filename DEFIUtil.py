@@ -19,6 +19,11 @@ def colored(text, color):
   else:
     return termcolor.colored(text,color)
 
+def dbRefresh():
+  url = 'https://api2.debank.com/mp?url=https://debank.com/profile/' + ADDRESS
+  headers = {'User-Agent': 'Mozilla/5.0'}
+  requests.get(url, headers=headers)
+
 def dbGetWalletDf():
   df=pd.DataFrame()
   for network in NETWORKS:
@@ -29,7 +34,7 @@ def dbGetWalletDf():
     df2['qty'] = df2['balance'] / (10 ** df2['decimals'])
     df2['spot'] = df2['price']
     df2['usdValue'] = df2['qty']*df2['spot']
-    df=df.append(df2[['network','qty','spot','usdValue']])
+    df=df.append(df2[['network','qty','spot','usdValue']]).sort_values('usdValue',ascending=False)
   return df
 
 def dbGetProjectsNAV():
@@ -44,15 +49,12 @@ def dbPrintProjects():
     for stake in data['portfolio_list']:
       APR = stake['detail']['daily_farm_rate'] * 365
       supply = stake['detail']['supply_token_list']
-      coin_1 = supply[0]['optimized_symbol']
-      coin_1_qty = supply[0]['amount']
-      coin_2 = supply[1]['optimized_symbol']
-      coin_2_qty = supply[1]['amount']
-      reward = stake['detail']['reward_token_list'][0]
-      reward_symbol = reward['optimized_symbol']
-      reward_qty = reward['amount']
-      reward_usd = reward_qty * reward['price']
-      print(f'{coin_1}({coin_1_qty:,.0f}) / {coin_2}({coin_2_qty:,.0f})       Rewards: {reward_qty:.0f} {reward_symbol} (${reward_usd:.0f})       APR: {APR:.0%}')
+      coin1 = supply[0]['optimized_symbol']
+      coin2 = supply[1]['optimized_symbol']
+      unclaimed = stake['detail']['reward_token_list'][0]
+      unclaimedSymbol = unclaimed['optimized_symbol']
+      unclaimedUSD = unclaimed['amount'] * unclaimed['price']
+      print(f'{coin1}/{coin2}          Unclaimed: {unclaimedSymbol} (${unclaimedUSD:.0f})          APR: {APR:.0%}')
 
 ##################################
 # Simon's section -- please ignore
@@ -66,6 +68,7 @@ if os.environ.get('USERNAME')=='Simon':
 # Main
 ######
 cl.printHeader('DEFIUtil')
+dbRefresh()
 walletDf=dbGetWalletDf()
 walletNAV=walletDf['usdValue'].sum()
 stakedNAV=dbGetProjectsNAV()
