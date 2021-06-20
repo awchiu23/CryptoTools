@@ -1110,7 +1110,7 @@ def ctInit(ccy, notional):
   print()
   return ftx,bb,bn,kf,qty,notional,spot
 
-def ctGetFutPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
+def ctGetPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
   if exch == 'ftx':
     return ftxGetFutPos(ftx, ccy) * spot
   elif exch == 'bb':
@@ -1124,8 +1124,10 @@ def ctGetFutPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
     return bntGetFutPos(bn, ccy) * spot
   elif exch == 'kf':
     return kfGetFutPos(kf, ccy)
+  elif exch == 'spot':
+    return ftxGetWallet(ftx).loc[ccy,'usdValue']
   else:
-    return None
+    sys.exit(1)
 
 def ctGetSuffix(i, tgtBps, realizedSlippageBps):
   z= 'Program '+str(i+1) + ' / Target = '+str(round(tgtBps)) + 'bps'
@@ -1219,22 +1221,20 @@ def ctRun(ccy, notional, tgtBps, color):
           maxPosUSDLong = 1e9
           dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
           if len(dLong) > 2: maxPosUSDLong = dLong[2]
-          if CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG']: maxPosUSDLong=min(0,maxPosUSDLong)
+          if CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] and chosenLong!='spot': maxPosUSDLong=min(0,maxPosUSDLong)
           #####
           maxPosUSDShort = 1e9
           dShort = CT_CONFIGS_DICT[chosenShort.upper() + '_' + ccy]
           if len(dShort) > 2: maxPosUSDShort = dShort[2]
           #####
-          posUSDLong = ctGetFutPosUSD(ftx, bb, bn, kf, chosenLong, ccy, spot)
-          posUSDShort = ctGetFutPosUSD(ftx, bb, bn, kf, chosenShort, ccy, spot)
-          if not posUSDLong is None:
-            if posUSDLong>=maxPosUSDLong:
-              del d[chosenLong+'SmartBasis']
-              continue
-          if not posUSDShort is None:
-            if posUSDShort<=-maxPosUSDShort:
-              del d[chosenShort+'SmartBasis']
-              continue
+          posUSDLong = ctGetPosUSD(ftx, bb, bn, kf, chosenLong, ccy, spot)
+          posUSDShort = ctGetPosUSD(ftx, bb, bn, kf, chosenShort, ccy, spot)
+          if posUSDLong>=maxPosUSDLong:
+            del d[chosenLong+'SmartBasis']
+            continue
+          if posUSDShort<=-maxPosUSDShort:
+            del d[chosenShort+'SmartBasis']
+            continue
           break
 
         ###############
