@@ -21,7 +21,7 @@ API_SECRET_KF = ''
 ###############
 CT_CONFIGS_DICT=dict()
 
-CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = True   # Stop buying futures when position is long?
+CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # Stop buying futures when position is long?
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
 CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
 CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps for range of observations
@@ -113,17 +113,17 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
   #CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
-  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_AG_CCY_DICT['LTC'] = 0
+  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['LTC','XRP'])
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt', 'bnt', 'kf']}
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb']}
+  CR_AG_CCY_DICT['LTC'] = 0
+  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC'])
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
+  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=0
   #CR_AG_CCY_DICT['ETH']=0
   #CR_AG_CCY_DICT['LTC']=0
-  #CR_AG_CCY_DICT['XRP'] = 172000  # bb:ftx
-  #CR_EXT_DELTA_USDT = 200000 #bb:ftx
+  CR_AG_CCY_DICT['XRP'] = 142840   # bb:ftx
+  CR_EXT_DELTA_USDT = 500000 #bb:ftx
