@@ -301,19 +301,19 @@ class core:
       return 1 + i * increment
     #####
     if self.exch=='bbt':
-      liqL = bbtGetLiq(riskDf, wallet_balance,-0.01)
-      liqH = bbtGetLiq(riskDf, wallet_balance,0.01)
+      self.liqL = bbtGetLiq(riskDf, wallet_balance,-0.01)
+      self.liqH = bbtGetLiq(riskDf, wallet_balance,0.01)
     else: # ftx, bnt
       liq = 1 - cushion / delta
       if delta>=0:
-        liqL = liq
-        liqH = 10
+        self.liqL = liq
+        self.liqH = 10
       else:
-        liqL = 0
-        liqH = liq
+        self.liqL = 0
+        self.liqH = liq
     #####
-    zL = fmtLiq(liqL)
-    zH = fmtLiq(liqH)
+    zL = fmtLiq(self.liqL)
+    zH = fmtLiq(self.liqH)
     if self.exch == 'ftx':
       z2 = (self.exch.upper() + ' liqL/liqH/mf/fc: ').rjust(37) + zL + '/' + zH + '/'
       z2 += str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
