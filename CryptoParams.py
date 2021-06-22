@@ -113,18 +113,21 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
+  CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_AG_CCY_DICT['FTT'] = 0
+  CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['LTC'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC'])
+  CR_FTX_FLOWS_CCYS.extend(['MATIC','XRP','LTC'])
+  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bn']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=5.8
+  #CR_AG_CCY_DICT['BTC']=6.5673 #kf:bn
   #CR_AG_CCY_DICT['ETH']=109
   #CR_AG_CCY_DICT['LTC']=0
   #CR_AG_CCY_DICT['XRP'] = 142840   # bb:ftx
-  CR_EXT_DELTA_USDT = 550000 #bb:ftx
+  #CR_EXT_DELTA_USDT = 280000 #bb:ftx

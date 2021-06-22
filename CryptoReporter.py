@@ -290,14 +290,36 @@ class core:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
-  def makeLiqStr(self):
-    z = fmtLiq(self.liq)
-    if self.exch=='ftx':
-      z2 = (self.exch.upper() + ' liq/mf/fc: ').rjust(37) + z + '/'
+  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,wallet_balance=None):  # ftx, bbt, bnt
+    def bbtGetLiq(riskDf, wallet_balance, increment):
+      df = riskDf.copy()
+      for i in range(100):
+        df['unrealised_pnl_sim'] = df['unrealised_pnl'] + df['delta_value'] * (i + 1) * increment
+        ab = wallet_balance - df['im_value'].sum() + df['unrealised_pnl_sim'].clip(None, 0).sum()
+        df['cushion'] = ab + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
+        if df['cushion'].min() < 0: break
+      return 1 + i * increment
+    #####
+    if self.exch=='bbt':
+      liqL = bbtGetLiq(riskDf, wallet_balance,-0.01)
+      liqH = bbtGetLiq(riskDf, wallet_balance,0.01)
+    else: # ftx, bnt
+      liq = 1 - cushion / delta
+      if delta>=0:
+        liqL = liq
+        liqH = 10
+      else:
+        liqL = 0
+        liqH = liq
+    #####
+    zL = fmtLiq(liqL)
+    zH = fmtLiq(liqH)
+    if self.exch == 'ftx':
+      z2 = (self.exch.upper() + ' liqL/liqH/mf/fc: ').rjust(37) + zL + '/' + zH + '/'
       z2 += str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
-      self.liqStr = colored(z2,'red')
+      self.liqStr = colored(z2, 'red')
     else:
-      self.liqStr = colored((self.exch.upper() + ' liq: ').rjust(37) + z, 'red')
+      self.liqStr = colored((self.exch.upper() + ' liqL/liqH: ').rjust(37) + zL +'/' + zH, 'red')
 
   def printAll(self):
     try:
@@ -393,13 +415,6 @@ class core:
         self.flowsDict[ccy+'2'] = ('FTX ' + ccy + ' 24h/prev/est: ').rjust(37) + '/'.join(zList) + ' p.a. ($' + str(round(self.wallet.loc[ccy, 'usdValue'] / 1000)) + 'K) '
     #####
     self.nav = self.wallet['usdValue'].sum()
-    self.mf = float(info['marginFraction'])
-    self.mmReq = float(info['maintenanceMarginRequirement'])
-    totalPositionNotional = self.nav / self.mf
-    cushion = (self.mf - self.mmReq) * totalPositionNotional
-    totalDelta = self.wallet.loc[self.validCcys, 'usdValue'].sum() + self.futures['FutDeltaUSD'].sum()
-    self.liq = 1 - cushion / totalDelta
-    self.freeCollateral = float(info['freeCollateral'])
     #####
     for ccy in self.validCcys:
       df = pmts.loc[pmts['future'] == ccy + '-PERP', 'rate']
@@ -409,7 +424,15 @@ class core:
       self.makeFundingStr(ccy,oneDayFunding,prevFunding,estFunding)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr()
+    #####
+    self.mf = float(info['marginFraction'])
+    self.mmReq = float(info['maintenanceMarginRequirement'])
+    self.freeCollateral = float(info['freeCollateral'])
+    totalPositionNotional = self.nav / self.mf
+    cushion = (self.mf - self.mmReq) * totalPositionNotional
+    delta = self.wallet.loc[self.validCcys, 'usdValue'].sum() + self.futures['FutDeltaUSD'].sum()
+    self.makeLiqStr(cushion=cushion,delta=delta)
+    #####
     self.isDone=True
 
   ####
@@ -512,8 +535,8 @@ class core:
     self.spots.loc['USDT', 'SpotDelta'] = equity
     self.calcSpotDeltaUSD()
     #####
-    # Liquidation (parallel) calc
-    wallet_balance = float(wb['wallet_balance'])
+
+    '''
     increment = -0.01 if riskDf['delta_value'].sum() >= 0 else 0.01
     for i in range(100):
       riskDf['unrealised_pnl_sim'] = riskDf['unrealised_pnl'] + riskDf['delta_value'] * (i+1) * increment
@@ -521,6 +544,7 @@ class core:
       riskDf['cushion'] = ab + riskDf['im_value'] - riskDf['mm_value'] + riskDf['unrealised_pnl_sim'].clip(0, None)
       if riskDf['cushion'].min() < 0: break
     self.liq = 1 + i * increment
+    '''
     #####
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
@@ -535,7 +559,7 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr()
+    self.makeLiqStr(riskDf=riskDf,wallet_balance=float(wb['wallet_balance']))
     self.isDone = True
 
   ####
@@ -625,9 +649,6 @@ class core:
     self.spots.loc['BNB','SpotDelta'] = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB', 'walletBalance'])
     self.calcSpotDeltaUSD()
     self.nav = self.spots.loc[['USDT','BNB'],'SpotDeltaUSD'].sum()
-    cushion = (mb-mm) * self.spotDict['USDT']
-    totalDelta = self.futures['FutDeltaUSD'].sum()
-    self.liq = 1 - cushion / totalDelta
     #####
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USDT', 'fundingRate']
@@ -637,7 +658,11 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr()
+    #####
+    cushion = (mb - mm) * self.spotDict['USDT']
+    delta = self.futures['FutDeltaUSD'].sum()
+    self.makeLiqStr(cushion=cushion,delta=delta)
+    #####
     self.isDone = True
 
   ####
