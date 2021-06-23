@@ -88,7 +88,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 # Smart Basis
 #############
 SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.03
+SMB_BASE_RATE = 0.02
 SMB_BASE_BASIS = SMB_BASE_RATE / 365
 SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
 
@@ -126,8 +126,8 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bn']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  CR_AG_CCY_DICT['BTC']=6.529 #bn:ftx
-  #CR_AG_CCY_DICT['ETH']=109
+  #CR_AG_CCY_DICT['BTC']=1.5204 #bn:ftx
+  CR_AG_CCY_DICT['ETH']=250 #bb:ftx
   #CR_AG_CCY_DICT['LTC']=0
   #CR_AG_CCY_DICT['XRP'] = 700000   # bb:ftx
-  #CR_EXT_DELTA_USDT = 350000 #bb:ftx
+  CR_EXT_DELTA_USDT = 100000 #bb:ftx

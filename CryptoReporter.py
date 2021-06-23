@@ -293,12 +293,18 @@ class core:
   def makeLiqStr(self,cushion=None,delta=None,riskDf=None,wallet_balance=None):  # ftx, bbt, bnt
     def bbtGetLiq(riskDf, wallet_balance, increment):
       df = riskDf.copy()
+      isOk=False
       for i in range(100):
         df['unrealised_pnl_sim'] = df['unrealised_pnl'] + df['delta_value'] * (i + 1) * increment
         ab = wallet_balance - df['im_value'].sum() + df['unrealised_pnl_sim'].clip(None, 0).sum()
         df['cushion'] = ab + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
-        if df['cushion'].min() < 0: break
-      return 1 + i * increment
+        if df['cushion'].min() < 0:
+          isOk=True
+          break
+      if isOk:
+        return 1 + i * increment
+      else:
+        return 0
     #####
     if self.exch=='bbt':
       self.liqL = bbtGetLiq(riskDf, wallet_balance,-0.01)
