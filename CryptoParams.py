@@ -21,7 +21,6 @@ API_SECRET_KF = ''
 ###############
 CT_CONFIGS_DICT=dict()
 
-CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] = False  # Stop buying futures when position is long?
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
 CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
 CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps for range of observations

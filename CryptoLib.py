@@ -1221,7 +1221,6 @@ def ctRun(ccy, notional, tgtBps, color):
           maxPosUSDLong = 1e9
           dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
           if len(dLong) > 2: maxPosUSDLong = dLong[2]
-          if CT_CONFIGS_DICT['IS_NO_FUT_BUYS_WHEN_LONG'] and chosenLong!='spot': maxPosUSDLong=min(0,maxPosUSDLong)
           #####
           maxPosUSDShort = 1e9
           dShort = CT_CONFIGS_DICT[chosenShort.upper() + '_' + ccy]
