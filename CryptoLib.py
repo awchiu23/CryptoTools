@@ -1219,19 +1219,25 @@ def ctRun(ccy, notional, tgtBps, color):
           chosenShort = keyMax[:len(keyMax) - 10]
           #####
           maxPosUSDLong = 1e9
+          signLong=0
           dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
-          if len(dLong) > 2: maxPosUSDLong = dLong[2]
+          if len(dLong) > 2:
+            if dLong[2] is not None: maxPosUSDLong = dLong[2]
+          if len(dLong) > 3: signLong=np.sign(dLong[3])
           #####
           maxPosUSDShort = 1e9
+          signShort=0
           dShort = CT_CONFIGS_DICT[chosenShort.upper() + '_' + ccy]
-          if len(dShort) > 2: maxPosUSDShort = dShort[2]
+          if len(dShort) > 2:
+            if dShort[2] is not None: maxPosUSDShort = dShort[2]
+          if len(dShort) > 3: signShort=np.sign(dShort[3])
           #####
           posUSDLong = ctGetPosUSD(ftx, bb, bn, kf, chosenLong, ccy, spot)
           posUSDShort = ctGetPosUSD(ftx, bb, bn, kf, chosenShort, ccy, spot)
-          if posUSDLong>=maxPosUSDLong:
+          if (posUSDLong>=maxPosUSDLong) or (posUSDLong>=0 and signLong==-1):
             del d[chosenLong+'SmartBasis']
             continue
-          if posUSDShort<=-maxPosUSDShort:
+          if (posUSDShort<=-maxPosUSDShort) or (posUSDShort<=0 and signShort==1):
             del d[chosenShort+'SmartBasis']
             continue
           break

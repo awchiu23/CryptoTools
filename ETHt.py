@@ -11,7 +11,8 @@ color='magenta'
 
 # [Enabled? (0 = disabled; 1 = enabled),
 #  Axe (+ve = eager to buy; -ve = eager to sell),
-#  Optional: Max abs position USD]
+#  Optional 1: Max abs position USD,
+#  Optional 2: Allowed sign (+ve = long only; -ve = short only)]
 CT_CONFIGS_DICT['SPOT_ETH']=[0,0]
 CT_CONFIGS_DICT['FTX_ETH']=[0,0]
 CT_CONFIGS_DICT['BBT_ETH']=[0,0]
