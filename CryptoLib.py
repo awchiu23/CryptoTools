@@ -919,11 +919,10 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
     edge += prevFundingRate / 365 / (24 / hoursInterval) * pctToCapture
     hoursAccountedFor += hoursInterval * pctToCapture
 
-  # gain on coupon from elapsed time; ignore for kf as est2 unreliable
-  if not isKF:
-    pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
-    edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
-    hoursAccountedFor+=hoursInterval*pctElapsed
+  # gain on coupon from elapsed time
+  pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
+  edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
+  hoursAccountedFor+=hoursInterval*pctElapsed
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
@@ -983,15 +982,20 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
 
 @retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
+  est2=fundingDict['kfEstFunding2']
+  mid = kfGetMid(kfTickers, fundingDict['Ccy'])
+  premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'], isIndex=True), 'last'] - 1, -0.008, 0.008)
+  snap = premIndexClipped * 365 * 3
+  #####
+  keyEst2='kfEMAEst2'+fundingDict['Ccy']
   keySnap='kfEMASnap'+fundingDict['Ccy']
-  if cache('r',keySnap) is None:
-    cache('w',keySnap,fundingDict['kfEstFunding2'])
-  mid=kfGetMid(kfTickers,fundingDict['Ccy'])
-  premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'],isIndex=True), 'last'] - 1, -0.008, 0.008)
-  snapFundingRate = premIndexClipped * 365 * 3
-  smoothedSnapFundingRate = getEMANow(snapFundingRate, cache('r', keySnap), CT_CONFIGS_DICT['EMA_K'])
+  if cache('r',keyEst2) is None: cache('w',keyEst2,est2) # seed with est2
+  if cache('r',keySnap) is None: cache('w',keySnap,est2) # seed with est2
+  smoothedEst2FundingRate = getEMANow(est2, cache('r', keyEst2), CT_CONFIGS_DICT['EMA_K'])
+  smoothedSnapFundingRate = getEMANow(snap, cache('r', keySnap), CT_CONFIGS_DICT['EMA_K'])
+  cache('w', keyEst2, smoothedEst2FundingRate)
   cache('w', keySnap, smoothedSnapFundingRate)
-  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, None, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
+  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, smoothedEst2FundingRate, pctElapsedPower=4, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
 #############################################################################################
 
