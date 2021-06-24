@@ -7,6 +7,7 @@ import time
 ########
 ccys = ['BTC','ETH','XRP','MATIC']
 colors = ['blue','red','green','grey']
+interval = 60*5
 
 ######
 # Main
@@ -22,5 +23,5 @@ while True:
     borrow=borrowS[ccy]
     z = ccy + ':' + str(round(borrow * 100,1))+'%'
     print(termcolor.colored(z.ljust(15), color), end='')
-  time.sleep(60)
+  time.sleep(interval)
   print()
