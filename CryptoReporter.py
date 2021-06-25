@@ -676,7 +676,7 @@ class core:
   ####
   def kfInit(self):
     def getPayments():
-      if APOPHIS_IS_IP_WHITELIST:
+      if APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
         ffn = os.path.dirname(cl.__file__) + '\\data\kfLog.csv'
         self.api.get_account_log(ffn)
         df = pd.read_csv(ffn, index_col=0, parse_dates=True)
@@ -741,7 +741,7 @@ if __name__ == '__main__':
   # Init
   ######
   cl.printHeader('CryptoReporter')
-  if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_IS_IP_WHITELIST:
+  if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
   _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, spotDict, objs = getCores()
 

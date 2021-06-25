@@ -63,7 +63,8 @@ CT_CONFIGS_DICT['ROUND_QTY_BNT']=dict({'DOGE':None,'MATIC':None,'XRP':1,
 ##########################
 # Apophis (Kraken Futures)
 ##########################
-APOPHIS_IS_IP_WHITELIST = True
+APOPHIS_CONFIGS_DICT=dict()
+APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = True
 
 #################
 # Crypto Reporter
@@ -100,7 +101,7 @@ import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
   #####
-  if 'COLAB' in os.environ: APOPHIS_IS_IP_WHITELIST = False
+  if 'COLAB' in os.environ: APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   #####
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
@@ -111,15 +112,14 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
-  CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
+  #CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_AG_CCY_DICT['FTT'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=2.953 #ftxkr
-  CR_AG_CCY_DICT['ETH']=161 #bb:ftx
+  #CR_AG_CCY_DICT['ETH']=161 #bb:ftx
   #CR_AG_CCY_DICT['XRP'] = 225000   # bb:ftx
   #CR_EXT_DELTA_USDT = 100000 #bb:ftx

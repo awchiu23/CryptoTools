@@ -113,7 +113,7 @@ class Apophis:
 
             ###################################
             # Simon replaced this block
-            if APOPHIS_IS_IP_WHITELIST:
+            if APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
                 self.uri = "https://api.futures.kraken.com/derivatives"
             else:
                 self.uri = "https://futures.kraken.com/derivatives"
