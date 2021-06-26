@@ -37,6 +37,7 @@ def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
     df.loc[ccy2, 'incomeUSD'] = df.loc[ccy2, 'income'] * fx
   df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
   df = df.set_index('date').sort_index()
+  if len(df) == 0: return 0, 0
   oneDayIncome = df['incomeUSD'].sum()
   prevIncome = df[df.index > df.index[-1] - pd.DateOffset(minutes=10)]['incomeUSD'].sum()
   return oneDayIncome, prevIncome
