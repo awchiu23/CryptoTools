@@ -322,6 +322,11 @@ def bbGetFutPos(bb,ccy):
   return pos
 
 @retry(wait_fixed=1000)
+def bbGetSpotPos(bb,ccy):
+  wallet = pd.DataFrame(bb.v2_private_get_wallet_balance()['result']).transpose()
+  return float(wallet.loc[ccy, 'equity'])
+
+@retry(wait_fixed=1000)
 def bbGetEstFunding1(bb,ccy):
   return float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
 
@@ -759,6 +764,14 @@ def kfCcyToSymbol(ccy,isIndex=False):
 def kfGetFutPos(kf,ccy):
   symbol=kfCcyToSymbol(ccy)
   return kf.query('accounts')['accounts']['f'+symbol[1:]]['balances'][symbol]
+
+@retry(wait_fixed=1000)
+def kfGetSpotPos(kf,ccy,isIncludeHoldingWallets=False):
+  accounts = kf.query('accounts')['accounts']
+  ccy2 = 'xbt' if ccy == 'BTC' else ccy.lower()
+  pos = accounts['fi_' + ccy2 + 'usd']['auxiliary']['pv']
+  if isIncludeHoldingWallets: pos+=accounts['cash']['balances'][ccy2]
+  return pos
 
 @retry(wait_fixed=1000)
 def kfGetTickers(kf):
@@ -1391,6 +1404,27 @@ def filterDict(d, keyword):
     if keyword in key:
       d2[key] = value
   return d2
+
+# Get max abs position USD (bb/kf only)
+def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=2, negMult=6):
+  if exch=='bb':
+    bb = bbCCXTInit()
+    spot = bbGetMid(bb,ccy)
+    spotPos = bbGetSpotPos(bb,ccy)
+    futPos = bbGetFutPos(bb,ccy)
+  elif exch=='kf':
+    kf = kfApophisInit()
+    spot = kfGetMid(kfGetTickers(kf),ccy)
+    spotPos = kfGetSpotPos(kf,ccy,isIncludeHoldingWallets=False)
+    futPos = kfGetFutPos(kf,ccy)
+  else:
+    sys.exit(1)
+  notional=(spot*spotPos)+spotDeltaUSDAdj
+  if np.sign(futPos)>=0:
+    notional*=posMult
+  else:
+    notional*=negMult
+  return notional
 
 # Get current time
 def getCurrentTime(isCondensed=False):
