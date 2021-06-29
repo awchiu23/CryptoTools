@@ -43,7 +43,7 @@ CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
 CT_CONFIGS_DICT['ROUND_PRICE_FTX']=dict({'BTC':[0,None],'ETH':[0,1],'FTT':[0,3],'DOGE':[1,2e6],'LTC':[1,200],'XRP':[1,40000],
                                          'AAVE':[0,2],'LINK':[1,2000],'SOL':[1,400]})
-CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],'ETH':[1,20],'DOGE':[0,4],'LTC':[0,2],'XRP':[0,4],
+CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],'ETH':[1,20],'DOGE':[0,4],'LTC':[0,2],'MATIC':[0,4],'XRP':[0,4],
                                          'AAVE':[1,20],'BCH':[1,20],'LINK':[0,3]})
 CT_CONFIGS_DICT['ROUND_PRICE_BNT']=dict({'BTC':[0,2],'ETH':[0,2],'DOGE':[0,5],'LTC':[0,2],'MATIC':[0,5],'XRP':[0,4],
                                          'AAVE':[0,2],'BCH':[0,2],'BNB':[0,3],'LINK':[0,3]})
@@ -123,7 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=14.56 #bbftx
-  #CR_AG_CCY_DICT['ETH']=54.43 #ftxkf
+  #CR_AG_CCY_DICT['BTC']=12.61 #bbftx
+  #CR_AG_CCY_DICT['ETH']=84.3 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 360530 #bb:ftx
-  #CR_EXT_DELTA_USDT = 150000 #ftxbb
+  #CR_EXT_DELTA_USDT = 250000 #bbftx
