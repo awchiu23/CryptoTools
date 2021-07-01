@@ -10,7 +10,7 @@ import termcolor
 isRunNow=False            # Run once and stop? Otherwise loop continuously and run one minute before every reset
 isManageCoins=True        # Also manage coins in addition to USD?
 
-minRate=0.03              # Minimum rate for all loans
+minRate=0.05              # Minimum rate for all loans
 usdLendingRatio=.5        # Percentage of USD to lend out
 coinLendingRatio=.5       # Percentage of coins to lend out
 

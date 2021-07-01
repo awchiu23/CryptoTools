@@ -113,17 +113,19 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
   #CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
-  SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'kf': 1, 'bb': 1, 'bn': 0})
   CR_QUOTE_CCY_DICT['XRP'] = 4
+  CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
+  CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','MATIC'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb']}
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=2.868 #ftxkf
-  #CR_AG_CCY_DICT['ETH']=84.3 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 360530 #bb:ftx
-  CR_EXT_DELTA_USDT = 250000 #bbftx
+  #CR_AG_CCY_DICT['ETH']=138.01 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 72000 #ftxbb
+  #CR_EXT_DELTA_USDT = 100000 #bbftx

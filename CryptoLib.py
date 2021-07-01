@@ -561,6 +561,11 @@ def bnGetFutPos(bn,ccy):
   return float(pd.DataFrame(bn.dapiPrivate_get_positionrisk({'pair':ccy+'USD'})).set_index('symbol').loc[ccy + 'USD_PERP']['positionAmt'])
 
 @retry(wait_fixed=1000)
+def bnGetSpotPos(bn,ccy):
+  bal = pd.DataFrame(bn.dapiPrivate_get_balance()).set_index('asset')
+  return float(bal.loc[ccy, 'balance']) + float(bal.loc[ccy, 'crossUnPnl'])
+
+@retry(wait_fixed=1000)
 def bnGetEstFunding(bn, ccy):
   return float(bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]['lastFundingRate'])*3*365
 
@@ -1405,13 +1410,18 @@ def filterDict(d, keyword):
       d2[key] = value
   return d2
 
-# Get max abs position USD (bb/kf only)
+# Get max abs position USD (bb/bn/kf only)
 def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=2, negMult=6):
   if exch=='bb':
     bb = bbCCXTInit()
     spot = bbGetMid(bb,ccy)
     spotPos = bbGetSpotPos(bb,ccy)
     futPos = bbGetFutPos(bb,ccy)
+  elif exch=='bn':
+    bn = bnCCXTInit()
+    spot = bnGetMid(bn,ccy)
+    spotPos = bnGetSpotPos(bn, ccy)
+    futPos = bnGetFutPos(bn, ccy)
   elif exch=='kf':
     kf = kfApophisInit()
     spot = kfGetMid(kfGetTickers(kf),ccy)

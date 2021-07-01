@@ -542,17 +542,6 @@ class core:
     self.spots.loc['USDT', 'SpotDelta'] = equity
     self.calcSpotDeltaUSD()
     #####
-
-    '''
-    increment = -0.01 if riskDf['delta_value'].sum() >= 0 else 0.01
-    for i in range(100):
-      riskDf['unrealised_pnl_sim'] = riskDf['unrealised_pnl'] + riskDf['delta_value'] * (i+1) * increment
-      ab = wallet_balance - riskDf['im_value'].sum() + riskDf['unrealised_pnl_sim'].clip(None, 0).sum()
-      riskDf['cushion'] = ab + riskDf['im_value'] - riskDf['mm_value'] + riskDf['unrealised_pnl_sim'].clip(0, None)
-      if riskDf['cushion'].min() < 0: break
-    self.liq = 1 + i * increment
-    '''
-    #####
     for ccy in self.validCcys:
       df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
       if len(df) == 0:
