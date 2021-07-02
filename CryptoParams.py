@@ -41,22 +41,22 @@ CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
 #############################################################################################
 
-CT_CONFIGS_DICT['ROUND_PRICE_FTX']=dict({'BTC':[0,None],'ETH':[0,1],'FTT':[0,3],'DOGE':[1,2e6],'LTC':[1,200],'XRP':[1,40000],
+CT_CONFIGS_DICT['ROUND_PRICE_FTX']=dict({'BTC':[0,None],'ETH':[0,1],'FTT':[0,3],'BNB':[1,400],'DOGE':[1,2e6],'LTC':[1,200],'XRP':[1,40000],
                                          'AAVE':[0,2],'LINK':[1,2000],'SOL':[1,400]})
-CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],'ETH':[1,20],'DOGE':[0,4],'LTC':[0,2],'MATIC':[0,4],'XRP':[0,4],
+CT_CONFIGS_DICT['ROUND_PRICE_BBT']=dict({'BTC':[1,2],'ETH':[1,20],'BNB':[1,20],'DOGE':[0,4],'LTC':[0,2],'MATIC':[0,4],'XRP':[0,4],
                                          'AAVE':[1,20],'BCH':[1,20],'LINK':[0,3]})
-CT_CONFIGS_DICT['ROUND_PRICE_BNT']=dict({'BTC':[0,2],'ETH':[0,2],'DOGE':[0,5],'LTC':[0,2],'MATIC':[0,5],'XRP':[0,4],
-                                         'AAVE':[0,2],'BCH':[0,2],'BNB':[0,3],'LINK':[0,3]})
+CT_CONFIGS_DICT['ROUND_PRICE_BNT']=dict({'BTC':[0,2],'ETH':[0,2],'BNB':[0,2],'DOGE':[0,5],'LTC':[0,2],'MATIC':[0,5],'XRP':[0,4],
+                                         'AAVE':[0,2],'BCH':[0,2],'LINK':[0,3]})
 CT_CONFIGS_DICT['ROUND_PRICE_KF']=dict({'BTC':[1,2],'ETH':[1,20],'LTC':[0,2],'XRP':[0,4]})
 CT_CONFIGS_DICT['ROUND_PRICE_BB']=dict({'BTC':[1,2],'ETH':[1,20],'XRP':[0,4]})
 CT_CONFIGS_DICT['ROUND_PRICE_BN']=dict({'BTC':[0,1],'ETH':[0,2],'LTC':[0,2],'XRP':[0,4],
                                         'BNB':[0,3]})
 
 # Default # digits for rounding = 3
-CT_CONFIGS_DICT['ROUND_QTY_FTX']=dict({'BTC':4, 'ETH':3, 'FTT':1, 'DOGE':None, 'LTC':2, 'MATIC':-1,'XRP':None,
-                                       'AAVE':2,'BCH':3, 'BNB':1, 'LINK':1})
-CT_CONFIGS_DICT['ROUND_QTY_BNT']=dict({'DOGE':None,'MATIC':None,'XRP':1,
-                                       'AAVE':1,'BNB':2,'LINK':2})
+CT_CONFIGS_DICT['ROUND_QTY_FTX']=dict({'BTC':4, 'ETH':3, 'FTT':1, 'BNB':1, 'DOGE':None, 'LTC':2, 'MATIC':-1,'XRP':None,
+                                       'AAVE':2,'BCH':3, 'LINK':1})
+CT_CONFIGS_DICT['ROUND_QTY_BNT']=dict({'BNB':2,'DOGE':None,'MATIC':None,'XRP':1,
+                                       'AAVE':1,'LINK':2})
 
 #############################################################################################
 
@@ -113,17 +113,17 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   #####
   #CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
+  SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'kf': 1, 'bb': 1, 'bn': 0})
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_QUOTE_CCY_DICT['DOGE'] = 4
+  CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_AG_CCY_DICT['DOGE'] = 0
+  CR_AG_CCY_DICT['BNB'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt', 'bnt']}
+  CR_FTX_FLOWS_CCYS.extend(['XRP','BNB','MATIC'])
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb']}
+  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=2.868 #ftxkf
   #CR_AG_CCY_DICT['ETH']=138.01 #bbftx
