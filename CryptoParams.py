@@ -130,4 +130,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['ETH']=257 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 290000 #bbftx
   #CR_EXT_DELTA_USDT = 100000 #bbftx
-  APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+  #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False

@@ -1,5 +1,5 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
-# Mod: imported CryptoParams
+# Mod: imported additional libraries
 # Mod: "editorder" added
 # Mod: Futures URI replaced if IS_IP_WHITELIST
 # Mod: "get_account_log" added
@@ -20,6 +20,9 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 from CryptoParams import * # <--- Simon added this line
+import pathlib             # <--- Simon added this line
+import datetime as dt      # <--- Simon added this line
+import math                # <--- Simon added this line
 
 version = "1.0"
 
@@ -297,7 +300,7 @@ class Apophis:
 
         return headers
 
-    def get_account_log(self, filename): # <--- Andrew added this method
+    def get_account_log(self, filename):  # <--- Andrew added this method
         data = {}
         endpoint = '/api/history/v2/accountlogcsv'
         url = 'https://api.futures.kraken.com' + endpoint
@@ -309,12 +312,28 @@ class Apophis:
         params["headers"] = headers
 
         try:
-            with session_call(url, timeout=self.timeout, **params) as self.response:
-                self.lock.release()
-                if self.response.status_code == 200:
-                    fd = open(filename, 'wb')
-                    fd.write(self.response.content)
-                    fd.close()
+
+            request_file = False
+            f = pathlib.Path(filename)
+            if f.exists() == False:
+                request_file = True
+            else:
+                log_file_time = dt.datetime.fromtimestamp(f.stat().st_mtime)
+                now = dt.datetime.now()
+                settle_hour = math.floor(now.hour / 4) * 4
+                settle_time = dt.datetime(now.year, now.month, now.day, settle_hour, 0, 0)
+                if log_file_time < settle_time:
+                    request_file = True
+
+            if request_file:
+                with session_call(url, timeout=self.timeout, **params) as self.response:
+                    self.lock.release()
+
+                    if self.response.status_code == 200:
+                        fd = open(filename, 'wb')
+                        fd.write(self.response.content)
+                        fd.close()
+
         except:
             print('[ERROR: KF account log retrieval failed!]')
             print()
