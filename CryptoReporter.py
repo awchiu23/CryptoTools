@@ -132,16 +132,14 @@ def printDeltas(ccy,spotDict,spotDelta,futDelta):
 
 def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
-  futDeltaUSD = ftxCore.futures.loc['USDT','FutDeltaUSD']
   implDeltaUSD=0
   for core in usdtCoreList:
     spotDeltaUSD+=core.spots.loc['USDT','SpotDeltaUSD']
     implDeltaUSD-=core.futures['FutDeltaUSD'].sum()
   imDeltaUSD = bnCore.spots.loc['USDT', 'SpotDeltaUSD']
-  netDeltaUSD=spotDeltaUSD+futDeltaUSD+imDeltaUSD+implDeltaUSD
+  netDeltaUSD=spotDeltaUSD+imDeltaUSD+implDeltaUSD
   #####
   spotDelta=spotDeltaUSD/spotDict['USDT']
-  futDelta=futDeltaUSD/spotDict['USDT']
   implDelta=implDeltaUSD/spotDict['USDT']
   imDelta=imDeltaUSD/spotDict['USDT']
   netDelta=netDeltaUSD/spotDict['USDT']
@@ -149,10 +147,6 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   zLabel = 'spot/'
   z1=str(round(spotDelta/1000))+'K/'
   z2='($'+str(round(spotDeltaUSD/1000))+'K/$'
-  if futDelta!=0:
-    zLabel += 'fut/'
-    z1+=str(round(futDelta/1000))+'K/'
-    z2+=str(round(futDeltaUSD/1000))+'K/$'
   zLabel += 'impl/'
   z1+=str(round(implDelta/1000))+'K/'
   z2+=str(round(implDeltaUSD/1000)) + 'K/$'
@@ -383,9 +377,7 @@ class core:
     info = self.api.private_get_account()['result']
     futs = pd.DataFrame(info['positions']).set_index('future')
     cl.dfSetFloat(futs, 'size')
-    ccys=self.validCcys.copy()
-    if 'USDT-PERP' in futs.index: cl.appendUnique(ccys,'USDT')
-    for ccy in ccys:
+    for ccy in self.validCcys:
       ccy2=ccy+'-PERP'
       mult = -1 if futs.loc[ccy2, 'side']=='sell' else 1
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
