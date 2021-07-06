@@ -326,6 +326,8 @@ class Apophis:
                     request_file = True
 
             if request_file:
+                print('[Retrieving KF account log from '+url+' ....]')
+                print()
                 with session_call(url, timeout=self.timeout, **params) as self.response:
                     self.lock.release()
 
