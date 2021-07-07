@@ -31,12 +31,14 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins
 
-CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']=0        # Execution setting
-CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']=0        # Execution setting
-CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']=0        # Execution setting
-CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']=0         # Execution setting
-CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']=0         # Execution setting
-CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']=0         # Execution setting
+CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_BPS']=-1         # Execution setting
+CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_BPS']=-1          # Execution setting
+CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_BPS']=-1          # Execution setting
+CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_BPS']=-1          # Execution setting
+CT_CONFIGS_DICT['KF_LEG1_DISTANCE_BPS']=-1           # Execution setting
+CT_CONFIGS_DICT['BB_LEG1_DISTANCE_BPS']=-1           # Execution setting
+CT_CONFIGS_DICT['BN_LEG1_DISTANCE_BPS']=-1           # Execution setting
+
 CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 
 #############################################################################################
@@ -126,7 +128,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=3.1 #ftxbb
+  #CR_AG_CCY_DICT['BTC']=2.9056 #bnkf
   #CR_AG_CCY_DICT['ETH']=257 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 290000 #bbftx
   #CR_EXT_DELTA_USDT = 100000 #bbftx

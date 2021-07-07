@@ -150,25 +150,11 @@ def kfGetBid(kf, ccy):
 def kfGetAsk(kf, ccy):
   return kfGetTickers(kf).loc[kfCcyToSymbol(ccy), 'ask']
 
-def getLimitPrice(exch,price,ccy,side):
-  if exch == 'ftx':
-    distanceToBestBps = CT_CONFIGS_DICT['FTX_DISTANCE_TO_BEST_BPS']
-  elif exch == 'bb':
-    distanceToBestBps = CT_CONFIGS_DICT['BB_DISTANCE_TO_BEST_BPS']
-  elif exch == 'bbt':
-    distanceToBestBps = CT_CONFIGS_DICT['BBT_DISTANCE_TO_BEST_BPS']
-  elif exch == 'bn':
-    distanceToBestBps = CT_CONFIGS_DICT['BN_DISTANCE_TO_BEST_BPS']
-  elif exch == 'bnt':
-    distanceToBestBps = CT_CONFIGS_DICT['BNT_DISTANCE_TO_BEST_BPS']
-  elif exch == 'kf':
-    distanceToBestBps = CT_CONFIGS_DICT['KF_DISTANCE_TO_BEST_BPS']
-  else:
-    sys.exit(1)
+def getLimitPrice(exch,price,ccy,side,distance):
   if side == 'BUY':
-    mult = 1 + distanceToBestBps / 10000
+    mult = 1 + distance / 10000
   else:
-    mult = 1 - distanceToBestBps / 10000
+    mult = 1 - distance / 10000
   return roundPrice(exch, price * mult, ccy)
 
 def roundPrice(exch, price, ccy):
@@ -227,7 +213,7 @@ def ftxGetEstLending(ftx, ccy=None):
   else:
     return s[ccy]
 
-def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
+def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
@@ -252,7 +238,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
     refPrice = ftxGetBid(ftx, ticker)
   else:
     refPrice = ftxGetAsk(ftx, ticker)
-  limitPrice = getLimitPrice('ftx',refPrice,ccy,side)
+  limitPrice = getLimitPrice('ftx',refPrice,ccy,side,distance)
   #####
   isOk=False
   for i in range(3):
@@ -294,7 +280,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0):
           return 0
       else:
         refTime=time.time()
-        newLimitPrice=getLimitPrice('ftx',refPrice,ccy,side)
+        newLimitPrice=getLimitPrice('ftx',refPrice,ccy,side,distance)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           try:
@@ -334,7 +320,7 @@ def bbGetEstFunding1(bb,ccy):
 def bbGetEstFunding2(bb, ccy):
   return float(bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate']) * 3 * 365
 
-def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
+def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
@@ -356,11 +342,11 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
     refPrice = bbGetBid(bb, ccy)
-    limitPrice=getLimitPrice('bb',refPrice,ccy,side)
+    limitPrice=getLimitPrice('bb',refPrice,ccy,side,distance)
     orderId = bb.create_limit_buy_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
   else:
     refPrice = bbGetAsk(bb, ccy)
-    limitPrice=getLimitPrice('bb',refPrice,ccy,side)
+    limitPrice=getLimitPrice('bb',refPrice,ccy,side,distance)
     orderId = bb.create_limit_sell_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
@@ -391,7 +377,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=getLimitPrice('bb',refPrice,ccy,side)
+        newLimitPrice=getLimitPrice('bb',refPrice,ccy,side,distance)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
@@ -464,7 +450,7 @@ def bbtGetRiskDf(bb,ccys,spotDict):
   df['delta_value']=df['position_value']+df['unrealised_pnl']
   return df[['position_value','delta_value','spot_price','liq_price','liq','unrealised_pnl','im','mm','im_value','mm_value']]
 
-def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
+def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   # Do not use @retry
   def getIsReduceOnly(bb, ccy, side, qty, cushionUSD=30000):
     df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
@@ -503,7 +489,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
     refPrice = bbtGetBid(bb, ccy)
   else:
     refPrice = bbtGetAsk(bb, ccy)
-  limitPrice=getLimitPrice('bbt',refPrice,ccy,side)
+  limitPrice=getLimitPrice('bbt',refPrice,ccy,side,distance)
   isReduceOnly=getIsReduceOnly(bb, ccy, side, qty)
   orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel',
                                                'reduce_only':bool(isReduceOnly),'close_on_trigger':False})['result']['order_id']
@@ -536,7 +522,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=getLimitPrice('bbt',refPrice,ccy,side)
+        newLimitPrice=getLimitPrice('bbt',refPrice,ccy,side,distance)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice)+'->'+str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
@@ -613,7 +599,7 @@ def bnGetIsolatedMarginDf(bn,spotDict):
   df=df[['symbol','symbolAsset','symbolColl','qty','collateralBTC','collateralUSDT','liq','oneDayFlows','oneDayFlowsAnnRet','prevFlows','prevFlowsAnnRet']].set_index('symbol')
   return df
 
-def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
+def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
     return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
@@ -642,7 +628,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
     refPrice = bnGetBid(bn, ccy)
   else:
     refPrice = bnGetAsk(bn, ccy)
-  limitPrice = getLimitPrice('bn', refPrice, ccy, side)
+  limitPrice = getLimitPrice('bn', refPrice, ccy, side,distance)
   orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
   nChases=0
@@ -665,7 +651,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0):
         break
       else:
         refTime = time.time()
-        limitPrice = getLimitPrice('bn', refPrice, ccy, side)
+        limitPrice = getLimitPrice('bn', refPrice, ccy, side,distance)
         orderId=bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
@@ -694,7 +680,7 @@ def bntGetRiskDf(bn,ccys):
   df['liq'] = df['liquidationPrice'] / df['markPrice']
   return df
 
-def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
+def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bntGetOrder(bn, ticker, orderId):
     return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
@@ -722,7 +708,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
     refPrice = bntGetBid(bn, ccy)
   else:
     refPrice = bntGetAsk(bn, ccy)
-  limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
+  limitPrice = getLimitPrice('bnt', refPrice, ccy, side,distance)
   orderId=bntPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
   nChases=0
@@ -745,7 +731,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0):
         break
       else:
         refTime = time.time()
-        limitPrice = getLimitPrice('bnt', refPrice, ccy, side)
+        limitPrice = getLimitPrice('bnt', refPrice, ccy, side,distance)
         orderId=bntPlaceOrder(bn, ticker, side, roundQty('bnt', leavesQty, ccy), limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
@@ -796,7 +782,7 @@ def kfGetEstFunding2(kf, ccy,kfTickers=None):
   symbol = kfCcyToSymbol(ccy)
   return kfTickers.loc[symbol, 'fundingRatePrediction']*kfTickers.loc[symbol,'markPrice']*24*365
 
-def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
+def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def kfGetOrderStatus(kf, orderId):
     l = kf.query('openorders')['openOrders']
@@ -826,7 +812,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
     refPrice = kfGetBid(kf, ccy)
   else:
     refPrice = kfGetAsk(kf, ccy)
-  limitPrice = getLimitPrice('kf', refPrice, ccy, side)
+  limitPrice = getLimitPrice('kf', refPrice, ccy, side,distance)
   orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
   refTime=time.time()
   nChases=0
@@ -860,7 +846,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0):
           return 0
       else:
         refTime=time.time()
-        newLimitPrice = getLimitPrice('kf', refPrice, ccy, side)
+        newLimitPrice = getLimitPrice('kf', refPrice, ccy, side,distance)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           try:
@@ -1311,46 +1297,60 @@ def ctRun(ccy, notional, tgtBps, color):
         completedLegs = 0
         isCancelled=False
         if 'bb' == chosenLong and not isCancelled:
-          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['BB_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bb' == chosenShort and not isCancelled:
-          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['BB_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bbt' == chosenLong and not isCancelled:
-          longFill = bbtRelOrder('BUY', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+          distance = CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = bbtRelOrder('BUY', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
-          shortFill = bbtRelOrder('SELL', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+          distance = CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = bbtRelOrder('SELL', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'kf' == chosenLong and not isCancelled:
-          longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['KF_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kf' == chosenShort and not isCancelled:
-          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['KF_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = kfRelOrder('SELL', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' == chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'spot' == chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'ftx' == chosenLong and not isCancelled:
-          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = ftxRelOrder('BUY', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'ftx' == chosenShort and not isCancelled:
-          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bn' == chosenLong and not isCancelled:
-          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['BN_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'bn' == chosenShort and not isCancelled:
-          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs))
+          distance = CT_CONFIGS_DICT['BN_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bnt' == chosenLong and not isCancelled:
-          longFill = bntRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+          distance = CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          longFill = bntRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'bnt' == chosenShort and not isCancelled:
-          shortFill = bntRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs)) * ftxGetMid(ftx, 'USDT/USD')
+          distance = CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_BPS'] if completedLegs == 0 else 0
+          shortFill = bntRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
 
         if isCancelled:
