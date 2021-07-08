@@ -150,28 +150,35 @@ def kfGetBid(kf, ccy):
 def kfGetAsk(kf, ccy):
   return kfGetTickers(kf).loc[kfCcyToSymbol(ccy), 'ask']
 
-def getLimitPrice(exch,price,ccy,side,distance):
+def getLimitPrice(api, exch, price, ccyOrTicker, side, distance):
   if side == 'BUY':
     mult = 1 + distance / 10000
   else:
     mult = 1 - distance / 10000
-  return roundPrice(exch, price * mult, ccy)
+  return roundPrice(api, exch, ccyOrTicker, price * mult)
 
-def roundPrice(exch, price, ccy):
-  method, param = CT_CONFIGS_DICT['ROUND_PRICE_'+exch.upper()].get(ccy, [0, 6])
-  if method == 0:
-    return round(price, param)
-  else:
-    return round(price * param) / param
-
-def roundQty(exch, qty, ccy):
-  DEFAULT_NDIGITS = 3
-  if exch=='ftx':
-    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_FTX'].get(ccy, DEFAULT_NDIGITS))
+def roundPrice(api, exch, ccyOrTicker, price):
+  if exch=='kf':
+    d = dict({'BTC': 0.5, 'ETH': 0.05, 'XRP': 0.0001,'BCH':0.1,'LTC': 0.01})
+    tickSize = d.get(ccyOrTicker)
+  elif exch=='ftx':
+    tickSize = ftxGetTickSize(api, ccyOrTicker)
+  elif exch in ['bb','bbt']:
+    tickSize=bbGetTickSize(api, ccyOrTicker, isBBT=(exch == 'bbt'))
+  elif exch=='bn':
+    tickSize = bnGetTickSize(api, ccyOrTicker)
   elif exch=='bnt':
-    return round(qty,CT_CONFIGS_DICT['ROUND_QTY_BNT'].get(ccy, DEFAULT_NDIGITS))
+    tickSize=bntGetTickSize(api, ccyOrTicker)
+  return round(round(price / tickSize) * tickSize, 6)
+
+def roundQty(api, ccyOrTicker, qty):
+  if api.name=='FTX':
+    lotSize = ftxGetLotSize(api, ccyOrTicker)
+  elif api.name=='Binance':
+    lotSize = bntGetLotSize(api, ccyOrTicker)
   else:
     sys.exit(1)
+  return round(round(qty / lotSize) * lotSize, 6)
 
 #############################################################################################
 
@@ -213,6 +220,24 @@ def ftxGetEstLending(ftx, ccy=None):
   else:
     return s[ccy]
 
+@retry(wait_fixed=1000)
+def ftxGetTickSize(ftx,ticker):
+  key='ftxTickSize'
+  df=cache('r',key)
+  if df is None:
+    df=pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
+    cache('w',key,df)
+  return float(df.loc[ticker, 'priceIncrement'])
+
+@retry(wait_fixed=1000)
+def ftxGetLotSize(ftx,ticker):
+  key='ftxLotSize'
+  df=cache('r',key)
+  if df is None:
+    df=pd.DataFrame(ftx.public_get_markets()['result']).set_index('name')
+    cache('w',key,df)
+  return float(df.loc[ticker, 'sizeIncrement'])
+
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
@@ -232,13 +257,13 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
     ccy=ticker.split('-')[0]
   else:
     sys.exit(1)
-  qty=roundQty('ftx',trade_qty,ccy)
+  qty=roundQty(ftx,ticker,trade_qty)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
     refPrice = ftxGetBid(ftx, ticker)
   else:
     refPrice = ftxGetAsk(ftx, ticker)
-  limitPrice = getLimitPrice('ftx',refPrice,ccy,side,distance)
+  limitPrice = getLimitPrice(ftx,'ftx',refPrice,ticker,side,distance)
   #####
   isOk=False
   for i in range(3):
@@ -269,7 +294,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       nChases+=1
       if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
         mult=.95 if side == 'BUY' else 1.05
-        farPrice = roundPrice('ftx', refPrice * mult,ccy)
+        farPrice = roundPrice(ftx,'ftx', ticker,refPrice * mult)
         try:
           orderId = ftx.private_post_orders_order_id_modify({'order_id': orderId, 'price': farPrice})['result']['id']
         except:
@@ -280,7 +305,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
           return 0
       else:
         refTime=time.time()
-        newLimitPrice=getLimitPrice('ftx',refPrice,ccy,side,distance)
+        newLimitPrice=getLimitPrice(ftx,'ftx',refPrice,ticker,side,distance)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           try:
@@ -320,6 +345,17 @@ def bbGetEstFunding1(bb,ccy):
 def bbGetEstFunding2(bb, ccy):
   return float(bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate']) * 3 * 365
 
+@retry(wait_fixed=1000)
+def bbGetTickSize(bb,ccy,isBBT=False):
+  ticker=ccy+'USD'
+  if isBBT: ticker+='T'
+  key='bbTickSize'
+  df=cache('r',key)
+  if df is None:
+    df = pd.DataFrame(bb.v2_public_get_symbols()['result']).set_index('name')['price_filter']
+    cache('w',key,df)
+  return float(df[ticker]['tick_size'])
+
 def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
@@ -342,11 +378,11 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
   if side=='BUY':
     refPrice = bbGetBid(bb, ccy)
-    limitPrice=getLimitPrice('bb',refPrice,ccy,side,distance)
+    limitPrice=getLimitPrice(bb,'bb',refPrice,ccy,side,distance)
     orderId = bb.create_limit_buy_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
   else:
     refPrice = bbGetAsk(bb, ccy)
-    limitPrice=getLimitPrice('bb',refPrice,ccy,side,distance)
+    limitPrice=getLimitPrice(bb,'bb',refPrice,ccy,side,distance)
     orderId = bb.create_limit_sell_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
@@ -365,7 +401,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
       if orderStatus['order_status']=='Filled': break
       if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
         mult = .95 if side == 'BUY' else 1.05
-        farPrice = roundPrice('bb',refPrice*mult,ccy)
+        farPrice = roundPrice(bb,'bb',ccy,refPrice*mult)
         try:
           bb.v2_private_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': farPrice})
         except:
@@ -377,7 +413,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=getLimitPrice('bb',refPrice,ccy,side,distance)
+        newLimitPrice=getLimitPrice(bb,'bb',refPrice,ccy,side,distance)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
@@ -489,7 +525,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
     refPrice = bbtGetBid(bb, ccy)
   else:
     refPrice = bbtGetAsk(bb, ccy)
-  limitPrice=getLimitPrice('bbt',refPrice,ccy,side,distance)
+  limitPrice=getLimitPrice(bb,'bbt',refPrice,ccy,side,distance)
   isReduceOnly=getIsReduceOnly(bb, ccy, side, qty)
   orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel',
                                                'reduce_only':bool(isReduceOnly),'close_on_trigger':False})['result']['order_id']
@@ -510,7 +546,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
       if orderStatus['order_status']=='Filled': break
       if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
         mult = .95 if side == 'BUY' else 1.05
-        farPrice = roundPrice('bbt',refPrice*mult,ccy)
+        farPrice = roundPrice(bb,'bbt',ccy,refPrice*mult)
         try:
           bb.private_linear_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': farPrice})
         except:
@@ -522,7 +558,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
           return 0
       else:
         refTime = time.time()
-        newLimitPrice=getLimitPrice('bbt',refPrice,ccy,side,distance)
+        newLimitPrice=getLimitPrice(bb,'bbt',refPrice,ccy,side,distance)
         if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice)+'->'+str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
@@ -599,6 +635,15 @@ def bnGetIsolatedMarginDf(bn,spotDict):
   df=df[['symbol','symbolAsset','symbolColl','qty','collateralBTC','collateralUSDT','liq','oneDayFlows','oneDayFlowsAnnRet','prevFlows','prevFlowsAnnRet']].set_index('symbol')
   return df
 
+@retry(wait_fixed=1000)
+def bnGetTickSize(bn,ccy):
+  key='bnTickSize'
+  df=cache('r',key)
+  if df is None:
+    df=pd.DataFrame(bn.dapiPublic_get_exchangeinfo()['symbols']).set_index('symbol')
+    cache('w',key,df)
+  return float(df.loc[ccy+'USD_PERP','filters'][0]['tickSize'])
+
 def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bnGetOrder(bn, ticker, orderId):
@@ -628,7 +673,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
     refPrice = bnGetBid(bn, ccy)
   else:
     refPrice = bnGetAsk(bn, ccy)
-  limitPrice = getLimitPrice('bn', refPrice, ccy, side,distance)
+  limitPrice = getLimitPrice(bn,'bn', refPrice, ccy, side,distance)
   orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
   nChases=0
@@ -651,7 +696,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
         break
       else:
         refTime = time.time()
-        limitPrice = getLimitPrice('bn', refPrice, ccy, side,distance)
+        limitPrice = getLimitPrice(bn,'bn', refPrice, ccy, side,distance)
         orderId=bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
@@ -680,6 +725,24 @@ def bntGetRiskDf(bn,ccys):
   df['liq'] = df['liquidationPrice'] / df['markPrice']
   return df
 
+@retry(wait_fixed=1000)
+def bntGetTickSize(bn,ccy):
+  key='bntTickSize'
+  df=cache('r',key)
+  if df is None:
+    df=pd.DataFrame(bn.fapiPublic_get_exchangeinfo()['symbols']).set_index('symbol')
+    cache('w',key,df)
+  return float(df.loc[ccy+'USDT','filters'][0]['tickSize'])
+
+@retry(wait_fixed=1000)
+def bntGetLotSize(bn,ccy):
+  key='bntLotSize'
+  df=cache('r',key)
+  if df is None:
+    df=pd.DataFrame(bn.fapiPublic_get_exchangeinfo()['symbols']).set_index('symbol')
+    cache('w',key,df)
+  return float(df.loc[ccy+'USDT','filters'][1]['stepSize'])
+
 def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bntGetOrder(bn, ticker, orderId):
@@ -702,13 +765,13 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   ticker=ccy+'USDT'
-  qty = roundQty('bnt', trade_qty, ccy)
+  qty = roundQty(bn,ccy,trade_qty)
   print(getCurrentTime()+': Sending BNT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
     refPrice = bntGetBid(bn, ccy)
   else:
     refPrice = bntGetAsk(bn, ccy)
-  limitPrice = getLimitPrice('bnt', refPrice, ccy, side,distance)
+  limitPrice = getLimitPrice(bn,'bnt', refPrice, ccy, side,distance)
   orderId=bntPlaceOrder(bn, ticker, side, qty, limitPrice)
   refTime = time.time()
   nChases=0
@@ -731,8 +794,8 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
         break
       else:
         refTime = time.time()
-        limitPrice = getLimitPrice('bnt', refPrice, ccy, side,distance)
-        orderId=bntPlaceOrder(bn, ticker, side, roundQty('bnt', leavesQty, ccy), limitPrice)
+        limitPrice = getLimitPrice(bn,'bnt', refPrice, ccy, side,distance)
+        orderId=bntPlaceOrder(bn, ticker, side, roundQty(bn, ccy, leavesQty), limitPrice)
     time.sleep(1)
   fill=float(orderStatus['avgPrice'])
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -812,7 +875,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
     refPrice = kfGetBid(kf, ccy)
   else:
     refPrice = kfGetAsk(kf, ccy)
-  limitPrice = getLimitPrice('kf', refPrice, ccy, side,distance)
+  limitPrice = getLimitPrice(kf,'kf', refPrice, ccy, side,distance)
   orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
   refTime=time.time()
   nChases=0
@@ -832,7 +895,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
         break
       if nChases>maxChases and float(orderStatus['filledSize'])==0:
         mult = .98 if side == 'BUY' else 1.02
-        farPrice = roundPrice('kf', refPrice * mult, ccy)
+        farPrice = roundPrice(kf,'kf', ccy,refPrice * mult)
         try:
           kf.query('editorder',{'orderId':orderId,'limitPrice':farPrice})
         except:
@@ -846,7 +909,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
           return 0
       else:
         refTime=time.time()
-        newLimitPrice = getLimitPrice('kf', refPrice, ccy, side,distance)
+        newLimitPrice = getLimitPrice(kf,'kf', refPrice, ccy, side,distance)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
           limitPrice=newLimitPrice
           try:
@@ -1411,7 +1474,7 @@ def filterDict(d, keyword):
   return d2
 
 # Get max abs position USD (bb/bn/kf only)
-def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=2, negMult=6):
+def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=3, negMult=6):
   if exch=='bb':
     bb = bbCCXTInit()
     spot = bbGetMid(bb,ccy)
