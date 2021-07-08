@@ -112,5 +112,5 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=4.31 #ftxbb
   #CR_AG_CCY_DICT['ETH']=257 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 290000 #bbftx
-  CR_EXT_DELTA_USDT = 346672 #bbftx
+  #CR_EXT_DELTA_USDT = 346672 #bbftx
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
