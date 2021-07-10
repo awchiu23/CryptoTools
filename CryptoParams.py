@@ -98,15 +98,17 @@ if os.environ.get('USERNAME')=='Simon':
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'kf': 1, 'bb': 1, 'bn': 0})
   CR_QUOTE_CCY_DICT['XRP'] = 4
+  CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_AG_CCY_DICT['FTT'] = 0
   CR_AG_CCY_DICT['XRP'] = 0
+  CR_AG_CCY_DICT['BNB'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC'])
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
+  CR_FTX_FLOWS_CCYS.extend(['XRP','BNB','DOGE','MATIC'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
+  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   #####

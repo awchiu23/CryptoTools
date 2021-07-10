@@ -39,7 +39,7 @@ class getPrices:
       self.fut = bntGetMid(self.api,self.ccy)
     elif self.exch == 'kf':
       self.kfTickers = kfGetTickers(self.api)
-      self.fut = kfGetMid(self.kfTickers,self.ccy)
+      self.fut = kfGetMid(self.api,self.ccy,kfTickers=self.kfTickers)
 
 #####################################################################################################################################
 
@@ -138,17 +138,20 @@ def bntGetAsk(bn, ccy):
   return float(bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})['askPrice'])
 
 # Do not use @retry
-def kfGetMid(kfTickers, ccy):
+def kfGetMid(kf, ccy, kfTickers=None):
+  if kfTickers is None: kfTickers = kfGetTickers(kf)
   ticker=kfCcyToSymbol(ccy)
   return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
 
 # Do not use @retry
-def kfGetBid(kf, ccy):
-  return kfGetTickers(kf).loc[kfCcyToSymbol(ccy), 'bid']
+def kfGetBid(kf, ccy, kfTickers=None):
+  if kfTickers is None: kfTickers = kfGetTickers(kf)
+  return kfTickers.loc[kfCcyToSymbol(ccy), 'bid']
 
 # Do not use @retry
-def kfGetAsk(kf, ccy):
-  return kfGetTickers(kf).loc[kfCcyToSymbol(ccy), 'ask']
+def kfGetAsk(kf, ccy, kfTickers=None):
+  if kfTickers is None: kfTickers = kfGetTickers(kf)
+  return kfTickers.loc[kfCcyToSymbol(ccy), 'ask']
 
 def getLimitPrice(api, exch, price, ccyOrTicker, side, distance):
   if side == 'BUY':
@@ -833,15 +836,13 @@ def kfGetTickers(kf):
 
 @retry(wait_fixed=1000)
 def kfGetEstFunding1(kf,ccy,kfTickers=None):
-  if kfTickers is None:
-    kfTickers=kfGetTickers(kf)
+  if kfTickers is None: kfTickers=kfGetTickers(kf)
   symbol=kfCcyToSymbol(ccy)
   return kfTickers.loc[symbol,'fundingRate']*kfTickers.loc[symbol,'markPrice']*24*365
 
 @retry(wait_fixed=1000)
 def kfGetEstFunding2(kf, ccy,kfTickers=None):
-  if kfTickers is None:
-    kfTickers = kfGetTickers(kf)
+  if kfTickers is None: kfTickers = kfGetTickers(kf)
   symbol = kfCcyToSymbol(ccy)
   return kfTickers.loc[symbol, 'fundingRatePrediction']*kfTickers.loc[symbol,'markPrice']*24*365
 
@@ -1048,9 +1049,9 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
   return getOneDayShortFutEdge(8, basis,smoothedSnapFundingRate, fundingDict['bntEstFunding'], pctElapsedPower=2) - getOneDayUSDTCollateralBleed(fundingDict)
 
 @retry(wait_fixed=1000)
-def kfGetOneDayShortFutEdge(kfTickers, fundingDict, basis):
+def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
   est2=fundingDict['kfEstFunding2']
-  mid = kfGetMid(kfTickers, fundingDict['Ccy'])
+  mid = kfGetMid(kf, fundingDict['Ccy'], kfTickers=kfTickers)
   premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'], isIndex=True), 'last'] - 1, -0.008, 0.008)
   snap = premIndexClipped * 365 * 3
   #####
@@ -1114,7 +1115,7 @@ def getSmartBasisDict(ftx, bb, bn, kf, ccy, fundingDict, isSkipAdj=False):
   if 'kf' in validExchs:
     kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['KF_' + ccy][1]) / 10000
     d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
-    d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
+    d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kf, kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
   return d
 
 #############################################################################################
@@ -1164,7 +1165,7 @@ def caRun(ccy, color):
 ##############
 # CryptoTrader
 ##############
-def ctInit(ccy, notional):
+def ctInit(ccy, notional, tgtBps):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
   bn = bnCCXTInit()
@@ -1176,8 +1177,9 @@ def ctInit(ccy, notional):
   notional = min(notional, maxNotional)
   qty = notional / spot
   printHeader(ccy+'t')
-  print('Qty:      ', round(qty,6))
-  print('Notional: ', notional)
+  print('Per Trade Notional: $'+str(notional))
+  print('Per Trade Quantity: '+str(round(qty, 6)))
+  print('Target:             '+str(round(tgtBps))+'bps')
   print()
   return ftx,bb,bn,kf,qty,notional,spot
 
@@ -1200,19 +1202,19 @@ def ctGetPosUSD(ftx, bb, bn, kf, exch, ccy, spot):
   else:
     sys.exit(1)
 
-def ctGetSuffix(i, tgtBps, realizedSlippageBps):
-  z= 'Program '+str(i+1) + ' / Target = '+str(round(tgtBps)) + 'bps'
+def ctGetSuffix(i, realizedSlippageBps):
+  z= 'Program '+str(i+1)
   if len(realizedSlippageBps) > 0:
     z += ' / Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps'
   return termcolor.colored(z,'red')
 
-def ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color):
-  print((getCurrentTime() + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), color) + ctGetSuffix(i,tgtBps, realizedSlippageBps))
+def ctTooFewCandidates(i, realizedSlippageBps, color):
+  print((getCurrentTime() + ':').ljust(23) + termcolor.colored('************ Too few candidates ************'.ljust(65), color) + ctGetSuffix(i,realizedSlippageBps))
   chosenLong = ''
   return chosenLong
 
-def ctStreakEnded(i, tgtBps, realizedSlippageBps, color):
-  print((getCurrentTime() + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), color) + ctGetSuffix(i,tgtBps, realizedSlippageBps))
+def ctStreakEnded(i, realizedSlippageBps, color):
+  print((getCurrentTime() + ':').ljust(23) + termcolor.colored('*************** Streak ended ***************'.ljust(65), color) + ctGetSuffix(i,realizedSlippageBps))
   prevSmartBasis = []
   chosenLong = ''
   chosenShort = ''
@@ -1243,7 +1245,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy, notional, tgtBps, color):
-  ftx, bb, bn, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional)
+  ftx, bb, bn, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
@@ -1271,7 +1273,7 @@ def ctRun(ccy, notional, tgtBps, color):
 
       # Check for too few candidates
       if len(d.keys())<2:
-        chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+        chosenLong = ctTooFewCandidates(i, realizedSlippageBps, color)
         continue  # to next iteration in While True loop
 
       # If pair not lock-in yet
@@ -1317,14 +1319,14 @@ def ctRun(ccy, notional, tgtBps, color):
 
         # If too few candidates ....
         if isTooFewCandidates:
-          chosenLong = ctTooFewCandidates(i, tgtBps, realizedSlippageBps, color)
+          chosenLong = ctTooFewCandidates(i, realizedSlippageBps, color)
           continue  # to next iteration in While True loop
 
         # If target not reached yet ....
         if smartBasisBps<tgtBps:
           z = (getCurrentTime() + ':').ljust(23)
           z += termcolor.colored((ccy+' (buy ' + chosenLong + '/sell '+chosenShort+') smart basis: '+str(round(smartBasisBps))+'bps').ljust(65),color)
-          z += ctGetSuffix(i,tgtBps, realizedSlippageBps)
+          z += ctGetSuffix(i,realizedSlippageBps)
           print(z)
           chosenLong = ''
           continue # to next iteration in While True loop
@@ -1335,7 +1337,7 @@ def ctRun(ccy, notional, tgtBps, color):
       try:
         smartBasisBps = (smartBasisDict[chosenShort+'SmartBasis'] - smartBasisDict[chosenLong+'SmartBasis'])* 10000
       except:
-        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps, color)
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, realizedSlippageBps, color)
         continue # to next iteration in While True Loop
       basisBps      = (smartBasisDict[chosenShort+'Basis']      - smartBasisDict[chosenLong+'Basis'])*10000
       prevSmartBasis.append(smartBasisBps)
@@ -1346,13 +1348,13 @@ def ctRun(ccy, notional, tgtBps, color):
       if smartBasisBps>=tgtBps:
         status+=1
       else:
-        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, tgtBps, realizedSlippageBps, color)
+        prevSmartBasis, chosenLong, chosenShort = ctStreakEnded(i, realizedSlippageBps, color)
         continue # to next iteration in While True Loop
 
       # Chosen long/short legs
       z = (getCurrentTime() + ':').ljust(20) + termcolor.colored(str(status).rjust(2), 'red') + ' '
       z += termcolor.colored((ccy + ' (buy ' + chosenLong + '/sell '+chosenShort+') smart/raw basis: ' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + 'bps').ljust(65), color)
-      print(z + ctGetSuffix(i,tgtBps, realizedSlippageBps))
+      print(z + ctGetSuffix(i,realizedSlippageBps))
 
       if abs(status) >= CT_CONFIGS_DICT['STREAK'] and isStable:
         print()
@@ -1487,7 +1489,7 @@ def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=3, negMult=6):
     futPos = bnGetFutPos(bn, ccy)
   elif exch=='kf':
     kf = kfApophisInit()
-    spot = kfGetMid(kfGetTickers(kf),ccy)
+    spot = kfGetMid(kf, ccy)
     spotPos = kfGetSpotPos(kf,ccy,isIncludeHoldingWallets=False)
     futPos = kfGetFutPos(kf,ccy)
   else:
