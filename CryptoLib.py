@@ -1055,15 +1055,11 @@ def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
   premIndexClipped = np.clip(mid / kfTickers.loc[kfCcyToSymbol(fundingDict['Ccy'], isIndex=True), 'last'] - 1, -0.008, 0.008)
   snap = premIndexClipped * 365 * 3
   #####
-  keyEst2='kfEMAEst2'+fundingDict['Ccy']
   keySnap='kfEMASnap'+fundingDict['Ccy']
-  if cache('r',keyEst2) is None: cache('w',keyEst2,est2) # seed with est2
   if cache('r',keySnap) is None: cache('w',keySnap,est2) # seed with est2
-  smoothedEst2FundingRate = getEMANow(est2, cache('r', keyEst2), CT_CONFIGS_DICT['EMA_K'])
   smoothedSnapFundingRate = getEMANow(snap, cache('r', keySnap), CT_CONFIGS_DICT['EMA_K'])
-  cache('w', keyEst2, smoothedEst2FundingRate)
   cache('w', keySnap, smoothedSnapFundingRate)
-  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, smoothedEst2FundingRate, pctElapsedPower=4, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
+  return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, est2, pctElapsedPower=4, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
 #############################################################################################
 
