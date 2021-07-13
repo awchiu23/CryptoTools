@@ -31,7 +31,7 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins
 
-CT_CONFIGS_DICT['MAX_WAIT_TIME']=15                  # Execution setting
+CT_CONFIGS_DICT['MAX_WAIT_TIME']=20                  # Execution setting
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
