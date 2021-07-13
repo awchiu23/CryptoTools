@@ -31,15 +31,21 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins
 
-CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_BPS']=-1         # Execution setting
-CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_BPS']=-1          # Execution setting
-CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_BPS']=-1          # Execution setting
-CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_BPS']=-1          # Execution setting
-CT_CONFIGS_DICT['KF_LEG1_DISTANCE_BPS']=-1           # Execution setting
-CT_CONFIGS_DICT['BB_LEG1_DISTANCE_BPS']=-1           # Execution setting
-CT_CONFIGS_DICT['BN_LEG1_DISTANCE_BPS']=-1           # Execution setting
-
-CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
+CT_CONFIGS_DICT['MAX_WAIT_TIME']=15                  # Execution setting
+CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
+CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
+CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['BBT_LEG2_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['BB_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['BN_LEG2_DISTANCE_TICKS']=0          # Execution setting
 
 #############################################################################################
 
@@ -53,7 +59,7 @@ APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = True
 # Crypto Reporter
 #################
 CR_IS_ENABLE_BN_ISOLATED_MARGIN = False
-CR_QUOTE_CCY_DICT = dict({'BTC':1, 'ETH':1, 'FTT':1, 'USDT':4})  # Quoted currencies; values are # digits for display rounding
+CR_QUOTE_CCY_DICT = dict({'USDT':4, 'BTC':1, 'ETH':1, 'FTT':1})  # Quoted currencies; values are # digits for display rounding
 CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0})                      # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
 CR_EXT_DELTA_USDT = 0
