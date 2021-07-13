@@ -113,8 +113,8 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=11.76 #bbftx
+  #CR_AG_CCY_DICT['BTC']=13.059 #bnftx
   #CR_AG_CCY_DICT['ETH']=96.9 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 290000 #bbftx
-  #CR_EXT_DELTA_USDT = 346672 #bbftx
+  #CR_EXT_DELTA_USDT = 439990 #bbftx
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
