@@ -123,4 +123,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['ETH']=96.9 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 290000 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
-  #CR_EXT_DELTA_USDT = 439990 #bbftx
+  CR_EXT_DELTA_USDT = 100e3 #bbftx
