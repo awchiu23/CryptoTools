@@ -745,8 +745,8 @@ if __name__ == '__main__':
   extCoinsNAV=0
   for ccy in CR_AG_CCY_DICT.keys():
     extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
-  extUSDTNAV = CR_EXT_DELTA_USDT * spotDict['USDT']
-  nav+= extCoinsNAV + extUSDTNAV
+  extCoinsNAV += CR_EXT_DELTA_USDT * spotDict['USDT']
+  nav+= extCoinsNAV
   oneDayIncome+=ftxCore.oneDayFlows+bnCore.oneDayFlows
 
   ########
