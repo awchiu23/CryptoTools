@@ -822,22 +822,9 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
           limitPrice = newLimitPrice
           orderStatus, leavesQty = bntCancelOrder(bn, ticker, orderId)
           if leavesQty == 0: break
-          orderId = bntPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
+          orderId = bntPlaceOrder(bn, ticker, side, roundQty(bn, ccy, leavesQty), limitPrice)
         else:
           print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
-      ######################
-      '''
-      orderStatus,leavesQty=bntCancelOrder(bn,ticker,orderId)
-      if nChases>maxChases and leavesQty==qty:
-        print(getCurrentTime() + ': Cancelled')
-        return 0
-      elif leavesQty==0:
-        break
-      else:
-        refTime = time.time()
-        limitPrice = roundPrice(bn,'bnt',ccy,refPrice,side=side,distance=distance)
-        orderId=bntPlaceOrder(bn, ticker, side, roundQty(bn, ccy, leavesQty), limitPrice)
-      '''
     time.sleep(1)
   orderStatus = bntGetOrder(bn, ticker, orderId)
   fill=float(orderStatus['avgPrice'])
