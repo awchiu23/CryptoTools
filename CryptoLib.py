@@ -255,14 +255,6 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
-  '''
-  if '/' in ticker:
-    ccy=ticker.split('/')[0]
-  elif '-' in ticker:
-    ccy=ticker.split('-')[0]
-  else:
-    sys.exit(1)
-  '''
   qty=roundQty(ftx,ticker,trade_qty)
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
@@ -286,11 +278,11 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   if not isOk:
     sys.exit(1)
   #####
+  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
   nChases=0
   while True:
-    if ftxGetRemainingSize(ftx,orderId) == 0:
-      break
+    if ftxGetRemainingSize(ftx,orderId) == 0: break
     if side=='BUY':
       newRefPrice=ftxGetBid(ftx,ticker)
     else:
@@ -313,11 +305,14 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
         refTime=time.time()
         newLimitPrice=roundPrice(ftx,'ftx',ticker,refPrice,side=side,distance=distance)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
+          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
             orderId=ftx.private_post_orders_order_id_modify({'order_id':orderId,'price':limitPrice})['result']['id']
           except:
             break
+        else:
+          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
     time.sleep(1)
   fill=ftxGetFillPrice(ftx,orderId)
   print(getCurrentTime() + ': Filled at '+str(round(fill,6)))
@@ -923,6 +918,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
     refPrice = kfGetAsk(kf, ccy)
   limitPrice = roundPrice(kf,'kf',ccy,refPrice,side=side,distance=distance)
   orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
+  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime=time.time()
   nChases=0
   while True:
@@ -957,11 +953,14 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
         refTime=time.time()
         newLimitPrice = roundPrice(kf,'kf',ccy,refPrice,side=side,distance=distance)
         if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
+          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
             kf.query('editorder', {'orderId': orderId, 'limitPrice': limitPrice})
           except:
             break
+        else:
+          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
     time.sleep(1)
   fill=kfGetFillPrice(kf, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
@@ -1405,14 +1404,6 @@ def ctRun(ccy, notional, tgtBps, color):
         speak('Go')
         completedLegs = 0
         isCancelled=False
-        if 'bb' == chosenLong and not isCancelled:
-          distance = ctGetDistance('BB', completedLegs)
-          longFill = bbRelOrder('BUY', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs),distance=distance)
-          completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
-        if 'bb' == chosenShort and not isCancelled:
-          distance = ctGetDistance('BB', completedLegs)
-          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional,maxChases=ctGetMaxChases(completedLegs),distance=distance)
-          completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bbt' == chosenLong and not isCancelled:
           distance = ctGetDistance('BBT', completedLegs)
           longFill = bbtRelOrder('BUY', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
@@ -1421,6 +1412,14 @@ def ctRun(ccy, notional, tgtBps, color):
           distance = ctGetDistance('BBT', completedLegs)
           shortFill = bbtRelOrder('SELL', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
+        if 'bb' == chosenLong and not isCancelled:
+          distance = ctGetDistance('BB', completedLegs)
+          longFill = bbRelOrder('BUY', bb, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'bb' == chosenShort and not isCancelled:
+          distance = ctGetDistance('BB', completedLegs)
+          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kf' == chosenLong and not isCancelled:
           distance = ctGetDistance('KF', completedLegs)
           longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
