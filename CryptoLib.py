@@ -685,7 +685,6 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
     if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
-      ################
       orderStatus = bnGetOrder(bn, ticker, orderId)
       if orderStatus['status'] == 'FILLED': break
       if nChases > maxChases and float(orderStatus['executedQty'])==0:
@@ -704,19 +703,6 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
           orderId = bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
         else:
           print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
-      ################
-      '''
-      orderStatus,leavesQty=bnCancelOrder(bn,ticker,orderId)
-      if nChases>maxChases and leavesQty==qty:
-        print(getCurrentTime() + ': Cancelled')
-        return 0
-      elif leavesQty==0:
-        break
-      else:
-        refTime = time.time()
-        limitPrice = roundPrice(bn,'bn',ccy,refPrice,side=side,distance=distance)
-        orderId=bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
-      '''
     time.sleep(1)
   orderStatus = bnGetOrder(bn, ticker, orderId)
   fill=float(orderStatus['avgPrice'])
@@ -806,7 +792,6 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
     if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
-      ######################
       orderStatus = bntGetOrder(bn, ticker, orderId)
       if orderStatus['status'] == 'FILLED': break
       if nChases > maxChases and float(orderStatus['executedQty']) == 0:
@@ -1431,14 +1416,6 @@ def ctRun(ccy, notional, tgtBps, color):
           distance = ctGetDistance('FTX', completedLegs)
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'bn' == chosenLong and not isCancelled:
-          distance = ctGetDistance('BN', completedLegs)
-          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bn' == chosenShort and not isCancelled:
-          distance = ctGetDistance('BN', completedLegs)
-          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bnt' == chosenLong and not isCancelled:
           distance = ctGetDistance('BNT', completedLegs)
           longFill = bntRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
@@ -1447,7 +1424,14 @@ def ctRun(ccy, notional, tgtBps, color):
           distance = ctGetDistance('BNT', completedLegs)
           shortFill = bntRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-
+        if 'bn' == chosenLong and not isCancelled:
+          distance = ctGetDistance('BN', completedLegs)
+          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'bn' == chosenShort and not isCancelled:
+          distance = ctGetDistance('BN', completedLegs)
+          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if isCancelled:
           status=(min(abs(status),CT_CONFIGS_DICT['STREAK'])-1)*np.sign(status)
           print()
