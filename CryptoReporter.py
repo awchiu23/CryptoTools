@@ -75,6 +75,7 @@ def getCores():
   bbtCore=processCore('bbt',spotDict,objs)
   bnCore=processCore('bn',spotDict,objs)
   bntCore=processCore('bnt',spotDict,objs)
+  dbCore=processCore('db', spotDict, objs)
   kfCore=processCore('kf',spotDict,objs)
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
@@ -89,10 +90,21 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
+
+def printTwoLists(list1, list2, n):
+  for i in range(min(len(list1), len(list2))):
+    print(list1[i].ljust(n) + list2[i])
+  if len(list1) > len(list2):
+    for i in range(len(list2), len(list1)):
+      print(list1[i].ljust(n))
+  elif len(list2) > len(list1):
+    for i in range(len(list1), len(list2)):
+      print(''.ljust(n) + list2[i])
+  print()
 
 def printAllDual(core1, core2):
   if core1.exch == 'dummy' and core2.exch == 'dummy': return
@@ -107,15 +119,28 @@ def printAllDual(core1, core2):
     list2 = list(core2.fundingStrDict.values())
     list1.append(core1.liqStr.ljust(n))
     list2.append(core2.liqStr)
-    for i in range(min(len(list1),len(list2))):
-      print(list1[i].ljust(n) + list2[i])
-    if len(list1)>len(list2):
-      for i in range(len(list2),len(list1)):
-        print(list1[i].ljust(n))
-    elif len(list2)>len(list1):
-      for i in range(len(list1),len(list2)):
-        print(''.ljust(n) + list2[i])
-    print()
+    printTwoLists(list1,list2,n)
+
+def printAllTrio(core1, core2, core3):
+  if core1.exch == 'dummy' and core2.exch == 'dummy' and core3.exch == 'dummy': return
+  if core1.exch == 'dummy':
+    printAllDual(core2, core3)
+  elif core2.exch == 'dummy':
+    printAllDual(core1, core3)
+  elif core3.exch == 'dummy':
+    printAllDual(core1, core2)
+  else:
+    n = 120
+    print(core1.incomesStr.ljust(n) + core2.incomesStr)
+    list1 = list(core1.fundingStrDict.values())
+    list2 = list(core2.fundingStrDict.values())
+    list1.append(core1.liqStr.ljust(n))
+    list2.append(core2.liqStr)
+    list2.append('')
+    list2.append(core3.incomesStr)
+    list2.extend(core3.fundingStrDict.values())
+    list2.append(core3.liqStr)
+    printTwoLists(list1, list2, n)
 
 def printDeltas(ccy,spotDict,spotDelta,futDelta):
   spot = spotDict[ccy]
@@ -234,6 +259,8 @@ class core:
       self.bnInit()
     elif self.exch=='bnt':
       self.bntInit()
+    elif self.exch=='db':
+      self.dbInit()
     elif self.exch=='kf':
       self.kfInit()
 
@@ -248,12 +275,15 @@ class core:
 
   def makeIncomesStr(self):
     z1 = '$' + str(round(self.oneDayIncome)) + ' (' + str(round(self.oneDayAnnRet * 100)) + '% p.a.)'
-    zPrev  = '4h' if self.exch == 'kf' else 'prev'
-    z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-    self.incomesStr = colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
+    if self.exch == 'db':
+      self.incomesStr = colored('DB 24h funding income: '.rjust(37) + z1, 'blue')
+    else:
+      zPrev  = '4h' if self.exch == 'kf' else 'prev'
+      z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
+      self.incomesStr = colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
-    if self.exch in ['bb','bbt','bn','bnt','kf']:
+    if self.exch in ['bb','bbt','bn','bnt','db','kf']:
       z = fmtLiq(self.liqDict[ccy])
     else:
       z = ''
@@ -657,6 +687,47 @@ class core:
     self.isDone = True
 
   ####
+  # DB
+  ####
+  def dbInit(self):
+    def getOneDayIncome(ccy):
+      df = pd.DataFrame(self.api.private_get_get_settlement_history_by_currency({'currency': ccy})['result']['settlements'])
+      if len(df) == 0: return 0
+      cl.dfSetFloat(df, 'funding')
+      df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['timestamp']]
+      df = df.set_index('date').sort_index()
+      if df.index[-1] >= (datetime.datetime.now() - pd.DateOffset(days=1)):
+        return df['funding'].iloc[-1] * self.spotDict[ccy]
+      else:
+        return 0
+    #####
+    self.api = cl.dbCCXTInit()
+    for ccy in self.validCcys:
+      acSum = self.api.private_get_get_account_summary({'currency': ccy})['result']
+      self.spots.loc[ccy, 'SpotDelta'] = float(acSum['equity'])
+      self.liqDict[ccy] = float(acSum['estimated_liquidation_ratio'])
+    self.calcSpotDeltaUSD()
+    #####
+    for ccy in self.validCcys:
+      self.futures.loc[ccy, 'FutDelta'] = cl.dbGetFutPos(self.api, ccy) / self.spotDict[ccy]
+    self.calcFuturesDeltaUSD()
+    #####
+    for ccy in self.validCcys:
+      self.oneDayIncome += getOneDayIncome(ccy)
+    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+    #####
+    self.nav = self.spots['SpotDeltaUSD'].sum()
+    #####
+    for ccy in self.validCcys:
+      oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
+      prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
+      estFunding = cl.dbGetEstFunding(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
+    #####
+    self.makeIncomesStr()
+    self.isDone = True
+
+  ####
   # KF
   ####
   def kfInit(self):
@@ -728,7 +799,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, kfCore, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, dbCore, kfCore, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -774,7 +845,7 @@ if __name__ == '__main__':
   #####
   printFlows(ftxCore, bnCore, nav)
   #####
-  printAllDual(ftxCore, kfCore)
+  printAllTrio(ftxCore, kfCore, dbCore)
   printAllDual(bbtCore, bbCore)
   printAllDual(bntCore, bnCore)
   #####

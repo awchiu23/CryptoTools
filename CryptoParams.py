@@ -11,6 +11,8 @@ API_KEY_BB = ''
 API_SECRET_BB = ''
 API_KEY_BN = ''
 API_SECRET_BN = ''
+API_KEY_DB = ''
+API_SECRET_DB = ''
 API_KEY_KF = ''
 API_SECRET_KF = ''
 
@@ -35,17 +37,20 @@ CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
+
 CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG2_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['BB_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=0          # Execution setting
 
 #############################################################################################
 
@@ -67,10 +72,10 @@ CR_EXT_DELTA_USDT = 0
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bnt':1,'kf':1,'bb':1,'bn':1})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
 SHARED_CCY_DICT=dict()
-SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb', 'bn']}
-SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf', 'bb', 'bn']}
+SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'bnt', 'bn', 'db', 'kf']}
+SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'bnt', 'bn', 'db', 'kf']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 
 #############
@@ -100,6 +105,8 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
+  API_KEY_DB = sl.jLoad('API_KEY_DB')
+  API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #SHARED_EXCH_DICT = dict({'ftx': 1, 'bbt': 1, 'bnt': 1, 'kf': 1, 'bb': 1, 'bn': 0})
@@ -107,23 +114,21 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
-  CR_QUOTE_CCY_DICT['LINK'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
-  CR_AG_CCY_DICT['LINK'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','BNB','DOGE','MATIC','LINK'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bb','bn']}
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx', 'bbt', 'bnt', 'kf','bn']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx', 'bbt', 'bnt']}
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
+  CR_AG_CCY_DICT['BNB'] = 0
+  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','DOGE','MATIC','BNB'])
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','bn','kf']}
+  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt','bnt','bn','kf']}
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt','bnt']}
+  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt','bnt']}
+  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt','bnt']}
   #####
   #CR_AG_CCY_DICT['BTC']=13.059 #bnftx
   #CR_AG_CCY_DICT['ETH']=96.9 #bbftx
-  CR_AG_CCY_DICT['XRP'] = 334280 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 334280 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
-  CR_EXT_DELTA_USDT = 250e3 #bbftx
+  #CR_EXT_DELTA_USDT = 250e3 #bbftx
