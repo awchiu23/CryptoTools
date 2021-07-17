@@ -117,8 +117,8 @@ def printAllDual(core1, core2):
     print(core1.incomesStr.ljust(n) + core2.incomesStr)
     list1 = list(core1.fundingStrDict.values())
     list2 = list(core2.fundingStrDict.values())
-    list1.append(core1.liqStr.ljust(n))
-    list2.append(core2.liqStr)
+    if core1.liqStr!='': list1.append(core1.liqStr.ljust(n))
+    if core2.liqStr!='': list2.append(core2.liqStr)
     printTwoLists(list1,list2,n)
 
 def printAllTrio(core1, core2, core3):
@@ -134,12 +134,12 @@ def printAllTrio(core1, core2, core3):
     print(core1.incomesStr.ljust(n) + core2.incomesStr)
     list1 = list(core1.fundingStrDict.values())
     list2 = list(core2.fundingStrDict.values())
-    list1.append(core1.liqStr.ljust(n))
-    list2.append(core2.liqStr)
+    if core1.liqStr!='': list1.append(core1.liqStr.ljust(n))
+    if core2.liqStr!='': list2.append(core2.liqStr)
     list2.append('')
     list2.append(core3.incomesStr)
     list2.extend(core3.fundingStrDict.values())
-    list2.append(core3.liqStr)
+    if core3.liqStr!='': list2.append(core3.liqStr)
     printTwoLists(list1, list2, n)
 
 def printDeltas(ccy,spotDict,spotDelta,futDelta):
