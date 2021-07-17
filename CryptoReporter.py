@@ -103,7 +103,7 @@ def printTwoLists(list1, list2, n):
       print(list1[i].ljust(n))
   elif len(list2) > len(list1):
     for i in range(len(list1), len(list2)):
-      print(''.ljust(n) + list2[i])
+      print(colored('','grey').ljust(n) + list2[i])
   print()
 
 def printAllDual(core1, core2):
