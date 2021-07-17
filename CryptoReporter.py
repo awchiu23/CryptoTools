@@ -289,7 +289,7 @@ class core:
       z = ''
     liqStr = colored(z.rjust(5),'red')
     prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
-    prefix+='prev'
+    prefix += '8h' if self.exch=='db' else 'prev'
     prefix+='/est'
     if self.exch in ['bb','bbt','kf']:
       prefix += '1/est2'

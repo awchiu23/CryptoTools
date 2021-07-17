@@ -904,7 +904,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
         break
       if nChases > maxChases and float(orderStatus['filled_amount']) == 0:
         mult = .98 if side == 'BUY' else 1.02
-        farPrice = roundPrice('db', refPrice * mult, ccy)
+        farPrice = roundPrice(db, 'db', ccy, refPrice * mult)
         if not dbEditOrder(db, orderId, trade_notional, farPrice):
           break
         if float(dbGetOrder(db, orderId)['filled_amount']) == 0:
