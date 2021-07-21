@@ -40,7 +40,7 @@ CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
 CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=10              # Execution setting
 CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=10               # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=10               # Execution setting
-CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=15               # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
@@ -135,8 +135,8 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  CR_AG_CCY_DICT['BTC']=7.01 #bbftx
+  #CR_AG_CCY_DICT['BTC']=7.01 #bbftx
   #CR_AG_CCY_DICT['ETH']=96 #bbftx
-  CR_AG_CCY_DICT['XRP'] = 393295 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 393295 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
   #CR_EXT_DELTA_USDT = 160e3 #bbftx
