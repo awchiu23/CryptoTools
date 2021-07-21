@@ -9,7 +9,7 @@ from retrying import retry
 # Params
 ########
 nPrograms=1
-notional=30
+notional=1000
 
 ccy='SLP'
 side='SELL'              # 'BUY', 'SELL'
