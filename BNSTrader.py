@@ -12,8 +12,8 @@ nPrograms=1
 notional=10000
 
 ccy='MATIC'
-side='SELL'              # 'BUY', 'SELL'
-hedgeExchange='bbt'      # 'ftxperp', 'bbt', 'none'
+side='SELL'                  # 'BUY', 'SELL'
+hedgeExchange='ftxperp'      # 'ftxspot', 'ftxperp', 'bbt', 'none'
 
 CT_CONFIGS_DICT['BNS_MAX_WAIT_TIME'] = 10
 
@@ -147,7 +147,9 @@ cl.printHeader('BNSTrader')
 bn = cl.bnCCXTInit()
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
-  if hedgeExchange=='ftxperp':
+  if hedgeExchange == 'ftxspot':
+    cl.ftxRelOrder(oppSide, ftx, ccy + '/USD', qty, maxChases=888)
+  elif hedgeExchange=='ftxperp':
     cl.ftxRelOrder(oppSide, ftx, ccy + '-PERP', qty, maxChases=888)
   elif hedgeExchange=='bbt':
     cl.bbtRelOrder(oppSide, bb, ccy, qty, maxChases=888)
