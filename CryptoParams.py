@@ -33,10 +33,10 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins (secondary control)
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins (secondary control)
 
-CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=10             # Execution setting
-CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=10              # Execution setting
-CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=10              # Execution setting
-CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=5              # Execution setting
+CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=5               # Execution setting
+CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
+CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
 CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=10              # Execution setting
 CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=10               # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=10               # Execution setting
