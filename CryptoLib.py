@@ -274,6 +274,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
   qty=roundQty(ftx,ticker,trade_qty)
+  maxWaitTime = CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME'] if 'PERP' in ticker else CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
   if side == 'BUY':
     refPrice = ftxGetBid(ftx, ticker)
@@ -305,7 +306,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       newRefPrice=ftxGetBid(ftx,ticker)
     else:
       newRefPrice=ftxGetAsk(ftx,ticker)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>maxWaitTime):
       refPrice=newRefPrice
       nChases+=1
       if nChases>maxChases and ftxGetRemainingSize(ftx,orderId)==qty:
@@ -413,7 +414,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
       newRefPrice=bbGetBid(bb,ccy)
     else:
       newRefPrice=bbGetAsk(bb,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']):
       refPrice = newRefPrice
       nChases+=1
       orderStatus = bbGetOrder(bb, ticker, orderId)
@@ -554,7 +555,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
       newRefPrice=bbtGetBid(bb,ccy)
     else:
       newRefPrice=bbtGetAsk(bb,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']):
       refPrice = newRefPrice
       nChases+=1
       orderStatus = bbtGetOrder(bb, ticker, orderId)
@@ -700,7 +701,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
       newRefPrice=bnGetBid(bn,ccy)
     else:
       newRefPrice=bnGetAsk(bn,ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       orderStatus = bnGetOrder(bn, ticker, orderId)
@@ -807,7 +808,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
       newRefPrice=bntGetBid(bn,ccy)
     else:
       newRefPrice=bntGetAsk(bn,ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       orderStatus = bntGetOrder(bn, ticker, orderId)
@@ -896,7 +897,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
       newRefPrice = dbGetBid(db, ccy)
     else:
       newRefPrice = dbGetAsk(db, ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']):
       refPrice = newRefPrice
       nChases += 1
       orderStatus = dbGetOrder(db, orderId)
@@ -1011,7 +1012,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
       newRefPrice=kfGetBid(kf,ccy)
     else:
       newRefPrice=kfGetAsk(kf,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['MAX_WAIT_TIME']):
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
       orderStatus = kfGetOrderStatus(kf, orderId)

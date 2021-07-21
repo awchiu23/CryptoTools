@@ -30,10 +30,18 @@ CT_CONFIGS_DICT['NPROGRAMS'] = 100                   # Number of programs (each 
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
 CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit in USD
-CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins
-CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins
+CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins (secondary control)
+CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins (secondary control)
 
-CT_CONFIGS_DICT['MAX_WAIT_TIME']=10                  # Execution setting
+CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=10             # Execution setting
+CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=10              # Execution setting
+CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=10              # Execution setting
+CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=10              # Execution setting
+CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
+
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
