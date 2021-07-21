@@ -9,11 +9,11 @@ from retrying import retry
 # Params
 ########
 nPrograms=1
-notional=1000
+notional=10000
 
-ccy='SLP'
+ccy='MATIC'
 side='SELL'              # 'BUY', 'SELL'
-hedgeExchange='none'     # 'ftxperp', 'none'
+hedgeExchange='bbt'      # 'ftxperp', 'bbt', 'none'
 
 CT_CONFIGS_DICT['BNS_MAX_WAIT_TIME'] = 10
 
@@ -149,12 +149,12 @@ bn = cl.bnCCXTInit()
 for n in range(nPrograms):
   cl.printHeader('Program '+str(n+1))
   if hedgeExchange=='ftxperp':
-    bnsRelOrder(side, bn, ccy, qty, maxChases=888)
-  elif hedgeExchange=='none':
-    bnsRelOrder(side, bn, ccy, qty, maxChases=888)
     cl.ftxRelOrder(oppSide, ftx, ccy + '-PERP', qty, maxChases=888)
-  else:
+  elif hedgeExchange=='bbt':
+    cl.bbtRelOrder(oppSide, bb, ccy, qty, maxChases=888)
+  elif hedgeExchange!='none':
     print('Bad exchange!')
     sys.exit(1)
+  bnsRelOrder(side, bn, ccy, qty, maxChases=888)
   time.sleep(2)
 cl.speak('BNSTrader has completed')
