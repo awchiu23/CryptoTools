@@ -132,7 +132,6 @@ def bnsRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
 ######
 # Init
 ######
-#object_methods = [method_name for method_name in dir(bn) if callable(getattr(bn, method_name))]
 ftx,bb,bn,db,kf,qty,notional,spot = cl.ctInit(ccy,notional,0)
 if side == 'BUY':
   oppSide = 'SELL'
