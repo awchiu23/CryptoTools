@@ -184,6 +184,15 @@ def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
   z2 += str(round(netDeltaUSD/1000))+'K)'
   print(colored(('USDT '+zLabel).rjust(37)+(z1+' ').ljust(27)+z2, 'red'))
 
+def printBUSDDeltas(bnCore):
+  if not CR_IS_ENABLE_BN_ISOLATED_MARGIN: return
+  imDeltaUSD = bnCore.spots.loc['USD', 'SpotDeltaUSD']
+  if imDeltaUSD==0: return
+  imDelta = imDeltaUSD
+  z1 = str(round(imDelta / 1000)) + 'K'
+  z2 = '($' + str(round(imDeltaUSD / 1000)) + 'K)'
+  print(colored('BUSD im: '.rjust(37) + (z1 + ' ').ljust(27) + z2, 'red'))
+
 def printFlows(ftxCore,bnCore,nav):
   def getSuffix(ftxCore,ccy,nav):
     return '(' + str(round(ftxCore.wallet.loc[ccy, 'usdValue'] / nav * 100)) + '%)'
@@ -843,6 +852,7 @@ if __name__ == '__main__':
   if SHARED_EXCH_DICT['bbt']==1: usdtCores.append(bbtCore)
   if SHARED_EXCH_DICT['bnt'] == 1: usdtCores.append(bntCore)
   printUSDTDeltas(ftxCore, bnCore, spotDict, usdtCores)
+  printBUSDDeltas(bnCore)
   print()
   #####
   printFlows(ftxCore, bnCore, nav)
