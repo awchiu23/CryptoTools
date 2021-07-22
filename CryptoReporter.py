@@ -852,6 +852,7 @@ if __name__ == '__main__':
   appendFlows(flowList, ftxCore, bnCore, nav)
   #####
   printTwoLists(agList, flowList, 120)
+  print()
   #####
   printAllTrio(ftxCore, kfCore, dbCore)
   printAllDual(bbtCore, bbCore)
