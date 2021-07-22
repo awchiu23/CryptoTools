@@ -234,6 +234,7 @@ class core:
     self.validCcys = cl.getValidCcys(exch)
     #####
     ccyList = list(SHARED_CCY_DICT.keys())
+    cl.appendUnique(ccyList, 'USD')
     cl.appendUnique(ccyList, 'USDT')
     zeroes = [0] * len(ccyList)
     self.spots = pd.DataFrame({'Ccy': ccyList, 'SpotDelta': zeroes, 'SpotDeltaUSD':zeroes}).set_index('Ccy')
@@ -599,8 +600,9 @@ class core:
       df=self.imDf.set_index('symbolAsset',drop=False)
       for i in range(len(df)):
         self.spots.loc[df.iloc[i]['symbolAsset'], 'SpotDelta'] += df.iloc[i]['qty']
-      self.spots.loc['USDT', 'SpotDelta'] += df['collateralUSDT'].sum()
       self.spots.loc['BTC', 'SpotDelta'] += df['collateralBTC'].sum()
+      self.spots.loc['USD','SpotDelta'] += df['collateralBUSD'].sum()
+      self.spots.loc['USDT', 'SpotDelta'] += df['collateralUSDT'].sum()
       self.oneDayFlows += self.imDf['oneDayFlows'].sum()
     #####
     self.calcSpotDeltaUSD()

@@ -9,9 +9,10 @@ from retrying import retry
 # Params
 ########
 nPrograms=1
-notional=10000
+notional=5000                # USD notional
+qtyOverRide=None             # Use in place of notional unless None
 
-ccy='MATIC'
+ccy='AXS'
 side='SELL'                  # 'BUY', 'SELL'
 hedgeExchange='ftxperp'      # 'ftxspot', 'ftxperp', 'bbt', 'none'
 
@@ -133,6 +134,9 @@ def bnsRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
 # Init
 ######
 ftx,bb,bn,db,kf,qty,notional,spot = cl.ctInit(ccy,notional,0)
+if qtyOverRide is not None:
+  qty = qtyOverRide
+  notional = qty * spot
 if side == 'BUY':
   oppSide = 'SELL'
 elif side == 'SELL':

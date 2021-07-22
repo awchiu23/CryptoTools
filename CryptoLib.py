@@ -617,11 +617,14 @@ def bnGetIsolatedMarginDf(bn,spotDict):
       symbolAsset = i['baseAsset']['asset']
       symbolColl=i['quoteAsset']['asset']
       qtyColl = float(i['quoteAsset']['totalAsset'])
+      qtyBTC=0
+      qtyUSDT=0
+      qtyBUSD=0
       if symbolColl== 'BTC':
         qtyBTC = qtyColl
-        qtyUSDT = 0
-      elif symbolColl== 'USDT':
-        qtyBTC = 0
+      elif symbolColl=='BUSD':
+        qtyBUSD = qtyColl
+      elif symbolColl == 'USDT':
         qtyUSDT = qtyColl
       else:
         sys.exit(1)
@@ -642,13 +645,14 @@ def bnGetIsolatedMarginDf(bn,spotDict):
                     'symbolColl':symbolColl,
                     'qty':qty,
                     'collateralBTC':qtyBTC,
+                    'collateralBUSD': qtyBUSD,
                     'collateralUSDT':qtyUSDT,
                     'liq':liq,
                     'oneDayFlows':oneDayFlows,
                     'oneDayFlowsAnnRet':oneDayFlowsAnnRet,
                     'prevFlows':prevFlows,
                     'prevFlowsAnnRet':prevFlowsAnnRet}, ignore_index=True)
-  df=df[['symbol','symbolAsset','symbolColl','qty','collateralBTC','collateralUSDT','liq','oneDayFlows','oneDayFlowsAnnRet','prevFlows','prevFlowsAnnRet']].set_index('symbol')
+  df=df[['symbol','symbolAsset','symbolColl','qty','collateralBTC','collateralBUSD','collateralUSDT','liq','oneDayFlows','oneDayFlowsAnnRet','prevFlows','prevFlowsAnnRet']].set_index('symbol')
   return df
 
 @retry(wait_fixed=1000)
