@@ -10,6 +10,79 @@ import sys
 ###########
 # Functions
 ###########
+def appendDeltas(myList, ccy, spotDict, spotDelta, futDelta):
+  spot = spotDict[ccy]
+  netDelta=spotDelta+futDelta
+  if ccy=='BTC':
+    nDigits=2
+  elif ccy=='XRP':
+    nDigits=None
+  else:
+    nDigits=1
+  z=(ccy+' spot/fut/net: ').rjust(37)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
+    '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
+  myList.append(colored(z,'red'))
+
+def appendUSDTDeltas(myList, ftxCore, bnCore, spotDict, usdtCoreList):
+  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
+  implDeltaUSD=0
+  for core in usdtCoreList:
+    spotDeltaUSD+=core.spots.loc['USDT','SpotDeltaUSD']
+    implDeltaUSD-=core.futures['FutDeltaUSD'].sum()
+  imDeltaUSD = bnCore.spots.loc['USDT', 'SpotDeltaUSD']
+  netDeltaUSD=spotDeltaUSD+imDeltaUSD+implDeltaUSD
+  #####
+  spotDelta=spotDeltaUSD/spotDict['USDT']
+  implDelta=implDeltaUSD/spotDict['USDT']
+  imDelta=imDeltaUSD/spotDict['USDT']
+  netDelta=netDeltaUSD/spotDict['USDT']
+  #####
+  zLabel = 'spot/'
+  z1=str(round(spotDelta/1000))+'K/'
+  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'
+  zLabel += 'impl/'
+  z1+=str(round(implDelta/1000))+'K/'
+  z2+=str(round(implDeltaUSD/1000)) + 'K/$'
+  if imDelta!=0:
+    zLabel += 'im/'
+    z1+= str(round(imDelta/1000))+'K/'
+    z2+= str(round(imDeltaUSD/1000))+'K/$'
+  zLabel += 'net: '
+  z1 += str(round(netDelta / 1000)) + 'K'
+  z2 += str(round(netDeltaUSD/1000))+'K)'
+  myList.append(colored(('USDT '+zLabel).rjust(37)+(z1+' ').ljust(27)+z2, 'red'))
+
+def appendBUSDDeltas(myList, bnCore):
+  if not CR_IS_ENABLE_BN_ISOLATED_MARGIN: return
+  imDeltaUSD = bnCore.spots.loc['USD', 'SpotDeltaUSD']
+  if imDeltaUSD==0: return
+  imDelta = imDeltaUSD
+  z1 = str(round(imDelta / 1000)) + 'K'
+  z2 = '($' + str(round(imDeltaUSD / 1000)) + 'K)'
+  myList.append(colored('BUSD im: '.rjust(37) + (z1 + ' ').ljust(27) + z2, 'red'))
+
+def appendFlows(myList, ftxCore, bnCore, nav):
+  def getSuffix(ftxCore,ccy,nav):
+    return '(' + str(round(ftxCore.wallet.loc[ccy, 'usdValue'] / nav * 100)) + '%)'
+  #####
+  try:
+    myList.append(ftxCore.flowsDict['USD'])
+    myList.append(ftxCore.flowsDict['USDT'])
+    myList.append(ftxCore.flowsDict['USD2']+getSuffix(ftxCore,'USD',nav))
+    myList.append(ftxCore.flowsDict['USDT2']+getSuffix(ftxCore,'USDT',nav))
+    myList.append('')
+    for ccy in CR_FTX_FLOWS_CCYS:
+      z = ftxCore.flowsDict[ccy]
+      if not z is None: myList.append(z)
+    if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
+      for symbol in bnCore.imDf.index:
+        z1 = '$' + str(round(bnCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
+        z2 = '$' + str(round(bnCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
+        z3 = ' ($' + str(round(bnCore.imDf.loc[symbol,'qty']*bnCore.spotDict[bnCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
+        myList.append(colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red') + colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
+  except:
+    pass
+
 def bnGetPayments(bn, ccy, isBNT=False):
   if isBNT:
     df = pd.DataFrame(bn.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': cl.getYest() * 1000}))
@@ -47,6 +120,9 @@ def colored(text, color):
     return text
   else:
     return termcolor.colored(text,color)
+
+def blank():
+  return colored('', 'grey')
 
 def fmtLiq(liq):
   return 'never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%'
@@ -95,17 +171,6 @@ def getCores():
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
 
-def printTwoLists(list1, list2, n):
-  for i in range(min(len(list1), len(list2))):
-    print(list1[i].ljust(n) + list2[i])
-  if len(list1) > len(list2):
-    for i in range(len(list2), len(list1)):
-      print(list1[i].ljust(n))
-  elif len(list2) > len(list1):
-    for i in range(len(list1), len(list2)):
-      print(colored('','grey').ljust(n) + list2[i])
-  print()
-
 def printAllDual(core1, core2):
   if core1.exch == 'dummy' and core2.exch == 'dummy': return
   if core1.exch == 'dummy':
@@ -142,88 +207,16 @@ def printAllTrio(core1, core2, core3):
     if core3.liqStr!='': list2.append(core3.liqStr)
     printTwoLists(list1, list2, n)
 
-def printDeltas(ccy,spotDict,spotDelta,futDelta):
-  spot = spotDict[ccy]
-  netDelta=spotDelta+futDelta
-  if ccy=='BTC':
-    nDigits=2
-  elif ccy=='XRP':
-    nDigits=None
-  else:
-    nDigits=1
-  z=(ccy+' spot/fut/net: ').rjust(37)+(str(round(spotDelta,nDigits))+'/'+str(round(futDelta,nDigits))+'/'+str(round(netDelta,nDigits))).ljust(27) + \
-    '($' + str(round(spotDelta * spot/1000)) + 'K/$' + str(round(futDelta * spot/1000)) + 'K/$' + str(round(netDelta * spot/1000)) + 'K)'
-  print(colored(z,'red'))
-
-def printUSDTDeltas(ftxCore,bnCore,spotDict,usdtCoreList):
-  spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
-  implDeltaUSD=0
-  for core in usdtCoreList:
-    spotDeltaUSD+=core.spots.loc['USDT','SpotDeltaUSD']
-    implDeltaUSD-=core.futures['FutDeltaUSD'].sum()
-  imDeltaUSD = bnCore.spots.loc['USDT', 'SpotDeltaUSD']
-  netDeltaUSD=spotDeltaUSD+imDeltaUSD+implDeltaUSD
-  #####
-  spotDelta=spotDeltaUSD/spotDict['USDT']
-  implDelta=implDeltaUSD/spotDict['USDT']
-  imDelta=imDeltaUSD/spotDict['USDT']
-  netDelta=netDeltaUSD/spotDict['USDT']
-  #####
-  zLabel = 'spot/'
-  z1=str(round(spotDelta/1000))+'K/'
-  z2='($'+str(round(spotDeltaUSD/1000))+'K/$'
-  zLabel += 'impl/'
-  z1+=str(round(implDelta/1000))+'K/'
-  z2+=str(round(implDeltaUSD/1000)) + 'K/$'
-  if imDelta!=0:
-    zLabel += 'im/'
-    z1+= str(round(imDelta/1000))+'K/'
-    z2+= str(round(imDeltaUSD/1000))+'K/$'
-  zLabel += 'net: '
-  z1 += str(round(netDelta / 1000)) + 'K'
-  z2 += str(round(netDeltaUSD/1000))+'K)'
-  print(colored(('USDT '+zLabel).rjust(37)+(z1+' ').ljust(27)+z2, 'red'))
-
-def printBUSDDeltas(bnCore):
-  if not CR_IS_ENABLE_BN_ISOLATED_MARGIN: return
-  imDeltaUSD = bnCore.spots.loc['USD', 'SpotDeltaUSD']
-  if imDeltaUSD==0: return
-  imDelta = imDeltaUSD
-  z1 = str(round(imDelta / 1000)) + 'K'
-  z2 = '($' + str(round(imDeltaUSD / 1000)) + 'K)'
-  print(colored('BUSD im: '.rjust(37) + (z1 + ' ').ljust(27) + z2, 'red'))
-
-def printFlows(ftxCore,bnCore,nav):
-  def getSuffix(ftxCore,ccy,nav):
-    return '(' + str(round(ftxCore.wallet.loc[ccy, 'usdValue'] / nav * 100)) + '%)'
-  #####
-  try:
-    print(ftxCore.flowsDict['USD'])
-    print(ftxCore.flowsDict['USDT'])
-    print(ftxCore.flowsDict['USD2']+getSuffix(ftxCore,'USD',nav))
-    print(ftxCore.flowsDict['USDT2']+getSuffix(ftxCore,'USDT',nav))
-    print()
-    #####
-    isPrinted=False
-    for ccy in CR_FTX_FLOWS_CCYS:
-      z = ftxCore.flowsDict[ccy]
-      if not z is None:
-        isPrinted=True
-        print(z)
-    #####
-    if CR_IS_ENABLE_BN_ISOLATED_MARGIN:
-      isPrinted=True
-      for symbol in bnCore.imDf.index:
-        z1 = '$' + str(round(bnCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
-        z2 = '$' + str(round(bnCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
-        z3 = ' ($' + str(round(bnCore.imDf.loc[symbol,'qty']*bnCore.spotDict[bnCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
-        print(colored(fmtLiq(bnCore.imDf.loc[symbol,'liq']).rjust(5),'red'),end='')
-        print(colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
-    #####
-    if isPrinted: print()
-  #####
-  except:
-    pass
+def printTwoLists(list1, list2, n):
+  for i in range(min(len(list1), len(list2))):
+    print(list1[i].ljust(n) + list2[i])
+  if len(list1) > len(list2):
+    for i in range(len(list2), len(list1)):
+      print(list1[i].ljust(n))
+  elif len(list2) > len(list1):
+    for i in range(len(list1), len(list2)):
+      print(blank().ljust(n) + list2[i])
+  print()
 
 ####################################################################################################
 
@@ -834,28 +827,31 @@ if __name__ == '__main__':
   ########
   # Output
   ########
-  navStrList=[]
+  navList=[]
   for obj in objs:
-    if obj.name!='DUMMY': navStrList.append(getNAVStr(obj.name,obj.nav))
-  if extCoinsNAV!=0: navStrList.append(getNAVStr('Ext Coins', extCoinsNAV))
-  print(colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(38)+str(round(nav))+' ('+' / '.join(navStrList)+')','blue'))
+    if obj.name!='DUMMY': navList.append(getNAVStr(obj.name, obj.nav))
+  if extCoinsNAV!=0: navList.append(getNAVStr('Ext Coins', extCoinsNAV))
+  print(colored(('NAV as of '+cl.getCurrentTime()+': $').rjust(38) + str(round(nav)) +' (' +' / '.join(navList) + ')', 'blue'))
   #####
-  zList=[]
+  quoteList=[]
   for ccy in CR_QUOTE_CCY_DICT.keys():
-    zList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
-  print(colored('24h income: $'.rjust(38)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue')+' / '.join(zList))
+    quoteList.append(ccy + '=' + str(round(spotDict[ccy], CR_QUOTE_CCY_DICT[ccy])))
+  print(colored('24h income: $'.rjust(38)+(str(round(oneDayIncome))+' ('+str(round(oneDayIncome*365/nav*100))+'% p.a.)').ljust(26),'blue') +' / '.join(quoteList))
   print()
   #####
+  agList=[]
   for ccy in CR_AG_CCY_DICT.keys():
-    printDeltas(ccy,spotDict,agDf.loc[ccy,'SpotDelta'],agDf.loc[ccy,'FutDelta'])
+    appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'])
   usdtCores=[]
   if SHARED_EXCH_DICT['bbt']==1: usdtCores.append(bbtCore)
   if SHARED_EXCH_DICT['bnt'] == 1: usdtCores.append(bntCore)
-  printUSDTDeltas(ftxCore, bnCore, spotDict, usdtCores)
-  printBUSDDeltas(bnCore)
-  print()
+  appendUSDTDeltas(agList, ftxCore, bnCore, spotDict, usdtCores)
+  appendBUSDDeltas(agList, bnCore)
   #####
-  printFlows(ftxCore, bnCore, nav)
+  flowList=[]
+  appendFlows(flowList, ftxCore, bnCore, nav)
+  #####
+  printTwoLists(agList, flowList, 120)
   #####
   printAllTrio(ftxCore, kfCore, dbCore)
   printAllDual(bbtCore, bbCore)
