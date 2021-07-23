@@ -1,6 +1,7 @@
 # Original URL: https://github.com/tupui/apophis/blob/master/apophis/apophis.py
 # Mod: imported additional libraries
 # Mod: "editorder" added
+# Mod: "transfer" added
 # Mod: Futures URI replaced if IS_IP_WHITELIST
 # Mod: "get_account_log" added
 
@@ -82,6 +83,7 @@ API_PRIVATE_POST = {
     "batchorder",
     "withdrawal",
     "editorder",  # <--- Simon added this line
+    "transfer",   # <--- Simon added this line
 }
 API_METHODS = API_PUBLIC | API_PRIVATE_GET | API_PRIVATE_POST
 
