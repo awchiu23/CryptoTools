@@ -8,13 +8,13 @@ from retrying import retry
 ########
 # Params
 ########
-nPrograms=1
+nPrograms=10
 notional=5000                # USD notional
 qtyOverRide=None             # Use in place of notional unless None
 
 ccy='AXS'
-side='SELL'                  # 'BUY', 'SELL'
-hedgeExchange='ftxperp'      # 'ftxspot', 'ftxperp', 'bbt', 'none'
+side='BUY'                  # 'BUY', 'SELL'
+hedgeExchange='bnt'         # 'ftxspot', 'ftxperp', 'bbt', 'bnt', 'none'
 
 CT_CONFIGS_DICT['BNS_MAX_WAIT_TIME'] = 10
 
@@ -157,6 +157,8 @@ for n in range(nPrograms):
     cl.ftxRelOrder(oppSide, ftx, ccy + '-PERP', qty, maxChases=888)
   elif hedgeExchange=='bbt':
     cl.bbtRelOrder(oppSide, bb, ccy, qty, maxChases=888)
+  elif hedgeExchange=='bnt':
+    cl.bntRelOrder(oppSide, bn, ccy, qty, maxChases=888)
   elif hedgeExchange!='none':
     print('Bad exchange!')
     sys.exit(1)
