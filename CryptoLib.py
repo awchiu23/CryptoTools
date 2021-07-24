@@ -1100,14 +1100,14 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy,isRateLimit=False):
 #############################################################################################
 
 def getOneDayShortSpotEdge(fundingDict):
-  return getOneDayDecayedMean(fundingDict['ftxEstMarginalUSD'], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365
+  return getOneDayDecayedMean(fundingDict['ftxEstMarginalUSD'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365
 
 def getOneDayUSDTCollateralBleed(fundingDict):
-  return -getOneDayDecayedMean(fundingDict['ftxEstMarginalUSDT'], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365 * SMB_USDT_COLLATERAL_COVERAGE
+  return -getOneDayDecayedMean(fundingDict['ftxEstMarginalUSDT'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365 * SMB_DICT['USDT_COLLATERAL_COVERAGE']
 
 def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None,isKF=False):
   # gain on projected basis mtm after 1 day
-  edge=basis-getOneDayDecayedValues(basis, SMB_BASE_BASIS, SMB_HALF_LIFE_HOURS)[-1]
+  edge=basis-getOneDayDecayedValues(basis, SMB_DICT['BASE_BASIS'], SMB_DICT['HALF_LIFE_HOURS'])[-1]
 
   # gain on coupon from previous reset
   hoursAccountedFor=0
@@ -1126,7 +1126,7 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
 
   # gain on projected funding pickup
   nMinutes = 1440 - round(hoursAccountedFor * 60)
-  edge+= getOneDayDecayedMean(snapFundingRate, SMB_BASE_RATE, SMB_HALF_LIFE_HOURS, nMinutes=nMinutes) / 365 * (nMinutes / 1440)
+  edge+= getOneDayDecayedMean(snapFundingRate, SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS'], nMinutes=nMinutes) / 365 * (nMinutes / 1440)
 
   return edge
 
@@ -1182,8 +1182,8 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
 
 @retry(wait_fixed=1000)
 def dbGetOneDayShortFutEdge(db, fundingDict, basis):
-  edge = basis - getOneDayDecayedValues(basis, SMB_BASE_BASIS, SMB_HALF_LIFE_HOURS)[-1] # basis
-  edge += getOneDayDecayedMean(fundingDict['dbEstFunding'], SMB_BASE_RATE, SMB_HALF_LIFE_HOURS) / 365 # funding
+  edge = basis - getOneDayDecayedValues(basis, SMB_DICT['BASE_BASIS'], SMB_DICT['HALF_LIFE_HOURS'])[-1] # basis
+  edge += getOneDayDecayedMean(fundingDict['dbEstFunding'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365 # funding
   return edge
 
 @retry(wait_fixed=1000)

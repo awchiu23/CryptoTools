@@ -89,10 +89,16 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 #############
 # Smart Basis
 #############
-SMB_HALF_LIFE_HOURS = 8
-SMB_BASE_RATE = 0.02
-SMB_BASE_BASIS = SMB_BASE_RATE / 365
-SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
+SMB_DICT=dict()
+SMB_DICT['HALF_LIFE_HOURS']=8
+SMB_DICT['BASE_RATE']=0.02
+SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
+SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
+
+#SMB_HALF_LIFE_HOURS = 8
+#SMB_BASE_RATE = 0.02
+#SMB_BASE_BASIS = SMB_BASE_RATE / 365
+#SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
 
 #############################################################################################
 
@@ -138,8 +144,8 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  #CR_AG_CCY_DICT['BTC']=3.609 #bbftx
+  #CR_AG_CCY_DICT['BTC']=4.12 #bnftx
   #CR_AG_CCY_DICT['ETH']=50.123 #ftxkf
   #CR_AG_CCY_DICT['XRP'] = 58451 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
-  #CR_EXT_DELTA_USDT = 160e3 #bbftx
+  #CR_EXT_DELTA_USDT = 252864 #bbftx
