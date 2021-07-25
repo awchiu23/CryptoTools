@@ -123,7 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
-  #SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
@@ -144,7 +144,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  #CR_AG_CCY_DICT['BTC']=4.12 #bnftx
+  #CR_AG_CCY_DICT['BTC']=2.388 #bnftx
   #CR_AG_CCY_DICT['ETH']=80.801 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 155905 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
