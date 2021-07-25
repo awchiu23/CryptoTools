@@ -123,6 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
+  #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['LTC'] = 4
