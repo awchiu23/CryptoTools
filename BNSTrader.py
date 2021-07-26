@@ -10,7 +10,7 @@ from retrying import retry
 ########
 nPrograms=1
 notional=5000                # USD notional
-qtyOverRide=None             # Use in place of notional unless None
+qtyOverRide=78 #None             # Use in place of notional unless None
 
 ccy='AXS'
 side='SELL'                  # 'BUY', 'SELL'
