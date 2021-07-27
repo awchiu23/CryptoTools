@@ -1584,6 +1584,8 @@ def ctRun(ccy, notional, tgtBps, color):
           print()
           speak('Done')
           break # Go to next program
+  print(getCurrentTime() + ': ' + termcolor.colored('Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps', 'red'))
+  print(getCurrentTime()+': All done')
   speak('All done')
 
 #############################################################################################

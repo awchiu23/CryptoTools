@@ -10,10 +10,10 @@ from retrying import retry
 ########
 nPrograms=1
 notional=5000                # USD notional
-qtyOverRide=78 #None             # Use in place of notional unless None
+qtyOverRide=None             # Use in place of notional unless None
 
 ccy='AXS'
-side='SELL'                  # 'BUY', 'SELL'
+side='BUY'                   # 'BUY', 'SELL'
 hedgeExchange='ftxperp'      # 'ftxspot', 'ftxperp', 'bbt', 'bnt', 'none'
 
 CT_CONFIGS_DICT['BNS_MAX_WAIT_TIME'] = 10

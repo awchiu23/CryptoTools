@@ -140,16 +140,16 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['AXS'] = 0
   CR_AG_CCY_DICT['SLP'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','BNB','MATIC'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','bn','kf']}
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt','bnt','bn','kf']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
+  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt','bnt','kf']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  #CR_AG_CCY_DICT['BTC']=3.6301 #bnftx
-  #CR_AG_CCY_DICT['ETH']=80.801 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 155905 #bbftx
+  #CR_AG_CCY_DICT['BTC']=24.1413 #bnftx
+  #CR_AG_CCY_DICT['ETH']=44.595 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
-  CR_EXT_DELTA_USDT = 650000 #bbftx
+  #CR_EXT_DELTA_USDT = 249999 #bbftx
