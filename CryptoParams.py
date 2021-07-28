@@ -148,7 +148,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  #CR_AG_CCY_DICT['BTC']=24.1413 #bnftx
+  #CR_AG_CCY_DICT['BTC']=9.595 #bbftx
   #CR_AG_CCY_DICT['ETH']=44.595 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
