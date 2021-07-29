@@ -33,14 +33,14 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins (secondary control)
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins (secondary control)
 
-CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=5              # Execution setting
-CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=5               # Execution setting
+CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
+CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
 CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
 CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
 CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=10              # Execution setting
 CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=10               # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=10               # Execution setting
-CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=15               # Execution setting
+CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
@@ -131,6 +131,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['AXS'] = 4
+  CR_QUOTE_CCY_DICT['SAND'] = 4
   CR_QUOTE_CCY_DICT['SLP'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['LTC'] = 0
@@ -138,18 +139,20 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['AXS'] = 0
+  CR_AG_CCY_DICT['SAND'] = 0
   CR_AG_CCY_DICT['SLP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','BNB','MATIC'])
+  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','BNB','DOGE','MATIC'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt','bnt','kf']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx','bnt']}
+  SHARED_CCY_DICT['SAND'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
   #CR_AG_CCY_DICT['BTC']=9.595 #bbftx
-  #CR_AG_CCY_DICT['ETH']=44.595 #bbftx
+  CR_AG_CCY_DICT['ETH']=51.595 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
   #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
   #CR_EXT_DELTA_USDT = 249999 #bbftx
