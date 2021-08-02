@@ -91,14 +91,9 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.05
+SMB_DICT['BASE_RATE']=0.06
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
-
-#SMB_HALF_LIFE_HOURS = 8
-#SMB_BASE_RATE = 0.02
-#SMB_BASE_BASIS = SMB_BASE_RATE / 365
-#SMB_USDT_COLLATERAL_COVERAGE = 1 / 6
 
 #############################################################################################
 
