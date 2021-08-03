@@ -1509,14 +1509,6 @@ def ctRun(ccy, notional, tgtBps, color):
         speak('Go')
         completedLegs = 0
         isCancelled=False
-        if 'bb' == chosenLong and not isCancelled:
-          distance = ctGetDistance('BB', completedLegs)
-          longFill = bbRelOrder('BUY', bb, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bb' == chosenShort and not isCancelled:
-          distance = ctGetDistance('BB', completedLegs)
-          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'bbt' == chosenLong and not isCancelled:
           distance = ctGetDistance('BBT', completedLegs)
           longFill = bbtRelOrder('BUY', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
@@ -1525,6 +1517,14 @@ def ctRun(ccy, notional, tgtBps, color):
           distance = ctGetDistance('BBT', completedLegs)
           shortFill = bbtRelOrder('SELL', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
+        if 'bb' == chosenLong and not isCancelled:
+          distance = ctGetDistance('BB', completedLegs)
+          longFill = bbRelOrder('BUY', bb, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'bb' == chosenShort and not isCancelled:
+          distance = ctGetDistance('BB', completedLegs)
+          shortFill = bbRelOrder('SELL', bb, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kf' == chosenLong and not isCancelled:
           distance = ctGetDistance('KF', completedLegs)
           longFill = kfRelOrder('BUY', kf, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)

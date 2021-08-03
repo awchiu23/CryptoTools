@@ -37,9 +37,9 @@ CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
 CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
 CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
 CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
-CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=10              # Execution setting
-CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=10               # Execution setting
-CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=3               # Execution setting
+CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=3                # Execution setting
+CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=3                # Execution setting
 CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
@@ -121,30 +121,22 @@ if os.environ.get('USERNAME')=='Simon':
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
-  CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SAND'] = 4
   CR_QUOTE_CCY_DICT['SLP'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_AG_CCY_DICT['LTC'] = 0
-  CR_AG_CCY_DICT['BNB'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
-  CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['SAND'] = 0
   CR_AG_CCY_DICT['SLP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','BNB','DOGE','MATIC'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt','bnt','kf']}
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt','bnt']}
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE'])
+  SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','bn','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt','bnt']}
-  SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt','bnt']}
   SHARED_CCY_DICT['SAND'] = {'futExch': ['ftx','bnt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
   #CR_AG_CCY_DICT['BTC']=1.25 #dbftx+ftxkf
   #CR_AG_CCY_DICT['ETH']=43.727 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
-  #CR_AG_CCY_DICT['LTC'] = 374 #ftxkf
-  #CR_EXT_DELTA_USDT = 249999 #bbftx
+  #CR_EXT_DELTA_USDT = 350000 #bbftx
