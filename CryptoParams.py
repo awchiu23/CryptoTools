@@ -48,7 +48,7 @@ CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-3         # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
@@ -120,6 +120,8 @@ if os.environ.get('USERNAME')=='Simon':
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
+  SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'bn', 'db', 'kf']}
+  SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'bnt', 'db', 'kf']}
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
@@ -129,11 +131,11 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['SLP'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE'])
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','bn','kf']}
-  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt','bnt']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
+  SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
   #CR_AG_CCY_DICT['BTC']=1.25 #dbftx+ftxkf
-  #CR_AG_CCY_DICT['ETH']=164 #dbftx
+  #CR_AG_CCY_DICT['ETH']=26.796 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
   #CR_EXT_DELTA_USDT = 350000 #bbftx
