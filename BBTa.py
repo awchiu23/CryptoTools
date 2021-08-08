@@ -1,0 +1,38 @@
+import CryptoLib as cl
+from CryptoParams import *
+import time
+import termcolor
+
+########
+# Params
+########
+ccys=['BNB','DOGE','UNI','BCH','LTC','SOL','LINK','MATIC','AAVE','SUSHI']
+threshold = 9
+interval = 60*5
+
+######
+# Main
+######
+cl.printHeader('BBTa')
+ftx=cl.ftxCCXTInit()
+bb=cl.bbCCXTInit()
+bn = None
+db = None
+kf = None
+while True:
+  print(cl.getCurrentTime(isCondensed=True).ljust(10),end='')
+  for i in range(len(ccys)):
+    ccy=ccys[i]
+    SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
+    fundingDict = cl.getFundingDict(ftx, bb, bn, db, kf, ccy, isRateLimit=False)
+    smartBasisDict = cl.getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=True)
+    smartBasisBps = smartBasisDict['bbtSmartBasis'] * 10000
+    basisBps = smartBasisDict['bbtBasis'] * 10000
+    color = 'red' if smartBasisBps >= threshold else 'blue'
+    est1=fundingDict['bbtEstFunding1']
+    est2=fundingDict['bbtEstFunding2']
+    z = ccy + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+')'
+    print(termcolor.colored(z.ljust(22),color), end='')
+  time.sleep(interval)
+  print()
+

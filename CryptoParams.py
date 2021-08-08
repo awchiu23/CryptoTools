@@ -48,7 +48,7 @@ CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-3         # Execution setting
+CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-10        # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
@@ -91,7 +91,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.06
+SMB_DICT['BASE_RATE']=0.09
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -119,29 +119,37 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':1,'bn':1,'db':1,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':1,'db':1,'kf':1})
   SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'bn', 'db', 'kf']}
   SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
+  CR_QUOTE_CCY_DICT['AXS'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 4
+  CR_QUOTE_CCY_DICT['SOL'] = 4
+  CR_QUOTE_CCY_DICT['SUSHI'] = 4
   CR_QUOTE_CCY_DICT['SLP'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['LINK'] = 0
+  CR_AG_CCY_DICT['SOL'] = 0
+  CR_AG_CCY_DICT['SUSHI'] = 0
   CR_AG_CCY_DICT['SLP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC','LINK'])
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC','LINK','SOL','SUSHI'])
   SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  #CR_AG_CCY_DICT['BTC']=1.25 #dbftx+ftxkf
-  #CR_AG_CCY_DICT['ETH']=26.796 #bbftx
+  CR_AG_CCY_DICT['BTC']=2.47802 #kfftx
+  CR_AG_CCY_DICT['ETH']=31.7 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
   #CR_EXT_DELTA_USDT = 350000 #bbftx

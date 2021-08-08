@@ -14,7 +14,7 @@ qtyOverRide=None             # Use in place of notional unless None
 
 ccy='AXS'
 side='BUY'                   # 'BUY', 'SELL'
-hedgeExchange='ftxperp'      # 'ftxspot', 'ftxperp', 'bbt', 'bnt', 'none'
+hedgeExchange='none'         # 'ftxspot', 'ftxperp', 'bbt', 'bnt', 'none'
 
 CT_CONFIGS_DICT['BNS_MAX_WAIT_TIME'] = 10
 
