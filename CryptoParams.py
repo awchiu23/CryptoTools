@@ -120,7 +120,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_IS_ENABLE_BN_ISOLATED_MARGIN = True
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':1,'db':1,'kf':1})
-  SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'bn', 'db', 'kf']}
+  SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
   SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
@@ -149,7 +149,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  CR_AG_CCY_DICT['BTC']=2.47802 #kfftx
+  #CR_AG_CCY_DICT['BTC']=2.47802 #kfftx
   CR_AG_CCY_DICT['ETH']=31.7 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 159604 #bbftx
+  CR_AG_CCY_DICT['XRP'] = 217000 #bbftx
   #CR_EXT_DELTA_USDT = 350000 #bbftx
