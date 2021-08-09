@@ -1689,9 +1689,10 @@ def getPctElapsed(hoursInterval):
 # Get valid currencies for a futures exchange
 def getValidCcys(futExch):
   myL = []
-  for ccy in SHARED_CCY_DICT.keys():
-    if futExch in SHARED_CCY_DICT[ccy]['futExch']:
-      myL.append(ccy)
+  if futExch!='BNIM':
+    for ccy in SHARED_CCY_DICT.keys():
+      if futExch in SHARED_CCY_DICT[ccy]['futExch']:
+        myL.append(ccy)
   return myL
 
 # Get valid exchanges for a currency

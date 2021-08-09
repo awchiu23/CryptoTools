@@ -6,7 +6,7 @@ import termcolor
 ########
 # Params
 ########
-ccys=['BNB','DOGE','UNI','BCH','LTC','SOL','LINK','MATIC','AAVE','SUSHI']
+ccys=['BNB','DOGE','XRP','UNI','BCH','LTC','SOL','LINK','MATIC','AAVE','SUSHI']
 threshold = 9
 interval = 60*5
 
@@ -32,7 +32,7 @@ while True:
     est1=fundingDict['bbtEstFunding1']
     est2=fundingDict['bbtEstFunding2']
     z = ccy + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+')'
-    print(termcolor.colored(z.ljust(22),color), end='')
+    print(termcolor.colored(z.ljust(16+len(ccy)),color), end='')
   time.sleep(interval)
   print()
 
