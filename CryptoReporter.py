@@ -492,7 +492,10 @@ class core:
           break
         else:
           df = df.append(pd.DataFrame(tl))
-      return df.set_index('symbol', drop=False)
+      if len(df)==0:
+        return None
+      else:
+        return df.set_index('symbol', drop=False)
     #####
     self.api = cl.bbCCXTInit()
     self.wallet=pd.DataFrame(self.api.v2_private_get_wallet_balance()['result']).transpose()
@@ -834,12 +837,12 @@ if __name__ == '__main__':
   for obj in objs:
     nav+=obj.nav
     oneDayIncome += obj.oneDayIncome
+    for ccy in CR_AG_CCY_DICT.keys():
+      agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
+      agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
     if obj.name=='BNIM':
       imDeltaBTC=obj.spots.loc['BTC', 'SpotDelta']
-    else:
-      for ccy in CR_AG_CCY_DICT.keys():
-        agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
-        agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
+      agDf.loc[ccy,'SpotDelta']-=imDeltaBTC
   extCoinsNAV=0
   for ccy in CR_AG_CCY_DICT.keys():
     extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
