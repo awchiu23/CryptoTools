@@ -1,4 +1,4 @@
 # CryptoTools
-These are tools that I wrote to facilitate my crypto arbitrage activities.
+These are tools that I have written to facilitate my crypto arbitrage activities.
 
 -Simon
