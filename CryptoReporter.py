@@ -304,9 +304,10 @@ class core:
     if self.exch == 'db':
       self.incomesStr = colored('DB 24h funding income: '.rjust(37) + z1, 'blue')
     else:
+      zN = '' if self.n is None else str(self.n)
       zPrev  = '4h' if self.exch == 'kf' else 'prev'
       z2 = '$' + str(round(self.prevIncome)) + ' (' + str(round(self.prevAnnRet * 100)) + '% p.a.)'
-      self.incomesStr = colored((self.exch.upper() + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
+      self.incomesStr = colored((self.exch.upper() + zN + ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
     if self.exch in ['bb','bbt','bn','bnt','db','kf']:
