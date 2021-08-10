@@ -54,10 +54,8 @@ class getPrices:
 def ftxCCXTInit():
   return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
-def bbCCXTInit(n=None):
-  apiKey = API_KEY_BB if n is None else API_KEY_BB2
-  apiSecret = API_SECRET_BB if n is None else API_SECRET_BB2
-  api = ccxt.bybit({'apiKey': apiKey, 'secret': apiSecret, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
+def bbCCXTInit():
+  api = ccxt.bybit({'apiKey': API_KEY_BB, 'secret': API_SECRET_BB, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
   api.options['recvWindow']=50000
   return api
 
@@ -1311,10 +1309,7 @@ def caRun(ccy, color):
 ##############
 def ctInit(ccy, notional, tgtBps):
   ftx = ftxCCXTInit()
-  if CT_CONFIGS_DICT['IS_BBT2']:
-    bb = bbCCXTInit(2)
-  else:
-    bb = bbCCXTInit()
+  bb = bbCCXTInit()
   bn = bnCCXTInit()
   db = dbCCXTInit()
   kf = kfApophisInit()

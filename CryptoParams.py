@@ -9,8 +9,6 @@ API_KEY_FTX = ''
 API_SECRET_FTX = ''
 API_KEY_BB = ''
 API_SECRET_BB = ''
-API_KEY_BB2 = ''
-API_SECRET_BB2 = ''
 API_KEY_BN = ''
 API_SECRET_BN = ''
 API_KEY_DB = ''
@@ -61,8 +59,6 @@ CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=0          # Execution setting
-
-CT_CONFIGS_DICT['IS_BBT2'] = False                   # Trade using BBT2 instead of BBT?
 
 #############################################################################################
 
@@ -123,9 +119,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
-  #SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
-  #SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
+  #SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
@@ -160,4 +154,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=1.3
   #CR_AG_CCY_DICT['ETH']=31.7 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 88000 #bbftx
-  #CR_EXT_DELTA_USDT = 30100 #bb2
+  CR_EXT_DELTA_USDT = 30892 #bbftx

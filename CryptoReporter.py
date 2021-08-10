@@ -166,11 +166,7 @@ def getCores():
   ftxCore=processCore('ftx',spotDict,objs)
   bbCore=processCore('bb',spotDict,objs)
   bbtCore=processCore('bbt',spotDict,objs)
-  if SHARED_EXCH_DICT['bbt']>=2:
-    bbt2Core=processCore('bbt',spotDict,objs,n=2)
-  else:
-    bbt2Core=getDummyCore(spotDict,objs)
-  bnCore=processCore('bn',spotDict,objs)  
+  bnCore=processCore('bn',spotDict,objs)
   bntCore=processCore('bnt',spotDict,objs)
   bnimCore=processCore('bnim',spotDict,objs)
   dbCore=processCore('db', spotDict, objs)
@@ -188,7 +184,7 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCore, bbt2Core, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -575,9 +571,6 @@ class core:
       self.liqDict[ccy] = riskDf.loc[ccy,'liq']
     self.calcFuturesDeltaUSD()
     #####
-    if self.n==2: # trim list for bbt2
-      self.validCcys=list(self.futures.index[self.futures['FutDelta'] != 0])
-    #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
       data = self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
@@ -852,7 +845,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCore, bbt2Core, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -897,7 +890,6 @@ if __name__ == '__main__':
     appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'],imDeltaBTC)
   usdtCores=[]
   if SHARED_EXCH_DICT['bbt']>=1: usdtCores.append(bbtCore)
-  if SHARED_EXCH_DICT['bbt']>=2: usdtCores.append(bbt2Core)
   if SHARED_EXCH_DICT['bnt']>=1: usdtCores.append(bntCore)
   appendUSDTDeltas(agList, ftxCore, bnimCore, spotDict, usdtCores)
   appendBUSDDeltas(agList, bnimCore)
@@ -910,7 +902,6 @@ if __name__ == '__main__':
   #####
   printAllTrio(ftxCore, kfCore, dbCore)
   printAllDual(bbtCore, bbCore)
-  if SHARED_EXCH_DICT['bbt'] >= 2: bbt2Core.printAll()
   printAllDual(bntCore, bnCore)
   #####
   if '-f' in sys.argv:
