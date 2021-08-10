@@ -12,7 +12,7 @@ nPrograms=1
 notional=5000                # USD notional
 qtyOverRide=None             # Use in place of notional unless None
 
-ccy='AXS'
+ccy='SLP'
 side='BUY'                   # 'BUY', 'SELL'
 hedgeExchange='none'         # 'ftxspot', 'ftxperp', 'bbt', 'bnt', 'none'
 

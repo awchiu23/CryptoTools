@@ -140,13 +140,18 @@ def fmtLiq(liq):
   return 'never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%'
 
 def getCores():
-  def processCore(exch,spotDict,objs):
-    if SHARED_EXCH_DICT[exch]==1:
-      myCore=core(exch,spotDict)
+  def getDummyCore(spotDict,objs):
+    dummyCore=core('dummy', spotDict)
+    objs.append(dummyCore)
+    return dummyCore
+  #####
+  def processCore(exch,spotDict,objs,n=None):
+    if SHARED_EXCH_DICT[exch]<1:
+      return getDummyCore(spotDict,objs)
     else:
-      myCore=core('dummy',spotDict)
-    objs.append(myCore)
-    return myCore
+      myCore = core(exch, spotDict, n=n)
+      objs.append(myCore)
+      return myCore
   #####
   isOk=True
   ftx=cl.ftxCCXTInit()
@@ -161,6 +166,10 @@ def getCores():
   ftxCore=processCore('ftx',spotDict,objs)
   bbCore=processCore('bb',spotDict,objs)
   bbtCore=processCore('bbt',spotDict,objs)
+  if SHARED_EXCH_DICT['bbt']>=2:
+    bbt2Core=processCore('bbt',spotDict,objs,n=2)
+  else:
+    bbt2Core=getDummyCore(spotDict,objs)
   bnCore=processCore('bn',spotDict,objs)  
   bntCore=processCore('bnt',spotDict,objs)
   bnimCore=processCore('bnim',spotDict,objs)
@@ -179,7 +188,7 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCore, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCore, bbt2Core, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -242,9 +251,8 @@ class core:
     self.exch = exch
     self.name = exch.upper()
     self.spotDict = spotDict
-    if n is not None:
-      self.n = n
-      self.name += str(n)
+    self.n = n
+    if self.n is not None: self.name += str(n)
     #####
     self.validCcys = cl.getValidCcys(exch)
     #####
@@ -306,7 +314,10 @@ class core:
     else:
       z = ''
     liqStr = colored(z.rjust(5),'red')
-    prefix = self.exch.upper() + ' ' + ccy + ' 24h/'
+    prefix = self.exch.upper()
+    if self.n is not None:
+      prefix+=str(self.n)
+    prefix += ' ' + ccy + ' 24h/'
     prefix += '8h' if self.exch=='db' else 'prev'
     prefix+='/est'
     if self.exch in ['bb','bbt','kf']:
@@ -556,28 +567,39 @@ class core:
   # BBT
   #####
   def bbtInit(self):
-    self.api = cl.bbCCXTInit()
+    self.api = cl.bbCCXTInit(n=self.n)
     riskDf = cl.bbtGetRiskDf(self.api, self.validCcys, self.spotDict)
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
       self.liqDict[ccy] = riskDf.loc[ccy,'liq']
     self.calcFuturesDeltaUSD()
     #####
+    if self.n==2: # trim list for bbt2
+      self.validCcys=list(self.futures.index[self.futures['FutDelta'] != 0])
+    #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
       data = self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
       if not data is None:
         pmts = pmts.append(pd.DataFrame(data).set_index('symbol', drop=False))
-    cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
-    pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
-    pmts['incomeUSD'] = -pmts['exec_fee'] * self.spotDict['USDT']
-    pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
-    pmts = pmts.set_index('date').sort_index()
-    #####
-    self.oneDayIncome = pmts['incomeUSD'].sum()
-    self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
-    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    if len(pmts)==0:
+      self.oneDayIncome=0
+      self.prevIncome=0
+    else:
+      cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
+      pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
+      pmts['incomeUSD'] = -pmts['exec_fee'] * self.spotDict['USDT']
+      pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
+      pmts = pmts.set_index('date').sort_index()
+      #####
+      self.oneDayIncome = pmts['incomeUSD'].sum()
+      self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
+    if self.futNotional == 0:
+      self.oneDayAnnRet = 0
+      self.prevAnnRet = 0
+    else:
+      self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+      self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
     wb = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
     equity = float(wb['equity'])
@@ -586,13 +608,17 @@ class core:
     self.calcSpotDeltaUSD()
     #####
     for ccy in self.validCcys:
-      df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
-      if len(df) == 0:
+      if len(pmts)==0:
         oneDayFunding = 0
         prevFunding = 0
       else:
-        oneDayFunding = df.mean() * 3 * 365
-        prevFunding = df[df.index[-1]].mean() * 3 * 365
+        df=pmts.loc[pmts['symbol']==ccy+'USDT','fee_rate']
+        if len(df) == 0:
+          oneDayFunding = 0
+          prevFunding = 0
+        else:
+          oneDayFunding = df.mean() * 3 * 365
+          prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.bbtGetEstFunding1(self.api, ccy)
       estFunding2 = cl.bbtGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
@@ -825,7 +851,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCore, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCore, bbt2Core, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -869,8 +895,9 @@ if __name__ == '__main__':
   for ccy in CR_AG_CCY_DICT.keys():
     appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'],imDeltaBTC)
   usdtCores=[]
-  if SHARED_EXCH_DICT['bbt']==1: usdtCores.append(bbtCore)
-  if SHARED_EXCH_DICT['bnt'] == 1: usdtCores.append(bntCore)
+  if SHARED_EXCH_DICT['bbt']>=1: usdtCores.append(bbtCore)
+  if SHARED_EXCH_DICT['bbt']>=2: usdtCores.append(bbt2Core)
+  if SHARED_EXCH_DICT['bnt']>=1: usdtCores.append(bntCore)
   appendUSDTDeltas(agList, ftxCore, bnimCore, spotDict, usdtCores)
   appendBUSDDeltas(agList, bnimCore)
   #####
@@ -882,6 +909,7 @@ if __name__ == '__main__':
   #####
   printAllTrio(ftxCore, kfCore, dbCore)
   printAllDual(bbtCore, bbCore)
+  if SHARED_EXCH_DICT['bbt'] >= 2: bbt2Core.printAll()
   printAllDual(bntCore, bnCore)
   #####
   if '-f' in sys.argv:

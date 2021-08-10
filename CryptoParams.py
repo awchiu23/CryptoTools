@@ -9,6 +9,8 @@ API_KEY_FTX = ''
 API_SECRET_FTX = ''
 API_KEY_BB = ''
 API_SECRET_BB = ''
+API_KEY_BB2 = ''
+API_SECRET_BB2 = ''
 API_KEY_BN = ''
 API_SECRET_BN = ''
 API_KEY_DB = ''
@@ -48,7 +50,7 @@ CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-10        # Execution setting
+CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-15        # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
@@ -59,6 +61,8 @@ CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=0          # Execution setting
+
+CT_CONFIGS_DICT['IS_BBT2'] = False                   # Trade using BBT2 instead of BBT?
 
 #############################################################################################
 
@@ -90,7 +94,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.06
+SMB_DICT['BASE_RATE']=0.09
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -109,6 +113,8 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
   API_KEY_BB = sl.jLoad('API_KEY_BB')
   API_SECRET_BB = sl.jLoad('API_SECRET_BB')
+  API_KEY_BB2 = sl.jLoad('API_KEY_BB2')
+  API_SECRET_BB2 = sl.jLoad('API_SECRET_BB2')
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   API_KEY_KF = sl.jLoad('API_KEY_KF')
@@ -117,40 +123,38 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':0,'bnim':1,'db':1,'kf':1})
-  SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
-  SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':2,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
+  #SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
+  #SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['AAVE'] = 4
   CR_QUOTE_CCY_DICT['AXS'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 4
+  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 4
   CR_QUOTE_CCY_DICT['SUSHI'] = 4
-  CR_QUOTE_CCY_DICT['SLP'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['AAVE'] = 0
   CR_AG_CCY_DICT['LINK'] = 0
+  CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['SOL'] = 0
   CR_AG_CCY_DICT['SUSHI'] = 0
-  CR_AG_CCY_DICT['SLP'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC','AAVE','LINK','SOL','SUSHI'])
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['bnt']}
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC','AAVE','LINK','LTC','SOL','SUSHI'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['AAVE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['AXS'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['SLP'] = {'futExch': ['ftx']}
   #####
-  #CR_AG_CCY_DICT['BTC']=2.47802 #kfftx
+  #CR_AG_CCY_DICT['BTC']=1.3
   #CR_AG_CCY_DICT['ETH']=31.7 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 88000 #bbftx
-  #CR_EXT_DELTA_USDT = 350000 #bbftx
+  #CR_EXT_DELTA_USDT = 30100 #bb2
