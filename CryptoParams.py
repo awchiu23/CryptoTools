@@ -123,7 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':2,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
   #SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
   #SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
   CR_QUOTE_CCY_DICT['XRP'] = 4
