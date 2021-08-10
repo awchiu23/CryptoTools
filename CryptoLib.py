@@ -1704,7 +1704,7 @@ def getValidCcys(futExch):
 def getValidExchs(ccy):
   myL=[]
   for futExch in SHARED_CCY_DICT[ccy]['futExch']:
-    if SHARED_EXCH_DICT[futExch]==1:
+    if SHARED_EXCH_DICT[futExch]>=1:
       myL.append(futExch)
   return myL
 
