@@ -7,7 +7,8 @@ import termcolor
 # Params
 ########
 ccys=['BNB','DOGE','XRP','UNI','BCH','LTC','SOL','LINK','MATIC','AAVE','SUSHI']
-threshold = 9
+thresholdH = 9
+thresholdL = -9
 interval = 60*5
 
 ######
@@ -28,7 +29,12 @@ while True:
     smartBasisDict = cl.getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=True)
     smartBasisBps = smartBasisDict['bbtSmartBasis'] * 10000
     basisBps = smartBasisDict['bbtBasis'] * 10000
-    color = 'red' if smartBasisBps >= threshold else 'blue'
+    if smartBasisBps >= thresholdH:
+      color = 'red'
+    elif smartBasisBps <= thresholdL:
+      color = 'cyan'
+    else:
+      color = 'grey'
     est1=fundingDict['bbtEstFunding1']
     est2=fundingDict['bbtEstFunding2']
     z = ccy + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+')'

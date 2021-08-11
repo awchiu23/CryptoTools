@@ -376,7 +376,10 @@ class core:
       z2 += str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
       self.liqStr = colored(z2, 'red')
     else:
-      self.liqStr = colored((self.exch.upper() + ' liqL/liqH: ').rjust(37) + zL +'/' + zH, 'red')
+      prefix = self.exch.upper()
+      if self.n is not None:
+        prefix += str(self.n)
+      self.liqStr = colored((prefix + ' liqL/liqH: ').rjust(37) + zL +'/' + zH, 'red')
 
   def printAll(self):
     try:
