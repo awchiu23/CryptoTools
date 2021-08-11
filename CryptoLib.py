@@ -1311,10 +1311,11 @@ def caRun(ccy, color):
 ##############
 def ctInit(ccy, notional, tgtBps):
   ftx = ftxCCXTInit()
+  bb = bbCCXTInit()
   if CT_CONFIGS_DICT['IS_BBT2']:
-    bb = bbCCXTInit(2)
+    bb2 = bbCCXTInit(2)
   else:
-    bb = bbCCXTInit()
+    bb2 = None
   bn = bnCCXTInit()
   db = dbCCXTInit()
   kf = kfApophisInit()
@@ -1329,7 +1330,7 @@ def ctInit(ccy, notional, tgtBps):
   print('Per Trade Quantity: '+str(round(qty, 6)))
   print('Target:             '+str(round(tgtBps))+'bps')
   print()
-  return ftx,bb,bn,db,kf,qty,notional,spot
+  return ftx,bb,bb2,bn,db,kf,qty,notional,spot
 
 def ctGetPosUSD(ftx, bb, bn, db, kf, exch, ccy, spot):
   if exch == 'ftx':
@@ -1398,7 +1399,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy, notional, tgtBps, color):
-  ftx, bb, bn, db, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
+  ftx, bb, bb2, bn, db, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
@@ -1516,11 +1517,11 @@ def ctRun(ccy, notional, tgtBps, color):
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
           distance = ctGetDistance('BBT', completedLegs)
-          longFill = bbtRelOrder('BUY', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = bbtRelOrder('BUY', bb2 if CT_CONFIGS_DICT['IS_BBT2'] else bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
           distance = ctGetDistance('BBT', completedLegs)
-          shortFill = bbtRelOrder('SELL', bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = bbtRelOrder('SELL', bb2 if CT_CONFIGS_DICT['IS_BBT2'] else bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' == chosenLong and not isCancelled:
           distance = ctGetDistance('BB', completedLegs)
