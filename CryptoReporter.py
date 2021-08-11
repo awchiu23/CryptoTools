@@ -564,7 +564,7 @@ class core:
   # BBT
   #####
   def bbtInit(self):
-    self.api = cl.bbCCXTInit(n=self.n)
+    self.api = cl.bbCCXTInit()
     riskDf = cl.bbtGetRiskDf(self.api, self.validCcys, self.spotDict)
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
