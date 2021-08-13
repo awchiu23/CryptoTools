@@ -912,8 +912,11 @@ if __name__ == '__main__':
   print()
   #####
   printAllTrio(ftxCore, kfCore, dbCore)
-  printAllDual(bbtCore, bbCore)
-  if SHARED_EXCH_DICT['bbt'] >= 2: bbt2Core.printAll()
+  if SHARED_EXCH_DICT['bbt'] >= 2:
+    printAllDual(bbtCore, bbt2Core)
+    bbCore.printAll()
+  else:
+    printAllDual(bbtCore, bbCore)
   printAllDual(bntCore, bnCore)
   #####
   if '-f' in sys.argv:
