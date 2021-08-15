@@ -909,7 +909,6 @@ if __name__ == '__main__':
   appendFlows(flowList, ftxCore, bnimCore, nav)
   #####
   printTwoLists(agList, flowList, 120)
-  print()
   #####
   printAllTrio(ftxCore, kfCore, dbCore)
   if SHARED_EXCH_DICT['bbt'] >= 2:
