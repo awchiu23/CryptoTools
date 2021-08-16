@@ -123,15 +123,13 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':0})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['AAVE'] = 4
   CR_QUOTE_CCY_DICT['BCH'] = 4
-  CR_QUOTE_CCY_DICT['BNB'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 4
-  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 4
   CR_QUOTE_CCY_DICT['SUSHI'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
@@ -139,20 +137,16 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['AAVE'] = 0
   CR_AG_CCY_DICT['BCH'] = 0
-  CR_AG_CCY_DICT['BNB'] = 0
   CR_AG_CCY_DICT['LINK'] = 0
-  CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['SOL'] = 0
   CR_AG_CCY_DICT['SUSHI'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC','AAVE','BCH','BNB','LINK','LTC','SOL','SUSHI'])
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','MATIC','AAVE','BCH','LINK','SOL','SUSHI'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['AAVE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['BCH'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx','bbt']}
   #####

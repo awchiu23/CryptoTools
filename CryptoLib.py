@@ -544,9 +544,8 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   else:
     refPrice = bbtGetAsk(bb, ccy)
   limitPrice=roundPrice(bb,'bbt',ccy,refPrice,side=side,distance=distance)
-  isReduceOnly=getIsReduceOnly(bb, ccy, side, qty)
   orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel',
-                                               'reduce_only':bool(isReduceOnly),'close_on_trigger':False})['result']['order_id']
+                                               'reduce_only':bool(getIsReduceOnly(bb, ccy, side, qty)),'close_on_trigger':False})['result']['order_id']
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + ']')
   refTime = time.time()
   nChases=0
