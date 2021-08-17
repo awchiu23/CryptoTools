@@ -6,7 +6,7 @@ import termcolor
 ########
 # Params
 ########
-ccys=['BNB','DOGE','XRP','UNI','BCH','LTC','SOL','LINK','MATIC','AAVE','SUSHI']
+ccys=['BNB','DOGE','XRP','BCH','LTC','SOL','LINK','MATIC','AAVE','SUSHI']
 thresholdH = 15
 thresholdL = 0
 interval = 60*5
