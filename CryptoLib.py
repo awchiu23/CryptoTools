@@ -510,7 +510,7 @@ def bbtGetRiskDf(bb,ccys,spotDict):
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   # Do not use @retry
-  def getIsReduceOnly(bb, ccy, side, qty, cushionUSD=30000):
+  def getIsReduceOnly(bb, ccy, side, qty, cushionUSD=0): # testing cushion 0 instead of 30000
     df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
     oppSide = 'Sell' if side == 'BUY' else 'Buy'
     return (qty + cushionUSD / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])

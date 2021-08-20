@@ -272,7 +272,9 @@ class core:
     self.liqStr = ''
 
   def run(self):
-    if self.exch=='dummy': return
+    if self.exch=='dummy':
+      self.isDone=True
+      return
     if self.exch=='ftx':
       self.ftxInit()
     elif self.exch=='bb':
