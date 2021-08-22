@@ -4,6 +4,11 @@
 import CryptoLib as cl
 import pandas as pd
 
+########
+# Params
+########
+isBBT2=False
+
 ###########
 # Functions
 ###########
@@ -14,7 +19,10 @@ def fmtPct(n):
 # Main
 ######
 ftx=cl.ftxCCXTInit()
-bb=cl.bbCCXTInit()
+if isBBT2:
+  bb=cl.bbCCXTInit(2)
+else:
+  bb=cl.bbCCXTInit()
 cl.printHeader('BBTUtil')
 spotDict=dict()
 ccys=cl.getValidCcys('bbt')
