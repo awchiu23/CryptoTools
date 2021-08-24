@@ -94,7 +94,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.09
+SMB_DICT['BASE_RATE']=0.12
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -140,7 +140,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['SOL'] = 0
   CR_AG_CCY_DICT['SUSHI'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','BNB','LINK','AAVE','MATIC','SOL','SUSHI'])
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','BNB','LINK','AAVE','MATIC','SUSHI'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt']}
