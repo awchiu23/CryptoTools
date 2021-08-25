@@ -550,6 +550,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   refTime = time.time()
   nChases=0
   while True:
+    #print(getCurrentTime() + ': [Inside while loop]')
     orderStatus=bbtGetOrder(bb,ticker,orderId)
     if orderStatus['order_status']=='Filled': break
     if side=='BUY':
