@@ -94,7 +94,7 @@ SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.12
+SMB_DICT['BASE_RATE']=0.06
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -123,7 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
