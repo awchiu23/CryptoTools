@@ -123,7 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4
@@ -141,7 +141,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['SOL'] = 0
   CR_AG_CCY_DICT['SUSHI'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','BNB','LINK','AAVE','MATIC','SUSHI'])
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','bnt','kf']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bnt','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['BNB'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx','bbt']}
@@ -152,5 +152,5 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   #CR_AG_CCY_DICT['BTC']=1.38752 #kfftx
   #CR_AG_CCY_DICT['ETH']=31.7 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 21736 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 70000 #bbftx
   #CR_EXT_DELTA_USDT = 1e6 #bbftx
