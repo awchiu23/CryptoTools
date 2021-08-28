@@ -229,6 +229,33 @@ def printAllTrio(core1, core2, core3):
     if core3.liqStr!='': list2.append(core3.liqStr)
     printTwoLists(list1, list2, n)
 
+def printAllQuad(core1, core2, core3, core4):
+  if core1.exch == 'dummy' and core2.exch == 'dummy' and core3.exch == 'dummy' and core4.exch == 'dummy': return
+  if core1.exch == 'dummy':
+    printAllTrio(core2,core3,core4)
+  elif core2.exch == 'dummy':
+    printAllTrio(core1,core3,core4)
+  elif core3.exch == 'dummy':
+    printAllTrio(core1,core2,core4)
+  elif core4.exch == 'dummy':
+    printAllTrio(core1,core2,core3)
+  else:
+    n = 120
+    print(core1.incomesStr.ljust(n) + core2.incomesStr)
+    list1 = list(core1.fundingStrDict.values())
+    list2 = list(core2.fundingStrDict.values())
+    if core1.liqStr != '': list1.append(core1.liqStr.ljust(n))
+    if core2.liqStr != '': list2.append(core2.liqStr)
+    list2.append('')
+    list2.append(core3.incomesStr)
+    list2.extend(core3.fundingStrDict.values())
+    if core3.liqStr != '': list2.append(core3.liqStr)
+    list2.append('')
+    list2.append(core4.incomesStr)
+    list2.extend(core4.fundingStrDict.values())
+    if core4.liqStr != '': list2.append(core4.liqStr)
+    printTwoLists(list1, list2, n)
+
 def printTwoLists(list1, list2, n):
   for i in range(min(len(list1), len(list2))):
     print(list1[i].ljust(n) + list2[i])
@@ -912,12 +939,11 @@ if __name__ == '__main__':
   #####
   printTwoLists(agList, flowList, 120)
   #####
-  printAllTrio(ftxCore, kfCore, dbCore)
+  printAllQuad(ftxCore, kfCore, dbCore, bbCore)
   if SHARED_EXCH_DICT['bbt'] >= 2:
     printAllDual(bbtCore, bbt2Core)
-    bbCore.printAll()
   else:
-    printAllDual(bbtCore, bbCore)
+    bbtCore.printAll()
   printAllDual(bntCore, bnCore)
   #####
   if '-f' in sys.argv:

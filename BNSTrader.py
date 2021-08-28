@@ -116,7 +116,7 @@ def bnsRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
       else:
         refTime = time.time()
         newLimitPrice = bnsRoundPrice(bn, 'bns', ccy, refPrice, side=side, distance=distance)
-        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(cl.getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice = newLimitPrice
           orderStatus, leavesQty = bnsCancelOrder(bn, ticker, orderId)
