@@ -325,7 +325,10 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       else:
         refTime=time.time()
         newLimitPrice=roundPrice(ftx,'ftx',ticker,refPrice,side=side,distance=distance)
-        if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
+
+        #if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
+        if ((side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
+
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
@@ -436,7 +439,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
       else:
         refTime = time.time()
         newLimitPrice=roundPrice(bb,'bb',ccy,refPrice,side=side,distance=distance)
-        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
@@ -550,7 +553,6 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   refTime = time.time()
   nChases=0
   while True:
-    #print(getCurrentTime() + ': [Inside while loop]')
     orderStatus=bbtGetOrder(bb,ticker,orderId)
     if orderStatus['order_status']=='Filled': break
     if side=='BUY':
@@ -577,7 +579,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
       else:
         refTime = time.time()
         newLimitPrice=roundPrice(bb,'bbt',ccy,refPrice,side=side,distance=distance)
-        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice)+'->'+str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
@@ -720,7 +722,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
       else:
         refTime = time.time()
         newLimitPrice = roundPrice(bn, 'bn', ccy, refPrice, side=side, distance=distance)
-        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice = newLimitPrice
           orderStatus, leavesQty = bnCancelOrder(bn, ticker, orderId)
@@ -827,7 +829,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
       else:
         refTime = time.time()
         newLimitPrice = roundPrice(bn, 'bnt', ccy, refPrice, side=side, distance=distance)
-        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice = newLimitPrice
           orderStatus, leavesQty = bntCancelOrder(bn, ticker, orderId)
@@ -921,7 +923,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
       else:
         refTime = time.time()
         newLimitPrice = roundPrice(db, 'db', ccy, refPrice, side=side, distance=distance)
-        if (side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice):
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice = newLimitPrice
           if not dbEditOrder(db, orderId, trade_notional, limitPrice):
@@ -1041,7 +1043,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
       else:
         refTime=time.time()
         newLimitPrice = roundPrice(kf,'kf',ccy,refPrice,side=side,distance=distance)
-        if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
+        if ((side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:

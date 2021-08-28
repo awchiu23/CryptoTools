@@ -41,8 +41,6 @@ CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
 CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
 CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
 CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
-CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=3               # Execution setting
-CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=3                # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=3                # Execution setting
 CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
 
@@ -50,19 +48,23 @@ CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=0        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-15        # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
 
-CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
-CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=1        # Execution setting
+CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=1         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=1          # Execution setting
+
+# BN/BNT to be deprecated soon....
+CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=3               # Execution setting
+CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=3                # Execution setting
+CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
+CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BN_LEG2_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=0          # Execution setting
 
 #############################################################################################
 
