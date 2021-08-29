@@ -166,8 +166,11 @@ def getCores():
   ftxCore=processCore('ftx',spotDict,objs)
   bbCore=processCore('bb',spotDict,objs)
   bbtCores=[]
-  for n in range(SHARED_EXCH_DICT['bbt']):
-    bbtCores.append(processCore('bbt',spotDict,objs,n=n+1))
+  if SHARED_EXCH_DICT['bbt']==0:
+    bbtCores.append(getDummyCore(spotDict,objs))
+  else:
+    for n in range(SHARED_EXCH_DICT['bbt']):
+      bbtCores.append(processCore('bbt',spotDict,objs,n=n+1))
   bnCore=processCore('bn',spotDict,objs)
   bntCore=processCore('bnt',spotDict,objs)
   bnimCore=processCore('bnim',spotDict,objs)
