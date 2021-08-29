@@ -23,8 +23,10 @@ for ccy in ccys:
 spotDict['USDT']=cl.ftxGetMid(ftx,'USDT/USD')
 
 for n in range(SHARED_EXCH_DICT['bbt']):
-  cl.printHeader('BBT'+str(n+1))
-  bbForBBT = cl.bbCCXTInit(n)
+  z='BBT'
+  if n>0: z+=str(n+1)
+  cl.printHeader(z)
+  bbForBBT = cl.bbCCXTInit(n+1)
   df=cl.bbtGetRiskDf(bbForBBT,ccys,spotDict)
   df.drop(['position_value','im','mm','im_value','mm_value'],axis=1,inplace=True)
   cols = ['delta_value','unrealised_pnl']
@@ -34,5 +36,6 @@ for n in range(SHARED_EXCH_DICT['bbt']):
   df=df.sort_values('liq')
   df['liq'] = df['liq'].apply(fmtPct)
   pd.set_option('display.max_columns',len(df.columns))
+  df=df[df['delta_value']!=0]
   print(df)
   print()
