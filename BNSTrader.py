@@ -133,7 +133,7 @@ def bnsRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
 ######
 # Init
 ######
-ftx,bb,bb2,bn,db,kf,qty,notional,spot = cl.ctInit(ccy,notional,0)
+ftx,bb,bbForBBT,bn,db,kf,qty,notional,spot = cl.ctInit(ccy,notional,0)
 if qtyOverRide is not None:
   qty = qtyOverRide
   notional = qty * spot

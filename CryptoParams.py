@@ -7,10 +7,8 @@
 ######
 API_KEY_FTX = ''
 API_SECRET_FTX = ''
-API_KEY_BB = ''
-API_SECRET_BB = ''
-API_KEY_BB2 = ''
-API_SECRET_BB2 = ''
+API_KEYS_BB = ['']        # List of keys to facilitate multiple bybit accounts
+API_SECRETS_BB = ['']     # List of secrets to facilitate multiple bybit accounts
 API_KEY_BN = ''
 API_SECRET_BN = ''
 API_KEY_DB = ''
@@ -35,7 +33,7 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins (secondary control)
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins (secondary control)
 
-CT_CONFIGS_DICT['IS_BBT2'] = False                   # Toggle between executing via BBT or BBT2
+CT_CONFIGS_DICT['CURRENT_BBT'] = 1                   # Current BBT account to trade with
 
 CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
 CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
@@ -113,10 +111,8 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
-  API_KEY_BB = sl.jLoad('API_KEY_BB')
-  API_SECRET_BB = sl.jLoad('API_SECRET_BB')
-  API_KEY_BB2 = sl.jLoad('API_KEY_BB2')
-  API_SECRET_BB2 = sl.jLoad('API_SECRET_BB2')
+  API_KEYS_BB = [sl.jLoad('API_KEY_BB'),sl.jLoad('API_KEY_BB2'),sl.jLoad('API_KEY_BB3')]
+  API_SECRETS_BB = [sl.jLoad('API_SECRET_BB'),sl.jLoad('API_SECRET_BB2'),sl.jLoad('API_SECRET_BB3')]
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   API_KEY_KF = sl.jLoad('API_KEY_KF')
@@ -125,7 +121,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['BNB'] = 4

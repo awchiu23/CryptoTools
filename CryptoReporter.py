@@ -165,11 +165,9 @@ def getCores():
   objs = []
   ftxCore=processCore('ftx',spotDict,objs)
   bbCore=processCore('bb',spotDict,objs)
-  bbtCore=processCore('bbt',spotDict,objs)
-  if SHARED_EXCH_DICT['bbt']>=2:
-    bbt2Core=processCore('bbt',spotDict,objs,n=2)
-  else:
-    bbt2Core=getDummyCore(spotDict,objs)
+  bbtCores=[]
+  for n in range(SHARED_EXCH_DICT['bbt']):
+    bbtCores.append(processCore('bbt',spotDict,objs,n=n+1))
   bnCore=processCore('bn',spotDict,objs)
   bntCore=processCore('bnt',spotDict,objs)
   bnimCore=processCore('bnim',spotDict,objs)
@@ -188,7 +186,7 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCore, bbt2Core, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -279,7 +277,7 @@ class core:
     self.name = exch.upper()
     self.spotDict = spotDict
     self.n = n
-    if self.n is not None: self.name += str(n)
+    if self.n is not None and self.n!=1: self.name += str(n)
     #####
     self.validCcys = cl.getValidCcys(exch)
     #####
@@ -607,7 +605,7 @@ class core:
       self.liqDict[ccy] = riskDf.loc[ccy,'liq']
     self.calcFuturesDeltaUSD()
     #####
-    if self.n==2: # trim list for bbt2
+    if self.n>=2: # trim list for auxiliary BBTs
       self.validCcys=list(self.futures.index[self.futures['FutDelta'] != 0])
     #####
     pmts=pd.DataFrame()
@@ -884,7 +882,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCore, bbt2Core, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -928,9 +926,9 @@ if __name__ == '__main__':
   for ccy in CR_AG_CCY_DICT.keys():
     appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'],imDeltaBTC)
   usdtCores=[]
-  if SHARED_EXCH_DICT['bbt']>=1: usdtCores.append(bbtCore)
-  if SHARED_EXCH_DICT['bbt']>=2: usdtCores.append(bbt2Core)
-  if SHARED_EXCH_DICT['bnt']>=1: usdtCores.append(bntCore)
+  for core in bbtCores:
+    usdtCores.append(core)
+  if SHARED_EXCH_DICT['bnt']==1: usdtCores.append(bntCore)
   appendUSDTDeltas(agList, ftxCore, bnimCore, spotDict, usdtCores)
   appendBUSDDeltas(agList, bnimCore)
   #####
@@ -941,9 +939,11 @@ if __name__ == '__main__':
   #####
   printAllQuad(ftxCore, kfCore, dbCore, bbCore)
   if SHARED_EXCH_DICT['bbt'] >= 2:
-    printAllDual(bbtCore, bbt2Core)
+    printAllDual(bbtCores[0], bbtCores[1])
   else:
-    bbtCore.printAll()
+    bbtCores[0].printAll()
+  if SHARED_EXCH_DICT['bbt'] >= 3:
+    bbtCores[2].printAll()
   printAllDual(bntCore, bnCore)
   #####
   if '-f' in sys.argv:

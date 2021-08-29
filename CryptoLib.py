@@ -54,9 +54,9 @@ class getPrices:
 def ftxCCXTInit():
   return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
-def bbCCXTInit(n=None):
-  apiKey = API_KEY_BB if n is None else API_KEY_BB2
-  apiSecret = API_SECRET_BB if n is None else API_SECRET_BB2
+def bbCCXTInit(n=1):
+  apiKey=API_KEYS_BB[n-1]
+  apiSecret=API_SECRETS_BB[n-1]
   api = ccxt.bybit({'apiKey': apiKey, 'secret': apiSecret, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
   api.options['recvWindow']=50000
   return api
@@ -1314,10 +1314,7 @@ def caRun(ccy, color):
 def ctInit(ccy, notional, tgtBps):
   ftx = ftxCCXTInit()
   bb = bbCCXTInit()
-  if CT_CONFIGS_DICT['IS_BBT2']:
-    bb2 = bbCCXTInit(2)
-  else:
-    bb2 = None
+  bbForBBT = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
   bn = bnCCXTInit()
   db = dbCCXTInit()
   kf = kfApophisInit()
@@ -1332,7 +1329,7 @@ def ctInit(ccy, notional, tgtBps):
   print('Per Trade Quantity: '+str(round(qty, 6)))
   print('Target:             '+str(round(tgtBps))+'bps')
   print()
-  return ftx,bb,bb2,bn,db,kf,qty,notional,spot
+  return ftx,bb,bbForBBT,bn,db,kf,qty,notional,spot
 
 def ctGetPosUSD(ftx, bb, bn, db, kf, exch, ccy, spot):
   if exch == 'ftx':
@@ -1401,7 +1398,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy, notional, tgtBps, color):
-  ftx, bb, bb2, bn, db, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
+  ftx, bb, bbForBBT, bn, db, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
@@ -1519,11 +1516,11 @@ def ctRun(ccy, notional, tgtBps, color):
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
           distance = ctGetDistance('BBT', completedLegs)
-          longFill = bbtRelOrder('BUY', bb2 if CT_CONFIGS_DICT['IS_BBT2'] else bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = bbtRelOrder('BUY', bbForBBT, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
           distance = ctGetDistance('BBT', completedLegs)
-          shortFill = bbtRelOrder('SELL', bb2 if CT_CONFIGS_DICT['IS_BBT2'] else bb, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = bbtRelOrder('SELL', bbForBBT, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' == chosenLong and not isCancelled:
           distance = ctGetDistance('BB', completedLegs)
