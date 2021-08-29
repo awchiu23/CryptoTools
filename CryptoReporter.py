@@ -345,10 +345,7 @@ class core:
     else:
       z = ''
     liqStr = colored(z.rjust(5),'red')
-    prefix = self.exch.upper()
-    if self.n is not None:
-      prefix+=str(self.n)
-    prefix += ' ' + ccy + ' 24h/'
+    prefix = self.name + ' ' + ccy + ' 24h/'
     prefix += '8h' if self.exch=='db' else 'prev'
     prefix+='/est'
     if self.exch in ['bb','bbt','kf']:
@@ -402,14 +399,11 @@ class core:
     zL = fmtLiq(self.liqL)
     zH = fmtLiq(self.liqH)
     if self.exch == 'ftx':
-      z2 = (self.exch.upper() + ' liqL/liqH/mf/fc: ').rjust(37) + zL + '/' + zH + '/'
+      z2 = 'FTX liqL/liqH/mf/fc: '.rjust(37) + zL + '/' + zH + '/'
       z2 += str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
       self.liqStr = colored(z2, 'red')
     else:
-      prefix = self.exch.upper()
-      if self.n is not None:
-        prefix += str(self.n)
-      self.liqStr = colored((prefix + ' liqL/liqH: ').rjust(37) + zL +'/' + zH, 'red')
+      self.liqStr = colored((self.name + ' liqL/liqH: ').rjust(37) + zL +'/' + zH, 'red')
 
   def printAll(self):
     try:
