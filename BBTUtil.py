@@ -33,7 +33,7 @@ for n in range(SHARED_EXCH_DICT['bbt']):
   cols2 = ['spot_price','liq_price']
   df[cols]=df[cols].astype(int)
   df[cols2]=df[cols2].round(2)
-  df=df.sort_values('liq')
+  df=df.sort_values('unrealised_pnl',ascending=False)
   df['liq'] = df['liq'].apply(fmtPct)
   pd.set_option('display.max_columns',len(df.columns))
   df=df[df['delta_value']!=0]
