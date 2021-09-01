@@ -6,12 +6,12 @@ import termcolor
 ########
 # Params
 ########
-nPrograms=10
-notional=5000               # USD notional
+nPrograms=5
+notional=10000               # USD notional
 
-ccy='MATIC'
-current_bbt_buy=3
-current_bbt_sell=2
+ccy='BTC'
+current_bbt_buy=2
+current_bbt_sell=1
 leg1_distance=-3
 leg2_distance=0
 

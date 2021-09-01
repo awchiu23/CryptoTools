@@ -6,8 +6,8 @@ import termcolor
 ########
 # Params
 ########
-ccys=['XRP','DOGE','BCH','BNB','LINK','LTC','AAVE','MATIC','SOL','SUSHI']
-thresholdH = 15
+ccys=['BTC','ETH','XRP','DOGE','BCH','BNB','LINK','LTC','AAVE','COMP','MATIC','SOL','SUSHI']
+thresholdH = 20
 thresholdL = 0
 interval = 60*5
 
@@ -28,7 +28,6 @@ while True:
     fundingDict = cl.getFundingDict(ftx, bb, bn, db, kf, ccy, isRateLimit=False)
     smartBasisDict = cl.getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=True)
     smartBasisBps = smartBasisDict['bbtSmartBasis'] * 10000
-    basisBps = smartBasisDict['bbtBasis'] * 10000
     if smartBasisBps >= thresholdH:
       color = 'red'
     elif smartBasisBps <= thresholdL:
@@ -37,8 +36,8 @@ while True:
       color = 'grey'
     est1=fundingDict['bbtEstFunding1']
     est2=fundingDict['bbtEstFunding2']
-    z = ccy + ':' + str(round(smartBasisBps)) + '/' + str(round(basisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+')'
-    print(termcolor.colored(z.ljust(16+len(ccy)),color), end='')
+    z = ccy + ':' + str(round(smartBasisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+')'
+    print(termcolor.colored(z.ljust(13+len(ccy)),color), end='')
   time.sleep(interval)
   print()
 
