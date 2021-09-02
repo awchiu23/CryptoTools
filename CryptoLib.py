@@ -522,7 +522,8 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
     while True:
       result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data']
       if result is None:
-        time.sleep(1)
+        print(getCurrentTime() + ': [DEBUG: private_linear_get_order_list: None]')
+        time.sleep(3)
       else:
         return result[0]
   @retry(wait_fixed=1000)
@@ -535,7 +536,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
       print(getCurrentTime() + ': [DEBUG: exec_qty_sum: ' + str(round(exec_qty_sum, 6)) + ']')
       if exec_qty_sum > 0:
         return (df['exec_qty'] * df['exec_price']).sum() / exec_qty_sum
-      time.sleep(1)
+      time.sleep(3)
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
