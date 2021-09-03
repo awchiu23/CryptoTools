@@ -88,6 +88,8 @@ SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
+SHARED_ETC_DICT=dict()
+SHARED_ETC_DICT['FTX_SPOTLESS'] = []
 
 #############
 # Smart Basis
@@ -130,6 +132,8 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['MATIC'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 4
   CR_QUOTE_CCY_DICT['SUSHI'] = 4
+  CR_QUOTE_CCY_DICT['ADA'] = 4
+  #CR_QUOTE_CCY_DICT['XLM'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['DOGE'] = 0
   #CR_AG_CCY_DICT['BNB'] = 0
@@ -139,6 +143,8 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['SOL'] = 0
   CR_AG_CCY_DICT['SUSHI'] = 0
+  CR_AG_CCY_DICT['ADA'] = 0
+  #CR_AG_CCY_DICT['XLM'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','LINK','AAVE','MATIC','SOL','SUSHI'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
@@ -148,8 +154,11 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['ADA'] = {'futExch': ['ftx','bbt']}
+  #SHARED_CCY_DICT['XLM'] = {'futExch': ['ftx','bbt']}
+  SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA','DOT','EOS','ETC','FIL','XLM']
   #####
   #CR_AG_CCY_DICT['BTC']=1.38752 #kfftx
   #CR_AG_CCY_DICT['ETH']=31.7 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 89185 #bbftx
-  #CR_EXT_DELTA_USDT = 47000 #bbftx
+  CR_EXT_DELTA_USDT = 90000 #bbftx

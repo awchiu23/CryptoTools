@@ -77,6 +77,9 @@ def kfApophisInit():
 ########
 @retry(wait_fixed=1000)
 def ftxGetMid(ftx, name):
+  for z in SHARED_ETC_DICT['FTX_SPOTLESS']:
+    if name==z+'/USD':
+      return float(ftx.public_get_futures_future_name({'future_name': z+'-PERP'})['result']['index'])
   d=ftx.public_get_markets_market_name({'market_name': name})['result']
   return (float(d['bid'])+float(d['ask']))/2
 
@@ -212,6 +215,11 @@ def roundQty(api, ccyOrTicker, qty):
 @retry(wait_fixed=1000)
 def ftxGetWallet(ftx):
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
+  for name in SHARED_ETC_DICT['FTX_SPOTLESS']:
+    s=wallet.iloc[-1]
+    s[:]=0
+    s.name=name
+    wallet=wallet.append(s)
   dfSetFloat(wallet,wallet.columns)
   return wallet
 
@@ -325,10 +333,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       else:
         refTime=time.time()
         newLimitPrice=roundPrice(ftx,'ftx',ticker,refPrice,side=side,distance=distance)
-
-        #if (side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice):
         if ((side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice=newLimitPrice
           try:
