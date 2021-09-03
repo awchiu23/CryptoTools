@@ -125,7 +125,6 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['DOGE'] = 4
   CR_QUOTE_CCY_DICT['LINK'] = 4
-  CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['AAVE'] = 4
   CR_QUOTE_CCY_DICT['COMP'] = 4
   CR_QUOTE_CCY_DICT['MATIC'] = 4
@@ -135,24 +134,22 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['DOGE'] = 0
   #CR_AG_CCY_DICT['BNB'] = 0
   CR_AG_CCY_DICT['LINK'] = 0
-  CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['AAVE'] = 0
   CR_AG_CCY_DICT['COMP'] = 0
   CR_AG_CCY_DICT['MATIC'] = 0
   CR_AG_CCY_DICT['SOL'] = 0
-  #CR_AG_CCY_DICT['SUSHI'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','LINK','LTC','AAVE','MATIC','SOL','SUSHI'])
+  CR_AG_CCY_DICT['SUSHI'] = 0
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','LINK','AAVE','MATIC','SOL','SUSHI'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['AAVE'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['COMP'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['MATIC'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx']}
+  SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx','bbt']}
   #####
   #CR_AG_CCY_DICT['BTC']=1.38752 #kfftx
   #CR_AG_CCY_DICT['ETH']=31.7 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 175000 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 89185 #bbftx
   #CR_EXT_DELTA_USDT = 47000 #bbftx
