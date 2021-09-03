@@ -37,7 +37,7 @@ while True:
     est1=fundingDict['bbtEstFunding1']
     est2=fundingDict['bbtEstFunding2']
     estFTX=fundingDict['ftxEstFunding']
-    z = ccy + ':' + str(round(smartBasisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+ '/-' + str(round(estFTX*100)) + ')'
+    z = ccy + ':' + str(round(smartBasisBps)) + '(' + str(round(est1 * 100)) + '/' + str(round(est2 * 100))+ '||' + str(round(estFTX*100)) + ')'
     print(termcolor.colored(z.ljust(20+len(ccy)),color), end='')
   time.sleep(interval)
   print()
