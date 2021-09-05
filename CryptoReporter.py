@@ -939,7 +939,9 @@ if __name__ == '__main__':
     printAllDual(bbtCores[0], bbtCores[1])
   else:
     bbtCores[0].printAll()
-  if SHARED_EXCH_DICT['bbt'] >= 3:
+  if SHARED_EXCH_DICT['bbt'] >= 4:
+    printAllDual(bbtCores[2], bbtCores[3])
+  elif SHARED_EXCH_DICT['bbt']>=3:
     bbtCores[2].printAll()
   printAllDual(bntCore, bnCore)
   #####
