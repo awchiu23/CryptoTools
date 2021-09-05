@@ -299,7 +299,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       isOk=True
       break
     except ccxt.RateLimitExceeded:
-      print(getCurrentTime()+': FTX rate limit exceeded!')
+      print(getCurrentTime()+': FTX rate limit exceeded; trying to recover ....')
       time.sleep(3)
     except:
       print(traceback.print_exc())
