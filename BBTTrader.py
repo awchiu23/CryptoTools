@@ -6,13 +6,13 @@ import termcolor
 ########
 # Params
 ########
-nPrograms=5
-notional=10000               # USD notional
+nPrograms=1
+notional=9000               # USD notional
 
-ccy='XLM'
+ccy='LINK'
 current_bbt_buy=3
-current_bbt_sell=1
-leg1_distance=-3*0
+current_bbt_sell=2
+leg1_distance=-3
 leg2_distance=0
 
 ######
