@@ -182,10 +182,10 @@ def getCores():
     print('[WARNING: Parallel run failed!  Rerunning in serial ....]')
     isOk = False
     for obj in objs:
-      #try:
-      obj.run()
-      #except:
-      #  pass
+      try:
+        obj.run()
+      except:
+        pass
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
