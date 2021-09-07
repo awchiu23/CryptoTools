@@ -25,7 +25,7 @@ CT_CONFIGS_DICT=dict()
 
 CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
 CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
-CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps for range of observations
+CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5*10              # Max number of allowed bps for range of observations
 CT_CONFIGS_DICT['NPROGRAMS'] = 100                   # Number of programs (each program being a pair of trades)
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
@@ -130,7 +130,6 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['LTC'] = 4
   CR_QUOTE_CCY_DICT['AAVE'] = 4
   CR_QUOTE_CCY_DICT['COMP'] = 4
-  CR_QUOTE_CCY_DICT['SUSHI'] = 4
   CR_QUOTE_CCY_DICT['ADA'] = 4
   CR_QUOTE_CCY_DICT['ETC'] = 4
   CR_QUOTE_CCY_DICT['FIL'] = 4
@@ -141,19 +140,17 @@ if os.environ.get('USERNAME')=='Simon':
   CR_AG_CCY_DICT['LTC'] = 0
   CR_AG_CCY_DICT['AAVE'] = 0
   CR_AG_CCY_DICT['COMP'] = 0
-  #CR_AG_CCY_DICT['SUSHI'] = 0
   CR_AG_CCY_DICT['ADA'] = 0
   CR_AG_CCY_DICT['ETC'] = 0
   CR_AG_CCY_DICT['FIL'] = 0
   CR_AG_CCY_DICT['XLM'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','LINK','LTC','AAVE','SUSHI'])
+  CR_FTX_FLOWS_CCYS.extend(['XRP','DOGE','LINK','LTC','AAVE'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kf']}
   SHARED_CCY_DICT['DOGE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['LINK'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['AAVE'] = {'futExch': ['ftx', 'bbt']}
   SHARED_CCY_DICT['COMP'] = {'futExch': ['ftx', 'bbt']}
-  SHARED_CCY_DICT['SUSHI'] = {'futExch': ['ftx']}
   SHARED_CCY_DICT['ADA'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['ETC'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['FIL'] = {'futExch': ['ftx','bbt']}
@@ -162,4 +159,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=1.38752 #kfftx
   #CR_AG_CCY_DICT['ETH']=31.7 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 74739 #bbftx
-  #CR_EXT_DELTA_USDT = 87196+27375 #bbftx
+  CR_EXT_DELTA_USDT = 1.3e6+1.6e6+120e3 #bbftx
