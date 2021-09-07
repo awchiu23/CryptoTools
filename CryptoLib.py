@@ -523,6 +523,14 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
     oppSide = 'Sell' if side == 'BUY' else 'Buy'
     return (qty / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
   @retry(wait_fixed=1000)
+  def bbtGetOrder(bb, ticker, orderId):
+    return bb.private_linear_get_order_search({'symbol': ticker, 'order_id': orderId})['result']
+  # Do not use @retry
+  def bbtGetFillPrice(bb, ticker, orderId):
+    orderStatus = bbtGetOrder(bb, ticker, orderId)
+    return float(orderStatus['cum_exec_value']) / float(orderStatus['cum_exec_qty'])
+  '''
+  @retry(wait_fixed=1000)
   def bbtGetOrder(bb,ticker,orderId):
     while True:
       result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data']
@@ -542,6 +550,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
       if exec_qty_sum > 0:
         return (df['exec_qty'] * df['exec_price']).sum() / exec_qty_sum
       time.sleep(3)
+  '''
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
@@ -598,8 +607,6 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   fill=bbtGetFillPrice(bb, ticker, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
   return fill
-
-#############################################################################################
 
 ####
 # BN
