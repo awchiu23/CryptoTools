@@ -6,6 +6,7 @@ import datetime
 import time
 import termcolor
 import sys
+from retrying import retry
 
 ###########
 # Functions
@@ -594,6 +595,10 @@ class core:
   # BBT
   #####
   def bbtInit(self):
+    @retry(wait_fixed=1000)
+    def getTradeExecutionList(ccy):
+      return self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
+    #####
     self.api = cl.bbCCXTInit(n=self.n)
     riskDf = cl.bbtGetRiskDf(self.api, self.validCcys, self.spotDict)
     for ccy in self.validCcys:
@@ -606,12 +611,7 @@ class core:
     #####
     pmts=pd.DataFrame()
     for ccy in self.validCcys:
-      while True:
-        try:
-          data = self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
-          break
-        except:
-          pass
+      data = getTradeExecutionList(ccy)
       if not data is None:
         pmts = pmts.append(pd.DataFrame(data).set_index('symbol', drop=False))
     if len(pmts)==0:
