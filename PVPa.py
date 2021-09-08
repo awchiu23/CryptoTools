@@ -8,8 +8,8 @@ import termcolor
 ########
 ccys=['AXS']
 ccys.extend(SHARED_ETC_DICT['FTX_SPOTLESS'])
-thresholdH = 15+6
-thresholdL = 0
+thresholdH = 15
+thresholdL = -6
 interval = 60*5
 
 ######
