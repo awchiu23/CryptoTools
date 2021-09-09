@@ -406,6 +406,15 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   ticker=ccy+'USD'
   trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
+
+  if side=='BUY':
+    refPrice = bbGetBid(bb, ccy)
+  else:
+    refPrice = bbGetAsk(bb, ccy)
+  limitPrice = roundPrice(bb, 'bb', ccy, refPrice, side=side, distance=distance)
+  orderId=bb.v2_private_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':trade_notional,'price':limitPrice,'time_in_force':'GoodTillCancel'})['result']['order_id']
+
+  '''
   if side=='BUY':
     refPrice = bbGetBid(bb, ccy)
     limitPrice=roundPrice(bb,'bb',ccy,refPrice,side=side,distance=distance)
@@ -414,6 +423,8 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
     refPrice = bbGetAsk(bb, ccy)
     limitPrice=roundPrice(bb,'bb',ccy,refPrice,side=side,distance=distance)
     orderId = bb.create_limit_sell_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
+  '''
+
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
   nChases=0
