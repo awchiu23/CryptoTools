@@ -5,8 +5,8 @@ import time
 ########
 # Params
 ########
-ccys = ['BTC','ETH','XRP','DOGE']
-colors = ['blue','red','green','cyan']
+ccys = ['BTC','ETH','XRP','DOGE','MATIC']
+colors = ['blue','red','green','cyan','grey']
 interval = 60*5
 
 ######

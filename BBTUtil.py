@@ -35,6 +35,8 @@ for n in range(SHARED_EXCH_DICT['bbt']):
   df[cols2]=df[cols2].round(2)
   df=df.sort_values('unrealised_pnl',ascending=False)
   df['liq'] = df['liq'].apply(fmtPct)
+  df['ratio'] = df['unrealised_pnl']/df['delta_value']
+  df['ratio'] = df['ratio'].apply(fmtPct)
   pd.set_option('display.max_columns',len(df.columns))
   df=df[df['delta_value']!=0]
   print(df)
