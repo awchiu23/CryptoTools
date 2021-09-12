@@ -413,18 +413,6 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
     refPrice = bbGetAsk(bb, ccy)
   limitPrice = roundPrice(bb, 'bb', ccy, refPrice, side=side, distance=distance)
   orderId=bb.v2_private_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':trade_notional,'price':limitPrice,'time_in_force':'GoodTillCancel'})['result']['order_id']
-
-  '''
-  if side=='BUY':
-    refPrice = bbGetBid(bb, ccy)
-    limitPrice=roundPrice(bb,'bb',ccy,refPrice,side=side,distance=distance)
-    orderId = bb.create_limit_buy_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
-  else:
-    refPrice = bbGetAsk(bb, ccy)
-    limitPrice=roundPrice(bb,'bb',ccy,refPrice,side=side,distance=distance)
-    orderId = bb.create_limit_sell_order(ccy+'/USD', trade_notional, limitPrice)['info']['order_id']
-  '''
-
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
   nChases=0
@@ -540,28 +528,6 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   def bbtGetFillPrice(bb, ticker, orderId):
     orderStatus = bbtGetOrder(bb, ticker, orderId)
     return float(orderStatus['cum_exec_value']) / float(orderStatus['cum_exec_qty'])
-  '''
-  @retry(wait_fixed=1000)
-  def bbtGetOrder(bb,ticker,orderId):
-    while True:
-      result=bb.private_linear_get_order_list({'symbol': ticker, 'order_id': orderId})['result']['data']
-      if result is None:
-        print(getCurrentTime() + ': [DEBUG: private_linear_get_order_list: None]')
-        time.sleep(3)
-      else:
-        return result[0]
-  @retry(wait_fixed=1000)
-  def bbtGetFillPrice(bb, ticker, orderId):
-    while True:
-      df = pd.DataFrame(bb.private_linear_get_trade_execution_list({'symbol': ticker})['result']['data'])
-      df = df[df['order_id'] == orderId]
-      dfSetFloat(df, ['exec_qty', 'exec_price'])
-      exec_qty_sum = df['exec_qty'].sum()
-      print(getCurrentTime() + ': [DEBUG: exec_qty_sum: ' + str(round(exec_qty_sum, 6)) + ']')
-      if exec_qty_sum > 0:
-        return (df['exec_qty'] * df['exec_price']).sum() / exec_qty_sum
-      time.sleep(3)
-  '''
   #####
   if side != 'BUY' and side != 'SELL':
     sys.exit(1)
