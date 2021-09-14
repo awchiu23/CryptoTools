@@ -216,7 +216,7 @@ def roundQty(api, ccyOrTicker, qty):
 def ftxGetWallet(ftx):
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   for name in SHARED_ETC_DICT['FTX_SPOTLESS']:
-    s=wallet.iloc[-1]
+    s=wallet.iloc[-1].copy()
     s[:]=0
     s.name=name
     wallet=wallet.append(s)
