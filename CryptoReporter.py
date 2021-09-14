@@ -368,13 +368,14 @@ class core:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
-  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,wallet_balance=None):  # ftx, bbt, bnt
-    def bbtGetLiq(riskDf, wallet_balance, increment):
+  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, bnt
+    def bbtGetLiq(riskDf, availableBalance, increment):
       df = riskDf.copy()
-      isOk=False
+      isOk = False
       for i in range(100):
         df['unrealised_pnl_sim'] = df['unrealised_pnl'] + df['delta_value'] * (i + 1) * increment
-        ab = wallet_balance - df['im_value'].sum() + df['unrealised_pnl_sim'].clip(None, 0).sum()
+        df['ab_delta'] = df['unrealised_pnl_sim'].clip(None, 0) - df['unrealised_pnl'].clip(None, 0)
+        ab = availableBalance + df['ab_delta'].sum()
         df['cushion'] = ab + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
         if df['cushion'].min() < 0:
           isOk=True
@@ -385,8 +386,8 @@ class core:
         return 0
     #####
     if self.exch=='bbt':
-      self.liqL = bbtGetLiq(riskDf, wallet_balance,-0.01)
-      self.liqH = bbtGetLiq(riskDf, wallet_balance,0.01)
+      self.liqL = bbtGetLiq(riskDf, availableBalance,-0.01)
+      self.liqH = bbtGetLiq(riskDf, availableBalance,0.01)
     else: # ftx, bnt
       liq = 1 - cushion / delta
       if delta>=0:
@@ -633,8 +634,8 @@ class core:
       self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
       self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
-    wb = self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
-    equity = float(wb['equity'])
+    usdtDict=self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
+    equity = float(usdtDict['equity'])
     self.nav = equity * self.spotDict['USDT']
     self.spots.loc['USDT', 'SpotDelta'] = equity
     self.calcSpotDeltaUSD()
@@ -656,7 +657,7 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr(riskDf=riskDf,wallet_balance=float(wb['wallet_balance']))
+    self.makeLiqStr(riskDf=riskDf,availableBalance=float(usdtDict['available_balance']))
     self.isDone = True
 
   ####

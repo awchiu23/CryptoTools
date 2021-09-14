@@ -28,7 +28,7 @@ for n in range(SHARED_EXCH_DICT['bbt']):
   cl.printHeader(z)
   bbForBBT = cl.bbCCXTInit(n+1)
   df=cl.bbtGetRiskDf(bbForBBT,ccys,spotDict)
-  df.drop(['position_value','im','mm','im_value','mm_value'],axis=1,inplace=True)
+  df.drop(['position_value','im_value','mm_value'],axis=1,inplace=True)
   cols = ['delta_value','unrealised_pnl']
   cols2 = ['spot_price','liq_price']
   df[cols]=df[cols].astype(int)
