@@ -127,13 +127,16 @@ if os.environ.get('USERNAME')=='Simon':
   CR_QUOTE_CCY_DICT['XRP'] = 4
   CR_QUOTE_CCY_DICT['AAVE'] = 4
   CR_QUOTE_CCY_DICT['SOL'] = 4
+  CR_QUOTE_CCY_DICT['EOS'] = 4
   CR_AG_CCY_DICT['XRP'] = 0
   CR_AG_CCY_DICT['AAVE'] = 0
   CR_AG_CCY_DICT['SOL'] = 0
+  CR_AG_CCY_DICT['EOS'] = 0
   CR_FTX_FLOWS_CCYS.extend(['XRP','AAVE','SOL'])
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kf']}
   SHARED_CCY_DICT['AAVE'] = {'futExch': ['ftx','bbt']}
   SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['EOS'] = {'futExch': ['ftx','bbt']}
   #####
   #CR_AG_CCY_DICT['BTC']=3.9091 #krftx
   #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
