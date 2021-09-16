@@ -124,25 +124,25 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  ############################################################################################################
+  myFTXOnly=['AAVE']
+  myRegulars=['SOL']
+  myFTXSpotless=['ADA','DOT','EOS','ICP']
+  ############################################################################################################
   CR_QUOTE_CCY_DICT['XRP'] = 4
-  CR_QUOTE_CCY_DICT['LTC'] = 4
-  CR_QUOTE_CCY_DICT['AAVE'] = 4
-  CR_QUOTE_CCY_DICT['SOL'] = 4
-  CR_QUOTE_CCY_DICT['ADA'] = 4
-  CR_QUOTE_CCY_DICT['EOS'] = 4
+  for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
+  for ccy in myRegulars: CR_QUOTE_CCY_DICT[ccy] = 4
+  for ccy in myFTXSpotless: CR_QUOTE_CCY_DICT[ccy] = 4
   CR_AG_CCY_DICT['XRP'] = 0
-  CR_AG_CCY_DICT['LTC'] = 0
-  CR_AG_CCY_DICT['AAVE'] = 0
-  CR_AG_CCY_DICT['SOL'] = 0
-  CR_AG_CCY_DICT['ADA'] = 0
-  CR_AG_CCY_DICT['EOS'] = 0
-  CR_FTX_FLOWS_CCYS.extend(['XRP','LTC','AAVE','SOL'])
+  for ccy in myRegulars:  CR_AG_CCY_DICT[ccy] = 0
+  for ccy in myFTXSpotless: CR_AG_CCY_DICT[ccy] = 0
+  CR_FTX_FLOWS_CCYS.append('XRP')
+  CR_FTX_FLOWS_CCYS.extend(myFTXOnly)
+  CR_FTX_FLOWS_CCYS.extend(myRegulars)
   SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kf']}
-  SHARED_CCY_DICT['LTC'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['AAVE'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['SOL'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['ADA'] = {'futExch': ['ftx','bbt']}
-  SHARED_CCY_DICT['EOS'] = {'futExch': ['ftx','bbt']}
+  for ccy in myFTXOnly: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
+  for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
+  for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
   #CR_AG_CCY_DICT['BTC']=5.099 #krftx
   #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
