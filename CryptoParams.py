@@ -125,9 +125,9 @@ if os.environ.get('USERNAME')=='Simon':
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
-  myFTXOnly=['AAVE']
+  myFTXOnly=[]
   myRegulars=['SOL']
-  myFTXSpotless=['ADA','DOT','EOS','ICP']
+  myFTXSpotless=['ADA','EOS','ICP']
   ############################################################################################################
   CR_QUOTE_CCY_DICT['XRP'] = 4
   for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
@@ -147,4 +147,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=5.099 #krftx
   #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 58894 #bbftx
-  #CR_EXT_DELTA_USDT = 300e3+70e3+100e3 #bbftx
+  #CR_EXT_DELTA_USDT = 200e3+170e3+150e3 #bbftx
