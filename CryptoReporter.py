@@ -554,37 +554,40 @@ class core:
       self.liqDict[ccy] = futs.loc[ccy2,'liq_price'] / cl.bbGetMid(self.api,ccy)
     self.calcFuturesDeltaUSD()
     #####
+    self.oneDayIncome=0
+    self.prevIncome=0
+    self.oneDayAnnRet=0
+    self.prevAnnRet=0
     pmts = pd.DataFrame()
     for ccy in self.validCcys:
       pmts = pmts.append(getPayments(ccy))
-    pmts = pmts[pmts['exec_type'] == 'Funding'].copy()
-    cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
-    pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
-    for ccy in self.validCcys:
-      ccy2=ccy+'USD'
-      if ccy2 in pmts.index: pmts.loc[ccy2, 'incomeUSD'] = -pmts.loc[ccy2, 'exec_fee'] * self.spotDict[ccy]
-    pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
-    pmts = pmts.set_index('date')
-    #####
-    self.oneDayIncome = pmts['incomeUSD'].sum()
-    self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
-    if self.futNotional == 0:
-      self.oneDayAnnRet = 0
-      self.prevAnnRet = 0
-    else:
+    if len(pmts)>0:
+      pmts = pmts[pmts['exec_type'] == 'Funding'].copy()
+      cl.dfSetFloat(pmts, ['fee_rate', 'exec_fee'])
+      pmts.loc[['Sell' in z for z in pmts['order_id']],'fee_rate']*=-1 # Correction for fee_rate signs
+      for ccy in self.validCcys:
+        ccy2=ccy+'USD'
+        if ccy2 in pmts.index: pmts.loc[ccy2, 'incomeUSD'] = -pmts.loc[ccy2, 'exec_fee'] * self.spotDict[ccy]
+      pmts['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in pmts['trade_time_ms']]
+      pmts = pmts.set_index('date')
+      #####
+      if len(pmts)>0:
+        self.oneDayIncome = pmts['incomeUSD'].sum()
+        self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
+    if self.futNotional != 0:
       self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
       self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
     #####
     self.nav=self.spots['SpotDeltaUSD'].sum()
     #####
     for ccy in self.validCcys:
-      df = pmts.loc[pmts['symbol'] == ccy + 'USD', 'fee_rate']
-      if len(df) == 0:
-        oneDayFunding = 0
-        prevFunding = 0
-      else:
-        oneDayFunding = df.mean() * 3 * 365
-        prevFunding = df[df.index[-1]].mean() * 3 * 365
+      oneDayFunding=0
+      prevFunding=0
+      if len(pmts)>0:
+        df = pmts.loc[pmts['symbol'] == ccy + 'USD', 'fee_rate']
+        if len(df) > 0:
+          oneDayFunding = df.mean() * 3 * 365
+          prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.bbGetEstFunding1(self.api, ccy)
       estFunding2 = cl.bbGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)

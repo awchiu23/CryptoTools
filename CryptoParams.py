@@ -123,11 +123,11 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
   myFTXOnly=[]
-  myRegulars=['SOL','SUSHI','AXS']
-  myFTXSpotless=['ADA','EOS','ICP']
+  myRegulars=['SUSHI','AXS']
+  myFTXSpotless=['ADA','AVAX','EOS','ICP']
   ############################################################################################################
   CR_QUOTE_CCY_DICT['XRP'] = 4
   for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
