@@ -126,7 +126,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
   myFTXOnly=[]
-  myRegulars=['DOGE','SUSHI','AXS']
+  myRegulars=['SOL','SUSHI']
   myFTXSpotless=['ADA','AVAX','EOS','ETC','ICP']
   ############################################################################################################
   CR_QUOTE_CCY_DICT['XRP'] = 4
