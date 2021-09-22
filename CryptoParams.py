@@ -96,7 +96,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'I
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.03
+SMB_DICT['BASE_RATE']=0.04
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -139,12 +139,12 @@ if os.environ.get('USERNAME')=='Simon':
   CR_FTX_FLOWS_CCYS.append('XRP')
   CR_FTX_FLOWS_CCYS.extend(myFTXOnly)
   CR_FTX_FLOWS_CCYS.extend(myRegulars)
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kf']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb']}
   for ccy in myFTXOnly: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=5.099 #krftx
+  #CR_AG_CCY_DICT['BTC']=7.5 #ftxkr
   #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 58894 #bbftx
-  #CR_EXT_DELTA_USDT = 200e3+170e3+150e3 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 123489 #bbftx
+  #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
