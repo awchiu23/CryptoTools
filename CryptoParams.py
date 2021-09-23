@@ -123,7 +123,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
   myFTXOnly=[]
   myRegulars=['SOL','SUSHI']
@@ -144,7 +144,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=7.5 #ftxkr
+  #CR_AG_CCY_DICT['BTC']=9.36 #kfftx
   #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 123489 #bbftx
   #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
