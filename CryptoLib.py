@@ -386,6 +386,67 @@ def bbGetTickSize(bb,ccy,isBBT=False):
     cache('w',key,df)
   return float(df[ticker]['tick_size'])
 
+def bbRelOrderCore(side,bb,ccy,maxChases,distance,exch,ticker,qty,getBidFunc,getAskFunc,getOrderFunc,getFillPriceFunc,orderReplaceFunc,orderCancelFunc):
+  # Do not use @retry
+  def getIsReduceOnly(bb, ccy, side, qty):
+    df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
+    oppSide = 'Sell' if side == 'BUY' else 'Buy'
+    return (qty / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
+  #####
+  if side=='BUY':
+    refPrice = getBidFunc(bb, ccy)
+  else:
+    refPrice = getAskFunc(bb, ccy)
+  limitPrice = roundPrice(bb, exch, ccy, refPrice, side=side, distance=distance)
+  if exch=='bb':
+    orderId=bb.v2_private_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel'})['result']['order_id']
+  else:
+    orderId = bb.private_linear_post_order_create({'side': side.capitalize(), 'symbol': ticker, 'order_type': 'Limit', 'qty': qty, 'price': limitPrice, 'time_in_force': 'GoodTillCancel',
+                                                   'reduce_only': bool(getIsReduceOnly(bb, ccy, side, qty)), 'close_on_trigger': False})['result']['order_id']
+  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  refTime = time.time()
+  nChases=0
+  while True:
+    orderStatus=getOrderFunc(bb,ticker,orderId)
+    if orderStatus['order_status']=='Filled': break
+    if side=='BUY':
+      newRefPrice=getBidFunc(bb,ccy)
+    else:
+      newRefPrice=getAskFunc(bb,ccy)
+    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT[exch.upper()+'_MAX_WAIT_TIME']):
+      refPrice = newRefPrice
+      nChases+=1
+      orderStatus = getOrderFunc(bb, ticker, orderId)
+      if orderStatus['order_status']=='Filled': break
+      if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
+        mult = .95 if side == 'BUY' else 1.05
+        farPrice = roundPrice(bb,exch,ccy,refPrice*mult)
+        try:
+          orderReplaceFunc({'symbol':ticker,'order_id':orderId, 'p_r_price': farPrice})
+        except:
+          break
+        orderStatus = getOrderFunc(bb, ticker, orderId)
+        if float(orderStatus['cum_exec_qty']) == 0:
+          orderCancelFunc({'symbol': ticker, 'order_id': orderId})
+          print(getCurrentTime() + ': Cancelled')
+          return 0
+      else:
+        refTime = time.time()
+        newLimitPrice=roundPrice(bb,exch,ccy,refPrice,side=side,distance=distance)
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
+          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          limitPrice=newLimitPrice
+          try:
+            orderReplaceFunc({'symbol':ticker,'order_id':orderId, 'p_r_price': limitPrice})
+          except:
+            break
+        else:
+          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases)+'; price='+str(limitPrice)+']')
+    time.sleep(1)
+  fill=getFillPriceFunc(bb, ticker, orderId)
+  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  return fill
+
 def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
@@ -406,56 +467,9 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   ticker=ccy+'USD'
   trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
-
-  if side=='BUY':
-    refPrice = bbGetBid(bb, ccy)
-  else:
-    refPrice = bbGetAsk(bb, ccy)
-  limitPrice = roundPrice(bb, 'bb', ccy, refPrice, side=side, distance=distance)
-  orderId=bb.v2_private_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':trade_notional,'price':limitPrice,'time_in_force':'GoodTillCancel'})['result']['order_id']
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
-  refTime = time.time()
-  nChases=0
-  while True:
-    orderStatus=bbGetOrder(bb,ticker,orderId)
-    if orderStatus['order_status']=='Filled': break
-    if side=='BUY':
-      newRefPrice=bbGetBid(bb,ccy)
-    else:
-      newRefPrice=bbGetAsk(bb,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']):
-      refPrice = newRefPrice
-      nChases+=1
-      orderStatus = bbGetOrder(bb, ticker, orderId)
-      if orderStatus['order_status']=='Filled': break
-      if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
-        mult = .95 if side == 'BUY' else 1.05
-        farPrice = roundPrice(bb,'bb',ccy,refPrice*mult)
-        try:
-          bb.v2_private_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': farPrice})
-        except:
-          break
-        orderStatus = bbGetOrder(bb, ticker, orderId)
-        if float(orderStatus['cum_exec_qty']) == 0:
-          bb.v2_private_post_order_cancel({'symbol': ticker, 'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
-          return 0
-      else:
-        refTime = time.time()
-        newLimitPrice=roundPrice(bb,'bb',ccy,refPrice,side=side,distance=distance)
-        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
-          limitPrice=newLimitPrice
-          try:
-            bb.v2_private_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': limitPrice})
-          except:
-            break
-        else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases)+'; price='+str(limitPrice)+']')
-    time.sleep(1)
-  fill=bbGetFillPrice(bb, ticker, orderId)
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
+  return bbRelOrderCore(side,bb,ccy,maxChases,distance,'bb',ticker,trade_notional,
+                        bbGetBid,bbGetAsk,bbGetOrder,bbGetFillPrice,
+                        bb.v2_private_post_order_replace,bb.v2_private_post_order_cancel)
 
 #############################################################################################
 
@@ -514,11 +528,6 @@ def bbtGetRiskDf(bb,ccys,spotDict):
   return df[['position_value','delta_value','spot_price','liq_price','liq','unrealised_pnl','im_value','mm_value']]
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
-  # Do not use @retry
-  def getIsReduceOnly(bb, ccy, side, qty):
-    df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
-    oppSide = 'Sell' if side == 'BUY' else 'Buy'
-    return (qty / bbtGetMid(bb, ccy)) < float(df.loc[oppSide, 'size'])
   @retry(wait_fixed=1000)
   def bbtGetOrder(bb, ticker, orderId):
     return bb.private_linear_get_order_search({'symbol': ticker, 'order_id': orderId})['result']
@@ -532,56 +541,9 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   ticker=ccy+'USDT'
   qty = round(trade_qty, 3)
   print(getCurrentTime() + ': Sending BBT ' + side + ' order of ' + ticker + ' (qty='+ str(qty)+') ....')
-  if side=='BUY':
-    refPrice = bbtGetBid(bb, ccy)
-  else:
-    refPrice = bbtGetAsk(bb, ccy)
-  limitPrice=roundPrice(bb,'bbt',ccy,refPrice,side=side,distance=distance)
-  orderId=bb.private_linear_post_order_create({'side':side.capitalize(),'symbol':ticker,'order_type':'Limit','qty':qty,'price':limitPrice,'time_in_force':'GoodTillCancel',
-                                               'reduce_only':bool(getIsReduceOnly(bb, ccy, side, qty)),'close_on_trigger':False})['result']['order_id']
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + ']')
-  refTime = time.time()
-  nChases=0
-  while True:
-    orderStatus=bbtGetOrder(bb,ticker,orderId)
-    if orderStatus['order_status']=='Filled': break
-    if side=='BUY':
-      newRefPrice=bbtGetBid(bb,ccy)
-    else:
-      newRefPrice=bbtGetAsk(bb,ccy)
-    if (side=='BUY' and newRefPrice > refPrice) or (side=='SELL' and newRefPrice < refPrice) or ((time.time()-refTime)>CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']):
-      refPrice = newRefPrice
-      nChases+=1
-      orderStatus = bbtGetOrder(bb, ticker, orderId)
-      if orderStatus['order_status']=='Filled': break
-      if nChases>maxChases and float(orderStatus['cum_exec_qty'])==0:
-        mult = .95 if side == 'BUY' else 1.05
-        farPrice = roundPrice(bb,'bbt',ccy,refPrice*mult)
-        try:
-          bb.private_linear_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': farPrice})
-        except:
-          break
-        orderStatus = bbtGetOrder(bb, ticker, orderId)
-        if float(orderStatus['cum_exec_qty']) == 0:
-          bb.private_linear_post_order_cancel({'symbol': ticker, 'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
-          return 0
-      else:
-        refTime = time.time()
-        newLimitPrice=roundPrice(bb,'bbt',ccy,refPrice,side=side,distance=distance)
-        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice)+'->'+str(newLimitPrice) + ']')
-          limitPrice=newLimitPrice
-          try:
-            bb.private_linear_post_order_replace({'symbol':ticker,'order_id':orderId, 'p_r_price': limitPrice})
-          except:
-            break
-        else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
-    time.sleep(1)
-  fill=bbtGetFillPrice(bb, ticker, orderId)
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
+  return bbRelOrderCore(side,bb,ccy,maxChases,distance,'bbt',ticker,qty,
+                        bbtGetBid,bbtGetAsk,bbtGetOrder,bbtGetFillPrice,
+                        bb.private_linear_post_order_replace,bb.private_linear_post_order_cancel)
 
 ####
 # BN

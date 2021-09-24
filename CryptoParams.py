@@ -96,7 +96,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'I
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.04
+SMB_DICT['BASE_RATE']=0.07
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -123,11 +123,11 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
   myFTXOnly=[]
   myRegulars=['SOL','SUSHI']
-  myFTXSpotless=['ADA','ETC','ICP']
+  myFTXSpotless=['ADA','ETC']
   ############################################################################################################
   CR_QUOTE_CCY_DICT['XRP'] = 4
   for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
