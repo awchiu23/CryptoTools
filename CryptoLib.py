@@ -72,9 +72,9 @@ def dbCCXTInit():
 def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
-########
-# Prices
-########
+#########
+# Helpers
+#########
 @retry(wait_fixed=1000)
 def ftxGetMid(ftx, name):
   for z in SHARED_ETC_DICT['FTX_SPOTLESS']:
@@ -281,8 +281,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   def ftxGetFillPrice(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice'])
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   qty=roundQty(ftx,ticker,trade_qty)
   maxWaitTime = CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME'] if 'PERP' in ticker else CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']
   print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
@@ -462,8 +461,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
     df['exec_price'] = [float(n) for n in df['exec_price']]
     return (df['exec_qty'] * df['exec_price']).sum() / df['exec_qty'].sum()
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   ticker=ccy+'USD'
   trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
@@ -536,8 +534,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
     orderStatus = bbtGetOrder(bb, ticker, orderId)
     return float(orderStatus['cum_exec_value']) / float(orderStatus['cum_exec_qty'])
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   ticker=ccy+'USDT'
   qty = round(trade_qty, 3)
   print(getCurrentTime() + ': Sending BBT ' + side + ' order of ' + ticker + ' (qty='+ str(qty)+') ....')
@@ -637,8 +634,7 @@ def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
       orderStatus=bnGetOrder(bn, ticker, orderId)
       return orderStatus,0
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   ticker=ccy+'USD_PERP'
   print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
   mult=100 if ccy=='BTC' else 10
@@ -745,8 +741,7 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
       orderStatus=bntGetOrder(bn, ticker, orderId)
       return orderStatus,0
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   ticker=ccy+'USDT'
   qty = roundQty(bn,ccy,trade_qty)
   print(getCurrentTime()+': Sending BNT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
@@ -827,8 +822,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
     except:
       return False
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   if ccy == 'BTC':
     trade_notional = round(trade_notional, -1)
   elif ccy == 'ETH':
@@ -948,8 +942,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
       df['value']=df['size']*df['price']
       return df['value'].sum()/df['size'].sum()
   #####
-  if side != 'BUY' and side != 'SELL':
-    sys.exit(1)
+  assertSide(side)
   symbol=kfCcyToSymbol(ccy)
   trade_notional = round(trade_notional)
   print(getCurrentTime() + ': Sending KF ' + side + ' order of ' + symbol + ' (notional=$' + str(trade_notional) + ') ....')
@@ -1552,6 +1545,11 @@ def ctRun(ccy, notional, tgtBps, color):
 def appendUnique(myList,item):
   if item not in myList:
     myList.append(item)
+
+# Assert side for RelOrder functions
+def assertSide(side):
+  if side != 'BUY' and side != 'SELL':
+    sys.exit(1)
 
 # Cache items in memory
 def cache(mode,key,value=None):
