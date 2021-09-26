@@ -89,7 +89,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM']
 
 #############
 # Smart Basis
@@ -144,7 +144,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=4.53218 #kfftx
+  #CR_AG_CCY_DICT['BTC']=9.2521 #kfftx
   #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 123489 #bbftx
   #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
