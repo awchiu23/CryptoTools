@@ -145,6 +145,6 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
   #CR_AG_CCY_DICT['BTC']=9.2521 #kfftx
-  #CR_AG_CCY_DICT['ETH']=55.293 #bbftx
+  #CR_AG_CCY_DICT['ETH']=139.99 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 123489 #bbftx
   #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
