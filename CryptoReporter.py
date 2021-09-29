@@ -467,10 +467,18 @@ class core:
       self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
     self.calcFuturesDeltaUSD()
     ######
+    '''
     pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': cl.getYest()})['result'])
     pmts = pmts.set_index('future', drop=False).loc[[z+'-PERP' for z in self.validCcys]].set_index('time')
     cl.dfSetFloat(pmts, ['payment', 'rate'])
     pmts = pmts.sort_index()
+    '''
+    pmts=pd.DataFrame()
+    for ccy in self.validCcys:
+      pmts = pmts.append(pd.DataFrame(self.api.private_get_funding_payments({'future':ccy+'-PERP','limit': 200, 'start_time': cl.getYest()})['result']))
+    cl.dfSetFloat(pmts, ['payment', 'rate'])
+    pmts = pmts.set_index('time').sort_index()
+
     self.payments = pmts
     #####
     self.oneDayIncome = -pmts['payment'].sum()
