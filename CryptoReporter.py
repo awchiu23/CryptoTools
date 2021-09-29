@@ -474,10 +474,11 @@ class core:
     pmts = pmts.sort_index()
     '''
     pmts=pd.DataFrame()
+    start_time=cl.getYest()
     for ccy in self.validCcys:
-      pmts = pmts.append(pd.DataFrame(self.api.private_get_funding_payments({'future':ccy+'-PERP','limit': 200, 'start_time': cl.getYest()})['result']))
-    cl.dfSetFloat(pmts, ['payment', 'rate'])
+      pmts = pmts.append(pd.DataFrame(self.api.private_get_funding_payments({'future':ccy+'-PERP', 'start_time': start_time})['result']))
     pmts = pmts.set_index('time').sort_index()
+    cl.dfSetFloat(pmts, ['payment', 'rate'])
 
     self.payments = pmts
     #####
