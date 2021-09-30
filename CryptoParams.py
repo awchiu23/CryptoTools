@@ -126,7 +126,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
   myFTXOnly=[]
-  myRegulars=['SOL','SUSHI','AXS']
+  myRegulars=['DOGE','SOL','SUSHI','AXS']
   myFTXSpotless=['ADA','ETC','ICP']
   ############################################################################################################
   CR_QUOTE_CCY_DICT['XRP'] = 4
@@ -144,7 +144,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=9.2521 #kfftx
-  #CR_AG_CCY_DICT['ETH']=139.99 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 123489 #bbftx
+  #CR_AG_CCY_DICT['BTC']=2.5733 #kfftx
+  #CR_AG_CCY_DICT['ETH']=73.753 #bbftx
+  CR_AG_CCY_DICT['XRP'] = 396969 #bbftx
   #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
