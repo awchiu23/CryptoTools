@@ -475,8 +475,8 @@ class core:
     pmts = pmts.sort_index()
     self.payments = pmts
     '''
-    pmts=pd.DataFrame()
     start_time=cl.getYest()
+    pmts = pd.DataFrame()
     for ccy in self.validCcys:
       pmts = pmts.append(pd.DataFrame(self.api.private_get_funding_payments({'future':ccy+'-PERP', 'start_time': start_time})['result']))
     pmts = pmts.set_index('time').sort_index()
@@ -519,7 +519,7 @@ class core:
     '''
     for ccy in self.validCcys:
       df=pd.DataFrame(self.api.public_get_funding_rates({'future':ccy+'-PERP', 'start_time': start_time})['result']).set_index('time').sort_index()
-      cl.dfSetFloat(df,['rate'])
+      cl.dfSetFloat(df,'rate')
       oneDayFunding = df['rate'].mean() * 24 * 365
       prevFunding = df['rate'][-1] * 24 * 365
       estFunding = cl.ftxGetEstFunding(self.api, ccy)
