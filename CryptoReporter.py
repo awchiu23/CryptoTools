@@ -463,8 +463,9 @@ class core:
     cl.dfSetFloat(futs, 'size')
     for ccy in self.validCcys:
       ccy2=ccy+'-PERP'
-      mult = -1 if futs.loc[ccy2, 'side']=='sell' else 1
-      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
+      if ccy2 in futs.index:
+        mult = -1 if futs.loc[ccy2, 'side']=='sell' else 1
+        self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
     self.calcFuturesDeltaUSD()
     ######
     '''
@@ -472,18 +473,18 @@ class core:
     pmts = pmts.set_index('future', drop=False).loc[[z+'-PERP' for z in self.validCcys]].set_index('time')
     cl.dfSetFloat(pmts, ['payment', 'rate'])
     pmts = pmts.sort_index()
+    self.payments = pmts
     '''
     pmts=pd.DataFrame()
     start_time=cl.getYest()
     for ccy in self.validCcys:
       pmts = pmts.append(pd.DataFrame(self.api.private_get_funding_payments({'future':ccy+'-PERP', 'start_time': start_time})['result']))
     pmts = pmts.set_index('time').sort_index()
-    cl.dfSetFloat(pmts, ['payment', 'rate'])
-
+    cl.dfSetFloat(pmts, 'payment')
     self.payments = pmts
     #####
-    self.oneDayIncome = -pmts['payment'].sum()
-    self.prevIncome = -pmts.loc[pmts.index[-1]]['payment'].sum()
+    self.oneDayIncome = -self.payments['payment'].sum()
+    self.prevIncome = -self.payments.loc[self.payments.index[-1]]['payment'].sum()
     self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
     self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
     #####
@@ -508,12 +509,21 @@ class core:
     #####
     self.nav = self.wallet['usdValue'].sum()
     #####
+    '''
     for ccy in self.validCcys:
       df = pmts.loc[pmts['future'] == ccy + '-PERP', 'rate']
       oneDayFunding = df.mean() * 24 * 365
       prevFunding = df[df.index[-1]].mean() * 24 * 365
       estFunding = cl.ftxGetEstFunding(self.api, ccy)
       self.makeFundingStr(ccy,oneDayFunding,prevFunding,estFunding)
+    '''
+    for ccy in self.validCcys:
+      df=pd.DataFrame(self.api.public_get_funding_rates({'future':ccy+'-PERP', 'start_time': start_time})['result']).set_index('time').sort_index()
+      cl.dfSetFloat(df,['rate'])
+      oneDayFunding = df['rate'].mean() * 24 * 365
+      prevFunding = df['rate'][-1] * 24 * 365
+      estFunding = cl.ftxGetEstFunding(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
     #####
     self.makeIncomesStr()
     #####
