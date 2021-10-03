@@ -15,6 +15,9 @@ API_KEY_DB = ''
 API_SECRET_DB = ''
 API_KEY_KF = ''
 API_SECRET_KF = ''
+API_KEY_KU = ''
+API_SECRET_KU = ''
+ADI_PASSWORD_KU = ''
 
 #############################################################################################
 
@@ -121,11 +124,14 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
+  API_KEY_KU = sl.jLoad('API_KEY_KU')
+  API_SECRET_KU = sl.jLoad('API_SECRET_KU')
+  API_PASSWORD_KU = sl.jLoad('API_PASSWORD_KU')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
   ############################################################################################################
-  myFTXOnly=[]
+  myFTXOnly=['AAVE']
   myRegulars=['DOGE','SOL','SUSHI','AXS']
   myFTXSpotless=['ADA','AVAX','ETC','ICP']
   ############################################################################################################
@@ -144,7 +150,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   #####
-  #CR_AG_CCY_DICT['BTC']=2.5733 #kfftx
+  #CR_AG_CCY_DICT['BTC']=2.2254 #bbftx
   #CR_AG_CCY_DICT['ETH']=16.7334 #ftxkf
   #CR_AG_CCY_DICT['XRP'] = 396969 #bbftx
   #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
