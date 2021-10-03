@@ -1064,13 +1064,26 @@ def kutGetMult(ku,ccy):
     df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
   return float(df.loc[kutGetCcy(ccy)+'USDTM','multiplier'])
 
+@retry(wait_fixed=1000)
+def kutGetMaxLeverage(ku,ccy):
+  key='kutMaxLeverage'
+  df=cache('r',key)
+  if df is None:
+    df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
+  return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
+
 def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
   @retry(wait_fixed=1000)
   def kutGetOrder(ku, orderId):
     return ku.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
   # Do not use @retry
-  def kutPlaceOrder(ku, ticker, side, qty, limitPrice):
-    return ku.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': 20, 'price': limitPrice, 'size': qty})['data']['orderId']
+  def kutPlaceOrder(ku, ticker, side, qty, limitPrice,ccy):
+    result=ku.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(ku,ccy), 'price': limitPrice, 'size': qty})
+    try:
+      return result['data']['orderId']
+    except:
+      print(result)
+      sys.exit(1)
   # Do not use @retry
   def kutCancelOrder(ku, orderId):
     ku.futuresPrivate_delete_orders_order_id({'order-id': orderId})
@@ -1090,7 +1103,7 @@ def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
   else:
     refPrice = kutGetAsk(ku, ccy)
   limitPrice = roundPrice(ku,'kut',ccy,refPrice,side=side,distance=distance)
-  orderId=kutPlaceOrder(ku, ticker, side, qty, limitPrice)
+  orderId=kutPlaceOrder(ku, ticker, side, qty, limitPrice,ccy)
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
   nChases=0
@@ -1119,7 +1132,7 @@ def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
           limitPrice = newLimitPrice
           leavesQty = kutCancelOrder(ku, orderId)
           if leavesQty == 0: break
-          orderId = kutPlaceOrder(ku, ticker, side, leavesQty, limitPrice)
+          orderId = kutPlaceOrder(ku, ticker, side, leavesQty, limitPrice,ccy)
         else:
           print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
     time.sleep(1)

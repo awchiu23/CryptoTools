@@ -909,11 +909,17 @@ class core:
   #####
   def kutInit(self):
     self.api = cl.kuCCXTInit()
+    usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
+    availableBalance = float(usdtDict['availableBalance'])
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.kutGetFutPos(self.api,ccy)*cl.kutGetMult(self.api,ccy)
-      d=self.api.futuresPrivate_get_position({'symbol': cl.kutGetCcy(ccy) + 'USDTM'})['data']
-      self.liqDict[ccy] = float(d['liquidationPrice'])/float(d['markPrice'])
     self.calcFuturesDeltaUSD()
+    for ccy in self.validCcys:
+      d = self.api.futuresPrivate_get_position({'symbol': cl.kutGetCcy(ccy) + 'USDTM'})['data']
+      self.liqDict[ccy] = float(d['liquidationPrice']) / float(d['markPrice'])
+      futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']
+      if futDeltaUSD!=0:
+        self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy,'FutDeltaUSD'])
     #####
     # to be written....
     self.oneDayIncome=0
@@ -921,7 +927,6 @@ class core:
     self.oneDayAnnRet = 0
     self.prevAnnRet = 0
     #####
-    usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
     equity = float(usdtDict['accountEquity'])
     self.nav = equity * self.spotDict['USDT']
     self.spots.loc['USDT', 'SpotDelta'] = equity
@@ -936,7 +941,7 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr(riskDf=cl.kutGetRiskDf(self.api), availableBalance=float(usdtDict['availableBalance']))
+    self.makeLiqStr(riskDf=cl.kutGetRiskDf(self.api), availableBalance=availableBalance)
     self.isDone = True
 
 ####################################################################################################

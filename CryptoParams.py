@@ -135,23 +135,23 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':1})
   ############################################################################################################
   myFTXOnly=['AAVE']
-  myRegulars=['DOGE','SOL','SUSHI','AXS']
+  myRegulars=['XRP','DOGE','SOL','SUSHI','AXS']
   myFTXSpotless=['ADA','AVAX','ETC','ICP']
+  myKUTs=['XRP','DOGE','SOL']
   ############################################################################################################
-  CR_QUOTE_CCY_DICT['XRP'] = 4
   for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in myRegulars: CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in myFTXSpotless: CR_QUOTE_CCY_DICT[ccy] = 4
-  CR_AG_CCY_DICT['XRP'] = 0
+  for ccy in myKUTs: CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in myRegulars:  CR_AG_CCY_DICT[ccy] = 0
   for ccy in myFTXSpotless: CR_AG_CCY_DICT[ccy] = 0
-  CR_FTX_FLOWS_CCYS.append('XRP')
   CR_FTX_FLOWS_CCYS.extend(myFTXOnly)
   CR_FTX_FLOWS_CCYS.extend(myRegulars)
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kut']}
   for ccy in myFTXOnly: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
+  SHARED_CCY_DICT['XRP']['futExch'].append('bb')
+  for ccy in myKUTs: SHARED_CCY_DICT[ccy]['futExch'].append('kut')
   #####
   #CR_AG_CCY_DICT['BTC']=2.2254 #bbftx
   #CR_AG_CCY_DICT['ETH']=16.7334 #ftxkf
