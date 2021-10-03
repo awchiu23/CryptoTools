@@ -177,6 +177,7 @@ def getCores():
   bnimCore=processCore('bnim',spotDict,objs)
   dbCore=processCore('db', spotDict, objs)
   kfCore=processCore('kf',spotDict,objs)
+  kutCore=processCore('kut',spotDict,objs)
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
@@ -190,7 +191,7 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs
+  return isOk, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, kutCore, spotDict, objs
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -320,6 +321,8 @@ class core:
       self.dbInit()
     elif self.exch=='kf':
       self.kfInit()
+    elif self.exch=='kut':
+      self.kutInit()
 
   def calcSpotDeltaUSD(self):
     for ccy in self.spots.index:
@@ -340,7 +343,7 @@ class core:
       self.incomesStr = colored((self.name +  ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
-    if self.exch in ['bb','bbt','bn','bnt','db','kf']:
+    if self.exch in ['bb','bbt','bn','bnt','db','kf','kut']:
       z = fmtLiq(self.liqDict[ccy])
     else:
       z = ''
@@ -348,14 +351,14 @@ class core:
     prefix = self.name + ' ' + ccy + ' 24h/'
     prefix += '8h' if self.exch=='db' else 'prev'
     prefix+='/est'
-    if self.exch in ['bb','bbt','kf']:
+    if self.exch in ['bb','bbt','kf','kut']:
       prefix += '1/est2'
     prefix += ':'
     #####
     body = str(round(oneDayFunding * 100)) + '%/'
     body += str(round(prevFunding * 100)) + '%/'
     body += str(round(estFunding * 100)) + '%'
-    if self.exch in ['bb','bbt','kf']:
+    if self.exch in ['bb','bbt','kf','kut']:
       body += '/' + str(round(estFunding2 * 100)) + '%'
     body += ' p.a.'
     #####
@@ -368,7 +371,7 @@ class core:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
-  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, bnt
+  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, bnt, kut
     def bbtGetLiq(riskDf, availableBalance, increment):
       df = riskDf.copy()
       isOk = False
@@ -385,9 +388,28 @@ class core:
       else:
         return 0
     #####
+    def kutGetLiq(riskDf, availableBalance, increment):
+      df = riskDf.copy()
+      isOk = False
+      for i in range(100):
+        sim_liq_ratio = (1 + ((i + 1) * increment))
+        df['sim_add_liq_ratio'] = sim_liq_ratio - df['liquidationRatio']
+        df['sim_add_margin'] = df['sim_add_liq_ratio'].clip(0, None) * abs(df['markValue'])
+        cushion = availableBalance - df['sim_add_margin'].sum()
+        if cushion < 0:
+          isOk=True
+          break
+      if isOk:
+        return 1 + i * increment
+      else:
+        return 0
+    #####
     if self.exch=='bbt':
       self.liqL = bbtGetLiq(riskDf, availableBalance,-0.01)
       self.liqH = bbtGetLiq(riskDf, availableBalance,0.01)
+    elif self.exch=='kut':
+      self.liqL = kutGetLiq(riskDf, availableBalance, -0.01)
+      self.liqH = kutGetLiq(riskDf, availableBalance, 0.01)
     else: # ftx, bnt
       liq = 1 - cushion / delta
       if delta>=0:
@@ -468,13 +490,6 @@ class core:
         self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'size']*mult
     self.calcFuturesDeltaUSD()
     ######
-    '''
-    pmts = pd.DataFrame(self.api.private_get_funding_payments({'limit': 1000, 'start_time': cl.getYest()})['result'])
-    pmts = pmts.set_index('future', drop=False).loc[[z+'-PERP' for z in self.validCcys]].set_index('time')
-    cl.dfSetFloat(pmts, ['payment', 'rate'])
-    pmts = pmts.sort_index()
-    self.payments = pmts
-    '''
     start_time=cl.getYest()
     pmts = pd.DataFrame()
     for ccy in self.validCcys:
@@ -509,14 +524,6 @@ class core:
     #####
     self.nav = self.wallet['usdValue'].sum()
     #####
-    '''
-    for ccy in self.validCcys:
-      df = pmts.loc[pmts['future'] == ccy + '-PERP', 'rate']
-      oneDayFunding = df.mean() * 24 * 365
-      prevFunding = df[df.index[-1]].mean() * 24 * 365
-      estFunding = cl.ftxGetEstFunding(self.api, ccy)
-      self.makeFundingStr(ccy,oneDayFunding,prevFunding,estFunding)
-    '''
     for ccy in self.validCcys:
       df=pd.DataFrame(self.api.public_get_funding_rates({'future':ccy+'-PERP', 'start_time': start_time})['result']).set_index('time').sort_index()
       cl.dfSetFloat(df,'rate')
@@ -897,6 +904,41 @@ class core:
     self.makeIncomesStr()
     self.isDone = True
 
+  #####
+  # KUT
+  #####
+  def kutInit(self):
+    self.api = cl.kuCCXTInit()
+    for ccy in self.validCcys:
+      self.futures.loc[ccy, 'FutDelta']=cl.kutGetFutPos(self.api,ccy)*cl.kutGetMult(self.api,ccy)
+      d=self.api.futuresPrivate_get_position({'symbol': cl.kutGetCcy(ccy) + 'USDTM'})['data']
+      self.liqDict[ccy] = float(d['liquidationPrice'])/float(d['markPrice'])
+    self.calcFuturesDeltaUSD()
+    #####
+    # to be written....
+    self.oneDayIncome=0
+    self.prevIncome=0
+    self.oneDayAnnRet = 0
+    self.prevAnnRet = 0
+    #####
+    usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
+    equity = float(usdtDict['accountEquity'])
+    self.nav = equity * self.spotDict['USDT']
+    self.spots.loc['USDT', 'SpotDelta'] = equity
+    self.calcSpotDeltaUSD()
+    #####
+    for ccy in self.validCcys:
+      # to be written
+      oneDayFunding = 0
+      prevFunding = 0
+      estFunding = cl.kutGetEstFunding1(self.api, ccy)
+      estFunding2 = cl.kutGetEstFunding2(self.api, ccy)
+      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
+    #####
+    self.makeIncomesStr()
+    self.makeLiqStr(riskDf=cl.kutGetRiskDf(self.api), availableBalance=float(usdtDict['availableBalance']))
+    self.isDone = True
+
 ####################################################################################################
 
 if __name__ == '__main__':
@@ -906,7 +948,7 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, spotDict, objs = getCores()
+  _, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, kutCore, spotDict, objs = getCores()
 
   #############
   # Aggregation
@@ -953,6 +995,7 @@ if __name__ == '__main__':
   for core in bbtCores:
     usdtCores.append(core)
   if SHARED_EXCH_DICT['bnt']==1: usdtCores.append(bntCore)
+  if SHARED_EXCH_DICT['kut']==1: usdtCores.append(kutCore)
   appendUSDTDeltas(agList, ftxCore, bnimCore, spotDict, usdtCores)
   appendBUSDDeltas(agList, bnimCore)
   #####
@@ -969,8 +1012,9 @@ if __name__ == '__main__':
     bbtCores[0].printAll()
   if SHARED_EXCH_DICT['bbt'] >= 4:
     printAllDual(bbtCores[2], bbtCores[3])
+    kutCore.printAll()
   elif SHARED_EXCH_DICT['bbt']>=3:
-    bbtCores[2].printAll()
+    printAllDual(bbtCores[2],kutCore)
   #####
   printAllDual(bntCore, bnCore)
   #####

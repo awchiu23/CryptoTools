@@ -184,19 +184,16 @@ def kfGetAsk(kf, ccy, kfTickers=None):
 
 @retry(wait_fixed=1000)
 def kutGetMid(ku,ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
-  d=ku.futuresPublic_get_ticker({'symbol': ccy2 + 'USDTM'})['data']
+  d=ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
   return (float(d['bestBidPrice'])+float(d['bestAskPrice']))/2
 
 @retry(wait_fixed=1000)
 def kutGetBid(ku,ccy):
-  ccy2='XBT' if ccy=='BTC' else ccy
-  return float(ku.futuresPublic_get_ticker({'symbol': ccy2+'USDTM'})['data']['bestBidPrice'])
+  return float(ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy)+'USDTM'})['data']['bestBidPrice'])
 
 @retry(wait_fixed=1000)
 def kutGetAsk(ku,ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
-  return float(ku.futuresPublic_get_ticker({'symbol': ccy2 + 'USDTM'})['data']['bestAskPrice'])
+  return float(ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestAskPrice'])
 
 def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
   if exch in ['db','kf']:
@@ -1029,38 +1026,43 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
 #####
 # KUT
 #####
+def kutGetCcy(ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  return ccy2
+
 @retry(wait_fixed=1000)
 def kutGetFutPos(ku,ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
-  return float(ku.futuresPrivate_get_position({'symbol':ccy2+'USDTM'})['data']['currentQty'])
+  return float(ku.futuresPrivate_get_position({'symbol':kutGetCcy(ccy)+'USDTM'})['data']['currentQty'])
 
 @retry(wait_fixed=1000)
 def kutGetEstFunding1(ku,ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
-  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.'+ccy2+'USDTMFPI8H'})['data']['value'])*3*365
+  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.'+kutGetCcy(ccy)+'USDTMFPI8H'})['data']['value'])*3*365
 
 @retry(wait_fixed=1000)
 def kutGetEstFunding2(ku, ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
-  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + ccy2 + 'USDTMFPI8H'})['data']['predictedValue'])*3*365
+  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue'])*3*365
+
+@retry(wait_fixed=1000)
+def kutGetRiskDf(ku):
+  df = pd.DataFrame(ku.futuresPrivate_get_positions()['data']).set_index('symbol')[['markPrice','markValue','liquidationPrice']].astype(float)
+  df['liquidationRatio']=df['liquidationPrice']/df['markPrice']
+  return df
 
 @retry(wait_fixed=1000)
 def kutGetTickSize(ku,ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
   key='kutTickSize'
   df=cache('r',key)
   if df is None:
     df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
-  return float(df.loc[ccy2+'USDTM','tickSize'])
+  return float(df.loc[kutGetCcy(ccy)+'USDTM','tickSize'])
 
 @retry(wait_fixed=1000)
 def kutGetMult(ku,ccy):
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
   key='kutMult'
   df=cache('r',key)
   if df is None:
     df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
-  return float(df.loc[ccy2+'USDTM','multiplier'])
+  return float(df.loc[kutGetCcy(ccy)+'USDTM','multiplier'])
 
 def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
   @retry(wait_fixed=1000)
@@ -1068,7 +1070,7 @@ def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
     return ku.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
   # Do not use @retry
   def kutPlaceOrder(ku, ticker, side, qty, limitPrice):
-    return ku.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': '20', 'price': limitPrice, 'size': qty})['data']['orderId']
+    return ku.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': 20, 'price': limitPrice, 'size': qty})['data']['orderId']
   # Do not use @retry
   def kutCancelOrder(ku, orderId):
     ku.futuresPrivate_delete_orders_order_id({'order-id': orderId})
@@ -1079,8 +1081,7 @@ def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
     return float(orderStatus['size'])-float(orderStatus['filledSize'])
   #####
   assertSide(side)
-  ccy2 = 'XBT' if ccy == 'BTC' else ccy
-  ticker=ccy2+'USDTM'
+  ticker=kutGetCcy(ccy)+'USDTM'
   mult=kutGetMult(ku,ccy)
   qty=round(trade_qty/mult)
   print(getCurrentTime()+': Sending KUT '+side+' order of '+ticker+' (qty='+str(qty)+'; mult='+str(mult)+') ....')
@@ -1283,8 +1284,7 @@ def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
 
 @retry(wait_fixed=1000)
 def kutGetOneDayShortFutEdge(ku, fundingDict, basis):
-  ccy2='XBT' if fundingDict['Ccy'] == 'BTC' else fundingDict['Ccy']
-  premIndex=pd.DataFrame(ku.futuresPublic_get_premium_query({'symbol':'.'+ccy2+'USDTMPI','maxCount':15})['data']['dataList'])['value'].astype(float).mean()
+  premIndex=pd.DataFrame(ku.futuresPublic_get_premium_query({'symbol':'.'+kutGetCcy(fundingDict['Ccy'])+'USDTMPI','maxCount':15})['data']['dataList'])['value'].astype(float).mean()
   premIndexClamped  = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
   snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['kutEstFunding2'], prevFundingRate=fundingDict['kutEstFunding1'],isKU=True) - getOneDayUSDTCollateralBleed(fundingDict)

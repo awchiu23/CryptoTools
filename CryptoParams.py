@@ -17,7 +17,7 @@ API_KEY_KF = ''
 API_SECRET_KF = ''
 API_KEY_KU = ''
 API_SECRET_KU = ''
-ADI_PASSWORD_KU = ''
+API_PASSWORD_KU = ''
 
 #############################################################################################
 
@@ -91,8 +91,8 @@ CR_EXT_DELTA_USDT = 0
 ########
 SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1,'kut':1})
 SHARED_CCY_DICT=dict()
-SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
-SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf','kut']}
+SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
+SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
 SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM']
@@ -148,7 +148,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_FTX_FLOWS_CCYS.append('XRP')
   CR_FTX_FLOWS_CCYS.extend(myFTXOnly)
   CR_FTX_FLOWS_CCYS.extend(myRegulars)
-  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb']}
+  SHARED_CCY_DICT['XRP'] = {'futExch': ['ftx','bbt','bb','kut']}
   for ccy in myFTXOnly: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
   for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
   for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
