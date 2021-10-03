@@ -1011,15 +1011,17 @@ if __name__ == '__main__':
   #####
   printAllQuad(ftxCore, kfCore, dbCore, bbCore)
   #####
-  if SHARED_EXCH_DICT['bbt'] >= 2:
+  if SHARED_EXCH_DICT['bbt'] == 1:
+    printAllDual(bbtCores[0], kutCore)
+  elif SHARED_EXCH_DICT['bbt'] >= 2:
     printAllDual(bbtCores[0], bbtCores[1])
-  else:
-    bbtCores[0].printAll()
   if SHARED_EXCH_DICT['bbt'] >= 4:
     printAllDual(bbtCores[2], bbtCores[3])
     kutCore.printAll()
   elif SHARED_EXCH_DICT['bbt']>=3:
     printAllDual(bbtCores[2],kutCore)
+  else:
+    kutCore.printAll()
   #####
   printAllDual(bntCore, bnCore)
   #####
