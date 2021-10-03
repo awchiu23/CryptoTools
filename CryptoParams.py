@@ -136,8 +136,8 @@ if os.environ.get('USERNAME')=='Simon':
   ############################################################################################################
   myFTXOnly=['AAVE']
   myRegulars=['XRP','DOGE','SOL','SUSHI','AXS']
-  myFTXSpotless=['ADA','AVAX','ETC','ICP']
-  myKUTs=['XRP','DOGE','SOL']
+  myFTXSpotless=['ADA','AVAX','DOT','ETC','ICP']
+  myKUTs=['XRP','DOGE','SOL','DOT']
   ############################################################################################################
   for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in myRegulars: CR_QUOTE_CCY_DICT[ccy] = 4
