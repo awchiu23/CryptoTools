@@ -1018,9 +1018,9 @@ if __name__ == '__main__':
   if SHARED_EXCH_DICT['bbt'] >= 4:
     printAllDual(bbtCores[2], bbtCores[3])
     kutCore.printAll()
-  elif SHARED_EXCH_DICT['bbt']>=3:
+  elif SHARED_EXCH_DICT['bbt']==3:
     printAllDual(bbtCores[2],kutCore)
-  else:
+  elif SHARED_EXCH_DICT['bbt']==2:
     kutCore.printAll()
   #####
   printAllDual(bntCore, bnCore)
