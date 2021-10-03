@@ -18,7 +18,7 @@ leg2_distance=0
 ######
 # Init
 ######
-ftx,_,_,_,_,_,qty,notional,spot = cl.ctInit(ccy,notional,0)
+ftx,_,_,_,_,_,_,qty,notional,spot = cl.ctInit(ccy,notional,0)
 
 ######
 # Main

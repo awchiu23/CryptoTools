@@ -11,6 +11,7 @@ import time
 import operator
 import termcolor
 import traceback
+import uuid
 import ccxt
 import apophis
 from retrying import retry
@@ -42,6 +43,8 @@ class getPrices:
     elif self.exch == 'kf':
       self.kfTickers = kfGetTickers(self.api)
       self.fut = kfGetMid(self.api,self.ccy,kfTickers=self.kfTickers)
+    elif self.exch == 'kut':
+      self.fut = kutGetMid(self.api,self.ccy)
 
 #####################################################################################################################################
 
@@ -71,6 +74,9 @@ def dbCCXTInit():
 
 def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
+
+def kuCCXTInit():
+  return ccxt.kucoin({'apiKey': API_KEY_KU, 'secret': API_SECRET_KU, 'password': API_PASSWORD_KU, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 #########
 # Helpers
@@ -176,6 +182,22 @@ def kfGetAsk(kf, ccy, kfTickers=None):
   if kfTickers is None: kfTickers = kfGetTickers(kf)
   return kfTickers.loc[kfCcyToSymbol(ccy), 'ask']
 
+@retry(wait_fixed=1000)
+def kutGetMid(ku,ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  d=ku.futuresPublic_get_ticker({'symbol': ccy2 + 'USDTM'})['data']
+  return (float(d['bestBidPrice'])+float(d['bestAskPrice']))/2
+
+@retry(wait_fixed=1000)
+def kutGetBid(ku,ccy):
+  ccy2='XBT' if ccy=='BTC' else ccy
+  return float(ku.futuresPublic_get_ticker({'symbol': ccy2+'USDTM'})['data']['bestBidPrice'])
+
+@retry(wait_fixed=1000)
+def kutGetAsk(ku,ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  return float(ku.futuresPublic_get_ticker({'symbol': ccy2 + 'USDTM'})['data']['bestAskPrice'])
+
 def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
   if exch in ['db','kf']:
     tickSize = dict({'BTC': 0.5, 'ETH': 0.05, 'XRP': 0.0001, 'BCH': 0.1, 'LTC': 0.01}).get(ccyOrTicker)
@@ -187,6 +209,8 @@ def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
     tickSize = bnGetTickSize(api, ccyOrTicker)
   elif exch=='bnt':
     tickSize=bntGetTickSize(api, ccyOrTicker)
+  elif exch=='kut':
+    tickSize=kutGetTickSize(api, ccyOrTicker)
   #####
   adjPrice = round(price / tickSize) * tickSize
   if not side is None:
@@ -1002,10 +1026,118 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
 
 #############################################################################################
 
+#####
+# KUT
+#####
+@retry(wait_fixed=1000)
+def kutGetFutPos(ku,ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  return float(ku.futuresPrivate_get_position({'symbol':ccy2+'USDTM'})['data']['currentQty'])
+
+@retry(wait_fixed=1000)
+def kutGetEstFunding1(ku,ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.'+ccy2+'USDTMFPI8H'})['data']['value'])*3*365
+
+@retry(wait_fixed=1000)
+def kutGetEstFunding2(ku, ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + ccy2 + 'USDTMFPI8H'})['data']['predictedValue'])*3*365
+
+@retry(wait_fixed=1000)
+def kutGetTickSize(ku,ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  key='kutTickSize'
+  df=cache('r',key)
+  if df is None:
+    df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
+  return float(df.loc[ccy2+'USDTM','tickSize'])
+
+@retry(wait_fixed=1000)
+def kutGetMult(ku,ccy):
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  key='kutMult'
+  df=cache('r',key)
+  if df is None:
+    df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
+  return float(df.loc[ccy2+'USDTM','multiplier'])
+
+def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
+  @retry(wait_fixed=1000)
+  def kutGetOrder(ku, orderId):
+    return ku.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
+  # Do not use @retry
+  def kutPlaceOrder(ku, ticker, side, qty, limitPrice):
+    return ku.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': '20', 'price': limitPrice, 'size': qty})['data']['orderId']
+  # Do not use @retry
+  def kutCancelOrder(ku, orderId):
+    ku.futuresPrivate_delete_orders_order_id({'order-id': orderId})
+    orderStatus=kutGetOrder(ku,orderId)
+    if orderStatus['isActive']:
+      print('Order cancellation failed!')
+      sys.exit(1)
+    return float(orderStatus['size'])-float(orderStatus['filledSize'])
+  #####
+  assertSide(side)
+  ccy2 = 'XBT' if ccy == 'BTC' else ccy
+  ticker=ccy2+'USDTM'
+  mult=kutGetMult(ku,ccy)
+  qty=round(trade_qty/mult)
+  print(getCurrentTime()+': Sending KUT '+side+' order of '+ticker+' (qty='+str(qty)+'; mult='+str(mult)+') ....')
+  if side == 'BUY':
+    refPrice = kutGetBid(ku, ccy)
+  else:
+    refPrice = kutGetAsk(ku, ccy)
+  limitPrice = roundPrice(ku,'kut',ccy,refPrice,side=side,distance=distance)
+  orderId=kutPlaceOrder(ku, ticker, side, qty, limitPrice)
+  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  refTime = time.time()
+  nChases=0
+  while True:
+    orderStatus = kutGetOrder(ku, orderId)
+    if orderStatus['status']=='done': break
+    if side=='BUY':
+      newRefPrice=kutGetBid(ku,ccy)
+    else:
+      newRefPrice=kutGetAsk(ku,ccy)
+    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']):
+      refPrice=newRefPrice
+      nChases+=1
+      orderStatus = kutGetOrder(ku, orderId)
+      if orderStatus['status'] == 'done': break
+      if nChases > maxChases and float(orderStatus['filledSize']) == 0:
+        leavesQty = kutCancelOrder(ku, orderId)
+        if leavesQty == 0: break
+        print(getCurrentTime() + ': Cancelled')
+        return 0
+      else:
+        refTime = time.time()
+        newLimitPrice = roundPrice(ku, 'kut', ccy, refPrice, side=side, distance=distance)
+        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
+          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          limitPrice = newLimitPrice
+          leavesQty = kutCancelOrder(ku, orderId)
+          if leavesQty == 0: break
+          orderId = kutPlaceOrder(ku, ticker, side, leavesQty, limitPrice)
+        else:
+          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
+    time.sleep(1)
+  orderStatus = kutGetOrder(ku, orderId)
+  filledSize=float(orderStatus['filledSize'])
+  filledValue=float(orderStatus['filledValue'])
+  if filledSize==0:
+    fill=0
+  else:
+    fill=filledValue/filledSize/mult
+  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  return fill
+
+#############################################################################################
+
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,db,kf,ccy,isRateLimit=False):
+def getFundingDict(ftx,bb,bn,db,kf,ku,ccy,isRateLimit=False):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -1037,6 +1169,9 @@ def getFundingDict(ftx,bb,bn,db,kf,ccy,isRateLimit=False):
     kfTickers = kfGetTickers(kf)
     d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
     d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
+  if 'kut' in validExchs:
+    d['kutEstFunding1'] = kutGetEstFunding1(ku, ccy)
+    d['kutEstFunding2'] = kutGetEstFunding2(ku, ccy)
   if isRateLimit:
     if ccy in ['BTC', 'ETH']:
       time.sleep(1)
@@ -1052,7 +1187,7 @@ def getOneDayShortSpotEdge(fundingDict):
 def getOneDayUSDTCollateralBleed(fundingDict):
   return -getOneDayDecayedMean(fundingDict['ftxEstMarginalUSDT'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365 * SMB_DICT['USDT_COLLATERAL_COVERAGE']
 
-def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None,isKF=False):
+def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None,isKF=False,isKU=False):
   # gain on projected basis mtm after 1 day
   edge=basis-getOneDayDecayedValues(basis, SMB_DICT['BASE_BASIS'], SMB_DICT['HALF_LIFE_HOURS'])[-1]
 
@@ -1060,14 +1195,14 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
   hoursAccountedFor=0
   if not prevFundingRate is None:
     if isKF:
-      pctToCapture = 1 - getPctElapsed(hoursInterval)
+      pctToCapture = 1 - getPctElapsed(hoursInterval,isKU=isKU)
     else:
       pctToCapture = 1
     edge += prevFundingRate / 365 / (24 / hoursInterval) * pctToCapture
     hoursAccountedFor += hoursInterval * pctToCapture
 
   # gain on coupon from elapsed time
-  pctElapsed = getPctElapsed(hoursInterval) ** pctElapsedPower
+  pctElapsed = getPctElapsed(hoursInterval,isKU=isKU) ** pctElapsedPower
   edge += estFundingRate / 365 / (24 / hoursInterval) * pctElapsed
   hoursAccountedFor+=hoursInterval*pctElapsed
 
@@ -1146,9 +1281,17 @@ def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
   cache('w', keySnap, smoothedSnapFundingRate)
   return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, est2, pctElapsedPower=4, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
+@retry(wait_fixed=1000)
+def kutGetOneDayShortFutEdge(ku, fundingDict, basis):
+  ccy2='XBT' if fundingDict['Ccy'] == 'BTC' else fundingDict['Ccy']
+  premIndex=pd.DataFrame(ku.futuresPublic_get_premium_query({'symbol':'.'+ccy2+'USDTMPI','maxCount':15})['data']['dataList'])['value'].astype(float).mean()
+  premIndexClamped  = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
+  snapFundingRate=premIndexClamped*365*3
+  return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['kutEstFunding2'], prevFundingRate=fundingDict['kutEstFunding1'],isKU=True) - getOneDayUSDTCollateralBleed(fundingDict)
+
 #############################################################################################
 
-def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
+def getSmartBasisDict(ftx, bb, bn, db, kf, ku, ccy, fundingDict, isSkipAdj=False):
   validExchs = getValidExchs(ccy)
   objs=[]
   if 'ftx' in validExchs:
@@ -1172,6 +1315,9 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
   if 'kf' in validExchs:
     kfPrices = getPrices('kf', kf, ccy)
     objs.append(kfPrices)
+  if 'kut' in validExchs:
+    kutPrices = getPrices('kut',ku,ccy)
+    objs.append(kutPrices)
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
   d = dict()
@@ -1204,6 +1350,10 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=False):
     kfAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['KF_' + ccy][1]) / 10000
     d['kfBasis']= kfPrices.fut / ftxPrices.spot - 1
     d['kfSmartBasis'] = kfGetOneDayShortFutEdge(kf, kfPrices.kfTickers,fundingDict, d['kfBasis']) - oneDayShortSpotEdge + kfAdj
+  if 'kut' in validExchs:
+    kutAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['KUT_' + ccy][1]) / 10000
+    d['kutBasis'] = kutPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
+    d['kutSmartBasis'] = kutGetOneDayShortFutEdge(ku, fundingDict, d['kutBasis']) - oneDayShortSpotEdge + kutAdj
   return d
 
 #############################################################################################
@@ -1239,14 +1389,15 @@ def caRun(ccy, color):
   bn=bnCCXTInit() if ('bn' in validExchs or 'bnt' in validExchs) else None
   db=dbCCXTInit() if 'db' in validExchs else None
   kf=kfApophisInit() if 'kf' in validExchs else None
+  ku=kuCCXTInit() if 'kut' in validExchs else None
   #####
   while True:
-    fundingDict = getFundingDict(ftx,bb,bn,db,kf,ccy,isRateLimit=True)
-    smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ccy, fundingDict, isSkipAdj=True)
+    fundingDict = getFundingDict(ftx,bb,bn,db,kf,ku,ccy,isRateLimit=True)
+    smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ku,ccy, fundingDict, isSkipAdj=True)
     print(getCurrentTime(isCondensed=True).ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
-      process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf'], color)
+      process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf', 'kut'], color)
     print()
 
 #############################################################################################
@@ -1261,6 +1412,7 @@ def ctInit(ccy, notional, tgtBps):
   bn = bnCCXTInit()
   db = dbCCXTInit()
   kf = kfApophisInit()
+  ku = kuCCXTInit()
   spot = ftxGetMid(ftx, ccy+'/USD')
   maxNotional = CT_CONFIGS_DICT['MAX_NOTIONAL_USD']
   if ccy in ['BTC','ETH']:
@@ -1272,9 +1424,9 @@ def ctInit(ccy, notional, tgtBps):
   print('Per Trade Quantity: '+str(round(qty, 6)))
   print('Target:             '+str(round(tgtBps))+'bps')
   print()
-  return ftx,bb,bbForBBT,bn,db,kf,qty,notional,spot
+  return ftx,bb,bbForBBT,bn,db,kf,ku,qty,notional,spot
 
-def ctGetPosUSD(ftx, bb, bn, db, kf, exch, ccy, spot):
+def ctGetPosUSD(ftx, bb, bn, db, kf,ku,exch, ccy, spot):
   if exch == 'ftx':
     return ftxGetFutPos(ftx, ccy) * spot
   elif exch == 'bb':
@@ -1290,6 +1442,8 @@ def ctGetPosUSD(ftx, bb, bn, db, kf, exch, ccy, spot):
     return dbGetFutPos(db, ccy)
   elif exch == 'kf':
     return kfGetFutPos(kf, ccy)
+  elif exch == 'kut':
+    return kutGetFutPos(ku, ccy) * kutGetMult(ku, ccy) * spot
   elif exch == 'spot':
     return ftxGetWallet(ftx).loc[ccy,'usdValue']
   else:
@@ -1341,15 +1495,15 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy, notional, tgtBps, color):
-  ftx, bb, bbForBBT, bn, db, kf, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
+  ftx, bb, bbForBBT, bn, db, kf, ku, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, db, kf, ccy, isRateLimit=True)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict)
+      fundingDict=getFundingDict(ftx, bb, bn, db, kf, ku, ccy, isRateLimit=True)
+      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, ku, ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
       smartBasisDict['spotBasis'] = 0
 
@@ -1401,8 +1555,8 @@ def ctRun(ccy, notional, tgtBps, color):
             if dShort[2] is not None: maxPosUSDShort = dShort[2]
           if len(dShort) > 3: signShort=np.sign(dShort[3])
           #####
-          posUSDLong = ctGetPosUSD(ftx, bb, bn, db, kf, chosenLong, ccy, spot)
-          posUSDShort = ctGetPosUSD(ftx, bb, bn, db, kf, chosenShort, ccy, spot)
+          posUSDLong = ctGetPosUSD(ftx, bb, bn, db, kf, ku, chosenLong, ccy, spot)
+          posUSDShort = ctGetPosUSD(ftx, bb, bn, db, kf, ku, chosenShort, ccy, spot)
           if (posUSDLong>=maxPosUSDLong) or (posUSDLong>=0 and signLong==-1):
             del d[chosenLong+'SmartBasis']
             continue
@@ -1488,6 +1642,14 @@ def ctRun(ccy, notional, tgtBps, color):
         if 'db' == chosenShort and not isCancelled:
           distance = ctGetDistance('DB', completedLegs)
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
+        if 'kut' == chosenLong and not isCancelled:
+          distance = ctGetDistance('KUT', completedLegs)
+          longFill = kutRelOrder('BUY', ku, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'kut' == chosenShort and not isCancelled:
+          distance = ctGetDistance('KUT', completedLegs)
+          shortFill = kutRelOrder('SELL', ku, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' == chosenLong and not isCancelled:
           distance = ctGetDistance('SPOT', completedLegs)
@@ -1635,9 +1797,13 @@ def getOneDayDecayedMean(current,terminal,halfLifeHours,nMinutes=1440):
   return np.mean(getOneDayDecayedValues(current,terminal,halfLifeHours)[:nMinutes])
 
 # Get percent of funding period that has elapsed
-def getPctElapsed(hoursInterval):
+def getPctElapsed(hoursInterval,isKU=False):
   utcNow = datetime.datetime.utcnow()
-  return (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
+  n = (utcNow.hour * 3600 + utcNow.minute * 60 + utcNow.second) % (hoursInterval * 3600) / (hoursInterval * 3600)
+  if isKU:
+    return (n + 0.5) % 1
+  else:
+    return n
 
 # Get valid currencies for a futures exchange
 def getValidCcys(futExch):

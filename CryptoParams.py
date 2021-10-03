@@ -44,6 +44,7 @@ CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
 CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=3                # Execution setting
 CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
+CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']=3                # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=-10      # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=-10       # Execution setting
@@ -51,6 +52,7 @@ CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=-3        # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=-3         # Execution setting
 CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-15        # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['KUT_LEG1_DISTANCE_TICKS']=-3         # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=1        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=1         # Execution setting
@@ -58,6 +60,7 @@ CT_CONFIGS_DICT['BBT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=1          # Execution setting
+CT_CONFIGS_DICT['KUT_LEG2_DISTANCE_TICKS']=0          # Execution setting
 
 # BN/BNT to be deprecated soon....
 CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=3               # Execution setting
@@ -86,10 +89,10 @@ CR_EXT_DELTA_USDT = 0
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1,'kut':1})
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
-SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf']}
+SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf','kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
 SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM']
@@ -129,7 +132,7 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORD_KU = sl.jLoad('API_PASSWORD_KU')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':1})
   ############################################################################################################
   myFTXOnly=['AAVE']
   myRegulars=['DOGE','SOL','SUSHI','AXS']
