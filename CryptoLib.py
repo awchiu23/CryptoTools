@@ -1086,12 +1086,20 @@ def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
       sys.exit(1)
   # Do not use @retry
   def kutCancelOrder(ku, orderId):
-    ku.futuresPrivate_delete_orders_order_id({'order-id': orderId})
-    orderStatus=kutGetOrder(ku,orderId)
-    if orderStatus['isActive']:
-      print('Order cancellation failed!')
+    isOk=False
+    for i in range(3):
+      ku.futuresPrivate_delete_orders_order_id({'order-id': orderId})
+      orderStatus=kutGetOrder(ku,orderId)
+      if orderStatus['isActive']:
+        print(getCurrentTime()+': Order cancellation failed; retrying ....')
+        time.sleep(3)
+      else:
+        isOk=True
+        break
+    if isOk:
+      return float(orderStatus['size']) - float(orderStatus['filledSize'])
+    else:
       sys.exit(1)
-    return float(orderStatus['size'])-float(orderStatus['filledSize'])
   #####
   assertSide(side)
   ticker=kutGetCcy(ccy)+'USDTM'

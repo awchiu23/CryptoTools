@@ -95,7 +95,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM', 'VET']
 
 #############
 # Smart Basis
@@ -132,28 +132,24 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORD_KU = sl.jLoad('API_PASSWORD_KU')
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':1})
   ############################################################################################################
-  myFTXOnly=['AAVE']
-  myRegulars=['XRP','DOGE','SOL','SUSHI','AXS']
-  myFTXSpotless=['ADA','AVAX','DOT','ETC','ICP']
-  myKUTs=['XRP','DOGE','SOL','DOT']
+  my_FTX=['AAVE']
+  my_FTX_BBT=['XRP', 'DOGE', 'FTM', 'SOL', 'SUSHI', 'AXS']
+  my_FTX_BBT_flowless=['ADA', 'AVAX', 'DOT', 'ETC', 'ICP']
+  my_FTX_KUT_flowless=['VET']
+  my_KUT_append=['XRP', 'DOGE', 'FTM', 'SOL', 'ADA', 'DOT']
   ############################################################################################################
-  for ccy in myFTXOnly: CR_QUOTE_CCY_DICT[ccy] = 4
-  for ccy in myRegulars: CR_QUOTE_CCY_DICT[ccy] = 4
-  for ccy in myFTXSpotless: CR_QUOTE_CCY_DICT[ccy] = 4
-  for ccy in myKUTs: CR_QUOTE_CCY_DICT[ccy] = 4
-  for ccy in myRegulars:  CR_AG_CCY_DICT[ccy] = 0
-  for ccy in myFTXSpotless: CR_AG_CCY_DICT[ccy] = 0
-  CR_FTX_FLOWS_CCYS.extend(myFTXOnly)
-  CR_FTX_FLOWS_CCYS.extend(myRegulars)
-  for ccy in myFTXOnly: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
-  for ccy in myRegulars: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
-  for ccy in myFTXSpotless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
+  for ccy in (my_FTX + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append): CR_QUOTE_CCY_DICT[ccy] = 4
+  for ccy in (my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append):  CR_AG_CCY_DICT[ccy] = 0
+  CR_FTX_FLOWS_CCYS.extend(my_FTX + my_FTX_BBT)
+  for ccy in my_FTX: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
+  for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
+  for ccy in my_FTX_KUT_flowless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
   SHARED_CCY_DICT['XRP']['futExch'].append('bb')
-  for ccy in myKUTs: SHARED_CCY_DICT[ccy]['futExch'].append('kut')
+  for ccy in my_KUT_append: SHARED_CCY_DICT[ccy]['futExch'].append('kut')
   #####
-  #CR_AG_CCY_DICT['BTC']=2.2254 #bbftx
-  #CR_AG_CCY_DICT['ETH']=16.7334 #ftxkf
-  #CR_AG_CCY_DICT['XRP'] = 396969 #bbftx
-  #CR_EXT_DELTA_USDT = 220e3+170e3+100e3 #bbftx
+  #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
+  #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
+  #CR_EXT_DELTA_USDT = 180e3 #bbftx

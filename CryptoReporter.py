@@ -439,6 +439,14 @@ class core:
     except:
       pass
 
+  def setAnnRets(self):
+    if self.futNotional !=0 :
+      self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
+      self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
+    else:
+      self.oneDayAnnRet = 0
+      self.prevAnnRet = 0
+
   #####
   # FTX
   #####
@@ -500,8 +508,7 @@ class core:
     #####
     self.oneDayIncome = -self.payments['payment'].sum()
     self.prevIncome = -self.payments.loc[self.payments.index[-1]]['payment'].sum()
-    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-    self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
+    self.setAnnRets()
     #####
     flowsCcy=CR_FTX_FLOWS_CCYS.copy()
     cl.appendUnique(flowsCcy,'USD')
@@ -582,8 +589,6 @@ class core:
     #####
     self.oneDayIncome=0
     self.prevIncome=0
-    self.oneDayAnnRet=0
-    self.prevAnnRet=0
     pmts = pd.DataFrame()
     for ccy in self.validCcys:
       pmts = pmts.append(getPayments(ccy))
@@ -600,9 +605,7 @@ class core:
       if len(pmts)>0:
         self.oneDayIncome = pmts['incomeUSD'].sum()
         self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
-    if self.futNotional != 0:
-      self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-      self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.setAnnRets()
     #####
     self.nav=self.spots['SpotDeltaUSD'].sum()
     #####
@@ -656,12 +659,7 @@ class core:
       #####
       self.oneDayIncome = pmts['incomeUSD'].sum()
       self.prevIncome = pmts.loc[pmts.index[-1]]['incomeUSD'].sum()
-    if self.futNotional == 0:
-      self.oneDayAnnRet = 0
-      self.prevAnnRet = 0
-    else:
-      self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-      self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.setAnnRets()
     #####
     usdtDict=self.api.v2_private_get_wallet_balance({'coin': 'USDT'})['result']['USDT']
     equity = float(usdtDict['equity'])
@@ -715,12 +713,7 @@ class core:
       pmts = pmts.append(bnGetPayments(self.api,ccy))
     #####
     self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict)
-    if self.futNotional==0:
-      self.oneDayAnnRet=0
-      self.prevAnnRet=0
-    else:
-      self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-      self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.setAnnRets()
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
@@ -756,8 +749,7 @@ class core:
     for ccy in self.validCcys:
       pmts=pmts.append(bnGetPayments(self.api,ccy,isBNT=True))
     self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict,isBNT=True)
-    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-    self.prevAnnRet = self.prevIncome * 3 * 365 / self.futNotional
+    self.setAnnRets()
     #####
     d=self.api.fapiPrivate_get_account()
     mb = float(d['totalMarginBalance'])
@@ -884,8 +876,7 @@ class core:
     self.calcFuturesDeltaUSD()
     #####
     pmts,self.oneDayIncome,self.prevIncome=getPayments()
-    self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-    self.prevAnnRet = self.prevIncome * 6 * 365 / self.futNotional
+    self.setAnnRets()
     #####
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
@@ -921,11 +912,17 @@ class core:
       if futDeltaUSD!=0:
         self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy,'FutDeltaUSD'])
     #####
-    # to be written....
-    self.oneDayIncome=0
-    self.prevIncome=0
-    self.oneDayAnnRet = 0
-    self.prevAnnRet = 0
+    pmts=pd.DataFrame()
+    startAt = cl.getYest()
+    for ccy in self.validCcys:
+      df=pd.DataFrame(self.api.futuresPrivate_get_funding_history({'symbol':cl.kutGetCcy(ccy)+'USDTM','startAt':startAt})['data']['dataList'])
+      if len(df)>0: pmts=pmts.append(df[['symbol','timePoint','fundingRate','funding']])
+    cl.dfSetFloat(pmts, ['timePoint', 'fundingRate', 'funding'])
+    pmts['fundingUSD'] = pmts['funding'] * self.spotDict['USDT']
+    pmts=pmts.set_index('timePoint').sort_index()
+    self.oneDayIncome=pmts['fundingUSD'].sum()
+    self.prevIncome=pmts.loc[pmts.index[-1]]['fundingUSD'].sum()
+    self.setAnnRets()
     #####
     equity = float(usdtDict['accountEquity'])
     self.nav = equity * self.spotDict['USDT']
@@ -933,9 +930,17 @@ class core:
     self.calcSpotDeltaUSD()
     #####
     for ccy in self.validCcys:
-      # to be written
-      oneDayFunding = 0
-      prevFunding = 0
+      if len(pmts)==0:
+        oneDayFunding = 0
+        prevFunding = 0
+      else:
+        df=pmts.loc[pmts['symbol']==cl.kutGetCcy(ccy)+'USDTM','fundingRate']
+        if len(df) == 0:
+          oneDayFunding = 0
+          prevFunding = 0
+        else:
+          oneDayFunding = df.mean() * 3 * 365
+          prevFunding = df[df.index[-1]].mean() * 3 * 365
       estFunding = cl.kutGetEstFunding1(self.api, ccy)
       estFunding2 = cl.kutGetEstFunding2(self.api, ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
@@ -1011,17 +1016,16 @@ if __name__ == '__main__':
   #####
   printAllQuad(ftxCore, kfCore, dbCore, bbCore)
   #####
-  if SHARED_EXCH_DICT['bbt'] == 1:
-    printAllDual(bbtCores[0], kutCore)
-  elif SHARED_EXCH_DICT['bbt'] >= 2:
-    printAllDual(bbtCores[0], bbtCores[1])
-  if SHARED_EXCH_DICT['bbt'] >= 4:
-    printAllDual(bbtCores[2], bbtCores[3])
-    kutCore.printAll()
-  elif SHARED_EXCH_DICT['bbt']==3:
-    printAllDual(bbtCores[2],kutCore)
-  elif SHARED_EXCH_DICT['bbt']==2:
-    kutCore.printAll()
+  bbt_kut_list=[]
+  for i in range(SHARED_EXCH_DICT['bbt']):
+    bbt_kut_list.append(bbtCores[i])
+  if SHARED_EXCH_DICT['kut']==1:
+    bbt_kut_list.append(kutCore)
+  while len(bbt_kut_list)>0:
+    if len(bbt_kut_list)>=2:
+      printAllDual(bbt_kut_list.pop(0), bbt_kut_list.pop(0))
+    elif len(bbt_kut_list)==1:
+      bbt_kut_list[0].printAll()
   #####
   printAllDual(bntCore, bnCore)
   #####

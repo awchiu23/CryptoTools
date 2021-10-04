@@ -20,13 +20,14 @@ bb=cl.bbCCXTInit()
 bn = None
 db = None
 kf = None
+ku = None
 while True:
   print(cl.getCurrentTime(isCondensed=True).ljust(10),end='')
   for i in range(len(ccys)):
     ccy=ccys[i]
     SHARED_CCY_DICT[ccy] = {'futExch': ['ftx','bbt']}
-    fundingDict = cl.getFundingDict(ftx, bb, bn, db, kf, ccy, isRateLimit=False)
-    smartBasisDict = cl.getSmartBasisDict(ftx, bb, bn, db, kf, ccy, fundingDict, isSkipAdj=True)
+    fundingDict = cl.getFundingDict(ftx, bb, bn, db, kf, ku, ccy, isRateLimit=False)
+    smartBasisDict = cl.getSmartBasisDict(ftx, bb, bn, db, kf, ku, ccy, fundingDict, isSkipAdj=True)
     smartBasisBps = smartBasisDict['bbtSmartBasis'] * 10000
     if smartBasisBps >= thresholdH:
       color = 'red'
