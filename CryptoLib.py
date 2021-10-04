@@ -75,8 +75,11 @@ def dbCCXTInit():
 def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
-def kuCCXTInit():
-  return ccxt.kucoin({'apiKey': API_KEY_KU, 'secret': API_SECRET_KU, 'password': API_PASSWORD_KU, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
+def kuCCXTInit(n=1):
+  apiKey = API_KEYS_KU[n - 1]
+  apiSecret = API_SECRETS_KU[n - 1]
+  apiPassword = API_PASSWORDS_KU[n - 1]
+  return ccxt.kucoin({'apiKey': apiKey, 'secret': apiSecret, 'password': apiPassword, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 #########
 # Helpers
@@ -1044,9 +1047,13 @@ def kutGetEstFunding2(ku, ccy):
 
 @retry(wait_fixed=1000)
 def kutGetRiskDf(ku):
-  df = pd.DataFrame(ku.futuresPrivate_get_positions()['data']).set_index('symbol')[['markPrice','markValue','liquidationPrice']].astype(float)
-  df['liquidationRatio']=df['liquidationPrice']/df['markPrice']
-  return df
+  df=pd.DataFrame(ku.futuresPrivate_get_positions()['data'])
+  if len(df)==0:
+    return df
+  else:
+    df = df.set_index('symbol')[['markPrice','markValue','liquidationPrice']].astype(float)
+    df['liquidationRatio']=df['liquidationPrice']/df['markPrice']
+    return df
 
 @retry(wait_fixed=1000)
 def kutGetTickSize(ku,ccy):
@@ -1434,6 +1441,7 @@ def ctInit(ccy, notional, tgtBps):
   db = dbCCXTInit()
   kf = kfApophisInit()
   ku = kuCCXTInit()
+  kuForKUT = kuCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
   spot = ftxGetMid(ftx, ccy+'/USD')
   maxNotional = CT_CONFIGS_DICT['MAX_NOTIONAL_USD']
   if ccy in ['BTC','ETH']:
@@ -1445,7 +1453,7 @@ def ctInit(ccy, notional, tgtBps):
   print('Per Trade Quantity: '+str(round(qty, 6)))
   print('Target:             '+str(round(tgtBps))+'bps')
   print()
-  return ftx,bb,bbForBBT,bn,db,kf,ku,qty,notional,spot
+  return ftx,bb,bbForBBT,bn,db,kf,ku,kuForKUT,qty,notional,spot
 
 def ctGetPosUSD(ftx, bb, bn, db, kf,ku,exch, ccy, spot):
   if exch == 'ftx':
@@ -1516,7 +1524,7 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy, notional, tgtBps, color):
-  ftx, bb, bbForBBT, bn, db, kf, ku, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
+  ftx, bb, bbForBBT, bn, db, kf, ku, kuForKUT, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
@@ -1666,11 +1674,11 @@ def ctRun(ccy, notional, tgtBps, color):
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kut' == chosenLong and not isCancelled:
           distance = ctGetDistance('KUT', completedLegs)
-          longFill = kutRelOrder('BUY', ku, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = kutRelOrder('BUY', kuForKUT, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kut' == chosenShort and not isCancelled:
           distance = ctGetDistance('KUT', completedLegs)
-          shortFill = kutRelOrder('SELL', ku, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = kutRelOrder('SELL', kuForKUT, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' == chosenLong and not isCancelled:
           distance = ctGetDistance('SPOT', completedLegs)

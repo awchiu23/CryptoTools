@@ -15,9 +15,9 @@ API_KEY_DB = ''
 API_SECRET_DB = ''
 API_KEY_KF = ''
 API_SECRET_KF = ''
-API_KEY_KU = ''
-API_SECRET_KU = ''
-API_PASSWORD_KU = ''
+API_KEYS_KU = ['']        # List of keys to facilitate multiple kucoin accounts
+API_SECRETS_KU = ['']     # List of secrets to facilitate multiple kucoin accounts
+API_PASSWORDS_KU = ['']   # List of passwords to facilitate multiple kucoin accounts
 
 #############################################################################################
 
@@ -37,6 +37,7 @@ CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number o
 CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins (secondary control)
 
 CT_CONFIGS_DICT['CURRENT_BBT'] = 1                   # Current BBT account to trade with
+CT_CONFIGS_DICT['CURRENT_KUT'] = 1                   # Current KUT account to trade with
 
 CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
 CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
@@ -127,18 +128,18 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEY_KU = sl.jLoad('API_KEY_KU')
-  API_SECRET_KU = sl.jLoad('API_SECRET_KU')
-  API_PASSWORD_KU = sl.jLoad('API_PASSWORD_KU')
+  API_KEYS_KU = [sl.jLoad('API_KEY_KU'),sl.jLoad('API_KEY_KU2')]
+  API_SECRETS_KU = [sl.jLoad('API_SECRET_KU'),sl.jLoad('API_SECRET_KU2')]
+  API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2')]
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':1})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':2})
   ############################################################################################################
-  my_FTX=['AAVE']
+  my_FTX=[]
   my_FTX_BBT=['XRP', 'DOGE', 'FTM', 'SOL', 'SUSHI', 'AXS']
   my_FTX_BBT_flowless=['ADA', 'AVAX', 'DOT', 'ETC', 'ICP']
   my_FTX_KUT_flowless=['HBAR','VET']
-  my_KUT_append=['XRP', 'DOGE', 'FTM', 'SOL', 'ADA', 'DOT']
+  my_KUT_append=['XRP', 'DOGE', 'FTM', 'SOL', 'ADA', 'AVAX', 'DOT']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append):  CR_AG_CCY_DICT[ccy] = 0
