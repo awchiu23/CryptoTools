@@ -442,7 +442,13 @@ class core:
   def setAnnRets(self):
     if self.futNotional !=0 :
       self.oneDayAnnRet = self.oneDayIncome * 365 / self.futNotional
-      self.prevAnnRet = self.prevIncome * 24 * 365 / self.futNotional
+      if self.exch == 'ftx':
+        mult = 24
+      elif self.exch == 'kf':
+        mult = 6
+      else:
+        mult = 3
+      self.prevAnnRet = self.prevIncome * mult * 365 / self.futNotional
     else:
       self.oneDayAnnRet = 0
       self.prevAnnRet = 0
