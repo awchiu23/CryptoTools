@@ -95,7 +95,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM', 'VET']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM', 'HBAR', 'VET']
 
 #############
 # Smart Basis
@@ -137,7 +137,7 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX=['AAVE']
   my_FTX_BBT=['XRP', 'DOGE', 'FTM', 'SOL', 'SUSHI', 'AXS']
   my_FTX_BBT_flowless=['ADA', 'AVAX', 'DOT', 'ETC', 'ICP']
-  my_FTX_KUT_flowless=['VET']
+  my_FTX_KUT_flowless=['HBAR','VET']
   my_KUT_append=['XRP', 'DOGE', 'FTM', 'SOL', 'ADA', 'DOT']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append): CR_QUOTE_CCY_DICT[ccy] = 4

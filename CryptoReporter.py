@@ -365,7 +365,7 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB'):
+    if self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB') or self.exch=='kut':
       suffix = '(fut: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
