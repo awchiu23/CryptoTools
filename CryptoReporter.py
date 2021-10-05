@@ -939,7 +939,7 @@ class core:
         self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy,'FutDeltaUSD'])
     #####
     pmts=pd.DataFrame()
-    startAt = cl.getYest()
+    startAt = cl.getYest() * 1000
     for ccy in self.validCcys:
       df=pd.DataFrame(getFundingHistory(ccy,startAt))
       if len(df)>0: pmts=pmts.append(df[['symbol','timePoint','fundingRate','funding']])
