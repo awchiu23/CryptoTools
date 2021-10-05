@@ -96,7 +96,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM', 'HBAR', 'VET']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM', 'XTZ', 'ATOM', 'HBAR', 'LUNA', 'VET']
 
 #############
 # Smart Basis
@@ -133,14 +133,14 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3')]
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':3})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0,'kut':3})
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT=['XRP', 'MATIC', 'SOL', 'SUSHI', 'AXS']
-  my_FTX_BBT_flowless=['ADA', 'ALGO', 'AVAX', 'DOT', 'ETC', 'ICP']
-  my_FTX_KUT=['LINK','DOGE','FTM']
-  my_FTX_KUT_flowless=['HBAR','VET']
-  my_KUT_append=['XRP', 'SOL', 'ADA', 'ALGO', 'AVAX', 'DOT']
+  my_FTX_BBT=['XRP', 'LINK', 'COMP', 'DOGE', 'MATIC', 'SOL', 'SUSHI']
+  my_FTX_BBT_flowless=['ADA', 'ALGO', 'AVAX', 'DOT', 'ETC', 'ICP','XTZ']
+  my_FTX_KUT=['DYDX','FTM']
+  my_FTX_KUT_flowless=['ATOM', 'HBAR','LUNA','VET']
+  my_KUT_append=['XRP', 'LINK', 'COMP', 'DOGE', 'MATIC', 'SOL', 'ADA', 'ALGO', 'AVAX', 'DOT']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless + my_KUT_append): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless + my_KUT_append):  CR_AG_CCY_DICT[ccy] = 0
@@ -155,4 +155,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
   #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
-  #CR_EXT_DELTA_USDT = 200e3+200e3+350e3 #bbftx
+  CR_EXT_DELTA_USDT = 450e3 #bbftx
