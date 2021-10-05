@@ -136,19 +136,21 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':1,'kut':3})
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT=['XRP', 'DOGE', 'FTM', 'MATIC', 'SOL', 'SUSHI', 'AXS']
-  my_FTX_BBT_flowless=['ADA', 'AVAX', 'DOT', 'ETC', 'ICP']
+  my_FTX_BBT=['XRP', 'MATIC', 'SOL', 'SUSHI', 'AXS']
+  my_FTX_BBT_flowless=['ADA', 'ALGO', 'AVAX', 'DOT', 'ETC', 'ICP']
+  my_FTX_KUT=['LINK','DOGE','FTM']
   my_FTX_KUT_flowless=['HBAR','VET']
-  my_KUT_append=['XRP', 'DOGE', 'FTM', 'SOL', 'ADA', 'AVAX', 'DOT']
+  my_KUT_append=['XRP', 'SOL', 'ADA', 'ALGO', 'AVAX', 'DOT']
   ############################################################################################################
-  for ccy in (my_FTX + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append): CR_QUOTE_CCY_DICT[ccy] = 4
-  for ccy in (my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT_flowless + my_KUT_append):  CR_AG_CCY_DICT[ccy] = 0
-  CR_FTX_FLOWS_CCYS.extend(my_FTX + my_FTX_BBT)
+  for ccy in (my_FTX + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless + my_KUT_append): CR_QUOTE_CCY_DICT[ccy] = 4
+  for ccy in (my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless + my_KUT_append):  CR_AG_CCY_DICT[ccy] = 0
+  CR_FTX_FLOWS_CCYS.extend(my_FTX + my_FTX_BBT + my_FTX_KUT)
   for ccy in my_FTX: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx']}
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
-  for ccy in my_FTX_KUT_flowless: SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
-  SHARED_CCY_DICT['XRP']['futExch'].append('bb')
+  for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
   for ccy in my_KUT_append: SHARED_CCY_DICT[ccy]['futExch'].append('kut')
+  SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
+  #SHARED_CCY_DICT['XRP']['futExch'].append('bb')
   #####
   #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
   #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
