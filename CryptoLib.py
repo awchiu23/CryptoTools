@@ -250,11 +250,15 @@ def ftxGetWallet(ftx):
 @retry(wait_fixed=1000)
 def ftxGetFutPos(ftx,ccy):
   df = pd.DataFrame(ftx.private_get_account()['result']['positions']).set_index('future')
-  s=df.loc[ccy+'-PERP']
-  pos=float(s['size'])
-  if s['side']=='sell':
-    pos*=-1
-  return pos
+  ccy2=ccy+'-PERP'
+  if ccy2 in df.index:
+    s=df.loc[ccy2]
+    pos=float(s['size'])
+    if s['side']=='sell':
+      pos*=-1
+    return pos
+  else:
+    return 0
 
 @retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
