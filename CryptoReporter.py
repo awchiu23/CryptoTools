@@ -962,8 +962,11 @@ class core:
     usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
     availableBalance = float(usdtDict['availableBalance'])
     #####
+    allFutPos=cl.kutGetAllFutPos(self.api)
     for ccy in self.validCcys:
-      self.futures.loc[ccy, 'FutDelta']=cl.kutGetFutPos(self.api,ccy)*cl.kutGetMult(self.api,ccy)
+      ccy2=cl.kutGetCcy(ccy)+'USDTM'
+      if ccy2 in allFutPos.index:
+        self.futures.loc[ccy, 'FutDelta']=allFutPos[ccy2]*cl.kutGetMult(self.api,ccy)
     self.calcFuturesDeltaUSD()
     #####
     if self.n >= 2:  # trim list for auxiliary KUTs

@@ -146,7 +146,7 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX_BBT_KUT=['XRP','COMP','DOGE','FTM','SOL']
   my_FTX_BBT_KUT_flowless=['AXS','ADA','ALGO','AVAX','ICP','THETA']
   my_FTX_BBT=['MATIC','SUSHI']
-  my_FTX_BBT_flowless=['ETC', 'XTZ']
+  my_FTX_BBT_flowless=['ETC']
   my_FTX_KUT=[]
   my_FTX_KUT_flowless=['DYDX','ATOM','DOT','LUNA','VET']
   ############################################################################################################
@@ -163,4 +163,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
   #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
-  #CR_EXT_DELTA_USDT = 240e3+210e3+240e3 #bbftx
+  CR_EXT_DELTA_USDT = 120e3 #bbftx
