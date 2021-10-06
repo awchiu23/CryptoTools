@@ -387,7 +387,12 @@ class core:
         df['unrealised_pnl_sim'] = df['unrealised_pnl'] + df['delta_value'] * (i + 1) * increment
         df['ab_delta'] = df['unrealised_pnl_sim'].clip(None, 0) - df['unrealised_pnl'].clip(None, 0)
         ab = availableBalance + df['ab_delta'].sum()
-        df['cushion'] = ab + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
+        df['unreal_loss_indiv'] = 0
+        if ab < 0:
+          losers = df['ab_delta'] < 0
+          df.loc[losers, 'unreal_loss_indiv'] = ab * (df.loc[losers, 'delta_value'] / df.loc[losers, 'delta_value'].sum())
+          ab = 0
+        df['cushion'] = ab + df['unreal_loss_indiv'] + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
         if df['cushion'].min() < 0:
           isOk=True
           break
@@ -396,6 +401,24 @@ class core:
       else:
         return 0
     #####
+    '''
+    def bbtGetLiq(riskDf, availableBalance, increment):
+      df = riskDf.copy()
+      isOk = False
+      for i in range(100):
+        df['unrealised_pnl_sim'] = df['unrealised_pnl'] + df['delta_value'] * (i + 1) * increment
+        df['ab_delta'] = df['unrealised_pnl_sim'].clip(None, 0) - df['unrealised_pnl'].clip(None, 0)
+        ab = availableBalance + df['ab_delta'].sum()
+        df['cushion'] = ab + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
+        if df['cushion'].min() < 0:
+          isOk = True
+          break
+      if isOk:
+        return 1 + i * increment
+      else:
+        return 0
+    '''
+    ###
     def kutGetLiq(riskDf, availableBalance, increment):
       df = riskDf.copy()
       isOk = False
