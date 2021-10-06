@@ -136,12 +136,12 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0,'kut':3})
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT_KUT=['XRP','LINK','COMP','DOGE','FTM','MATIC','SOL']
-  my_FTX_BBT_KUT_flowless=['AXS','ADA','ALGO','AVAX','DOT','ICP']
-  my_FTX_BBT=['SUSHI']
+  my_FTX_BBT_KUT=['XRP','LINK','COMP','DOGE','FTM','SOL']
+  my_FTX_BBT_KUT_flowless=['AXS','ADA','ALGO','AVAX','ICP']
+  my_FTX_BBT=['MATIC','SUSHI']
   my_FTX_BBT_flowless=['ETC', 'XTZ']
   my_FTX_KUT=[]
-  my_FTX_KUT_flowless=['DYDX','ATOM', 'LUNA','VET']
+  my_FTX_KUT_flowless=['DYDX','ATOM','DOT','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0

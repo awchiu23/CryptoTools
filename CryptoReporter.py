@@ -6,7 +6,9 @@ import datetime
 import time
 import termcolor
 import sys
+import threading
 from retrying import retry
+
 
 ###########
 # Functions
@@ -189,15 +191,12 @@ def getCores():
     print('[WARNING: Parallel run failed!  Rerunning in serial ....]')
     isOk = False
     for obj in objs:
-      if False: # Set to False to debug
-        try:
-          obj.run()
-        except:
-          pass
-        if not obj.isDone:
-          print('[WARNING: Corrupted results for ' + obj.name + '!]')
-      else:
+      try:
         obj.run()
+      except:
+        pass
+      if not obj.isDone:
+        print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
   return isOk, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, kutCores, spotDict, objs
 
@@ -940,19 +939,34 @@ class core:
   # KUT
   #####
   def kutInit(self):
-    @retry(wait_fixed=1000)
     def getFundingHistory(ccy,startAt):
-      return self.api.futuresPrivate_get_funding_history({'symbol': cl.kutGetCcy(ccy) + 'USDTM', 'startAt': startAt})['data']['dataList']
+      key='kutLock'
+      kutLock = cl.cache('r', key)
+      if kutLock is None:
+        kutLock = threading.Lock()
+        cl.cache('w',key,kutLock)
+      with kutLock:
+        #print(cl.getCurrentTime()+':'+self.name+' '+ccy)
+        while True:
+          try:
+            fundingHistory = self.api.futuresPrivate_get_funding_history({'symbol': cl.kutGetCcy(ccy) + 'USDTM', 'startAt': startAt})['data']['dataList']
+            break
+          except:
+            print("[DEBUG: Error from KuCoin's futuresPrivate_get_funding_history! Pausing for 30 seconds ....]")
+            time.sleep(30)
+        time.sleep(0.4)
+        return fundingHistory
     #####
     self.api = cl.kuCCXTInit(n=self.n)
     usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
     availableBalance = float(usdtDict['availableBalance'])
+    #####
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.kutGetFutPos(self.api,ccy)*cl.kutGetMult(self.api,ccy)
     self.calcFuturesDeltaUSD()
     #####
-    if self.n>=2: # trim list for auxiliary KUTs
-      self.validCcys=list(self.futures.index[self.futures['FutDelta'] != 0])
+    if self.n >= 2:  # trim list for auxiliary KUTs
+      self.validCcys = list(self.futures.index[self.futures['FutDelta'] != 0])
     #####
     for ccy in self.validCcys:
       d = self.api.futuresPrivate_get_position({'symbol': cl.kutGetCcy(ccy) + 'USDTM'})['data']
