@@ -102,7 +102,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'XLM', 'XTZ', 'ATOM', 'LUNA', 'VET']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'THETA','XLM', 'XTZ', 'ATOM', 'LUNA', 'VET']
 
 #############
 # Smart Basis
@@ -139,11 +139,12 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3')]
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0,'kut':3})
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=['XRP','COMP','DOGE','FTM','SOL']
-  my_FTX_BBT_KUT_flowless=['AXS','ADA','ALGO','AVAX','ICP']
+  my_FTX_BBT_KUT_flowless=['AXS','ADA','ALGO','AVAX','ICP','THETA']
   my_FTX_BBT=['MATIC','SUSHI']
   my_FTX_BBT_flowless=['ETC', 'XTZ']
   my_FTX_KUT=[]
@@ -162,4 +163,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
   #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
-  #CR_EXT_DELTA_USDT = 450e3 #bbftx
+  CR_EXT_DELTA_USDT = 240e3+210e3+240e3 #bbftx
