@@ -456,11 +456,12 @@ class core:
     zL = fmtLiq(self.liqL)
     zH = fmtLiq(self.liqH)
     if self.exch == 'ftx':
-      z2 = 'FTX liqL/liqH/mf/fc: '.rjust(37) + zL + '/' + zH + '/'
-      z2 += str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
-      self.liqStr = colored(z2, 'red')
+      z = 'FTX liqL/liqH/mf/fc: '.rjust(37) + zL + '/' + zH + '/' + str(round(self.mf * 100, 1)) + '%(vs.' + str(round(self.mmReq * 100, 1)) + '%)/$' + str(round(self.freeCollateral))
+    elif self.exch in ['bbt','kut']:
+      z = (self.name + ' liqL/liqH/ab: ').rjust(37) + zL + '/' + zH + '/' + '$'+str(round(availableBalance))
     else:
-      self.liqStr = colored((self.name + ' liqL/liqH: ').rjust(37) + zL +'/' + zH, 'red')
+      z = (self.name + ' liqL/liqH: ').rjust(37) + zL +'/' + zH
+    self.liqStr = colored(z,'red')
 
   def printAll(self):
     try:
