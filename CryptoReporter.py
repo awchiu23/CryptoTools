@@ -147,8 +147,6 @@ def getCores():
   else:
     for n in range(SHARED_EXCH_DICT['bbt']):
       bbtCores.append(processCore('bbt',spotDict,objs,n=n+1))
-  bnCore=processCore('bn',spotDict,objs)
-  bntCore=processCore('bnt',spotDict,objs)
   dbCore=processCore('db', spotDict, objs)
   kfCore=processCore('kf',spotDict,objs)
   kutCores=[]
@@ -157,6 +155,11 @@ def getCores():
   else:
     for n in range(SHARED_EXCH_DICT['kut']):
       kutCores.append(processCore('kut',spotDict,objs,n=n+1))
+
+  # BN/BNT to be deprecated soon....
+  bnCore=processCore('bn',spotDict,objs)
+  bntCore=processCore('bnt',spotDict,objs)
+
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
