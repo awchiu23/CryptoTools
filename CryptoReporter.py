@@ -339,7 +339,7 @@ class core:
       self.incomesStr = colored((self.name +  ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
-    if self.exch in ['bb','bbt','bn','bnt','db','kf','kut']:
+    if self.exch in ['bb','bbt','db','kf','kut','bn','bnt']:
       z = fmtLiq(self.liqDict[ccy])
     else:
       z = ''
@@ -361,13 +361,13 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch in ['bbt','bnt','kut']:
+    if self.exch in ['bbt','kut','bnt']:
       suffix = '(fut: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
-  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, bnt, kut
+  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, kut, bnt
     def bbtGetLiq(riskDf, availableBalance, increment):
       df = riskDf.copy()
       isOk = False
