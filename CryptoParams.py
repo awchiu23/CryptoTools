@@ -134,21 +134,21 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEYS_KU = [sl.jLoad('API_KEY_KU'),sl.jLoad('API_KEY_KU2'),sl.jLoad('API_KEY_KU3')]
-  API_SECRETS_KU = [sl.jLoad('API_SECRET_KU'),sl.jLoad('API_SECRET_KU2'),sl.jLoad('API_SECRET_KU3')]
-  API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3')]
+  API_KEYS_KU = [sl.jLoad('API_KEY_KU'),sl.jLoad('API_KEY_KU2'),sl.jLoad('API_KEY_KU3'),sl.jLoad('API_KEY_KU4'),sl.jLoad('API_KEY_KU5')]
+  API_SECRETS_KU = [sl.jLoad('API_SECRET_KU'),sl.jLoad('API_SECRET_KU2'),sl.jLoad('API_SECRET_KU3'),sl.jLoad('API_SECRET_KU4'),sl.jLoad('API_SECRET_KU5')]
+  API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3'),sl.jLoad('API_PASSWORD_KU4'),sl.jLoad('API_PASSWORD_KU5')]
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0,'kut':3})
+  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = True
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0,'kut':5})
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=['XRP','COMP','DOGE','FTM','SOL']
-  my_FTX_BBT_KUT_flowless=['AXS','ADA','ALGO','AVAX','ICP','THETA']
+  my_FTX_BBT_KUT_flowless=['AXS','ADA','AVAX','ICP','THETA']
   my_FTX_BBT=['MATIC','SUSHI']
   my_FTX_BBT_flowless=['ETC']
   my_FTX_KUT=[]
-  my_FTX_KUT_flowless=['DYDX','ATOM','DOT','LUNA','VET']
+  my_FTX_KUT_flowless=['DYDX','ALGO','ATOM','DOT','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -163,4 +163,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
   #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
-  CR_EXT_DELTA_USDT = 120e3 #bbftx
+  #CR_EXT_DELTA_USDT = 120e3 #bbftx

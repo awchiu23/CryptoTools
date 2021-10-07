@@ -9,7 +9,6 @@ import sys
 import threading
 from retrying import retry
 
-
 ###########
 # Functions
 ###########
@@ -192,6 +191,7 @@ def getCores():
     isOk = False
     for obj in objs:
       try:
+        print('Running '+obj.name+' ....')
         obj.run()
       except:
         pass
