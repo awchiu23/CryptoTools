@@ -9,8 +9,6 @@ API_KEY_FTX = ''
 API_SECRET_FTX = ''
 API_KEYS_BB = ['']        # List of keys to facilitate multiple bybit accounts
 API_SECRETS_BB = ['']     # List of secrets to facilitate multiple bybit accounts
-API_KEY_BN = ''
-API_SECRET_BN = ''
 API_KEY_DB = ''
 API_SECRET_DB = ''
 API_KEY_KF = ''
@@ -18,6 +16,10 @@ API_SECRET_KF = ''
 API_KEYS_KU = ['']        # List of keys to facilitate multiple kucoin accounts
 API_SECRETS_KU = ['']     # List of secrets to facilitate multiple kucoin accounts
 API_PASSWORDS_KU = ['']   # List of passwords to facilitate multiple kucoin accounts
+
+# BN/BNT to be deprecated soon....
+API_KEY_BN = ''
+API_SECRET_BN = ''
 
 #############################################################################################
 
@@ -33,8 +35,6 @@ CT_CONFIGS_DICT['NPROGRAMS'] = 100                   # Number of programs (each 
 CT_CONFIGS_DICT['EMA_K'] = 2/(60 * 15 / 5 + 1)       # EMA smoothing parameter
 
 CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit in USD
-CT_CONFIGS_DICT['MAX_BTC'] = 1                       # Limit for BTC in number of coins (secondary control)
-CT_CONFIGS_DICT['MAX_ETH'] = 10                      # Limit for ETH in number of coins (secondary control)
 
 CT_CONFIGS_DICT['CURRENT_BBT'] = 1                   # Current BBT account to trade with
 CT_CONFIGS_DICT['CURRENT_KUT'] = 1                   # Current KUT account to trade with
@@ -96,7 +96,7 @@ CR_EXT_DELTA_USDT = 0
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'bnt':0,'bn':0,'bnim':0,'db':1,'kf':1,'kut':1})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'db':1,'kf':1,'kut':1,'bnt':0,'bn':0})
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
@@ -139,16 +139,16 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3'),sl.jLoad('API_PASSWORD_KU4'),sl.jLoad('API_PASSWORD_KU5')]
   #####
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = True
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'bnt':0,'bn':0,'bnim':0,'db':0,'kf':0,'kut':5})
+  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=['XRP','COMP','DOGE','FTM','SOL']
-  my_FTX_BBT_KUT_flowless=['AXS','ADA','AVAX','ICP','THETA']
+  my_FTX_BBT_KUT_flowless=['ADA','AVAX','ICP']
   my_FTX_BBT=['MATIC','SUSHI']
-  my_FTX_BBT_flowless=['ETC']
+  my_FTX_BBT_flowless=['AXS','ETC']
   my_FTX_KUT=[]
-  my_FTX_KUT_flowless=['DYDX','ALGO','ATOM','DOT','LUNA','VET']
+  my_FTX_KUT_flowless=['DYDX','ALGO','ATOM','DOT','LUNA','THETA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -163,4 +163,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
   #CR_AG_CCY_DICT['ETH']=29.302 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
-  #CR_EXT_DELTA_USDT = 120e3 #bbftx
+  #CR_EXT_DELTA_USDT = 120e3+120e3+80e3 #bbftx

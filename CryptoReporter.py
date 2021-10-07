@@ -12,9 +12,9 @@ from retrying import retry
 ###########
 # Functions
 ###########
-def appendDeltas(myList, ccy, spotDict, spotDelta, futDelta, imDeltaBTC):
+def appendDeltas(myList, ccy, spotDict, spotDelta, futDelta):
   spot = spotDict[ccy]
-  netDelta=spotDelta+futDelta+imDeltaBTC
+  netDelta=spotDelta+futDelta
   if ccy=='BTC':
     nDigits=2
   elif ccy in ['XRP','DOGE','MATIC']:
@@ -27,28 +27,22 @@ def appendDeltas(myList, ccy, spotDict, spotDelta, futDelta, imDeltaBTC):
   zLabel += 'fut/'
   z1 += str(round(futDelta,nDigits)) + '/'
   z2 += str(round(futDelta * spot / 1000)) + 'K/$'
-  if ccy=='BTC' and imDeltaBTC != 0:
-    zLabel += 'im/'
-    z1 += str(round(imDeltaBTC,nDigits)) + '/'
-    z2 += str(round(imDeltaBTC * spot / 1000)) + 'K/$'
   zLabel += 'net'
   z1 += str(round(netDelta,nDigits))
   z2 += str(round(netDelta * spot / 1000)) + 'K)'
   z=(ccy + ' ' +zLabel+': ').rjust(37)+z1.ljust(27)+z2
   myList.append(colored(z,'red'))
 
-def appendUSDTDeltas(myList, ftxCore, bnimCore, spotDict, usdtCoreList):
+def appendUSDTDeltas(myList, ftxCore, spotDict, usdtCoreList):
   spotDeltaUSD = ftxCore.spots.loc['USDT','SpotDeltaUSD'] + CR_EXT_DELTA_USDT * spotDict['USDT']
   implDeltaUSD=0
   for core in usdtCoreList:
     spotDeltaUSD+=core.spots.loc['USDT','SpotDeltaUSD']
     implDeltaUSD-=core.futures['FutDeltaUSD'].sum()
-  imDeltaUSD = bnimCore.spots.loc['USDT', 'SpotDeltaUSD']
-  netDeltaUSD=spotDeltaUSD+imDeltaUSD+implDeltaUSD
+  netDeltaUSD=spotDeltaUSD+implDeltaUSD
   #####
   spotDelta=spotDeltaUSD/spotDict['USDT']
   implDelta=implDeltaUSD/spotDict['USDT']
-  imDelta=imDeltaUSD/spotDict['USDT']
   netDelta=netDeltaUSD/spotDict['USDT']
   #####
   zLabel = 'spot/'
@@ -57,25 +51,12 @@ def appendUSDTDeltas(myList, ftxCore, bnimCore, spotDict, usdtCoreList):
   zLabel += 'impl/'
   z1+=str(round(implDelta/1000))+'K/'
   z2+=str(round(implDeltaUSD/1000)) + 'K/$'
-  if imDelta!=0:
-    zLabel += 'im/'
-    z1+= str(round(imDelta/1000))+'K/'
-    z2+= str(round(imDeltaUSD/1000))+'K/$'
   zLabel += 'net: '
   z1 += str(round(netDelta / 1000)) + 'K'
   z2 += str(round(netDeltaUSD/1000))+'K)'
   myList.append(colored(('USDT '+zLabel).rjust(37)+(z1+' ').ljust(27)+z2, 'red'))
 
-def appendBUSDDeltas(myList, bnimCore):
-  if SHARED_EXCH_DICT['bnim']==0: return
-  imDeltaUSD = bnimCore.spots.loc['USD', 'SpotDeltaUSD']
-  if imDeltaUSD==0: return
-  imDelta = imDeltaUSD
-  z1 = str(round(imDelta / 1000)) + 'K'
-  z2 = '($' + str(round(imDeltaUSD / 1000)) + 'K)'
-  myList.append(colored('BUSD im: '.rjust(37) + (z1 + ' ').ljust(27) + z2, 'red'))
-
-def appendFlows(myList, ftxCore, bnimCore, nav):
+def appendFlows(myList, ftxCore, nav):
   def getSuffix(ftxCore,ccy,nav):
     return '(' + str(round(ftxCore.wallet.loc[ccy, 'usdValue'] / nav * 100)) + '%)'
   #####
@@ -88,12 +69,6 @@ def appendFlows(myList, ftxCore, bnimCore, nav):
     for ccy in CR_FTX_FLOWS_CCYS:
       z = ftxCore.flowsDict[ccy]
       if not z is None: myList.append(z)
-    if SHARED_EXCH_DICT['bnim']==1:
-      for symbol in bnimCore.imDf.index:
-        z1 = '$' + str(round(bnimCore.imDf.loc[symbol,'oneDayFlows'])) + ' (' + str(round(bnimCore.imDf.loc[symbol,'oneDayFlowsAnnRet'] * 100)) + '% p.a.)'
-        z2 = '$' + str(round(bnimCore.imDf.loc[symbol,'prevFlows'])) + ' (' + str(round(bnimCore.imDf.loc[symbol,'prevFlowsAnnRet'] * 100)) + '% p.a.)'
-        z3 = ' ($' + str(round(bnimCore.imDf.loc[symbol,'qty']*bnimCore.spotDict[bnimCore.imDf.loc[symbol,'symbolAsset']]/1000))+'K)'
-        myList.append(colored(fmtLiq(bnimCore.imDf.loc[symbol,'liq']).rjust(5),'red') + colored(('BN 24h/prev '+symbol+' flows: ').rjust(32) + z1 + ' / ' + z2, 'blue')+z3)
   except:
     pass
 
@@ -159,7 +134,6 @@ def getCores():
   ftx=cl.ftxCCXTInit()
   spotDict=dict()
   ccyList = list(CR_QUOTE_CCY_DICT.keys())
-  if not 'BNB' in ccyList: ccyList.append('BNB')
   for ccy in ccyList:
     spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
   spotDict['USD']=1
@@ -175,7 +149,6 @@ def getCores():
       bbtCores.append(processCore('bbt',spotDict,objs,n=n+1))
   bnCore=processCore('bn',spotDict,objs)
   bntCore=processCore('bnt',spotDict,objs)
-  bnimCore=processCore('bnim',spotDict,objs)
   dbCore=processCore('db', spotDict, objs)
   kfCore=processCore('kf',spotDict,objs)
   kutCores=[]
@@ -198,7 +171,20 @@ def getCores():
       if not obj.isDone:
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-  return isOk, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, kutCores, spotDict, objs
+    
+  coresDict=dict()
+  coresDict['ftx']=ftxCore
+  coresDict['bb']=bbCore
+  coresDict['bbt']=bbtCores
+  coresDict['db']=dbCore
+  coresDict['kf']=kfCore
+  coresDict['kut']=kutCores
+  
+  # BN/BNT to be deprecated soon....
+  coresDict['bn']=bnCore
+  coresDict['bnt']=bntCore
+  
+  return coresDict, spotDict, objs, isOk
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
@@ -318,18 +304,18 @@ class core:
       self.bbInit()
     elif self.exch=='bbt':
       self.bbtInit()
-    elif self.exch=='bn':
-      self.bnInit()
-    elif self.exch=='bnt':
-      self.bntInit()
-    elif self.exch=='bnim':
-      self.bnimInit()
     elif self.exch=='db':
       self.dbInit()
     elif self.exch=='kf':
       self.kfInit()
     elif self.exch=='kut':
       self.kutInit()
+
+    # BN/BNT to be deprecated soon....
+    elif self.exch == 'bn':
+      self.bnInit()
+    elif self.exch == 'bnt':
+      self.bntInit()
 
   def calcSpotDeltaUSD(self):
     for ccy in self.spots.index:
@@ -372,7 +358,7 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch == 'bbt' or (self.exch == 'bnt' and ccy != 'BNB') or self.exch=='kut':
+    if self.exch in ['bbt','bnt','kut']:
       suffix = '(fut: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
@@ -400,24 +386,6 @@ class core:
       else:
         return 0
     #####
-    '''
-    def bbtGetLiq(riskDf, availableBalance, increment):
-      df = riskDf.copy()
-      isOk = False
-      for i in range(100):
-        df['unrealised_pnl_sim'] = df['unrealised_pnl'] + df['delta_value'] * (i + 1) * increment
-        df['ab_delta'] = df['unrealised_pnl_sim'].clip(None, 0) - df['unrealised_pnl'].clip(None, 0)
-        ab = availableBalance + df['ab_delta'].sum()
-        df['cushion'] = ab + df['im_value'] - df['mm_value'] + df['unrealised_pnl_sim'].clip(0, None)
-        if df['cushion'].min() < 0:
-          isOk = True
-          break
-      if isOk:
-        return 1 + i * increment
-      else:
-        return 0
-    '''
-    ###
     def kutGetLiq(riskDf, availableBalance, increment):
       df = riskDf.copy()
       isOk = False
@@ -796,9 +764,8 @@ class core:
     mb = float(d['totalMarginBalance'])
     mm = float(d['totalMaintMargin'])
     self.spots.loc['USDT','SpotDelta'] = mb
-    self.spots.loc['BNB','SpotDelta'] = float(pd.DataFrame(d['assets']).set_index('asset').loc['BNB', 'walletBalance'])
     self.calcSpotDeltaUSD()
-    self.nav = self.spots.loc[['USDT','BNB'],'SpotDeltaUSD'].sum()
+    self.nav = self.spots.loc['USDT','SpotDeltaUSD'].sum()
     #####
     for ccy in self.validCcys:
       df = pmts.loc[pmts['symbol'] == ccy + 'USDT', 'fundingRate']
@@ -813,24 +780,6 @@ class core:
     delta = self.futures['FutDeltaUSD'].sum()
     self.makeLiqStr(cushion=cushion,delta=delta)
     #####
-    self.isDone = True
-
-  ######
-  # BNIM
-  ######
-  def bnimInit(self):
-    if SHARED_EXCH_DICT['bnim'] == 1:
-      self.api = cl.bnCCXTInit()
-      self.imDf = cl.bnGetIsolatedMarginDf(self.api,self.spotDict)
-      df=self.imDf.set_index('symbolAsset',drop=False)
-      for i in range(len(df)):
-        self.spots.loc[df.iloc[i]['symbolAsset'], 'SpotDelta'] += df.iloc[i]['qty']
-      self.spots.loc['BTC', 'SpotDelta'] += df['collateralBTC'].sum()
-      self.spots.loc['USD','SpotDelta'] += df['collateralBUSD'].sum()
-      self.spots.loc['USDT', 'SpotDelta'] += df['collateralUSDT'].sum()
-      self.oneDayFlows = self.imDf['oneDayFlows'].sum()
-      self.calcSpotDeltaUSD()
-      self.nav = self.spots['SpotDeltaUSD'].sum()
     self.isDone = True
 
   ####
@@ -1030,7 +979,17 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-  _, ftxCore, bbCore, bbtCores, bnCore, bntCore, bnimCore, dbCore, kfCore, kutCores, spotDict, objs = getCores()
+  coresDict, spotDict, objs, _ = getCores()
+  ftxCore=coresDict['ftx']
+  bbCore=coresDict['bb']
+  bbtCores=coresDict['bbt']
+  dbCore=coresDict['db']
+  kfCore=coresDict['kf']
+  kutCores=coresDict['kut']
+
+  # BN/BNT to be deprecated soon....
+  bnCore = coresDict['bn']
+  bntCore = coresDict['bnt']
 
   #############
   # Aggregation
@@ -1038,16 +997,12 @@ if __name__ == '__main__':
   agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'SpotDelta': CR_AG_CCY_DICT.values(), 'FutDelta': [0] * len(CR_AG_CCY_DICT.keys())}).set_index('Ccy')
   nav=0
   oneDayIncome=0
-  imDeltaBTC=0
   for obj in objs:
     nav+=obj.nav
     oneDayIncome += obj.oneDayIncome
     for ccy in CR_AG_CCY_DICT.keys():
       agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
       agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
-    if obj.name=='BNIM':
-      imDeltaBTC=obj.spots.loc['BTC', 'SpotDelta']
-      agDf.loc[ccy,'SpotDelta']-=imDeltaBTC
   extCoinsNAV=0
   for ccy in CR_AG_CCY_DICT.keys():
     extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
@@ -1072,18 +1027,17 @@ if __name__ == '__main__':
   #####
   agList=[]
   for ccy in CR_AG_CCY_DICT.keys():
-    appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'],imDeltaBTC)
+    appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'])
   usdtCores=[]
   for core in bbtCores:
     usdtCores.append(core)
   if SHARED_EXCH_DICT['bnt']==1: usdtCores.append(bntCore)
   for core in kutCores:
     usdtCores.append(core)
-  appendUSDTDeltas(agList, ftxCore, bnimCore, spotDict, usdtCores)
-  appendBUSDDeltas(agList, bnimCore)
+  appendUSDTDeltas(agList, ftxCore, spotDict, usdtCores)
   #####
   flowList=[]
-  appendFlows(flowList, ftxCore, bnimCore, nav)
+  appendFlows(flowList, ftxCore, nav)
   #####
   printTwoLists(agList, flowList, 120)
   #####
