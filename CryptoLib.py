@@ -823,7 +823,7 @@ def kutGetRiskDf(ku):
   if len(df)==0:
     return df
   else:
-    df = df.set_index('symbol')[['markPrice','markValue','liquidationPrice']].astype(float)
+    df = df.set_index('symbol')[['markPrice','markValue','maintMargin','liquidationPrice']].astype(float)
     df['liquidationRatio']=df['liquidationPrice']/df['markPrice']
     return df
 
