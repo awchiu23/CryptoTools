@@ -53,7 +53,7 @@ CT_CONFIGS_DICT['BBT_LEG1_DISTANCE_TICKS']=-3        # Execution setting
 CT_CONFIGS_DICT['BB_LEG1_DISTANCE_TICKS']=-3         # Execution setting
 CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-15        # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['KUT_LEG1_DISTANCE_TICKS']=-3         # Execution setting
+CT_CONFIGS_DICT['KUT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=1        # Execution setting
 CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=1         # Execution setting
@@ -138,17 +138,17 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
+  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False ################ ***************** #################
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT_KUT=['XRP','COMP','DOGE','FTM']
-  my_FTX_BBT_KUT_flowless=['AVAX','ICP']
+  my_FTX_BBT_KUT=['XRP','COMP','DOGE','FTM','SOL']
+  my_FTX_BBT_KUT_flowless=['AVAX','ICP','XTZ']
   my_FTX_BBT=['SUSHI']
-  my_FTX_BBT_flowless=['AXS','ETC']
-  my_FTX_KUT=['LINK','MATIC','SOL']
-  my_FTX_KUT_flowless=['ADA','DYDX','ATOM','DOT','LUNA','XTZ']
+  my_FTX_BBT_flowless=['AXS']
+  my_FTX_KUT=['LINK','MATIC']
+  my_FTX_KUT_flowless=['ADA','DYDX','ALGO','ATOM','DOT','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
