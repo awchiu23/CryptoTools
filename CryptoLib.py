@@ -56,6 +56,18 @@ class getPrices:
 ###########
 # API Inits
 ###########
+def getApiDict():
+  apiDict = dict()
+  apiDict['ftx'] = ftxCCXTInit()
+  apiDict['bb'] = bbCCXTInit()
+  apiDict['bbForBBT'] = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
+  apiDict['db'] = dbCCXTInit()
+  apiDict['kf'] = kfApophisInit()
+  apiDict['ku'] = kuCCXTInit()
+  apiDict['kuForKUT'] = kuCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
+  apiDict['bn'] = bnCCXTInit()  # BN/BNT to be deprecated soon....
+  return apiDict
+
 def ftxCCXTInit():
   return ccxt.ftx({'apiKey': API_KEY_FTX, 'secret': API_SECRET_FTX, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
@@ -176,7 +188,6 @@ def kutGetAsk(ku,ccy):
   return float(ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestAskPrice'])
 
 # BN/BNT to be deprecated soon....
-
 @retry(wait_fixed=1000)
 def bnGetMid(bn, ccy):
   d=bn.dapiPublicGetTickerBookTicker({'symbol':ccy+'USD_PERP'})[0]
@@ -1188,12 +1199,19 @@ def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(ftx,bb,bn,db,kf,ku,ccy,isRateLimit=False):
+def getFundingDict(apiDict,ccy,isRateLimit=False):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
     else:
       return borrowS[ccy]
+  #####
+  ftx = apiDict['ftx']
+  bb = apiDict['bb']
+  db = apiDict['db']
+  kf = apiDict['kf']
+  ku = apiDict['ku']
+  bn = apiDict['bn']  # BN/BNT to be deprecated soon....
   #####
   # Common
   ftxWallet = ftxGetWallet(ftx)
@@ -1346,7 +1364,14 @@ def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
 
 #############################################################################################
 
-def getSmartBasisDict(ftx, bb, bn, db, kf, ku, ccy, fundingDict, isSkipAdj=False):
+def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
+  ftx = apiDict['ftx']
+  bb = apiDict['bb']
+  db = apiDict['db']
+  kf = apiDict['kf']
+  ku = apiDict['ku']
+  bn = apiDict['bn'] # BN/BNT to be deprecated soon....
+  #####
   validExchs = getValidExchs(ccy)
   objs=[]
   if 'ftx' in validExchs:
@@ -1406,7 +1431,6 @@ def getSmartBasisDict(ftx, bb, bn, db, kf, ku, ccy, fundingDict, isSkipAdj=False
     d['kutSmartBasis'] = kutGetOneDayShortFutEdge(ku, fundingDict, d['kutBasis']) - oneDayShortSpotEdge + kutAdj
 
   # BN/BNT to be deprecated soon....
-
   if 'bn' in validExchs:
     bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BN_' + ccy][1]) / 10000
     d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1
@@ -1446,16 +1470,11 @@ def caRun(ccy, color):
   print()
   #####
   validExchs=getValidExchs(ccy)
-  ftx=ftxCCXTInit() if 'ftx' in validExchs else None
-  bb=bbCCXTInit() if ('bb' in validExchs or 'bbt' in validExchs) else None
-  db=dbCCXTInit() if 'db' in validExchs else None
-  kf=kfApophisInit() if 'kf' in validExchs else None
-  ku=kuCCXTInit() if 'kut' in validExchs else None
-  bn = bnCCXTInit() if ('bn' in validExchs or 'bnt' in validExchs) else None       # BN/BNT to be deprecated soon....
+  apiDict = getApiDict()
   #####
   while True:
-    fundingDict = getFundingDict(ftx,bb,bn,db,kf,ku,ccy,isRateLimit=True)
-    smartBasisDict = getSmartBasisDict(ftx,bb,bn,db,kf,ku,ccy, fundingDict, isSkipAdj=True)
+    fundingDict = getFundingDict(apiDict,ccy,isRateLimit=True)
+    smartBasisDict = getSmartBasisDict(apiDict,ccy, fundingDict, isSkipAdj=True)
     print(getCurrentTime(isCondensed=True).ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
@@ -1468,15 +1487,8 @@ def caRun(ccy, color):
 # CryptoTrader
 ##############
 def ctInit(ccy, notional, tgtBps):
-  ftx = ftxCCXTInit()
-  bb = bbCCXTInit()
-  bbForBBT = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
-  bn = bnCCXTInit()
-  db = dbCCXTInit()
-  kf = kfApophisInit()
-  ku = kuCCXTInit()
-  kuForKUT = kuCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
-  spot = ftxGetMid(ftx, ccy+'/USD')
+  apiDict = getApiDict()
+  spot = ftxGetMid(apiDict['ftx'], ccy+'/USD')
   maxNotional = CT_CONFIGS_DICT['MAX_NOTIONAL_USD']
   notional = min(notional, maxNotional)
   qty = notional / spot
@@ -1485,30 +1497,30 @@ def ctInit(ccy, notional, tgtBps):
   print('Per Trade Quantity: '+str(round(qty, 6)))
   print('Target:             '+str(round(tgtBps))+'bps')
   print()
-  return ftx,bb,bbForBBT,bn,db,kf,ku,kuForKUT,qty,notional,spot
+  return apiDict,qty,notional,spot
 
-def ctGetPosUSD(ftx, bb, bn, db, kf,ku,exch, ccy, spot):
+def ctGetPosUSD(apiDict,exch, ccy, spot):
   if exch == 'ftx':
-    return ftxGetFutPos(ftx, ccy) * spot
+    return ftxGetFutPos(apiDict['ftx'], ccy) * spot
   elif exch == 'bb':
-    return bbGetFutPos(bb, ccy)
+    return bbGetFutPos(apiDict['bb'], ccy)
   elif exch == 'bbt':
-    return bbtGetFutPos(bb, ccy) * spot
+    return bbtGetFutPos(apiDict['bbForBBT'], ccy) * spot
   elif exch == 'db':
-    return dbGetFutPos(db, ccy)
+    return dbGetFutPos(apiDict['db'], ccy)
   elif exch == 'kf':
-    return kfGetFutPos(kf, ccy)
+    return kfGetFutPos(apiDict['kf'], ccy)
   elif exch == 'kut':
-    return kutGetFutPos(ku, ccy) * kutGetMult(ku, ccy) * spot
+    return kutGetFutPos(apiDict['kuForKUT'], ccy) * kutGetMult(apiDict['kuForKUT'], ccy) * spot
   elif exch == 'spot':
-    return ftxGetWallet(ftx).loc[ccy,'usdValue']
+    return ftxGetWallet(apiDict['ftx']).loc[ccy,'usdValue']
 
   # BN/BNT to be deprecated soon....
   elif exch == 'bn':
     mult = 100 if ccy == 'BTC' else 10
-    return bnGetFutPos(bn, ccy) * mult
+    return bnGetFutPos(apiDict['bn'], ccy) * mult
   elif exch == 'bnt':
-    return bntGetFutPos(bn, ccy) * spot
+    return bntGetFutPos(apiDict['bn'], ccy) * spot
   else:
     sys.exit(1)
 
@@ -1558,15 +1570,23 @@ def ctPrintTradeStats(longFill, shortFill, obsBasisBps, realizedSlippageBps):
   return realizedSlippageBps
 
 def ctRun(ccy, notional, tgtBps, color):
-  ftx, bb, bbForBBT, bn, db, kf, ku, kuForKUT, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
+  apiDict, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
+  ftx = apiDict['ftx']
+  bb = apiDict['bb']
+  bbForBBT = apiDict['bbForBBT']
+  db = apiDict['db']
+  kf = apiDict['kf']
+  kuForKUT = apiDict['kuForKUT']
+  bn = apiDict['bn']  # BN/BNT to be deprecated soon....
+  #####
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
     prevSmartBasis = []
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(ftx, bb, bn, db, kf, ku, ccy, isRateLimit=True)
-      smartBasisDict = getSmartBasisDict(ftx, bb, bn, db, kf, ku, ccy, fundingDict)
+      fundingDict=getFundingDict(apiDict, ccy, isRateLimit=True)
+      smartBasisDict = getSmartBasisDict(apiDict ,ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
       smartBasisDict['spotBasis'] = 0
 
@@ -1618,8 +1638,8 @@ def ctRun(ccy, notional, tgtBps, color):
             if dShort[2] is not None: maxPosUSDShort = dShort[2]
           if len(dShort) > 3: signShort=np.sign(dShort[3])
           #####
-          posUSDLong = ctGetPosUSD(ftx, bb, bn, db, kf, ku, chosenLong, ccy, spot)
-          posUSDShort = ctGetPosUSD(ftx, bb, bn, db, kf, ku, chosenShort, ccy, spot)
+          posUSDLong = ctGetPosUSD(apiDict, chosenLong, ccy, spot)
+          posUSDShort = ctGetPosUSD(apiDict, chosenShort, ccy, spot)
           if (posUSDLong>=maxPosUSDLong) or (posUSDLong>=0 and signLong==-1):
             del d[chosenLong+'SmartBasis']
             continue
