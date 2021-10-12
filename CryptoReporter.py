@@ -941,7 +941,10 @@ class core:
     positions=pd.DataFrame(self.api.futuresPrivate_get_positions()['data']).set_index('symbol')
     for ccy in self.validCcys:
       ccy2=cl.kutGetCcy(ccy)+'USDTM'
-      self.liqDict[ccy] = float(positions.loc[ccy2,'liquidationPrice']) / float(positions.loc[ccy2,'markPrice'])
+      if ccy2 in positions.index:
+        self.liqDict[ccy] = float(positions.loc[ccy2,'liquidationPrice']) / float(positions.loc[ccy2,'markPrice'])
+      else:
+        self.liqDict[ccy] = 0
       futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']
       if futDeltaUSD != 0:
         self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy, 'FutDeltaUSD'])
