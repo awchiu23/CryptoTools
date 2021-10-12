@@ -691,14 +691,28 @@ class core:
         else:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = cl.bbtGetEstFunding1(self.api, ccy)
-      estFunding2 = cl.bbtGetEstFunding2(self.api, ccy)
+      estFunding = self.bbtGetEstFunding1_fast(ccy)
+      estFunding2 = self.bbtGetEstFunding2_fast(ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
     self.makeLiqStr(riskDf=riskDf,availableBalance=float(usdtDict['available_balance']))
     self.isDone = True
 
+  def bbtGetEstFunding1_fast(self,ccy):
+    key = 'bbtEstFunding1_'+ccy
+    estFunding1 = cl.cache('r', key)
+    if estFunding1 is None:
+      estFunding1 = cl.bbtGetEstFunding1(self.api,ccy)
+    return estFunding1
+
+  def bbtGetEstFunding2_fast(self,ccy):
+    key = 'bbtEstFunding2_'+ccy
+    estFunding2 = cl.cache('r', key)
+    if estFunding2 is None:
+      estFunding2 = cl.bbtGetEstFunding2(self.api,ccy)
+    return estFunding2
+  
   ####
   # BN
   ####
@@ -924,12 +938,13 @@ class core:
     if self.n >= 2:  # trim list for auxiliary KUTs
       self.validCcys = list(self.futures.index[self.futures['FutDelta'] != 0])
     #####
+    positions=pd.DataFrame(self.api.futuresPrivate_get_positions()['data']).set_index('symbol')
     for ccy in self.validCcys:
-      d = self.api.futuresPrivate_get_position({'symbol': cl.kutGetCcy(ccy) + 'USDTM'})['data']
-      self.liqDict[ccy] = float(d['liquidationPrice']) / float(d['markPrice'])
+      ccy2=cl.kutGetCcy(ccy)+'USDTM'
+      self.liqDict[ccy] = float(positions.loc[ccy2,'liquidationPrice']) / float(positions.loc[ccy2,'markPrice'])
       futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']
-      if futDeltaUSD!=0:
-        self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy,'FutDeltaUSD'])
+      if futDeltaUSD != 0:
+        self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy, 'FutDeltaUSD'])
     #####
     pmts=pd.DataFrame()
     if KU_CONFIGS_DICT['IS_CALC_PAYMENTS']:
@@ -965,13 +980,27 @@ class core:
         else:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = cl.kutGetEstFunding1(self.api, ccy)
-      estFunding2 = cl.kutGetEstFunding2(self.api, ccy)
+      estFunding = self.kutGetEstFunding1_fast(ccy)
+      estFunding2 = self.kutGetEstFunding2_fast(ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
     self.makeLiqStr(riskDf=cl.kutGetRiskDf(self.api), availableBalance=availableBalance)
     self.isDone = True
+
+  def kutGetEstFunding1_fast(self,ccy):
+    key = 'kutEstFunding1_'+ccy
+    estFunding1 = cl.cache('r', key)
+    if estFunding1 is None:
+      estFunding1 = cl.kutGetEstFunding1(self.api,ccy)
+    return estFunding1
+
+  def kutGetEstFunding2_fast(self,ccy):
+    key = 'kutEstFunding2_'+ccy
+    estFunding2 = cl.cache('r', key)
+    if estFunding2 is None:
+      estFunding2 = cl.kutGetEstFunding2(self.api,ccy)
+    return estFunding2
 
 ####################################################################################################
 

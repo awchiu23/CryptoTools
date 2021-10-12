@@ -439,7 +439,7 @@ def bbRelOrderCore(side,bb,ccy,maxChases,distance,exch,ticker,qty,getBidFunc,get
   def getIsReduceOnly(bb, ccy, side, qty):
     df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
     oppSide = 'Sell' if side == 'BUY' else 'Buy'
-    return qty < float(df.loc[oppSide, 'size'])
+    return qty <= float(df.loc[oppSide, 'size'])
   #####
   if side=='BUY':
     refPrice = getBidFunc(bb, ccy)
