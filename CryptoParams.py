@@ -139,10 +139,10 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
-  #KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False  ################ ***************** #################
+  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False  ################ ***************** #################
   #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 0
+  SHARED_ETC_DICT['THRESHOLD_L'] = 6
   ############################################################################################################
   my_FTX=['COMP']
   my_FTX_BBT_KUT=['XRP','FTM']
