@@ -1542,6 +1542,29 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
+def ctKUTUnwindStepper(side,kuForKUT, ccy, trade_qty):
+  if CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']:
+    key = 'ct_kutN'
+    kutN = cache('r', key)
+    if kutN is None:
+      kutN=CT_CONFIGS_DICT['CURRENT_KUT']
+      cache('w',key,kutN)
+    while kutN > 0:
+      kuForKUT = kuCCXTInit(kutN)
+      pos = kutGetFutPos(kuForKUT, ccy) * kutGetMult(kuForKUT, ccy)
+      if side=='BUY':
+        if pos <= -trade_qty: break
+      else: # SELL
+        if pos >= trade_qty: break
+      kutN -= 1
+    if kutN == 0:
+      print('No more unwind possibilities!')
+      sys.exit(1)
+    else:
+      print((getCurrentTime() + ':').ljust(20) + ' Using KUT' + str(kutN) + ' ....')
+      cache('w', key, kutN)
+  return kuForKUT
+
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
     return 2
@@ -1727,10 +1750,12 @@ def ctRun(ccy, notional, tgtBps, color):
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kut' == chosenLong and not isCancelled:
+          kuForKUT = ctKUTUnwindStepper('BUY',kuForKUT,ccy,trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
           longFill = kutRelOrder('BUY', kuForKUT, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kut' == chosenShort and not isCancelled:
+          kuForKUT = ctKUTUnwindStepper('SELL',kuForKUT,ccy,trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
           shortFill = kutRelOrder('SELL', kuForKUT, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)

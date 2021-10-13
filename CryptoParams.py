@@ -38,6 +38,7 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 
 CT_CONFIGS_DICT['CURRENT_BBT'] = 1                   # Current BBT account to trade with
 CT_CONFIGS_DICT['CURRENT_KUT'] = 1                   # Current KUT account to trade with
+CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']=False       # Special unwind mode for KUT
 
 CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
 CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
@@ -45,7 +46,7 @@ CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
 CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=3                # Execution setting
 CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
-CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']=10              # Execution setting
+CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']=3               # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=-10      # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=-10       # Execution setting
@@ -55,8 +56,8 @@ CT_CONFIGS_DICT['DB_LEG1_DISTANCE_TICKS']=-15        # Execution setting
 CT_CONFIGS_DICT['KF_LEG1_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['KUT_LEG1_DISTANCE_TICKS']=0         # Execution setting
 
-CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=1        # Execution setting
-CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=1         # Execution setting
+CT_CONFIGS_DICT['SPOT_LEG2_DISTANCE_TICKS']=0        # Execution setting
+CT_CONFIGS_DICT['FTX_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BBT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
@@ -100,7 +101,7 @@ SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'db':1,'kf':1,'kut':1,'bnt':0,'bn'
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
-SHARED_CCY_DICT['FTT'] = {'futExch':['ftx']}
+SHARED_CCY_DICT['FTT'] = {'futExch':['ftx', 'bbt']}
 SHARED_ETC_DICT=dict()
 SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'THETA','XLM', 'XTZ', 'ATOM', 'LUNA', 'VET']
 
@@ -138,18 +139,18 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
-  KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False  ################ ***************** #################
-  APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+  #KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False  ################ ***************** #################
+  #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
   SHARED_ETC_DICT['THRESHOLD_L'] = 0
   ############################################################################################################
   my_FTX=['COMP']
-  my_FTX_BBT_KUT=['XRP']
+  my_FTX_BBT_KUT=['XRP','FTM']
   my_FTX_BBT_KUT_flowless=['AXS','ADA']
-  my_FTX_BBT=['SUSHI']
+  my_FTX_BBT=['LINK']
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['DOGE','SOL']
-  my_FTX_KUT_flowless=['AVAX','DYDX','ALGO','ATOM','DOT','FIL','ICP','LUNA','VET']
+  my_FTX_KUT_flowless=['AVAX','DYDX','ATOM','FIL','ICP','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -158,11 +159,14 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt','kut']}
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
   for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
-  SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
+  SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
+  #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
   SHARED_CCY_DICT['XRP']['futExch'].append('bb')
   #####
-  #CR_AG_CCY_DICT['BTC']=-37.2 #bbftx
+  #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
   #CR_EXT_DELTA_USDT = 430e3 #bbftx
