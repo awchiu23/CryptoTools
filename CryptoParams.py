@@ -140,17 +140,17 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
   KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = False  ################ ***************** #################
-  #APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+  APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':1,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 6
+  SHARED_ETC_DICT['THRESHOLD_L'] = 0
   ############################################################################################################
   my_FTX=['COMP']
-  my_FTX_BBT_KUT=['XRP','FTM']
-  my_FTX_BBT_KUT_flowless=['AXS','DYDX']
+  my_FTX_BBT_KUT=['XRP','FTM','MATIC']
+  my_FTX_BBT_KUT_flowless=['AXS','ATOM','DYDX','LUNA']
   my_FTX_BBT=['LINK','SUSHI']
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['DOGE','SOL']
-  my_FTX_KUT_flowless=['ADA','AVAX','ATOM','LUNA','VET']
+  my_FTX_KUT_flowless=['ADA','AVAX','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -168,5 +168,5 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 80000 #bbftx
+  CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
   #CR_EXT_DELTA_USDT = 430e3 #bbftx
