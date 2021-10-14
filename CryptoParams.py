@@ -90,7 +90,7 @@ KU_CONFIGS_DICT['IS_CALC_PAYMENTS'] = True
 # Crypto Reporter
 #################
 CR_QUOTE_CCY_DICT = dict({'USDT':4, 'BTC':1, 'ETH':1, 'FTT':1})  # Quoted currencies; values are # digits for display rounding
-CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0})                      # Aggregated currencies; values are external deltas (# coins)
+CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'FTT':0})             # Aggregated currencies; values are external deltas (# coins)
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
 CR_EXT_DELTA_USDT = 0
 
@@ -110,7 +110,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', '
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.07
+SMB_DICT['BASE_RATE']=0.1
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -146,11 +146,11 @@ if os.environ.get('USERNAME')=='Simon':
   ############################################################################################################
   my_FTX=['COMP']
   my_FTX_BBT_KUT=['XRP','FTM']
-  my_FTX_BBT_KUT_flowless=['AXS']
-  my_FTX_BBT=['LINK']
+  my_FTX_BBT_KUT_flowless=['AXS','DYDX']
+  my_FTX_BBT=['LINK','SUSHI']
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['DOGE','SOL']
-  my_FTX_KUT_flowless=['ADA','AVAX','DYDX','ATOM','FIL','ICP','LUNA','VET']
+  my_FTX_KUT_flowless=['ADA','AVAX','ATOM','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -161,12 +161,12 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
   SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
   SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
-  SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
-  #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
+  #SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
   SHARED_CCY_DICT['XRP']['futExch'].append('bb')
   #####
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
-  #CR_AG_CCY_DICT['XRP'] = 78999 #bbftx
+  #CR_AG_CCY_DICT['XRP'] = 80000 #bbftx
   #CR_EXT_DELTA_USDT = 430e3 #bbftx
