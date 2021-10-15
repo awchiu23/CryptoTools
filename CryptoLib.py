@@ -1542,6 +1542,29 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
+def ctBBTUnwindStepper(side,bbForBBT, ccy, trade_qty):
+  if CT_CONFIGS_DICT['IS_BBT_UNWIND_STEPPER']:
+    key = 'ct_bbtN'
+    bbtN = cache('r', key)
+    if bbtN is None:
+      bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
+      cache('w',key,bbtN)
+    while bbtN > 0:
+      bbForBBT = bbCCXTInit(bbtN)
+      pos = bbtGetFutPos(bbForBBT, ccy)
+      if side=='BUY':
+        if pos <= -trade_qty: break
+      else: # SELL
+        if pos >= trade_qty: break
+      bbtN -= 1
+    if bbtN == 0:
+      print('No more unwind possibilities!')
+      sys.exit(1)
+    else:
+      print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
+      cache('w', key, bbtN)
+  return bbForBBT
+
 def ctKUTUnwindStepper(side,kuForKUT, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']:
     key = 'ct_kutN'
@@ -1718,10 +1741,12 @@ def ctRun(ccy, notional, tgtBps, color):
         completedLegs = 0
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
+          bbForBBT = ctBBTUnwindStepper('BUY', bbForBBT, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
           longFill = bbtRelOrder('BUY', bbForBBT, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
+          bbForBBT = ctBBTUnwindStepper('SELL', bbForBBT, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
           shortFill = bbtRelOrder('SELL', bbForBBT, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)

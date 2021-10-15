@@ -950,7 +950,7 @@ class core:
         self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy, 'FutDeltaUSD'])
     #####
     pmts=pd.DataFrame()
-    if KU_CONFIGS_DICT['IS_CALC_PAYMENTS']:
+    if CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS']:
       startAt = cl.getYest() * 1000
       for ccy in self.validCcys:
         df=pd.DataFrame(getFundingHistory(ccy,startAt))
