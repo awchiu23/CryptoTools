@@ -47,7 +47,7 @@ CT_CONFIGS_DICT['BBT_MAX_WAIT_TIME']=15              # Execution setting
 CT_CONFIGS_DICT['BB_MAX_WAIT_TIME']=15               # Execution setting
 CT_CONFIGS_DICT['DB_MAX_WAIT_TIME']=3                # Execution setting
 CT_CONFIGS_DICT['KF_MAX_WAIT_TIME']=10               # Execution setting
-CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']=3               # Execution setting
+CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']=10              # Execution setting
 
 CT_CONFIGS_DICT['SPOT_LEG1_DISTANCE_TICKS']=-10      # Execution setting
 CT_CONFIGS_DICT['FTX_LEG1_DISTANCE_TICKS']=-10       # Execution setting
@@ -107,7 +107,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', '
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.1
+SMB_DICT['BASE_RATE']=0.11
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -139,12 +139,12 @@ if os.environ.get('USERNAME')=='Simon':
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 0
+  SHARED_ETC_DICT['THRESHOLD_L'] = 6
   ############################################################################################################
-  my_FTX=['COMP']
-  my_FTX_BBT_KUT=['XRP','DOGE','FTM']
+  my_FTX=['AAVE','COMP']
+  my_FTX_BBT_KUT=['XRP','DOGE','FTM','SUSHI']
   my_FTX_BBT_KUT_flowless=['ATOM','DYDX','LUNA']
-  my_FTX_BBT=['LINK','SUSHI']
+  my_FTX_BBT=['LINK']
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['LTC','SOL']
   my_FTX_KUT_flowless=['AXS','ADA','AVAX','DOT','VET']
@@ -166,4 +166,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  #CR_EXT_DELTA_USDT = 430e3 #bbftx
+  CR_EXT_DELTA_USDT = 100e3 #bbftx
