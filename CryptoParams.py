@@ -136,12 +136,12 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
-  #CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
+  CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':8,'bnt':0,'bn':0})
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
-  my_FTX=['AAVE','COMP']
+  my_FTX=['AAVE']
   my_FTX_BBT_KUT=['XRP','LINK']
   my_FTX_BBT_KUT_flowless=['AXS','ADA','DYDX']
   my_FTX_BBT=['SUSHI']
@@ -166,4 +166,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  #CR_EXT_DELTA_USDT = 260e3 #bbftx
+  CR_EXT_DELTA_USDT = 230e3+190e3+90e3 #bbftx
