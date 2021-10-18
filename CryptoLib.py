@@ -817,10 +817,6 @@ def kutGetFutPos(ku,ccy):
   return float(ku.futuresPrivate_get_position({'symbol':kutGetCcy(ccy)+'USDTM'})['data']['currentQty'])
 
 @retry(wait_fixed=1000)
-def kutGetAllFutPos(ku):
-  return pd.DataFrame(ku.futuresPrivate_get_positions()['data']).set_index('symbol')['currentQty'].astype(float)
-
-@retry(wait_fixed=1000)
 def kutGetEstFunding1(ku,ccy):
   return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.'+kutGetCcy(ccy)+'USDTMFPI8H'})['data']['value'])*3*365
 

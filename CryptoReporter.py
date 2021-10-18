@@ -906,6 +906,10 @@ class core:
   # KUT
   #####
   def kutInit(self):
+    @retry(wait_fixed=1000)
+    def getPosData():
+      return pd.DataFrame(self.api.futuresPrivate_get_positions()['data']).set_index('symbol')
+    #####
     def getFundingHistory(ccy,startAt):
       key='kutLock'
       kutLock = cl.cache('r', key)
@@ -928,21 +932,20 @@ class core:
     usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
     availableBalance = float(usdtDict['availableBalance'])
     #####
-    allFutPos=cl.kutGetAllFutPos(self.api)
+    posData=getPosData()
     for ccy in self.validCcys:
       ccy2=cl.kutGetCcy(ccy)+'USDTM'
-      if ccy2 in allFutPos.index:
-        self.futures.loc[ccy, 'FutDelta']=allFutPos[ccy2]*cl.kutGetMult(self.api,ccy)
+      if ccy2 in posData.index:
+        self.futures.loc[ccy, 'FutDelta']=float(posData.loc[ccy2,'currentQty'])*cl.kutGetMult(self.api,ccy)
     self.calcFuturesDeltaUSD()
     #####
     if self.n >= 2:  # trim list for auxiliary KUTs
       self.validCcys = list(self.futures.index[self.futures['FutDelta'] != 0])
     #####
-    positions=pd.DataFrame(self.api.futuresPrivate_get_positions()['data']).set_index('symbol')
     for ccy in self.validCcys:
       ccy2=cl.kutGetCcy(ccy)+'USDTM'
-      if ccy2 in positions.index:
-        self.liqDict[ccy] = float(positions.loc[ccy2,'liquidationPrice']) / float(positions.loc[ccy2,'markPrice'])
+      if ccy2 in posData.index:
+        self.liqDict[ccy] = float(posData.loc[ccy2,'liquidationPrice']) / float(posData.loc[ccy2,'markPrice'])
       else:
         self.liqDict[ccy] = 0
       futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']

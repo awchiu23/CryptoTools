@@ -107,7 +107,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', '
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.11
+SMB_DICT['BASE_RATE']=0.15
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -130,24 +130,24 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEYS_KU = [sl.jLoad('API_KEY_KU'),sl.jLoad('API_KEY_KU2'),sl.jLoad('API_KEY_KU3'),sl.jLoad('API_KEY_KU4'),sl.jLoad('API_KEY_KU5')]
-  API_SECRETS_KU = [sl.jLoad('API_SECRET_KU'),sl.jLoad('API_SECRET_KU2'),sl.jLoad('API_SECRET_KU3'),sl.jLoad('API_SECRET_KU4'),sl.jLoad('API_SECRET_KU5')]
-  API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3'),sl.jLoad('API_PASSWORD_KU4'),sl.jLoad('API_PASSWORD_KU5')]
+  API_KEYS_KU = [sl.jLoad('API_KEY_KU'),sl.jLoad('API_KEY_KU2'),sl.jLoad('API_KEY_KU3'),sl.jLoad('API_KEY_KU4'),sl.jLoad('API_KEY_KU5'),sl.jLoad('API_KEY_KU6'),sl.jLoad('API_KEY_KU7')]
+  API_SECRETS_KU = [sl.jLoad('API_SECRET_KU'),sl.jLoad('API_SECRET_KU2'),sl.jLoad('API_SECRET_KU3'),sl.jLoad('API_SECRET_KU4'),sl.jLoad('API_SECRET_KU5'),sl.jLoad('API_SECRET_KU6'),sl.jLoad('API_SECRET_KU7')]
+  API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3'),sl.jLoad('API_PASSWORD_KU4'),sl.jLoad('API_PASSWORD_KU5'),sl.jLoad('API_PASSWORD_KU6'),sl.jLoad('API_PASSWORD_KU7')]
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':5,'bnt':0,'bn':0})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':7,'bnt':0,'bn':0})
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
-  my_FTX=['AAVE','COMP','SUSHI']
-  my_FTX_BBT_KUT=['XRP','LINK','SOL']
+  my_FTX=['AAVE','COMP']
+  my_FTX_BBT_KUT=['XRP']
   my_FTX_BBT_KUT_flowless=['AXS','DYDX']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['DOGE','FTM','LTC']
-  my_FTX_KUT_flowless=['ADA','ATOM','AVAX','DOT','LUNA','VET']
+  my_FTX_KUT=['DOGE','FTM','LINK','LTC','SOL']
+  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','AVAX','DOT','FIL','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -166,4 +166,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  CR_EXT_DELTA_USDT = 80e3 #bbftx
+  #CR_EXT_DELTA_USDT = 260e3 #bbftx
