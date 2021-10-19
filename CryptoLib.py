@@ -117,7 +117,7 @@ def ftxGetBid(ftx,ticker):
 @retry(wait_fixed=1000)
 def ftxGetAsk(ftx,ticker):
   if ticker=='SHIB-PERP': # Special fix for SHIB
-    return float(ftx.public_get_markets_market_name({'market_name': ticker})['result']['bid']+2e-8)
+    return ftxGetBid(ftx,ticker)+2e-8
   else:
     return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
 
