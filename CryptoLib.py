@@ -105,7 +105,10 @@ def ftxGetMid(ftx, name):
     if name==z+'/USD':
       return float(ftx.public_get_futures_future_name({'future_name': z+'-PERP'})['result']['index'])
   d=ftx.public_get_markets_market_name({'market_name': name})['result']
-  return (float(d['bid'])+float(d['ask']))/2
+  if name=='SHIB-PERP': # Special fix for SHIB
+    return float(d['bid'])+1e-8
+  else:
+    return (float(d['bid'])+float(d['ask']))/2
 
 @retry(wait_fixed=1000)
 def ftxGetBid(ftx,ticker):
@@ -113,7 +116,10 @@ def ftxGetBid(ftx,ticker):
 
 @retry(wait_fixed=1000)
 def ftxGetAsk(ftx,ticker):
-  return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
+  if ticker=='SHIB-PERP': # Special fix for SHIB
+    return float(ftx.public_get_markets_market_name({'market_name': ticker})['result']['bid']+2e-8)
+  else:
+    return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
 
 @retry(wait_fixed=1000)
 def ftxGetFuture(ftx,ccy):
@@ -241,7 +247,8 @@ def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
       adjPrice -= tickSize * distance
     else:
       sys.exit(1)
-  return round(adjPrice,6)
+  nDigits=8 if ccyOrTicker[:4] == 'SHIB' else 6   # Special fix for SHIB
+  return round(adjPrice,nDigits)
 
 def roundQty(api, ccyOrTicker, qty):
   if api.name=='FTX':

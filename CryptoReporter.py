@@ -15,12 +15,7 @@ from retrying import retry
 def appendDeltas(myList, ccy, spotDict, spotDelta, futDelta):
   spot = spotDict[ccy]
   netDelta=spotDelta+futDelta
-  if ccy=='BTC':
-    nDigits=2
-  elif ccy in ['XRP','DOGE','MATIC']:
-    nDigits=None
-  else:
-    nDigits=1
+  nDigits=2 if ccy=='BTC' else 1
   zLabel = 'spot/'
   z1 = str(round(spotDelta,nDigits)) + '/'
   z2 = '($' + str(round(spotDelta * spot / 1000)) + 'K/$'
