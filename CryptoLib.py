@@ -42,12 +42,6 @@ class getPrices:
     elif self.exch == 'kut':
       self.fut = kutGetMid(self.api,self.ccy)
 
-    # BN/BNT to be deprecated soon....
-    elif self.exch == 'bn':
-      self.fut = bnGetMid(self.api,self.ccy)
-    elif self.exch == 'bnt':
-      self.fut = bntGetMid(self.api,self.ccy)
-
 #####################################################################################################################################
 
 ###########
@@ -65,7 +59,6 @@ def getApiDict():
   apiDict['kf'] = kfApophisInit()
   apiDict['kut'] = kutCCXTInit()
   apiDict['kutCurrent'] = kutCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
-  apiDict['bn'] = bnCCXTInit()  # BN/BNT to be deprecated soon....
   return apiDict
 
 def ftxCCXTInit():
@@ -89,12 +82,6 @@ def kutCCXTInit(n=1):
   apiSecret = API_SECRETS_KUT[n - 1]
   apiPassword = API_PASSWORDS_KUT[n - 1]
   return ccxt.kucoin({'apiKey': apiKey, 'secret': apiSecret, 'password': apiPassword, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
-
-# BN/BNT to be deprecated soon....
-def bnCCXTInit():
-  api = ccxt.binance({'apiKey': API_KEY_BN, 'secret': API_SECRET_BN, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
-  api.options['recvWindow']=50000
-  return api
 
 #########
 # Helpers
@@ -193,33 +180,6 @@ def kutGetBid(kut, ccy):
 def kutGetAsk(kut, ccy):
   return float(kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestAskPrice'])
 
-# BN/BNT to be deprecated soon....
-@retry(wait_fixed=1000)
-def bnGetMid(bn, ccy):
-  d=bn.dapiPublicGetTickerBookTicker({'symbol':ccy+'USD_PERP'})[0]
-  return (float(d['bidPrice']) + float(d['askPrice'])) / 2
-
-@retry(wait_fixed=1000)
-def bnGetBid(bn, ccy):
-  return float(bn.dapiPublicGetTickerBookTicker({'symbol': ccy+'USD_PERP'})[0]['bidPrice'])
-
-@retry(wait_fixed=1000)
-def bnGetAsk(bn, ccy):
-  return float(bn.dapiPublicGetTickerBookTicker({'symbol': ccy+'USD_PERP'})[0]['askPrice'])
-
-@retry(wait_fixed=1000)
-def bntGetMid(bn, ccy):
-  d = bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})
-  return (float(d['bidPrice']) + float(d['askPrice'])) / 2
-
-@retry(wait_fixed=1000)
-def bntGetBid(bn, ccy):
-  return float(bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})['bidPrice'])
-
-@retry(wait_fixed=1000)
-def bntGetAsk(bn, ccy):
-  return float(bn.fapiPublic_get_ticker_bookticker({'symbol': ccy + 'USDT'})['askPrice'])
-
 #####
 
 def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
@@ -231,12 +191,6 @@ def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
     tickSize=bbGetTickSize(api, ccyOrTicker, isBBT=(exch == 'bbt'))
   elif exch=='kut':
     tickSize=kutGetTickSize(api, ccyOrTicker)
-
-  # BN/BNT to be deprecated soon....
-  elif exch=='bn':
-    tickSize = bnGetTickSize(api, ccyOrTicker)
-  elif exch=='bnt':
-    tickSize=bntGetTickSize(api, ccyOrTicker)
 
   #####
   adjPrice = round(price / tickSize) * tickSize
@@ -253,8 +207,6 @@ def roundPrice(api, exch, ccyOrTicker, price, side=None, distance=None):
 def roundQty(api, ccyOrTicker, qty):
   if api.name=='FTX':
     lotSize = ftxGetLotSize(api, ccyOrTicker)
-  elif api.name=='Binance':                       # BN/BNT to be deprecated soon....
-    lotSize = bntGetLotSize(api, ccyOrTicker)
   else:
     sys.exit(1)
   return round(round(qty / lotSize) * lotSize, 6)
@@ -949,256 +901,6 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
 
 #############################################################################################
 
-# BN/BNT to be deprecated soon....
-
-####
-# BN
-####
-@retry(wait_fixed=1000)
-def bnGetFutPos(bn,ccy):
-  return float(pd.DataFrame(bn.dapiPrivate_get_positionrisk({'pair':ccy+'USD'})).set_index('symbol').loc[ccy + 'USD_PERP']['positionAmt'])
-
-@retry(wait_fixed=1000)
-def bnGetSpotPos(bn,ccy):
-  bal = pd.DataFrame(bn.dapiPrivate_get_balance()).set_index('asset')
-  return float(bal.loc[ccy, 'balance']) + float(bal.loc[ccy, 'crossUnPnl'])
-
-@retry(wait_fixed=1000)
-def bnGetEstFunding(bn, ccy):
-  return float(bn.dapiPublic_get_premiumindex({'symbol': ccy + 'USD_PERP'})[0]['lastFundingRate'])*3*365
-
-@retry(wait_fixed=1000)
-def bnGetIsolatedMarginDf(bn,spotDict):
-  df=pd.DataFrame()
-  for i in bn.sapi_get_margin_isolated_account()['assets']:
-    qty=float(i['baseAsset']['netAsset'])
-    if qty!=0:
-      symbol = i['symbol']
-      symbolAsset = i['baseAsset']['asset']
-      symbolColl=i['quoteAsset']['asset']
-      qtyColl = float(i['quoteAsset']['totalAsset'])
-      qtyBTC=0
-      qtyUSDT=0
-      qtyBUSD=0
-      if symbolColl== 'BTC':
-        qtyBTC = qtyColl
-      elif symbolColl=='BUSD':
-        qtyBUSD = qtyColl
-      elif symbolColl == 'USDT':
-        qtyUSDT = qtyColl
-      else:
-        sys.exit(1)
-      liq = float(i['liquidatePrice']) / float(i['indexPrice'])
-      #############
-      df2 = pd.DataFrame(bn.sapi_get_margin_interesthistory({'isolatedSymbol': symbol, 'size': 100, 'startTime': getYest() * 1000})['rows'])
-      dfSetFloat(df2, ['interestAccuredTime','principal','interest','interestRate'])
-      df2['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df2['interestAccuredTime']]
-      df2 = df2.set_index('date').sort_index()
-      principal = df2['principal'][-1] * spotDict[symbolAsset]
-      oneDayFlows = -df2['interest'].sum() * spotDict[symbolAsset]
-      oneDayFlowsAnnRet = oneDayFlows * 365 / principal
-      prevFlows = -df2['interest'][-1] * spotDict[symbolAsset]
-      prevFlowsAnnRet = prevFlows * 24 * 365 / principal
-      #############
-      df=df.append({'symbol':symbol,
-                    'symbolAsset':symbolAsset,
-                    'symbolColl':symbolColl,
-                    'qty':qty,
-                    'collateralBTC':qtyBTC,
-                    'collateralBUSD': qtyBUSD,
-                    'collateralUSDT':qtyUSDT,
-                    'liq':liq,
-                    'oneDayFlows':oneDayFlows,
-                    'oneDayFlowsAnnRet':oneDayFlowsAnnRet,
-                    'prevFlows':prevFlows,
-                    'prevFlowsAnnRet':prevFlowsAnnRet}, ignore_index=True)
-  df=df[['symbol','symbolAsset','symbolColl','qty','collateralBTC','collateralBUSD','collateralUSDT','liq','oneDayFlows','oneDayFlowsAnnRet','prevFlows','prevFlowsAnnRet']].set_index('symbol')
-  return df
-
-@retry(wait_fixed=1000)
-def bnGetTickSize(bn,ccy):
-  key='bnTickSize'
-  df=cache('r',key)
-  if df is None:
-    df=pd.DataFrame(bn.dapiPublic_get_exchangeinfo()['symbols']).set_index('symbol')
-    cache('w',key,df)
-  return float(df.loc[ccy+'USD_PERP','filters'][0]['tickSize'])
-
-def bnRelOrder(side,bn,ccy,trade_notional,maxChases=0,distance=0):
-  @retry(wait_fixed=1000)
-  def bnGetOrder(bn, ticker, orderId):
-    return bn.dapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
-  # Do not use @retry
-  def bnPlaceOrder(bn, ticker, side, qty, limitPrice):
-    return bn.dapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
-  # Do not use @retry
-  def bnCancelOrder(bn, ticker, orderId):
-    try:
-      orderStatus=bn.dapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
-      if orderStatus['status']!='CANCELED':
-        print('Order cancellation failed!')
-        sys.exit(1)
-      return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty'])
-    except:
-      orderStatus=bnGetOrder(bn, ticker, orderId)
-      return orderStatus,0
-  #####
-  assertSide(side)
-  ticker=ccy+'USD_PERP'
-  print(getCurrentTime() + ': Sending BN ' + side + ' order of ' + ticker + ' (notional=$'+ str(round(trade_notional))+') ....')
-  mult=100 if ccy=='BTC' else 10
-  qty=round(trade_notional/mult)
-  if side == 'BUY':
-    refPrice = bnGetBid(bn, ccy)
-  else:
-    refPrice = bnGetAsk(bn, ccy)
-  limitPrice = roundPrice(bn,'bn',ccy,refPrice,side=side,distance=distance)
-  orderId=bnPlaceOrder(bn, ticker, side, qty, limitPrice)
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
-  refTime = time.time()
-  nChases=0
-  while True:
-    orderStatus = bnGetOrder(bn, ticker, orderId)
-    if orderStatus['status']=='FILLED': break
-    if side=='BUY':
-      newRefPrice=bnGetBid(bn,ccy)
-    else:
-      newRefPrice=bnGetAsk(bn,ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']):
-      refPrice=newRefPrice
-      nChases+=1
-      orderStatus = bnGetOrder(bn, ticker, orderId)
-      if orderStatus['status'] == 'FILLED': break
-      if nChases > maxChases and float(orderStatus['executedQty'])==0:
-        orderStatus, leavesQty = bnCancelOrder(bn, ticker, orderId)
-        if leavesQty==0: break
-        print(getCurrentTime() + ': Cancelled')
-        return 0
-      else:
-        refTime = time.time()
-        newLimitPrice = roundPrice(bn, 'bn', ccy, refPrice, side=side, distance=distance)
-        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
-          limitPrice = newLimitPrice
-          orderStatus, leavesQty = bnCancelOrder(bn, ticker, orderId)
-          if leavesQty == 0: break
-          orderId = bnPlaceOrder(bn, ticker, side, leavesQty, limitPrice)
-        else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
-    time.sleep(1)
-  orderStatus = bnGetOrder(bn, ticker, orderId)
-  fill=float(orderStatus['avgPrice'])
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
-
-#############################################################################################
-
-#####
-# BNT
-#####
-@retry(wait_fixed=1000)
-def bntGetFutPos(bn, ccy):
-  return float(bn.fapiPrivate_get_positionrisk({'symbol':ccy+'USDT'})[0]['positionAmt'])
-
-@retry(wait_fixed=1000)
-def bntGetEstFunding(bn, ccy):
-  return float(bn.fapiPublic_get_premiumindex({'symbol': ccy + 'USDT'})['lastFundingRate']) * 3 * 365
-
-@retry(wait_fixed=1000)
-def bntGetRiskDf(bn,ccys):
-  positionRisk = pd.DataFrame(bn.fapiPrivate_get_positionrisk()).set_index('symbol').loc[[z + 'USDT' for z in ccys]]
-  cols = ['positionAmt','entryPrice','markPrice','unRealizedProfit','liquidationPrice','notional']
-  df=positionRisk[cols].copy()
-  dfSetFloat(df,cols)
-  df['liq'] = df['liquidationPrice'] / df['markPrice']
-  return df
-
-@retry(wait_fixed=1000)
-def bntGetTickSize(bn,ccy):
-  key='bntTickSize'
-  df=cache('r',key)
-  if df is None:
-    df=pd.DataFrame(bn.fapiPublic_get_exchangeinfo()['symbols']).set_index('symbol')
-    cache('w',key,df)
-  return float(df.loc[ccy+'USDT','filters'][0]['tickSize'])
-
-@retry(wait_fixed=1000)
-def bntGetLotSize(bn,ccy):
-  key='bntLotSize'
-  df=cache('r',key)
-  if df is None:
-    df=pd.DataFrame(bn.fapiPublic_get_exchangeinfo()['symbols']).set_index('symbol')
-    cache('w',key,df)
-  return float(df.loc[ccy+'USDT','filters'][1]['stepSize'])
-
-def bntRelOrder(side, bn, ccy, trade_qty, maxChases=0,distance=0):
-  @retry(wait_fixed=1000)
-  def bntGetOrder(bn, ticker, orderId):
-    return bn.fapiPrivate_get_order({'symbol': ticker, 'orderId': orderId})
-  # Do not use @retry
-  def bntPlaceOrder(bn, ticker, side, qty, limitPrice):
-    return bn.fapiPrivate_post_order({'symbol': ticker, 'side': side, 'type': 'LIMIT', 'quantity': qty, 'price': limitPrice, 'timeInForce': 'GTC'})['orderId']
-  # Do not use @retry
-  def bntCancelOrder(bn, ticker, orderId):
-    try:
-      orderStatus=bn.fapiPrivate_delete_order({'symbol': ticker, 'orderId': orderId})
-      if orderStatus['status']!='CANCELED':
-        print('Order cancellation failed!')
-        sys.exit(1)
-      return orderStatus,float(orderStatus['origQty'])-float(orderStatus['executedQty'])
-    except:
-      orderStatus=bntGetOrder(bn, ticker, orderId)
-      return orderStatus,0
-  #####
-  assertSide(side)
-  ticker=ccy+'USDT'
-  qty = roundQty(bn,ccy,trade_qty)
-  print(getCurrentTime()+': Sending BNT '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
-  if side == 'BUY':
-    refPrice = bntGetBid(bn, ccy)
-  else:
-    refPrice = bntGetAsk(bn, ccy)
-  limitPrice = roundPrice(bn,'bnt',ccy,refPrice,side=side,distance=distance)
-  orderId=bntPlaceOrder(bn, ticker, side, qty, limitPrice)
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
-  refTime = time.time()
-  nChases=0
-  while True:
-    orderStatus = bntGetOrder(bn, ticker, orderId)
-    if orderStatus['status']=='FILLED': break
-    if side=='BUY':
-      newRefPrice=bntGetBid(bn,ccy)
-    else:
-      newRefPrice=bntGetAsk(bn,ccy)
-    if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']):
-      refPrice=newRefPrice
-      nChases+=1
-      orderStatus = bntGetOrder(bn, ticker, orderId)
-      if orderStatus['status'] == 'FILLED': break
-      if nChases > maxChases and float(orderStatus['executedQty']) == 0:
-        orderStatus, leavesQty = bntCancelOrder(bn, ticker, orderId)
-        if leavesQty == 0: break
-        print(getCurrentTime() + ': Cancelled')
-        return 0
-      else:
-        refTime = time.time()
-        newLimitPrice = roundPrice(bn, 'bnt', ccy, refPrice, side=side, distance=distance)
-        if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
-          limitPrice = newLimitPrice
-          orderStatus, leavesQty = bntCancelOrder(bn, ticker, orderId)
-          if leavesQty == 0: break
-          orderId = bntPlaceOrder(bn, ticker, side, roundQty(bn, ccy, leavesQty), limitPrice)
-        else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
-    time.sleep(1)
-  orderStatus = bntGetOrder(bn, ticker, orderId)
-  fill=float(orderStatus['avgPrice'])
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  return fill
-
-#############################################################################################
-
 ####################
 # Smart basis models
 ####################
@@ -1214,7 +916,6 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
   db = apiDict['db']
   kf = apiDict['kf']
   kut = apiDict['kut']
-  bn = apiDict['bn']  # BN/BNT to be deprecated soon....
   #####
   # Common
   ftxWallet = ftxGetWallet(ftx)
@@ -1242,10 +943,6 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
   if 'kut' in validExchs:
     d['kutEstFunding1'] = kutGetEstFunding1(kut, ccy)
     d['kutEstFunding2'] = kutGetEstFunding2(kut, ccy)
-
-  # BN/BNT to be deprecated soon....
-  if 'bn' in validExchs:  d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
-  if 'bnt' in validExchs: d['bntEstFunding'] = bntGetEstFunding(bn, ccy)
 
   if isRateLimit:
     if ccy in ['BTC', 'ETH']:
@@ -1342,29 +1039,6 @@ def kutGetOneDayShortFutEdge(kut, fundingDict, basis):
   snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['kutEstFunding2'], prevFundingRate=fundingDict['kutEstFunding1'],isKU=True) - getOneDayUSDTCollateralBleed(fundingDict)
 
-# BN/BNT to be deprecated soon....
-
-@retry(wait_fixed=1000)
-def bnGetOneDayShortFutEdge(bn, fundingDict, basis):
-  df=pd.DataFrame(bn.dapiData_get_basis({'pair': fundingDict['Ccy'] + 'USD', 'contractType': 'PERPETUAL', 'period': '1m'}))[-15:]
-  dfSetFloat(df,['basis','indexPrice'])
-  premIndex=(df['basis'] / df['indexPrice']).mean()
-  premIndexClamped=premIndex+np.clip(0.0001-premIndex,-0.0005,0.0005)
-  snapFundingRate=premIndexClamped*365*3
-  return getOneDayShortFutEdge(8, basis,snapFundingRate, fundingDict['bnEstFunding'], pctElapsedPower=2)
-
-@retry(wait_fixed=1000)
-def bntGetOneDayShortFutEdge(bn, fundingDict, basis):
-  keyPremIndex='bntEMAPremIndex'+fundingDict['Ccy']
-  if cache('r',keyPremIndex) is None:
-    cache('w',keyPremIndex,fundingDict['bntEstFunding'] / 365 / 3)
-  d = bn.fapiPublic_get_premiumindex({'symbol': fundingDict['Ccy'] + 'USDT'})
-  premIndex = float(d['markPrice']) / float(d['indexPrice']) - 1
-  smoothedPremIndex = getEMANow(premIndex, cache('r',keyPremIndex), CT_CONFIGS_DICT['EMA_K'])
-  cache('w',keyPremIndex,smoothedPremIndex)
-  smoothedSnapFundingRate = (smoothedPremIndex + np.clip(0.0001 - smoothedPremIndex, -0.0005, 0.0005))*365*3
-  return getOneDayShortFutEdge(8, basis,smoothedSnapFundingRate, fundingDict['bntEstFunding'], pctElapsedPower=2) - getOneDayUSDTCollateralBleed(fundingDict)
-
 #############################################################################################
 
 def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
@@ -1373,7 +1047,6 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
   db = apiDict['db']
   kf = apiDict['kf']
   kut = apiDict['kut']
-  bn = apiDict['bn'] # BN/BNT to be deprecated soon....
   #####
   validExchs = getValidExchs(ccy)
   objs=[]
@@ -1395,14 +1068,6 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
   if 'kut' in validExchs:
     kutPrices = getPrices('kut',kut,ccy)
     objs.append(kutPrices)
-
-  # BN/BNT to be deprecated soon....
-  if 'bnt' in validExchs:
-    bntPrices = getPrices('bnt', bn, ccy)
-    objs.append(bntPrices)
-  if 'bn' in validExchs:
-    bnPrices = getPrices('bn', bn, ccy)
-    objs.append(bnPrices)
 
   Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   #####
@@ -1432,16 +1097,6 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
     kutAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['KUT_' + ccy][1]) / 10000
     d['kutBasis'] = kutPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
     d['kutSmartBasis'] = kutGetOneDayShortFutEdge(kut, fundingDict, d['kutBasis']) - oneDayShortSpotEdge + kutAdj
-
-  # BN/BNT to be deprecated soon....
-  if 'bn' in validExchs:
-    bnAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BN_' + ccy][1]) / 10000
-    d['bnBasis'] = bnPrices.fut / ftxPrices.spot - 1
-    d['bnSmartBasis'] = bnGetOneDayShortFutEdge(bn, fundingDict, d['bnBasis']) - oneDayShortSpotEdge + bnAdj
-  if 'bnt' in validExchs:
-    bntAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['BNT_' + ccy][1]) / 10000
-    d['bntBasis'] = bntPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
-    d['bntSmartBasis'] = bntGetOneDayShortFutEdge(bn, fundingDict, d['bntBasis']) - oneDayShortSpotEdge + bntAdj
 
   return d
 
@@ -1517,13 +1172,6 @@ def ctGetPosUSD(apiDict,exch, ccy, spot):
     return kutGetFutPos(apiDict['kutCurrent'], ccy) * kutGetMult(apiDict['kutCurrent'], ccy) * spot
   elif exch == 'spot':
     return ftxGetWallet(apiDict['ftx']).loc[ccy,'usdValue']
-
-  # BN/BNT to be deprecated soon....
-  elif exch == 'bn':
-    mult = 100 if ccy == 'BTC' else 10
-    return bnGetFutPos(apiDict['bn'], ccy) * mult
-  elif exch == 'bnt':
-    return bntGetFutPos(apiDict['bn'], ccy) * spot
   else:
     sys.exit(1)
 
@@ -1626,7 +1274,6 @@ def ctRun(ccy, notional, tgtBps, color):
   db = apiDict['db']
   kf = apiDict['kf']
   kutCurrent = apiDict['kutCurrent']
-  bn = apiDict['bn']  # BN/BNT to be deprecated soon....
   #####
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
@@ -1804,24 +1451,6 @@ def ctRun(ccy, notional, tgtBps, color):
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
 
-        # BN/BNT to be deprecated soon....
-        if 'bn' == chosenLong and not isCancelled:
-          distance = ctGetDistance('BN', completedLegs)
-          longFill = bnRelOrder('BUY', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bn' == chosenShort and not isCancelled:
-          distance = ctGetDistance('BN', completedLegs)
-          shortFill = bnRelOrder('SELL', bn, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs), distance=distance)
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'bnt' == chosenLong and not isCancelled:
-          distance = ctGetDistance('BNT', completedLegs)
-          longFill = bntRelOrder('BUY', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'bnt' == chosenShort and not isCancelled:
-          distance = ctGetDistance('BNT', completedLegs)
-          shortFill = bntRelOrder('SELL', bn, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-
         if isCancelled:
           status=(min(abs(status),CT_CONFIGS_DICT['STREAK'])-1)*np.sign(status)
           print()
@@ -1886,7 +1515,7 @@ def filterDict(d, keyword):
       d2[key] = value
   return d2
 
-# Get max abs position USD (bb/bn/db/kf only)
+# Get max abs position USD (bb/db/kf only)
 def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=3, negMult=6):
   if exch=='bb':
     bb = bbCCXTInit()
@@ -1903,14 +1532,6 @@ def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=3, negMult=6):
     spot = kfGetMid(kf, ccy)
     spotPos = kfGetSpotPos(kf,ccy,isIncludeHoldingWallets=False)
     futPos = kfGetFutPos(kf,ccy)
-
-  # BN/BNT to be deprecated soon....
-  elif exch == 'bn':
-    bn = bnCCXTInit()
-    spot = bnGetMid(bn, ccy)
-    spotPos = bnGetSpotPos(bn, ccy)
-    futPos = bnGetFutPos(bn, ccy)
-
   else:
     sys.exit(1)
   notional=(spot*spotPos)+spotDeltaUSDAdj

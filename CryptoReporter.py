@@ -67,38 +67,6 @@ def appendFlows(myList, ftxCore, nav):
   except:
     pass
 
-def bnGetPayments(bn, ccy, isBNT=False):
-  if isBNT:
-    df = pd.DataFrame(bn.fapiPublic_get_fundingrate({'symbol': ccy + 'USDT', 'startTime': cl.getYest() * 1000}))
-  else:
-    df = pd.DataFrame(bn.dapiPublic_get_fundingrate({'symbol': ccy + 'USD_PERP', 'startTime': cl.getYest() * 1000}))
-  cl.dfSetFloat(df, 'fundingRate')
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['fundingTime']]
-  df = df.set_index('date').sort_index()
-  return df
-
-def bnGetIncomes(bn, validCcys, spotDict, isBNT=False):
-  if isBNT:
-    df = pd.DataFrame(bn.fapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000}))
-  else:
-    df = pd.DataFrame(bn.dapiPrivate_get_income({'incomeType': 'FUNDING_FEE', 'startTime': cl.getYest() * 1000}))
-  if len(df) == 0: return 0, 0
-  df = df.set_index('symbol')
-  cl.dfSetFloat(df, 'income')
-  suffix = 'USDT' if isBNT else 'USD_PERP'
-  validCcys=list(set(z.replace(suffix,'') for z in df.index).intersection(validCcys)) # Remove currencies without cashflows
-  df = df.loc[[z + suffix for z in validCcys]]
-  for ccy in validCcys:
-    ccy2 = ccy + suffix
-    fx = spotDict['USDT'] if isBNT else spotDict[ccy]
-    df.loc[ccy2, 'incomeUSD'] = df.loc[ccy2, 'income'] * fx
-  df['date'] = [datetime.datetime.fromtimestamp(int(ts) / 1000) for ts in df['time']]
-  df = df.set_index('date').sort_index()
-  if len(df) == 0: return 0, 0
-  oneDayIncome = df['incomeUSD'].sum()
-  prevIncome = df[df.index > df.index[-1] - pd.DateOffset(minutes=10)]['incomeUSD'].sum()
-  return oneDayIncome, prevIncome
-
 def colored(text, color):
   if '--nocolor' in sys.argv:
     return text
@@ -151,10 +119,6 @@ def getCores():
     for n in range(SHARED_EXCH_DICT['kut']):
       kutCores.append(processCore('kut',spotDict,objs,n=n+1))
 
-  # BN/BNT to be deprecated soon....
-  bnCore=processCore('bn',spotDict,objs)
-  bntCore=processCore('bnt',spotDict,objs)
-
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
@@ -177,10 +141,6 @@ def getCores():
   coresDict['db']=dbCore
   coresDict['kf']=kfCore
   coresDict['kut']=kutCores
-  
-  # BN/BNT to be deprecated soon....
-  coresDict['bn']=bnCore
-  coresDict['bnt']=bntCore
   
   return coresDict, spotDict, objs, isOk
 
@@ -309,12 +269,6 @@ class core:
     elif self.exch=='kut':
       self.kutInit()
 
-    # BN/BNT to be deprecated soon....
-    elif self.exch == 'bn':
-      self.bnInit()
-    elif self.exch == 'bnt':
-      self.bntInit()
-
   def calcSpotDeltaUSD(self):
     for ccy in self.spots.index:
       self.spots.loc[ccy,'SpotDeltaUSD']=self.spots.loc[ccy,'SpotDelta']*self.spotDict[ccy]
@@ -334,7 +288,7 @@ class core:
       self.incomesStr = colored((self.name +  ' 24h/'+zPrev+' funding income: ').rjust(37) + z1 + ' / ' + z2, 'blue')
 
   def makeFundingStr(self,ccy, oneDayFunding, prevFunding, estFunding, estFunding2=None):
-    if self.exch in ['bb','bbt','db','kf','kut','bn','bnt']:
+    if self.exch in ['bb','bbt','db','kf','kut']:
       z = fmtLiq(self.liqDict[ccy])
     else:
       z = ''
@@ -356,13 +310,13 @@ class core:
     spotDeltaUSD=self.spots.loc[ccy,'SpotDeltaUSD']
     futDeltaUSD=self.futures.loc[ccy, 'FutDeltaUSD']
     netDeltaUSD=spotDeltaUSD+futDeltaUSD
-    if self.exch in ['bbt','kut','bnt']:
+    if self.exch in ['bbt','kut']:
       suffix = '(fut: $' + str(round(futDeltaUSD / 1000)) + 'K)'
     else:
       suffix = '(spot/fut/net: $' + str(round(spotDeltaUSD/1000)) + 'K/$' + str(round(futDeltaUSD/1000)) + 'K/$' + str(round(netDeltaUSD/1000))+'K)'
     self.fundingStrDict[ccy] = liqStr.rjust(5) + prefix.rjust(31) + ' ' + body.ljust(27) + suffix
 
-  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, kut, bnt
+  def makeLiqStr(self,cushion=None,delta=None,riskDf=None,availableBalance=None):  # ftx, bbt, kut
     def bbtGetLiq(riskDf, availableBalance, increment):
       df = riskDf.copy()
       isOk = False
@@ -410,7 +364,7 @@ class core:
       elif self.exch=='kut':
         self.liqL = kutGetLiq(riskDf, availableBalance, -0.01)
         self.liqH = kutGetLiq(riskDf, availableBalance, 0.01)
-    else: # ftx, bnt
+    else: # ftx
       liq = 1 - cushion / delta
       if delta>=0:
         self.liqL = liq
@@ -709,92 +663,6 @@ class core:
     return estFunding2
   
   ####
-  # BN
-  ####
-  def bnInit(self):
-    self.api = cl.bnCCXTInit()
-    bal = pd.DataFrame(self.api.dapiPrivate_get_balance())
-    cl.dfSetFloat(bal, ['balance', 'crossUnPnl'])
-    bal = bal.set_index('asset').loc[self.validCcys]
-    for ccy in self.validCcys:
-      self.spots.loc[ccy,'SpotDelta']=bal.loc[ccy,'balance']+bal.loc[ccy,'crossUnPnl']
-    self.calcSpotDeltaUSD()
-    #####
-    futs = pd.DataFrame(self.api.dapiPrivate_get_positionrisk()).set_index('symbol')
-    cl.dfSetFloat(futs, ['positionAmt','liquidationPrice','markPrice'])
-    for ccy in self.validCcys:
-      ccy2=ccy+'USD_PERP'
-      mult=100 if ccy=='BTC' else 10 # Only BTC is 100 multiplier
-      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']*mult/self.spotDict[ccy]
-      self.liqDict[ccy] = futs.loc[ccy2,'liquidationPrice'] / futs.loc[ccy2,'markPrice']
-    self.calcFuturesDeltaUSD()
-    #####
-    pmts = pd.DataFrame()
-    for ccy in self.validCcys:
-      pmts = pmts.append(bnGetPayments(self.api,ccy))
-    #####
-    self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict)
-    self.setAnnRets()
-    #####
-    self.nav = self.spots['SpotDeltaUSD'].sum()
-    #####
-    self.oneDayFundingDict = dict()
-    self.prevFundingDict = dict()
-    self.estFundingDict=dict()
-    for ccy in self.validCcys:
-      df = pmts.loc[pmts['symbol'] == ccy + 'USD_PERP', 'fundingRate']
-      oneDayFunding = df.mean() * 3 * 365
-      prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = cl.bnGetEstFunding(self.api, ccy)
-      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
-    #####
-    self.makeIncomesStr()
-    #####
-    self.isDone = True
-
-  #####
-  # BNT
-  #####
-  def bntInit(self):
-    self.api = cl.bnCCXTInit()
-    riskDf = cl.bntGetRiskDf(self.api, self.validCcys)
-    futs = pd.DataFrame(self.api.fapiPrivate_get_positionrisk()).set_index('symbol')
-    cl.dfSetFloat(futs, ['positionAmt'])
-    for ccy in self.validCcys:
-      ccy2=ccy+'USDT'
-      self.futures.loc[ccy,'FutDelta']=futs.loc[ccy2,'positionAmt']
-      self.liqDict[ccy] = riskDf.loc[ccy+'USDT', 'liq']
-    self.calcFuturesDeltaUSD()
-    #####
-    pmts=pd.DataFrame()
-    for ccy in self.validCcys:
-      pmts=pmts.append(bnGetPayments(self.api,ccy,isBNT=True))
-    self.oneDayIncome,self.prevIncome=bnGetIncomes(self.api,self.validCcys,self.spotDict,isBNT=True)
-    self.setAnnRets()
-    #####
-    d=self.api.fapiPrivate_get_account()
-    mb = float(d['totalMarginBalance'])
-    mm = float(d['totalMaintMargin'])
-    self.spots.loc['USDT','SpotDelta'] = mb
-    self.calcSpotDeltaUSD()
-    self.nav = self.spots.loc['USDT','SpotDeltaUSD'].sum()
-    #####
-    for ccy in self.validCcys:
-      df = pmts.loc[pmts['symbol'] == ccy + 'USDT', 'fundingRate']
-      oneDayFunding = df.mean() * 3 * 365
-      prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = cl.bntGetEstFunding(self.api, ccy)
-      self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
-    #####
-    self.makeIncomesStr()
-    #####
-    cushion = (mb - mm) * self.spotDict['USDT']
-    delta = self.futures['FutDeltaUSD'].sum()
-    self.makeLiqStr(cushion=cushion,delta=delta)
-    #####
-    self.isDone = True
-
-  ####
   # DB
   ####
   def dbInit(self):
@@ -1020,10 +888,6 @@ if __name__ == '__main__':
   kfCore=coresDict['kf']
   kutCores=coresDict['kut']
 
-  # BN/BNT to be deprecated soon....
-  bnCore = coresDict['bn']
-  bntCore = coresDict['bnt']
-
   #############
   # Aggregation
   #############
@@ -1041,7 +905,7 @@ if __name__ == '__main__':
     extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
   extCoinsNAV += CR_EXT_DELTA_USDT * spotDict['USDT']
   nav+= extCoinsNAV
-  oneDayIncome+=ftxCore.oneDayFlows+bnCore.oneDayFlows
+  oneDayIncome+=ftxCore.oneDayFlows
 
   ########
   # Output
@@ -1064,7 +928,6 @@ if __name__ == '__main__':
   usdtCores=[]
   for core in bbtCores:
     usdtCores.append(core)
-  if SHARED_EXCH_DICT['bnt']==1: usdtCores.append(bntCore)
   for core in kutCores:
     usdtCores.append(core)
   appendUSDTDeltas(agList, ftxCore, spotDict, usdtCores)
@@ -1087,8 +950,6 @@ if __name__ == '__main__':
     elif len(bbt_kut_list)==1:
       bbt_kut_list[0].printAll()
       break
-  #####
-  printAllDual(bntCore, bnCore)
   #####
   if '-f' in sys.argv:
     while True:

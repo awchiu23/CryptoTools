@@ -17,10 +17,6 @@ API_KEYS_KUT = ['']       # List of keys to facilitate multiple kucoin accounts
 API_SECRETS_KUT = ['']    # List of secrets to facilitate multiple kucoin accounts
 API_PASSWORDS_KUT = ['']  # List of passwords to facilitate multiple kucoin accounts
 
-# BN/BNT to be deprecated soon....
-API_KEY_BN = ''
-API_SECRET_BN = ''
-
 #############################################################################################
 
 ###############
@@ -65,14 +61,6 @@ CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=1          # Execution setting
 CT_CONFIGS_DICT['KUT_LEG2_DISTANCE_TICKS']=0          # Execution setting
 
-# BN/BNT to be deprecated soon....
-CT_CONFIGS_DICT['BNT_MAX_WAIT_TIME']=3               # Execution setting
-CT_CONFIGS_DICT['BN_MAX_WAIT_TIME']=3                # Execution setting
-CT_CONFIGS_DICT['BNT_LEG1_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['BN_LEG1_DISTANCE_TICKS']=0          # Execution setting
-CT_CONFIGS_DICT['BNT_LEG2_DISTANCE_TICKS']=0         # Execution setting
-CT_CONFIGS_DICT['BN_LEG2_DISTANCE_TICKS']=0          # Execution setting
-
 #############################################################################################
 
 ##########################
@@ -94,7 +82,7 @@ CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = True
 ########
 # Shared
 ########
-SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'db':1,'kf':1,'kut':1,'bnt':0,'bn':0})
+SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':1,'db':1,'kf':1,'kut':1})
 SHARED_CCY_DICT=dict()
 SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
@@ -119,6 +107,8 @@ SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
+  from win32api import GetKeyState
+  from win32con import VK_CAPITAL
   #####
   if 'COLAB' in os.environ: APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   #####
@@ -133,12 +123,11 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEYS_KUT = [sl.jLoad('API_KEY_KUT'),sl.jLoad('API_KEY_KUT2'),sl.jLoad('API_KEY_KUT3'),sl.jLoad('API_KEY_KUT4'),sl.jLoad('API_KEY_KUT5'),sl.jLoad('API_KEY_KUT6'),sl.jLoad('API_KEY_KUT7'),sl.jLoad('API_KEY_KUT8'),sl.jLoad('API_KEY_KUT9')]
   API_SECRETS_KUT = [sl.jLoad('API_SECRET_KUT'),sl.jLoad('API_SECRET_KUT2'),sl.jLoad('API_SECRET_KUT3'),sl.jLoad('API_SECRET_KUT4'),sl.jLoad('API_SECRET_KUT5'),sl.jLoad('API_SECRET_KUT6'),sl.jLoad('API_SECRET_KUT7'),sl.jLoad('API_SECRET_KUT8'),sl.jLoad('API_SECRET_KUT9')]
   API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9')]
-  API_KEY_BN = sl.jLoad('API_KEY_BN')
-  API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
+  CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   #CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':9,'bnt':0,'bn':0})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':9})
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
   my_FTX=['AAVE']
@@ -147,7 +136,7 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['FTM','LTC','SOL']
-  my_FTX_KUT_flowless=['ALGO','AXS','ATOM','AVAX','DOT','FIL','LUNA','SHIB','VET','XLM','XTZ']
+  my_FTX_KUT_flowless=['ALGO','AXS','ATOM','AVAX','DOT','FIL','LUNA','SHIB','VET','XTZ']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
