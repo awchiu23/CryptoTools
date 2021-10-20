@@ -24,7 +24,7 @@ API_PASSWORDS_KUT = ['']  # List of passwords to facilitate multiple kucoin acco
 ###############
 CT_CONFIGS_DICT=dict()
 
-CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when spot rates >= 100%?
+CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] = True     # Trading of spot paused when usd rates >= 100%?
 CT_CONFIGS_DICT['STREAK'] = 3                        # Number of observations through target before triggering
 CT_CONFIGS_DICT['STREAK_RANGE_BPS'] = 5              # Max number of allowed bps for range of observations
 CT_CONFIGS_DICT['NPROGRAMS'] = 100                   # Number of programs (each program being a pair of trades)
@@ -95,7 +95,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', '
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.11
+SMB_DICT['BASE_RATE']=0.17
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -127,7 +127,7 @@ if os.environ.get('USERNAME')=='Simon':
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   #CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':9})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':0,'db':0,'kf':0,'kut':9})
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
   my_FTX=['AAVE']
@@ -155,4 +155,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  #CR_EXT_DELTA_USDT = 230e3+190e3+90e3 #bbftx
+  CR_EXT_DELTA_USDT = 42615 #bbftx
