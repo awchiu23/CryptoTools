@@ -923,7 +923,7 @@ class core:
         time.sleep(0.35)
         return fundingHistory
     #####
-    self.api = cl.kuCCXTInit(n=self.n)
+    self.api = cl.kutCCXTInit(n=self.n)
     usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
     availableBalance = float(usdtDict['availableBalance'])
     #####

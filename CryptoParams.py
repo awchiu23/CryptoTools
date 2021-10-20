@@ -13,9 +13,9 @@ API_KEY_DB = ''
 API_SECRET_DB = ''
 API_KEY_KF = ''
 API_SECRET_KF = ''
-API_KEYS_KU = ['']        # List of keys to facilitate multiple kucoin accounts
-API_SECRETS_KU = ['']     # List of secrets to facilitate multiple kucoin accounts
-API_PASSWORDS_KU = ['']   # List of passwords to facilitate multiple kucoin accounts
+API_KEYS_KUT = ['']       # List of keys to facilitate multiple kucoin accounts
+API_SECRETS_KUT = ['']    # List of secrets to facilitate multiple kucoin accounts
+API_PASSWORDS_KUT = ['']  # List of passwords to facilitate multiple kucoin accounts
 
 # BN/BNT to be deprecated soon....
 API_KEY_BN = ''
@@ -130,16 +130,16 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEYS_KU = [sl.jLoad('API_KEY_KU'),sl.jLoad('API_KEY_KU2'),sl.jLoad('API_KEY_KU3'),sl.jLoad('API_KEY_KU4'),sl.jLoad('API_KEY_KU5'),sl.jLoad('API_KEY_KU6'),sl.jLoad('API_KEY_KU7'),sl.jLoad('API_KEY_KU8'),sl.jLoad('API_KEY_KU9')]
-  API_SECRETS_KU = [sl.jLoad('API_SECRET_KU'),sl.jLoad('API_SECRET_KU2'),sl.jLoad('API_SECRET_KU3'),sl.jLoad('API_SECRET_KU4'),sl.jLoad('API_SECRET_KU5'),sl.jLoad('API_SECRET_KU6'),sl.jLoad('API_SECRET_KU7'),sl.jLoad('API_SECRET_KU8'),sl.jLoad('API_SECRET_KU9')]
-  API_PASSWORDS_KU = [sl.jLoad('API_PASSWORD_KU'),sl.jLoad('API_PASSWORD_KU2'),sl.jLoad('API_PASSWORD_KU3'),sl.jLoad('API_PASSWORD_KU4'),sl.jLoad('API_PASSWORD_KU5'),sl.jLoad('API_PASSWORD_KU6'),sl.jLoad('API_PASSWORD_KU7'),sl.jLoad('API_PASSWORD_KU8'),sl.jLoad('API_PASSWORD_KU9')]
+  API_KEYS_KUT = [sl.jLoad('API_KEY_KUT'),sl.jLoad('API_KEY_KUT2'),sl.jLoad('API_KEY_KUT3'),sl.jLoad('API_KEY_KUT4'),sl.jLoad('API_KEY_KUT5'),sl.jLoad('API_KEY_KUT6'),sl.jLoad('API_KEY_KUT7'),sl.jLoad('API_KEY_KUT8'),sl.jLoad('API_KEY_KUT9')]
+  API_SECRETS_KUT = [sl.jLoad('API_SECRET_KUT'),sl.jLoad('API_SECRET_KUT2'),sl.jLoad('API_SECRET_KUT3'),sl.jLoad('API_SECRET_KUT4'),sl.jLoad('API_SECRET_KUT5'),sl.jLoad('API_SECRET_KUT6'),sl.jLoad('API_SECRET_KUT7'),sl.jLoad('API_SECRET_KUT8'),sl.jLoad('API_SECRET_KUT9')]
+  API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9')]
   API_KEY_BN = sl.jLoad('API_KEY_BN')
   API_SECRET_BN = sl.jLoad('API_SECRET_BN')
   #####
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':3,'bb':0,'db':0,'kf':0,'kut':9,'bnt':0,'bn':0})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 5
+  SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
   my_FTX=['AAVE']
   my_FTX_BBT_KUT=['XRP','DOGE','LINK']

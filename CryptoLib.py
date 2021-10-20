@@ -60,11 +60,11 @@ def getApiDict():
   apiDict = dict()
   apiDict['ftx'] = ftxCCXTInit()
   apiDict['bb'] = bbCCXTInit()
-  apiDict['bbForBBT'] = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
+  apiDict['bbCurrent'] = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
   apiDict['db'] = dbCCXTInit()
   apiDict['kf'] = kfApophisInit()
-  apiDict['ku'] = kuCCXTInit()
-  apiDict['kuForKUT'] = kuCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
+  apiDict['kut'] = kutCCXTInit()
+  apiDict['kutCurrent'] = kutCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
   apiDict['bn'] = bnCCXTInit()  # BN/BNT to be deprecated soon....
   return apiDict
 
@@ -84,10 +84,10 @@ def dbCCXTInit():
 def kfApophisInit():
   return apophis.Apophis(API_KEY_KF,API_SECRET_KF,True)
 
-def kuCCXTInit(n=1):
-  apiKey = API_KEYS_KU[n - 1]
-  apiSecret = API_SECRETS_KU[n - 1]
-  apiPassword = API_PASSWORDS_KU[n - 1]
+def kutCCXTInit(n=1):
+  apiKey = API_KEYS_KUT[n - 1]
+  apiSecret = API_SECRETS_KUT[n - 1]
+  apiPassword = API_PASSWORDS_KUT[n - 1]
   return ccxt.kucoin({'apiKey': apiKey, 'secret': apiSecret, 'password': apiPassword, 'enableRateLimit': True, 'nonce': lambda: ccxt.Exchange.milliseconds()})
 
 # BN/BNT to be deprecated soon....
@@ -181,17 +181,17 @@ def kfGetAsk(kf, ccy, kfTickers=None):
   return kfTickers.loc[kfCcyToSymbol(ccy), 'ask']
 
 @retry(wait_fixed=1000)
-def kutGetMid(ku,ccy):
-  d=ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
+def kutGetMid(kut, ccy):
+  d=kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
   return (float(d['bestBidPrice'])+float(d['bestAskPrice']))/2
 
 @retry(wait_fixed=1000)
-def kutGetBid(ku,ccy):
-  return float(ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy)+'USDTM'})['data']['bestBidPrice'])
+def kutGetBid(kut, ccy):
+  return float(kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestBidPrice'])
 
 @retry(wait_fixed=1000)
-def kutGetAsk(ku,ccy):
-  return float(ku.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestAskPrice'])
+def kutGetAsk(kut, ccy):
+  return float(kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestAskPrice'])
 
 # BN/BNT to be deprecated soon....
 @retry(wait_fixed=1000)
@@ -820,20 +820,20 @@ def kutGetCcy(ccy):
   return ccy2
 
 @retry(wait_fixed=1000)
-def kutGetFutPos(ku,ccy):
-  return float(ku.futuresPrivate_get_position({'symbol':kutGetCcy(ccy)+'USDTM'})['data']['currentQty'])
+def kutGetFutPos(kut, ccy):
+  return float(kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['currentQty'])
 
 @retry(wait_fixed=1000)
-def kutGetEstFunding1(ku,ccy):
-  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.'+kutGetCcy(ccy)+'USDTMFPI8H'})['data']['value'])*3*365
+def kutGetEstFunding1(kut, ccy):
+  return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['value']) * 3 * 365
 
 @retry(wait_fixed=1000)
-def kutGetEstFunding2(ku, ccy):
-  return float(ku.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue'])*3*365
+def kutGetEstFunding2(kut, ccy):
+  return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue']) * 3 * 365
 
 @retry(wait_fixed=1000)
-def kutGetRiskDf(ku):
-  df=pd.DataFrame(ku.futuresPrivate_get_positions()['data'])
+def kutGetRiskDf(kut):
+  df=pd.DataFrame(kut.futuresPrivate_get_positions()['data'])
   if len(df)==0:
     return df
   else:
@@ -842,47 +842,47 @@ def kutGetRiskDf(ku):
     return df
 
 @retry(wait_fixed=1000)
-def kutGetTickSize(ku,ccy):
+def kutGetTickSize(kut, ccy):
   key='kutTickSize'
   df=cache('r',key)
   if df is None:
-    df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
+    df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
   return float(df.loc[kutGetCcy(ccy)+'USDTM','tickSize'])
 
 @retry(wait_fixed=1000)
-def kutGetMult(ku,ccy):
+def kutGetMult(kut, ccy):
   key='kutMult'
   df=cache('r',key)
   if df is None:
-    df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
+    df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
   return float(df.loc[kutGetCcy(ccy)+'USDTM','multiplier'])
 
 @retry(wait_fixed=1000)
-def kutGetMaxLeverage(ku,ccy):
+def kutGetMaxLeverage(kut, ccy):
   key='kutMaxLeverage'
   df=cache('r',key)
   if df is None:
-    df = pd.DataFrame(ku.futuresPublic_get_contracts_active()['data']).set_index('symbol')
+    df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
   return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
 
-def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
+def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   @retry(wait_fixed=1000)
-  def kutGetOrder(ku, orderId):
-    return ku.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
+  def kutGetOrder(kut, orderId):
+    return kut.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
   # Do not use @retry
-  def kutPlaceOrder(ku, ticker, side, qty, limitPrice,ccy):
-    result=ku.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(ku,ccy), 'price': limitPrice, 'size': qty})
+  def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
+    result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
     try:
       return result['data']['orderId']
     except:
       print(result)
       sys.exit(1)
   # Do not use @retry
-  def kutCancelOrder(ku, orderId):
+  def kutCancelOrder(kut, orderId):
     isOk=False
     for i in range(3):
-      ku.futuresPrivate_delete_orders_order_id({'order-id': orderId})
-      orderStatus=kutGetOrder(ku,orderId)
+      kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
+      orderStatus=kutGetOrder(kut, orderId)
       if orderStatus['isActive']:
         print(getCurrentTime()+': Order cancellation failed; retrying ....')
         time.sleep(3)
@@ -896,48 +896,48 @@ def kutRelOrder(side, ku, ccy, trade_qty, maxChases=0,distance=0):
   #####
   assertSide(side)
   ticker=kutGetCcy(ccy)+'USDTM'
-  mult=kutGetMult(ku,ccy)
+  mult=kutGetMult(kut, ccy)
   qty=round(trade_qty/mult)
   print(getCurrentTime()+': Sending KUT '+side+' order of '+ticker+' (qty='+str(qty)+'; mult='+str(mult)+') ....')
   if side == 'BUY':
-    refPrice = kutGetBid(ku, ccy)
+    refPrice = kutGetBid(kut, ccy)
   else:
-    refPrice = kutGetAsk(ku, ccy)
-  limitPrice = roundPrice(ku,'kut',ccy,refPrice,side=side,distance=distance)
-  orderId=kutPlaceOrder(ku, ticker, side, qty, limitPrice,ccy)
+    refPrice = kutGetAsk(kut, ccy)
+  limitPrice = roundPrice(kut, 'kut', ccy, refPrice, side=side, distance=distance)
+  orderId=kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy)
   print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
   refTime = time.time()
   nChases=0
   while True:
-    orderStatus = kutGetOrder(ku, orderId)
+    orderStatus = kutGetOrder(kut, orderId)
     if orderStatus['status']=='done': break
     if side=='BUY':
-      newRefPrice=kutGetBid(ku,ccy)
+      newRefPrice=kutGetBid(kut, ccy)
     else:
-      newRefPrice=kutGetAsk(ku,ccy)
+      newRefPrice=kutGetAsk(kut, ccy)
     if (side == 'BUY' and newRefPrice > refPrice) or (side == 'SELL' and newRefPrice < refPrice) or ((time.time() - refTime) > CT_CONFIGS_DICT['KUT_MAX_WAIT_TIME']):
       refPrice=newRefPrice
       nChases+=1
-      orderStatus = kutGetOrder(ku, orderId)
+      orderStatus = kutGetOrder(kut, orderId)
       if orderStatus['status'] == 'done': break
       if nChases > maxChases and float(orderStatus['filledSize']) == 0:
-        leavesQty = kutCancelOrder(ku, orderId)
+        leavesQty = kutCancelOrder(kut, orderId)
         if leavesQty == 0: break
         print(getCurrentTime() + ': Cancelled')
         return 0
       else:
         refTime = time.time()
-        newLimitPrice = roundPrice(ku, 'kut', ccy, refPrice, side=side, distance=distance)
+        newLimitPrice = roundPrice(kut, 'kut', ccy, refPrice, side=side, distance=distance)
         if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
           print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
           limitPrice = newLimitPrice
-          leavesQty = kutCancelOrder(ku, orderId)
+          leavesQty = kutCancelOrder(kut, orderId)
           if leavesQty == 0: break
-          orderId = kutPlaceOrder(ku, ticker, side, leavesQty, limitPrice,ccy)
+          orderId = kutPlaceOrder(kut, ticker, side, leavesQty, limitPrice, ccy)
         else:
           print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
     time.sleep(1)
-  orderStatus = kutGetOrder(ku, orderId)
+  orderStatus = kutGetOrder(kut, orderId)
   filledSize=float(orderStatus['filledSize'])
   filledValue=float(orderStatus['filledValue'])
   if filledSize==0:
@@ -1213,7 +1213,7 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
   bb = apiDict['bb']
   db = apiDict['db']
   kf = apiDict['kf']
-  ku = apiDict['ku']
+  kut = apiDict['kut']
   bn = apiDict['bn']  # BN/BNT to be deprecated soon....
   #####
   # Common
@@ -1240,8 +1240,8 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
     d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
     d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
   if 'kut' in validExchs:
-    d['kutEstFunding1'] = kutGetEstFunding1(ku, ccy)
-    d['kutEstFunding2'] = kutGetEstFunding2(ku, ccy)
+    d['kutEstFunding1'] = kutGetEstFunding1(kut, ccy)
+    d['kutEstFunding2'] = kutGetEstFunding2(kut, ccy)
 
   # BN/BNT to be deprecated soon....
   if 'bn' in validExchs:  d['bnEstFunding'] = bnGetEstFunding(bn, ccy)
@@ -1336,8 +1336,8 @@ def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
   return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, est2, pctElapsedPower=4, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
 @retry(wait_fixed=1000)
-def kutGetOneDayShortFutEdge(ku, fundingDict, basis):
-  premIndex=pd.DataFrame(ku.futuresPublic_get_premium_query({'symbol':'.'+kutGetCcy(fundingDict['Ccy'])+'USDTMPI','maxCount':15})['data']['dataList'])['value'].astype(float).mean()
+def kutGetOneDayShortFutEdge(kut, fundingDict, basis):
+  premIndex=pd.DataFrame(kut.futuresPublic_get_premium_query({'symbol': '.' + kutGetCcy(fundingDict['Ccy']) + 'USDTMPI', 'maxCount':15})['data']['dataList'])['value'].astype(float).mean()
   premIndexClamped  = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
   snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['kutEstFunding2'], prevFundingRate=fundingDict['kutEstFunding1'],isKU=True) - getOneDayUSDTCollateralBleed(fundingDict)
@@ -1372,7 +1372,7 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
   bb = apiDict['bb']
   db = apiDict['db']
   kf = apiDict['kf']
-  ku = apiDict['ku']
+  kut = apiDict['kut']
   bn = apiDict['bn'] # BN/BNT to be deprecated soon....
   #####
   validExchs = getValidExchs(ccy)
@@ -1393,7 +1393,7 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
     kfPrices = getPrices('kf', kf, ccy)
     objs.append(kfPrices)
   if 'kut' in validExchs:
-    kutPrices = getPrices('kut',ku,ccy)
+    kutPrices = getPrices('kut',kut,ccy)
     objs.append(kutPrices)
 
   # BN/BNT to be deprecated soon....
@@ -1431,7 +1431,7 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
   if 'kut' in validExchs:
     kutAdj = 0 if isSkipAdj else (CT_CONFIGS_DICT['SPOT_' + ccy][1] - CT_CONFIGS_DICT['KUT_' + ccy][1]) / 10000
     d['kutBasis'] = kutPrices.fut * ftxPrices.spotUSDT / ftxPrices.spot - 1
-    d['kutSmartBasis'] = kutGetOneDayShortFutEdge(ku, fundingDict, d['kutBasis']) - oneDayShortSpotEdge + kutAdj
+    d['kutSmartBasis'] = kutGetOneDayShortFutEdge(kut, fundingDict, d['kutBasis']) - oneDayShortSpotEdge + kutAdj
 
   # BN/BNT to be deprecated soon....
   if 'bn' in validExchs:
@@ -1508,13 +1508,13 @@ def ctGetPosUSD(apiDict,exch, ccy, spot):
   elif exch == 'bb':
     return bbGetFutPos(apiDict['bb'], ccy)
   elif exch == 'bbt':
-    return bbtGetFutPos(apiDict['bbForBBT'], ccy) * spot
+    return bbtGetFutPos(apiDict['bbChosen'], ccy) * spot
   elif exch == 'db':
     return dbGetFutPos(apiDict['db'], ccy)
   elif exch == 'kf':
     return kfGetFutPos(apiDict['kf'], ccy)
   elif exch == 'kut':
-    return kutGetFutPos(apiDict['kuForKUT'], ccy) * kutGetMult(apiDict['kuForKUT'], ccy) * spot
+    return kutGetFutPos(apiDict['kutChosen'], ccy) * kutGetMult(apiDict['kutChosen'], ccy) * spot
   elif exch == 'spot':
     return ftxGetWallet(apiDict['ftx']).loc[ccy,'usdValue']
 
@@ -1545,7 +1545,7 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
-def ctBBTUnwindStepper(side,bbForBBT, ccy, trade_qty):
+def ctBBTUnwindStepper(side, bbChosen, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_BBT_UNWIND_STEPPER']:
     key = 'ct_bbtN'
     bbtN = cache('r', key)
@@ -1553,8 +1553,8 @@ def ctBBTUnwindStepper(side,bbForBBT, ccy, trade_qty):
       bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
       cache('w',key,bbtN)
     while bbtN > 0:
-      bbForBBT = bbCCXTInit(bbtN)
-      pos = bbtGetFutPos(bbForBBT, ccy)
+      bbChosen = bbCCXTInit(bbtN)
+      pos = bbtGetFutPos(bbChosen, ccy)
       if side=='BUY':
         if pos <= -trade_qty: break
       else: # SELL
@@ -1566,9 +1566,9 @@ def ctBBTUnwindStepper(side,bbForBBT, ccy, trade_qty):
     else:
       print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
       cache('w', key, bbtN)
-  return bbForBBT
+  return bbChosen
 
-def ctKUTUnwindStepper(side,kuForKUT, ccy, trade_qty):
+def ctKUTUnwindStepper(side, kutChosen, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']:
     key = 'ct_kutN'
     kutN = cache('r', key)
@@ -1576,8 +1576,8 @@ def ctKUTUnwindStepper(side,kuForKUT, ccy, trade_qty):
       kutN=CT_CONFIGS_DICT['CURRENT_KUT']
       cache('w',key,kutN)
     while kutN > 0:
-      kuForKUT = kuCCXTInit(kutN)
-      pos = kutGetFutPos(kuForKUT, ccy) * kutGetMult(kuForKUT, ccy)
+      kutChosen = kutCCXTInit(kutN)
+      pos = kutGetFutPos(kutChosen, ccy) * kutGetMult(kutChosen, ccy)
       if side=='BUY':
         if pos <= -trade_qty: break
       else: # SELL
@@ -1589,7 +1589,7 @@ def ctKUTUnwindStepper(side,kuForKUT, ccy, trade_qty):
     else:
       print((getCurrentTime() + ':').ljust(20) + ' Using KUT' + str(kutN) + ' ....')
       cache('w', key, kutN)
-  return kuForKUT
+  return kutChosen
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
@@ -1622,10 +1622,10 @@ def ctRun(ccy, notional, tgtBps, color):
   apiDict, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   ftx = apiDict['ftx']
   bb = apiDict['bb']
-  bbForBBT = apiDict['bbForBBT']
+  bbChosen = apiDict['bbChosen']
   db = apiDict['db']
   kf = apiDict['kf']
-  kuForKUT = apiDict['kuForKUT']
+  kutChosen = apiDict['kutChosen']
   bn = apiDict['bn']  # BN/BNT to be deprecated soon....
   #####
   realizedSlippageBps = []
@@ -1744,14 +1744,14 @@ def ctRun(ccy, notional, tgtBps, color):
         completedLegs = 0
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
-          bbForBBT = ctBBTUnwindStepper('BUY', bbForBBT, ccy, trade_qty)
+          bbChosen = ctBBTUnwindStepper('BUY', bbChosen, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
-          longFill = bbtRelOrder('BUY', bbForBBT, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = bbtRelOrder('BUY', bbChosen, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
-          bbForBBT = ctBBTUnwindStepper('SELL', bbForBBT, ccy, trade_qty)
+          bbChosen = ctBBTUnwindStepper('SELL', bbChosen, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
-          shortFill = bbtRelOrder('SELL', bbForBBT, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = bbtRelOrder('SELL', bbChosen, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' == chosenLong and not isCancelled:
           distance = ctGetDistance('BB', completedLegs)
@@ -1778,14 +1778,14 @@ def ctRun(ccy, notional, tgtBps, color):
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kut' == chosenLong and not isCancelled:
-          kuForKUT = ctKUTUnwindStepper('BUY',kuForKUT,ccy,trade_qty)
+          kutChosen = ctKUTUnwindStepper('BUY',kutChosen,ccy,trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
-          longFill = kutRelOrder('BUY', kuForKUT, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = kutRelOrder('BUY', kutChosen, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kut' == chosenShort and not isCancelled:
-          kuForKUT = ctKUTUnwindStepper('SELL',kuForKUT,ccy,trade_qty)
+          kutChosen = ctKUTUnwindStepper('SELL',kutChosen,ccy,trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
-          shortFill = kutRelOrder('SELL', kuForKUT, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = kutRelOrder('SELL', kutChosen, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' == chosenLong and not isCancelled:
           distance = ctGetDistance('SPOT', completedLegs)
