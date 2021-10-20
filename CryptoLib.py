@@ -1508,13 +1508,13 @@ def ctGetPosUSD(apiDict,exch, ccy, spot):
   elif exch == 'bb':
     return bbGetFutPos(apiDict['bb'], ccy)
   elif exch == 'bbt':
-    return bbtGetFutPos(apiDict['bbChosen'], ccy) * spot
+    return bbtGetFutPos(apiDict['bbCurrent'], ccy) * spot
   elif exch == 'db':
     return dbGetFutPos(apiDict['db'], ccy)
   elif exch == 'kf':
     return kfGetFutPos(apiDict['kf'], ccy)
   elif exch == 'kut':
-    return kutGetFutPos(apiDict['kutChosen'], ccy) * kutGetMult(apiDict['kutChosen'], ccy) * spot
+    return kutGetFutPos(apiDict['kutCurrent'], ccy) * kutGetMult(apiDict['kutCurrent'], ccy) * spot
   elif exch == 'spot':
     return ftxGetWallet(apiDict['ftx']).loc[ccy,'usdValue']
 
@@ -1545,7 +1545,7 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
-def ctBBTUnwindStepper(side, bbChosen, ccy, trade_qty):
+def ctBBTUnwindStepper(side, bbCurrent, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_BBT_UNWIND_STEPPER']:
     key = 'ct_bbtN'
     bbtN = cache('r', key)
@@ -1553,8 +1553,8 @@ def ctBBTUnwindStepper(side, bbChosen, ccy, trade_qty):
       bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
       cache('w',key,bbtN)
     while bbtN > 0:
-      bbChosen = bbCCXTInit(bbtN)
-      pos = bbtGetFutPos(bbChosen, ccy)
+      bbCurrent = bbCCXTInit(bbtN)
+      pos = bbtGetFutPos(bbCurrent, ccy)
       if side=='BUY':
         if pos <= -trade_qty: break
       else: # SELL
@@ -1566,9 +1566,9 @@ def ctBBTUnwindStepper(side, bbChosen, ccy, trade_qty):
     else:
       print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
       cache('w', key, bbtN)
-  return bbChosen
+  return bbCurrent
 
-def ctKUTUnwindStepper(side, kutChosen, ccy, trade_qty):
+def ctKUTUnwindStepper(side, kutCurrent, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']:
     key = 'ct_kutN'
     kutN = cache('r', key)
@@ -1576,8 +1576,8 @@ def ctKUTUnwindStepper(side, kutChosen, ccy, trade_qty):
       kutN=CT_CONFIGS_DICT['CURRENT_KUT']
       cache('w',key,kutN)
     while kutN > 0:
-      kutChosen = kutCCXTInit(kutN)
-      pos = kutGetFutPos(kutChosen, ccy) * kutGetMult(kutChosen, ccy)
+      kutCurrent = kutCCXTInit(kutN)
+      pos = kutGetFutPos(kutCurrent, ccy) * kutGetMult(kutCurrent, ccy)
       if side=='BUY':
         if pos <= -trade_qty: break
       else: # SELL
@@ -1589,7 +1589,7 @@ def ctKUTUnwindStepper(side, kutChosen, ccy, trade_qty):
     else:
       print((getCurrentTime() + ':').ljust(20) + ' Using KUT' + str(kutN) + ' ....')
       cache('w', key, kutN)
-  return kutChosen
+  return kutCurrent
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
@@ -1622,10 +1622,10 @@ def ctRun(ccy, notional, tgtBps, color):
   apiDict, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   ftx = apiDict['ftx']
   bb = apiDict['bb']
-  bbChosen = apiDict['bbChosen']
+  bbCurrent = apiDict['bbCurrent']
   db = apiDict['db']
   kf = apiDict['kf']
-  kutChosen = apiDict['kutChosen']
+  kutCurrent = apiDict['kutCurrent']
   bn = apiDict['bn']  # BN/BNT to be deprecated soon....
   #####
   realizedSlippageBps = []
@@ -1744,14 +1744,14 @@ def ctRun(ccy, notional, tgtBps, color):
         completedLegs = 0
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
-          bbChosen = ctBBTUnwindStepper('BUY', bbChosen, ccy, trade_qty)
+          bbCurrent = ctBBTUnwindStepper('BUY', bbCurrent, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
-          longFill = bbtRelOrder('BUY', bbChosen, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = bbtRelOrder('BUY', bbCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
-          bbChosen = ctBBTUnwindStepper('SELL', bbChosen, ccy, trade_qty)
+          bbCurrent = ctBBTUnwindStepper('SELL', bbCurrent, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
-          shortFill = bbtRelOrder('SELL', bbChosen, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = bbtRelOrder('SELL', bbCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' == chosenLong and not isCancelled:
           distance = ctGetDistance('BB', completedLegs)
@@ -1778,14 +1778,14 @@ def ctRun(ccy, notional, tgtBps, color):
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kut' == chosenLong and not isCancelled:
-          kutChosen = ctKUTUnwindStepper('BUY',kutChosen,ccy,trade_qty)
+          kutCurrent = ctKUTUnwindStepper('BUY',kutCurrent,ccy,trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
-          longFill = kutRelOrder('BUY', kutChosen, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = kutRelOrder('BUY', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kut' == chosenShort and not isCancelled:
-          kutChosen = ctKUTUnwindStepper('SELL',kutChosen,ccy,trade_qty)
+          kutCurrent = ctKUTUnwindStepper('SELL',kutCurrent,ccy,trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
-          shortFill = kutRelOrder('SELL', kutChosen, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = kutRelOrder('SELL', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'spot' == chosenLong and not isCancelled:
           distance = ctGetDistance('SPOT', completedLegs)
