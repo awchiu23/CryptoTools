@@ -125,18 +125,17 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9')]
   #####
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
-  #CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False  ################ ***************** #################
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':2,'bb':0,'db':0,'kf':0,'kut':9})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 10
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':9})
+  SHARED_ETC_DICT['THRESHOLD_L'] = 20
   ############################################################################################################
   my_FTX=['AAVE']
-  my_FTX_BBT_KUT=['XRP','DOGE','LINK']
-  my_FTX_BBT_KUT_flowless=['ADA','DYDX']
+  my_FTX_BBT_KUT=['LINK']
+  my_FTX_BBT_KUT_flowless=['DYDX']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['FTM','LTC','SOL']
-  my_FTX_KUT_flowless=['ALGO','AXS','ATOM','AVAX','DOT','FIL','LUNA','SHIB','VET','XTZ']
+  my_FTX_KUT=['XRP','DOGE','FTM','LTC','SOL']
+  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','AVAX','DOT','FIL','LUNA','SHIB','VET','XTZ']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -146,7 +145,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
   for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
   SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
-  #SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
   SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
   #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
@@ -155,4 +154,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  CR_EXT_DELTA_USDT = 42615 #bbftx
+  #CR_EXT_DELTA_USDT = 140464+190000 #bbftx
