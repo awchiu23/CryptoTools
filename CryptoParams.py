@@ -127,15 +127,15 @@ if os.environ.get('USERNAME')=='Simon':
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':9})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 20
+  SHARED_ETC_DICT['THRESHOLD_L'] = 40
   ############################################################################################################
   my_FTX=['AAVE']
-  my_FTX_BBT_KUT=['LINK']
-  my_FTX_BBT_KUT_flowless=['DYDX']
+  my_FTX_BBT_KUT=[]
+  my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','LTC','SOL']
-  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','AVAX','DOT','FIL','LUNA','SHIB','VET','XTZ']
+  my_FTX_KUT=['XRP','DOGE','FTM','LINK','LTC','SOL']
+  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','AVAX','DOT','DYDX','LUNA','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -144,7 +144,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt','kut']}
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
   for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
-  SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
+  #SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
   SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
   SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
   #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
@@ -154,4 +154,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  #CR_EXT_DELTA_USDT = 140464+190000 #bbftx
+  CR_EXT_DELTA_USDT = 65500 #bbftx
