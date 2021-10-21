@@ -54,11 +54,11 @@ def getApiDict():
   apiDict = dict()
   apiDict['ftx'] = ftxCCXTInit()
   apiDict['bb'] = bbCCXTInit()
-  apiDict['bbCurrent'] = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
+  apiDict['bbtCurrent'] = bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT']) if SHARED_EXCH_DICT['bbt'] > 0 else None
   apiDict['db'] = dbCCXTInit()
   apiDict['kf'] = kfApophisInit()
   apiDict['kut'] = kutCCXTInit()
-  apiDict['kutCurrent'] = kutCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
+  apiDict['kutCurrent'] = kutCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT']) if SHARED_EXCH_DICT['kut'] > 0 else None
   return apiDict
 
 def ftxCCXTInit():
@@ -1163,7 +1163,7 @@ def ctGetPosUSD(apiDict,exch, ccy, spot):
   elif exch == 'bb':
     return bbGetFutPos(apiDict['bb'], ccy)
   elif exch == 'bbt':
-    return bbtGetFutPos(apiDict['bbCurrent'], ccy) * spot
+    return bbtGetFutPos(apiDict['bbtCurrent'], ccy) * spot
   elif exch == 'db':
     return dbGetFutPos(apiDict['db'], ccy)
   elif exch == 'kf':
@@ -1193,7 +1193,7 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
-def ctBBTUnwindStepper(side, bbCurrent, ccy, trade_qty):
+def ctBBTUnwindStepper(side, bbtCurrent, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_BBT_UNWIND_STEPPER']:
     key = 'ct_bbtN'
     bbtN = cache('r', key)
@@ -1201,8 +1201,8 @@ def ctBBTUnwindStepper(side, bbCurrent, ccy, trade_qty):
       bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
       cache('w',key,bbtN)
     while bbtN > 0:
-      bbCurrent = bbCCXTInit(bbtN)
-      pos = bbtGetFutPos(bbCurrent, ccy)
+      bbtCurrent = bbCCXTInit(bbtN)
+      pos = bbtGetFutPos(bbtCurrent, ccy)
       if side=='BUY':
         if pos <= -trade_qty: break
       else: # SELL
@@ -1214,7 +1214,7 @@ def ctBBTUnwindStepper(side, bbCurrent, ccy, trade_qty):
     else:
       print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
       cache('w', key, bbtN)
-  return bbCurrent
+  return bbtCurrent
 
 def ctKUTUnwindStepper(side, kutCurrent, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']:
@@ -1270,7 +1270,7 @@ def ctRun(ccy, notional, tgtBps, color):
   apiDict, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   ftx = apiDict['ftx']
   bb = apiDict['bb']
-  bbCurrent = apiDict['bbCurrent']
+  bbtCurrent = apiDict['bbtCurrent']
   db = apiDict['db']
   kf = apiDict['kf']
   kutCurrent = apiDict['kutCurrent']
@@ -1289,8 +1289,8 @@ def ctRun(ccy, notional, tgtBps, color):
       # Remove disabled instruments
       for exch in SHARED_CCY_DICT[ccy]['futExch'] + ['spot']:
         if CT_CONFIGS_DICT[exch.upper() + '_' + ccy][0] == 0:
-          del smartBasisDict[exch + 'SmartBasis']
-          del smartBasisDict[exch+'Basis']
+          safeDel(smartBasisDict,exch + 'SmartBasis')
+          safeDel(smartBasisDict,exch+'Basis')
 
       # Remove spots when high spot rate
       if CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] and fundingDict['ftxEstMarginalUSD'] >= 1:
@@ -1391,14 +1391,14 @@ def ctRun(ccy, notional, tgtBps, color):
         completedLegs = 0
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
-          bbCurrent = ctBBTUnwindStepper('BUY', bbCurrent, ccy, trade_qty)
+          bbtCurrent = ctBBTUnwindStepper('BUY', bbtCurrent, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
-          longFill = bbtRelOrder('BUY', bbCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          longFill = bbtRelOrder('BUY', bbtCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
-          bbCurrent = ctBBTUnwindStepper('SELL', bbCurrent, ccy, trade_qty)
+          bbtCurrent = ctBBTUnwindStepper('SELL', bbtCurrent, ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
-          shortFill = bbtRelOrder('SELL', bbCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          shortFill = bbtRelOrder('SELL', bbtCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
         if 'bb' == chosenLong and not isCancelled:
           distance = ctGetDistance('BB', completedLegs)
@@ -1621,6 +1621,10 @@ def sleepUntil(h, m, s):
   print('Sleeping until ', future.strftime(fmt), '....')
   print('')
   time.sleep((future - t).seconds+1)
+
+# Safer del function
+def safeDel(d, key):
+  if key in d.keys(): del d[key]
 
 # Speak text
 def speak(text):
