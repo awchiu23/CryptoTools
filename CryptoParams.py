@@ -107,10 +107,13 @@ SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
-  from win32api import GetKeyState
-  from win32con import VK_CAPITAL
   #####
-  if 'COLAB' in os.environ: APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+  if 'COLAB' in os.environ:
+    APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+  else:
+    from win32api import GetKeyState
+    from win32con import VK_CAPITAL
+    CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   #####
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
@@ -124,7 +127,6 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRETS_KUT = [sl.jLoad('API_SECRET_KUT'),sl.jLoad('API_SECRET_KUT2'),sl.jLoad('API_SECRET_KUT3'),sl.jLoad('API_SECRET_KUT4'),sl.jLoad('API_SECRET_KUT5'),sl.jLoad('API_SECRET_KUT6'),sl.jLoad('API_SECRET_KUT7'),sl.jLoad('API_SECRET_KUT8'),sl.jLoad('API_SECRET_KUT9'),sl.jLoad('API_SECRET_KUT10'),sl.jLoad('API_SECRET_KUT11'),sl.jLoad('API_SECRET_KUT12')]
   API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9'),sl.jLoad('API_PASSWORD_KUT10'),sl.jLoad('API_PASSWORD_KUT11'),sl.jLoad('API_PASSWORD_KUT12')]
   #####
-  CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
