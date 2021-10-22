@@ -1237,6 +1237,7 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
       if riskLimit is None: riskLimit = kutCurrent.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy)+'USDTM'})['data']['maxRiskLimit']
       mult = 1 if side=='BUY' else -1
       posSim = pos + trade_qty * mult
+      absPosSim = abs(posSim)
       if pos==0 and side=='BUY':
         print('Cannot initiate long positions from zero!')
         sys.exit(1)
@@ -1245,7 +1246,7 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
         if kutN < 1:
           print('No more unwind possibilities!')
           sys.exit(1)
-      elif abs(posSim * mid) > riskLimit*0.95:
+      elif absPosSim>abs(pos) and absPosSim>(riskLimit*0.95/mid): # ie., if position increases and goes above risk limit
         kutN +=1
         if kutN > SHARED_EXCH_DICT['kut']:
           print('No more add-on possibilities!')
