@@ -120,23 +120,23 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEYS_KUT = [sl.jLoad('API_KEY_KUT'),sl.jLoad('API_KEY_KUT2'),sl.jLoad('API_KEY_KUT3'),sl.jLoad('API_KEY_KUT4'),sl.jLoad('API_KEY_KUT5'),sl.jLoad('API_KEY_KUT6'),sl.jLoad('API_KEY_KUT7'),sl.jLoad('API_KEY_KUT8'),sl.jLoad('API_KEY_KUT9'),sl.jLoad('API_KEY_KUT10')]
-  API_SECRETS_KUT = [sl.jLoad('API_SECRET_KUT'),sl.jLoad('API_SECRET_KUT2'),sl.jLoad('API_SECRET_KUT3'),sl.jLoad('API_SECRET_KUT4'),sl.jLoad('API_SECRET_KUT5'),sl.jLoad('API_SECRET_KUT6'),sl.jLoad('API_SECRET_KUT7'),sl.jLoad('API_SECRET_KUT8'),sl.jLoad('API_SECRET_KUT9'),sl.jLoad('API_SECRET_KUT10')]
-  API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9'),sl.jLoad('API_PASSWORD_KUT10')]
+  API_KEYS_KUT = [sl.jLoad('API_KEY_KUT'),sl.jLoad('API_KEY_KUT2'),sl.jLoad('API_KEY_KUT3'),sl.jLoad('API_KEY_KUT4'),sl.jLoad('API_KEY_KUT5'),sl.jLoad('API_KEY_KUT6'),sl.jLoad('API_KEY_KUT7'),sl.jLoad('API_KEY_KUT8'),sl.jLoad('API_KEY_KUT9'),sl.jLoad('API_KEY_KUT10'),sl.jLoad('API_KEY_KUT11'),sl.jLoad('API_KEY_KUT12')]
+  API_SECRETS_KUT = [sl.jLoad('API_SECRET_KUT'),sl.jLoad('API_SECRET_KUT2'),sl.jLoad('API_SECRET_KUT3'),sl.jLoad('API_SECRET_KUT4'),sl.jLoad('API_SECRET_KUT5'),sl.jLoad('API_SECRET_KUT6'),sl.jLoad('API_SECRET_KUT7'),sl.jLoad('API_SECRET_KUT8'),sl.jLoad('API_SECRET_KUT9'),sl.jLoad('API_SECRET_KUT10'),sl.jLoad('API_SECRET_KUT11'),sl.jLoad('API_SECRET_KUT12')]
+  API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9'),sl.jLoad('API_PASSWORD_KUT10'),sl.jLoad('API_PASSWORD_KUT11'),sl.jLoad('API_PASSWORD_KUT12')]
   #####
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':10})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 40
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':12})
+  SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
   my_FTX=['AAVE']
   my_FTX_BBT_KUT=[]
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','LINK','LTC','SOL']
+  my_FTX_KUT=['XRP','DOGE','FTM','LINK','LTC','SOL','SUSHI']
   my_FTX_KUT_flowless=['ADA','ALGO','ATOM','AVAX','DOT','DYDX','LUNA','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
