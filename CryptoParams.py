@@ -34,8 +34,8 @@ CT_CONFIGS_DICT['MAX_NOTIONAL_USD'] = 50000          # Universal notional limit 
 
 CT_CONFIGS_DICT['CURRENT_BBT'] = 1                   # Current BBT account to trade with
 CT_CONFIGS_DICT['CURRENT_KUT'] = 1                   # Current KUT account to trade with
-CT_CONFIGS_DICT['IS_BBT_UNWIND_STEPPER']=False       # Special unwind mode for BBT
-CT_CONFIGS_DICT['IS_KUT_UNWIND_STEPPER']=False       # Special unwind mode for KUT
+CT_CONFIGS_DICT['IS_BBT_STEPPER']=False              # Special trade mode for BBT
+CT_CONFIGS_DICT['IS_KUT_STEPPER']=False              # Special trade mode for KUT
 
 CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']=3              # Execution setting
 CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME']=3               # Execution setting
@@ -125,9 +125,11 @@ if os.environ.get('USERNAME')=='Simon':
   API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9'),sl.jLoad('API_PASSWORD_KUT10')]
   #####
   CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
+  CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
+  CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':10})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 30
+  SHARED_ETC_DICT['THRESHOLD_L'] = 40
   ############################################################################################################
   my_FTX=['AAVE']
   my_FTX_BBT_KUT=[]
