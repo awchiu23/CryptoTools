@@ -88,7 +88,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx', 'bbt']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'ICP', 'THETA','XLM', 'XTZ', 'ATOM', 'LUNA', 'VET']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'LUNA', 'ONE','THETA','VET','XLM', 'XTZ']
 
 #############
 # Smart Basis
@@ -123,9 +123,9 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEYS_KUT = [sl.jLoad('API_KEY_KUT'),sl.jLoad('API_KEY_KUT2'),sl.jLoad('API_KEY_KUT3'),sl.jLoad('API_KEY_KUT4'),sl.jLoad('API_KEY_KUT5'),sl.jLoad('API_KEY_KUT6'),sl.jLoad('API_KEY_KUT7'),sl.jLoad('API_KEY_KUT8'),sl.jLoad('API_KEY_KUT9'),sl.jLoad('API_KEY_KUT10'),sl.jLoad('API_KEY_KUT11'),sl.jLoad('API_KEY_KUT12')]
-  API_SECRETS_KUT = [sl.jLoad('API_SECRET_KUT'),sl.jLoad('API_SECRET_KUT2'),sl.jLoad('API_SECRET_KUT3'),sl.jLoad('API_SECRET_KUT4'),sl.jLoad('API_SECRET_KUT5'),sl.jLoad('API_SECRET_KUT6'),sl.jLoad('API_SECRET_KUT7'),sl.jLoad('API_SECRET_KUT8'),sl.jLoad('API_SECRET_KUT9'),sl.jLoad('API_SECRET_KUT10'),sl.jLoad('API_SECRET_KUT11'),sl.jLoad('API_SECRET_KUT12')]
-  API_PASSWORDS_KUT = [sl.jLoad('API_PASSWORD_KUT'),sl.jLoad('API_PASSWORD_KUT2'),sl.jLoad('API_PASSWORD_KUT3'),sl.jLoad('API_PASSWORD_KUT4'),sl.jLoad('API_PASSWORD_KUT5'),sl.jLoad('API_PASSWORD_KUT6'),sl.jLoad('API_PASSWORD_KUT7'),sl.jLoad('API_PASSWORD_KUT8'),sl.jLoad('API_PASSWORD_KUT9'),sl.jLoad('API_PASSWORD_KUT10'),sl.jLoad('API_PASSWORD_KUT11'),sl.jLoad('API_PASSWORD_KUT12')]
+  API_KEYS_KUT = sl.jLoad('API_KEYS_KUT')
+  API_SECRETS_KUT = sl.jLoad('API_SECRETS_KUT')
+  API_PASSWORDS_KUT = sl.jLoad('API_PASSWORDS_KUT')
   #####
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
@@ -133,7 +133,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':12})
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
-  my_FTX=['AAVE','FTM']
+  my_FTX=['FTM']
   my_FTX_BBT_KUT=['SOL','SUSHI']
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=['MATIC']
