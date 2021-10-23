@@ -1342,6 +1342,9 @@ def ctRun(ccy, notional, tgtBps, color):
           signLong=0
           dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
           if len(dLong) > 2:
+            if CT_CONFIGS_DICT['IS_BBT_STEPPER'] or CT_CONFIGS_DICT['IS_KUT_STEPPER']:
+              print('Cannot use more than two parameters when using steppers!')
+              sys.exit(1)
             if dLong[2] is not None: maxPosUSDLong = dLong[2]
           if len(dLong) > 3: signLong=np.sign(dLong[3])
           #####

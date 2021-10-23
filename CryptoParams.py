@@ -130,16 +130,16 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':12})
-  SHARED_ETC_DICT['THRESHOLD_L'] = 15
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':12})
+  SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
-  my_FTX=['AAVE']
-  my_FTX_BBT_KUT=[]
+  my_FTX=['AAVE','FTM']
+  my_FTX_BBT_KUT=['SOL','SUSHI']
   my_FTX_BBT_KUT_flowless=[]
-  my_FTX_BBT=[]
+  my_FTX_BBT=['MATIC']
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','LINK','LTC','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','AVAX','DOT','DYDX','FIL','SHIB','THETA','VET','XTZ']
+  my_FTX_KUT=['XRP','DOGE','FTM','LINK']
+  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','DYDX','FIL','LUNA','SHIB','THETA','VET','XTZ']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -148,7 +148,7 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt','kut']}
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
   for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
-  #SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
   SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
   SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
   #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
