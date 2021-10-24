@@ -117,12 +117,16 @@ if os.environ.get('USERNAME')=='Simon':
   #####
   API_KEY_FTX = sl.jLoad('API_KEY_FTX')
   API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
-  API_KEYS_BB = [sl.jLoad('API_KEY_BB'),sl.jLoad('API_KEY_BB2'),sl.jLoad('API_KEY_BB3')]
-  API_SECRETS_BB = [sl.jLoad('API_SECRET_BB'),sl.jLoad('API_SECRET_BB2'),sl.jLoad('API_SECRET_BB3')]
   API_KEY_KF = sl.jLoad('API_KEY_KF')
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
+  if 'COLAB' in os.environ:
+    API_KEYS_BB_NO_IP = sl.jLoad('API_KEYS_BB')
+    API_SECRETS_BB_NO_IP = sl.jLoad('API_SECRETS_BB')
+  else:
+    API_KEYS_BB = sl.jLoad('API_KEYS_BB')
+    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
   API_KEYS_KUT = sl.jLoad('API_KEYS_KUT')
   API_SECRETS_KUT = sl.jLoad('API_SECRETS_KUT')
   API_PASSWORDS_KUT = sl.jLoad('API_PASSWORDS_KUT')
@@ -136,7 +140,7 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX=['FTM']
   my_FTX_BBT_KUT=['XRP','SOL']
   my_FTX_BBT_KUT_flowless=[]
-  my_FTX_BBT=['MATIC']
+  my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['DOGE','FTM','LINK','SUSHI']
   my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','DYDX','FIL','LUNA','SHIB','THETA','VET','XTZ']
