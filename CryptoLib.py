@@ -784,6 +784,10 @@ def kutGetEstFunding2(kut, ccy):
   return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue']) * 3 * 365
 
 @retry(wait_fixed=1000)
+def kutGetPositions(kut):
+  return pd.DataFrame(kut.futuresPrivate_get_positions()['data']).set_index('symbol')
+
+@retry(wait_fixed=1000)
 def kutGetRiskDf(kut):
   df=pd.DataFrame(kut.futuresPrivate_get_positions()['data'])
   if len(df)==0:
@@ -831,6 +835,17 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
       sys.exit(1)
   # Do not use @retry
   def kutCancelOrder(kut, orderId):
+    try:
+      kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
+    except:
+      pass
+    while True:
+      orderStatus = kutGetOrder(kut, orderId)
+      if orderStatus['status'] == 'done': return float(orderStatus['size']) - float(orderStatus['filledSize'])
+      time.sleep(1)
+
+  '''
+  def kutCancelOrder(kut, orderId):
     isOk=False
     for i in range(3):
       kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
@@ -845,6 +860,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
       return float(orderStatus['size']) - float(orderStatus['filledSize'])
     else:
       sys.exit(1)
+  '''
   #####
   assertSide(side)
   ticker=kutGetCcy(ccy)+'USDTM'

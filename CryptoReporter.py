@@ -773,10 +773,6 @@ class core:
     def getUSDTDict():
       return self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
     #####
-    @retry(wait_fixed=1000)
-    def getPosData():
-      return pd.DataFrame(self.api.futuresPrivate_get_positions()['data']).set_index('symbol')
-    #####
     def getFundingHistory(ccy,startAt):
       key='kutLock'
       kutLock = cl.cache('r', key)
@@ -790,8 +786,9 @@ class core:
             fundingHistory = self.api.futuresPrivate_get_funding_history({'symbol': cl.kutGetCcy(ccy) + 'USDTM', 'startAt': startAt})['data']['dataList']
             break
           except:
-            print("[DEBUG: Error from KuCoin's futuresPrivate_get_funding_history! Pausing for 30 seconds ....]")
+            print("[DEBUG: Error from KuCoin's futuresPrivate_get_funding_history ("+self.name+':'+ccy+')!  Pausing for 30 seconds ....]')
             time.sleep(30)
+            print('[DEBUG: Resuming ....]')
         time.sleep(0.35)
         return fundingHistory
     #####
@@ -799,7 +796,7 @@ class core:
     usdtDict = getUSDTDict()
     availableBalance = float(usdtDict['availableBalance'])
     #####
-    posData=getPosData()
+    posData=cl.kutGetPositions(self.api)
     for ccy in self.validCcys:
       ccy2=cl.kutGetCcy(ccy)+'USDTM'
       if ccy2 in posData.index:
