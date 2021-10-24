@@ -130,7 +130,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':12})
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':18})
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
   my_FTX=['FTM']
