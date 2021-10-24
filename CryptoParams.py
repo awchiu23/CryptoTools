@@ -109,8 +109,13 @@ if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
   #####
   if 'COLAB' in os.environ:
+    API_KEYS_BB = sl.jLoad('API_KEYS_BB_NO_IP')
+    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB_NO_IP')
     APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
+    CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False
   else:
+    API_KEYS_BB = sl.jLoad('API_KEYS_BB')
+    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
     from win32api import GetKeyState
     from win32con import VK_CAPITAL
     CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
@@ -121,12 +126,6 @@ if os.environ.get('USERNAME')=='Simon':
   API_SECRET_KF = sl.jLoad('API_SECRET_KF')
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  if 'COLAB' in os.environ:
-    API_KEYS_BB = sl.jLoad('API_KEYS_BB_NO_IP')
-    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB_NO_IP')
-  else:
-    API_KEYS_BB = sl.jLoad('API_KEYS_BB')
-    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
   API_KEYS_KUT = sl.jLoad('API_KEYS_KUT')
   API_SECRETS_KUT = sl.jLoad('API_SECRETS_KUT')
   API_PASSWORDS_KUT = sl.jLoad('API_PASSWORDS_KUT')
