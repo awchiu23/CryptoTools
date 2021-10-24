@@ -122,8 +122,8 @@ if os.environ.get('USERNAME')=='Simon':
   API_KEY_DB = sl.jLoad('API_KEY_DB')
   API_SECRET_DB = sl.jLoad('API_SECRET_DB')
   if 'COLAB' in os.environ:
-    API_KEYS_BB_NO_IP = sl.jLoad('API_KEYS_BB')
-    API_SECRETS_BB_NO_IP = sl.jLoad('API_SECRETS_BB')
+    API_KEYS_BB = sl.jLoad('API_KEYS_BB_NO_IP')
+    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB_NO_IP')
   else:
     API_KEYS_BB = sl.jLoad('API_KEYS_BB')
     API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
