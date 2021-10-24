@@ -770,6 +770,10 @@ class core:
   #####
   def kutInit(self):
     @retry(wait_fixed=1000)
+    def getUSDTDict():
+      return self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
+    #####
+    @retry(wait_fixed=1000)
     def getPosData():
       return pd.DataFrame(self.api.futuresPrivate_get_positions()['data']).set_index('symbol')
     #####
@@ -792,7 +796,7 @@ class core:
         return fundingHistory
     #####
     self.api = cl.kutCCXTInit(n=self.n)
-    usdtDict = self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
+    usdtDict = getUSDTDict()
     availableBalance = float(usdtDict['availableBalance'])
     #####
     posData=getPosData()

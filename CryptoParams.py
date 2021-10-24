@@ -134,11 +134,11 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['THRESHOLD_L'] = 10
   ############################################################################################################
   my_FTX=['FTM']
-  my_FTX_BBT_KUT=['SOL','SUSHI']
+  my_FTX_BBT_KUT=['DOGE','SOL','SUSHI']
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=['MATIC']
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','LINK']
+  my_FTX_KUT=['XRP','FTM','LINK']
   my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','DYDX','FIL','LUNA','SHIB','THETA','VET','XTZ']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
