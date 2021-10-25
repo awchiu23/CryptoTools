@@ -88,14 +88,14 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx', 'bbt']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'LUNA', 'ONE','THETA','VET','XLM', 'XTZ']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'LUNA', 'ONE','VET','XLM']
 
 #############
 # Smart Basis
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.2
+SMB_DICT['BASE_RATE']=0.15
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -134,15 +134,15 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':18})
-  SHARED_ETC_DICT['SHIFT'] = 20
+  SHARED_ETC_DICT['SHIFT'] = 15
   ############################################################################################################
   my_FTX=['FTM']
-  my_FTX_BBT_KUT=['XRP','SOL']
+  my_FTX_BBT_KUT=['DOGE']
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['DOGE','FTM','LINK','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','DYDX','FIL','LUNA','SHIB','THETA','VET']
+  my_FTX_KUT=['XRP','FTM','LINK','LTC','SOL','SUSHI']
+  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','DYDX','FIL','LUNA','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -161,4 +161,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  CR_EXT_DELTA_USDT = 40000 #bbftx
+  #CR_EXT_DELTA_USDT = 40000 #bbftx

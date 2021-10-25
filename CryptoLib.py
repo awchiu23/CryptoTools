@@ -784,6 +784,10 @@ def kutGetEstFunding2(kut, ccy):
   return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue']) * 3 * 365
 
 @retry(wait_fixed=1000)
+def kutGetUSDTDict(kut):
+  return kut.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
+
+@retry(wait_fixed=1000)
 def kutGetPositions(kut):
   return pd.DataFrame(kut.futuresPrivate_get_positions()['data']).set_index('symbol')
 
@@ -827,7 +831,15 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
     return kut.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
   # Do not use @retry
   def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
-    result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
+    try:
+      result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
+    except ccxt.RateLimitExceeded:
+      print(getCurrentTime()+': KuCoin rate limit exceeded!')
+      sys.exit(1)
+    except:
+      print(traceback.print_exc())
+      sys.exit(1)
+    #####
     try:
       return result['data']['orderId']
     except:
@@ -843,24 +855,6 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
       orderStatus = kutGetOrder(kut, orderId)
       if orderStatus['status'] == 'done': return float(orderStatus['size']) - float(orderStatus['filledSize'])
       time.sleep(1)
-
-  '''
-  def kutCancelOrder(kut, orderId):
-    isOk=False
-    for i in range(3):
-      kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
-      orderStatus=kutGetOrder(kut, orderId)
-      if orderStatus['isActive']:
-        print(getCurrentTime()+': Order cancellation failed; retrying ....')
-        time.sleep(3)
-      else:
-        isOk=True
-        break
-    if isOk:
-      return float(orderStatus['size']) - float(orderStatus['filledSize'])
-    else:
-      sys.exit(1)
-  '''
   #####
   assertSide(side)
   ticker=kutGetCcy(ccy)+'USDTM'

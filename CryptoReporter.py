@@ -769,10 +769,6 @@ class core:
   # KUT
   #####
   def kutInit(self):
-    @retry(wait_fixed=1000)
-    def getUSDTDict():
-      return self.api.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
-    #####
     def getFundingHistory(ccy,startAt):
       key='kutLock'
       kutLock = cl.cache('r', key)
@@ -793,7 +789,7 @@ class core:
         return fundingHistory
     #####
     self.api = cl.kutCCXTInit(n=self.n)
-    usdtDict = getUSDTDict()
+    usdtDict = cl.kutGetUSDTDict(self.api)
     availableBalance = float(usdtDict['availableBalance'])
     #####
     posData=cl.kutGetPositions(self.api)
