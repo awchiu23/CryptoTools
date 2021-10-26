@@ -864,7 +864,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   assertSide(side)
   ticker=kutGetCcy(ccy)+'USDTM'
   mult=kutGetMult(kut, ccy)
-  origQty=qty=round(trade_qty/mult)
+  qty=round(trade_qty/mult)
   print(getCurrentTime()+': Sending KUT '+side+' order of '+ticker+' (qty='+str(qty)+'; mult='+str(mult)+') ....')
   if side == 'BUY':
     refPrice = kutGetBid(kut, ccy)
@@ -887,7 +887,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
       nChases+=1
       orderStatus = kutGetOrder(kut, orderId)
       if orderStatus['status'] == 'done': break
-      if nChases > maxChases and float(orderStatus['size'])==origQty and float(orderStatus['filledSize']) == 0:
+      if nChases > maxChases and float(orderStatus['size'])==qty and float(orderStatus['filledSize']) == 0:
         leavesQty = kutCancelOrder(kut, orderId)
         if leavesQty == 0: break
         print(getCurrentTime() + ': Cancelled')
