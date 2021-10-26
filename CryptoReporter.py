@@ -785,7 +785,7 @@ class core:
             print("[DEBUG: Error from KuCoin's futuresPrivate_get_funding_history ("+self.name+':'+ccy+')!  Pausing for 30 seconds ....]')
             time.sleep(30)
             print('[DEBUG: Resuming ....]')
-        time.sleep(0.35)
+        time.sleep(CR_CONFIGS_DICT['KU_FUNDING_HISTORY_SLEEP'])
         return fundingHistory
     #####
     self.api = cl.kutCCXTInit(n=self.n)

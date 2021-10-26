@@ -954,11 +954,8 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
     d['kutEstFunding1'] = kutGetEstFunding1(kut, ccy)
     d['kutEstFunding2'] = kutGetEstFunding2(kut, ccy)
 
-  if isRateLimit:
-    if ccy in ['BTC', 'ETH']:
-      time.sleep(1)
-    else:
-      time.sleep(2)
+  if isRateLimit: time.sleep(2)
+
   return d
 
 #############################################################################################

@@ -78,6 +78,7 @@ CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows cur
 CR_EXT_DELTA_USDT = 0
 CR_CONFIGS_DICT=dict()
 CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = True
+CR_CONFIGS_DICT['KU_FUNDING_HISTORY_SLEEP'] = 0.4
 
 ########
 # Shared
@@ -133,16 +134,16 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':18})
-  SHARED_ETC_DICT['SHIFT'] = 15
+  SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':27})
+  SHARED_ETC_DICT['SHIFT'] = 20
   ############################################################################################################
-  my_FTX=['FTM']
-  my_FTX_BBT_KUT=['DOGE']
+  my_FTX=[]
+  my_FTX_BBT_KUT=[]
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','FTM','LINK','LTC','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','DYDX','FIL','LUNA','SHIB','VET']
+  my_FTX_KUT=['XRP','DOGE','FTM','LINK','SOL','SUSHI']
+  my_FTX_KUT_flowless=['ADA','ALGO','ATOM','DOT','FIL','LUNA','ONE','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -161,4 +162,4 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['BTC']=2.523 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
-  #CR_EXT_DELTA_USDT = 40000 #bbftx
+  #CR_EXT_DELTA_USDT = 18020 #bbftx
