@@ -881,6 +881,22 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
+
+  ##########################
+  # Preload fundings for kut
+  ##########################
+  if SHARED_EXCH_DICT['kut']>=1:
+    kut=cl.kutCCXTInit()
+    posData=cl.kutGetPositions(kut)
+    for symbol in posData.index:
+      ccy=symbol[:len(symbol)-5]
+      if ccy=='XBT':ccy='BTC'
+      cl.cache('w','kutEstFunding1_'+ccy,cl.kutGetEstFunding1(kut,ccy))
+      cl.cache('w','kutEstFunding2_'+ccy,cl.kutGetEstFunding2(kut,ccy))
+
+  ###########
+  # Get cores
+  ###########
   coresDict, spotDict, objs, _ = getCores()
   ftxCore=coresDict['ftx']
   bbCore=coresDict['bb']
