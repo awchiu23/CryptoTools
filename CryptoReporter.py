@@ -891,8 +891,9 @@ if __name__ == '__main__':
     for symbol in posData.index:
       ccy=symbol[:len(symbol)-5]
       if ccy=='XBT':ccy='BTC'
-      cl.cache('w','kutEstFunding1_'+ccy,cl.kutGetEstFunding1(kut,ccy))
-      cl.cache('w','kutEstFunding2_'+ccy,cl.kutGetEstFunding2(kut,ccy))
+      estFunding1,estFunding2=cl.kutGetEstFundings(kut,ccy)
+      cl.cache('w','kutEstFunding1_'+ccy,estFunding1)
+      cl.cache('w','kutEstFunding2_'+ccy,estFunding2)
 
   ###########
   # Get cores

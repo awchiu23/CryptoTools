@@ -784,6 +784,11 @@ def kutGetEstFunding2(kut, ccy):
   return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue']) * 3 * 365
 
 @retry(wait_fixed=1000)
+def kutGetEstFundings(kut, ccy):
+  data=kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']
+  return float(data['value']) * 3 * 365, float(data['predictedValue']) * 3 * 365
+
+@retry(wait_fixed=1000)
 def kutGetUSDTDict(kut):
   return kut.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
 
@@ -951,8 +956,7 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
     d['kfEstFunding1'] = kfGetEstFunding1(kf, ccy, kfTickers)
     d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
   if 'kut' in validExchs:
-    d['kutEstFunding1'] = kutGetEstFunding1(kut, ccy)
-    d['kutEstFunding2'] = kutGetEstFunding2(kut, ccy)
+    d['kutEstFunding1'],d['kutEstFunding2'] = kutGetEstFundings(kut, ccy)
 
   if isRateLimit: time.sleep(2)
 
