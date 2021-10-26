@@ -833,7 +833,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
     try:
       result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
-    except ccxt.RateLimitExceeded:
+    except ccxt.RateLimitExceeded: # observe over a period of time whether this has triggered or not
       print(getCurrentTime()+': KuCoin rate limit exceeded!')
       sys.exit(1)
     except:

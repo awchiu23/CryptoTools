@@ -653,6 +653,7 @@ class core:
     estFunding1 = cl.cache('r', key)
     if estFunding1 is None:
       estFunding1 = cl.bbtGetEstFunding1(self.api,ccy)
+      cl.cache('w', key, estFunding1)
     return estFunding1
 
   def bbtGetEstFunding2_fast(self,ccy):
@@ -660,6 +661,7 @@ class core:
     estFunding2 = cl.cache('r', key)
     if estFunding2 is None:
       estFunding2 = cl.bbtGetEstFunding2(self.api,ccy)
+      cl.cache('w', key, estFunding2)
     return estFunding2
   
   ####
@@ -859,6 +861,7 @@ class core:
     estFunding1 = cl.cache('r', key)
     if estFunding1 is None:
       estFunding1 = cl.kutGetEstFunding1(self.api,ccy)
+      cl.cache('w',key,estFunding1)
     return estFunding1
 
   def kutGetEstFunding2_fast(self,ccy):
@@ -866,6 +869,7 @@ class core:
     estFunding2 = cl.cache('r', key)
     if estFunding2 is None:
       estFunding2 = cl.kutGetEstFunding2(self.api,ccy)
+      cl.cache('w', key, estFunding2)
     return estFunding2
 
 ####################################################################################################
