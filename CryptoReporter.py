@@ -848,29 +848,20 @@ class core:
         else:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = self.kutGetEstFunding1_fast(ccy)
-      estFunding2 = self.kutGetEstFunding2_fast(ccy)
+      estFunding,estFunding2 = self.kutGetEstFundings_fast(ccy)
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
     self.makeLiqStr(riskDf=cl.kutGetRiskDf(self.api), availableBalance=availableBalance)
     self.isDone = True
 
-  def kutGetEstFunding1_fast(self,ccy):
-    key = 'kutEstFunding1_'+ccy
-    estFunding1 = cl.cache('r', key)
-    if estFunding1 is None:
-      estFunding1 = cl.kutGetEstFunding1(self.api,ccy)
-      cl.cache('w',key,estFunding1)
-    return estFunding1
-
-  def kutGetEstFunding2_fast(self,ccy):
-    key = 'kutEstFunding2_'+ccy
-    estFunding2 = cl.cache('r', key)
-    if estFunding2 is None:
-      estFunding2 = cl.kutGetEstFunding2(self.api,ccy)
-      cl.cache('w', key, estFunding2)
-    return estFunding2
+  def kutGetEstFundings_fast(self,ccy):
+    key = 'kutEstFundings_'+ccy
+    estFundings = cl.cache('r', key)
+    if estFundings is None:
+      estFundings = cl.kutGetEstFundings(self.api,ccy)
+      cl.cache('w',key,estFundings)
+    return estFundings
 
 ####################################################################################################
 
@@ -881,19 +872,6 @@ if __name__ == '__main__':
   cl.printHeader('CryptoReporter')
   if SHARED_EXCH_DICT['kf']==1 and not APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST']:
     print('[WARNING: IP is not whitelisted for Apophis, therefore KF incomes are not shown]\n')
-
-  ##########################
-  # Preload fundings for kut
-  ##########################
-  if SHARED_EXCH_DICT['kut']>=1:
-    kut=cl.kutCCXTInit()
-    posData=cl.kutGetPositions(kut)
-    for symbol in posData.index:
-      ccy=symbol[:len(symbol)-5]
-      if ccy=='XBT':ccy='BTC'
-      estFunding1,estFunding2=cl.kutGetEstFundings(kut,ccy)
-      cl.cache('w','kutEstFunding1_'+ccy,estFunding1)
-      cl.cache('w','kutEstFunding2_'+ccy,estFunding2)
 
   ###########
   # Get cores
