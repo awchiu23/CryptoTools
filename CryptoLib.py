@@ -1212,6 +1212,36 @@ def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
     if bbtN is None:
       bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
       cache('w',key,bbtN)
+    isBuild = None
+    mult = 1 if side == 'BUY' else -1
+    while True:
+      bbtCurrent = bbCCXTInit(bbtN)
+      pos = bbtGetFutPos(bbtCurrent, ccy)
+      if isBuild is None:
+        isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
+      posSim = pos + trade_qty * mult
+      if not isBuild and pos * posSim <= 0: # ie., during unwind, if sign is flipped:
+        bbtN+=1
+        if bbtN > SHARED_EXCH_DICT['BBT']:
+          print('No more unwind opportunities!')
+          sys.exit(1)
+        else:
+          continue
+      else:
+        print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
+        cache('w', key, bbtN)
+        break
+  return bbtCurrent
+
+'''
+def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
+  if CT_CONFIGS_DICT['IS_BBT_STEPPER']:
+    print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ....')
+    key = 'ct_bbtN'
+    bbtN = cache('r', key)
+    if bbtN is None:
+      bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
+      cache('w',key,bbtN)
     while True:
       bbtCurrent = bbCCXTInit(bbtN)
       pos = bbtGetFutPos(bbtCurrent, ccy)
@@ -1230,7 +1260,50 @@ def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
         cache('w', key, bbtN)
         break
   return bbtCurrent
+'''
 
+def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
+  if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
+    print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ....')
+    key = 'ct_kutN'
+    kutN = cache('r', key)
+    if kutN is None:
+      kutN=CT_CONFIGS_DICT['CURRENT_KUT']
+      cache('w',key,kutN)
+    isBuild = None
+    riskLimit = None
+    mid = None
+    mult = 1 if side == 'BUY' else -1
+    while True:
+      kutCurrent = kutCCXTInit(kutN)
+      pos = kutGetFutPos(kutCurrent, ccy) * kutGetMult(kutCurrent, ccy)
+      if isBuild is None:
+        isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
+        if isBuild:
+          riskLimit = kutCurrent.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit'] * 0.93
+          mid = kutGetMid(kutCurrent, ccy)
+      posSim = pos + trade_qty * mult
+      if isBuild and abs(posSim)>riskLimit/mid:
+        kutN +=1
+        if kutN > SHARED_EXCH_DICT['kut']:
+          print('No more build opportunities!')
+          sys.exit(1)
+        else:
+          continue
+      elif pos * posSim <= 0: # ie., during unwind, if sign is flipped:
+        kutN+=1
+        if kutN > SHARED_EXCH_DICT['kut']:
+          print('No more unwind opportunities!')
+          sys.exit(1)
+        else:
+          continue
+      else:
+        print((getCurrentTime() + ':').ljust(20) + ' Using KUT' + str(kutN) + ' ....')
+        cache('w', key, kutN)
+        break
+  return kutCurrent
+
+'''
 def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
     print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ....')
@@ -1267,6 +1340,7 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
         cache('w', key, kutN)
         break
   return kutCurrent
+'''
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
