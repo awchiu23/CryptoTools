@@ -1290,7 +1290,7 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
           sys.exit(1)
         else:
           continue
-      elif pos * posSim <= 0: # ie., during unwind, if sign is flipped:
+      elif not isBuild and pos * posSim < 0: # ie., during unwind, if sign is flipped:
         kutN+=1
         if kutN > SHARED_EXCH_DICT['kut']:
           print('No more unwind opportunities!')
