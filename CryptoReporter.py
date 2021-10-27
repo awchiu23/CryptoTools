@@ -79,7 +79,7 @@ def blank():
 def fmtLiq(liq):
   return 'never' if (liq <= 0 or liq >= 10) else str(round(liq * 100)) + '%'
 
-def getCores():
+def getCores(isRetry=True):
   def getDummyCore(spotDict,objs):
     dummyCore=core('dummy', spotDict)
     objs.append(dummyCore)
@@ -93,7 +93,6 @@ def getCores():
       objs.append(myCore)
       return myCore
   #####
-  isOk=True
   ftx=cl.ftxCCXTInit()
   spotDict=dict()
   ccyList = list(CR_QUOTE_CCY_DICT.keys())
@@ -118,12 +117,14 @@ def getCores():
   else:
     for n in range(SHARED_EXCH_DICT['kut']):
       kutCores.append(processCore('kut',spotDict,objs,n=n+1))
-
+  #####
+  isOk=True
   try:
     Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
   except:
+    if not isRetry: return None, None, None, False
     print('[WARNING: Parallel run failed!  Rerunning in serial ....]')
-    isOk = False
+    isOk=True
     for obj in objs:
       try:
         print('Running '+obj.name+' ....')
@@ -131,6 +132,7 @@ def getCores():
       except:
         pass
       if not obj.isDone:
+        isOk=False
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
     

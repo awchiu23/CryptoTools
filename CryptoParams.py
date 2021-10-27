@@ -96,7 +96,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.2
+SMB_DICT['BASE_RATE']=0.15
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -107,29 +107,35 @@ SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 ##################################
 import os
 if os.environ.get('USERNAME')=='Simon':
-  import SimonLib as sl
+  import filelock
+  import json
+  ROOT_PATH = '.' if 'COLAB' in os.environ else 'c:/onedrive/py'
+  fn = ROOT_PATH + '/data/Simon.json'
+  with filelock.FileLock(fn + '.lock'):
+    with open(fn) as f:
+      sDict = json.load(f)
   #####
   if 'COLAB' in os.environ:
-    API_KEYS_BB = sl.jLoad('API_KEYS_BB_NO_IP')
-    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB_NO_IP')
+    API_KEYS_BB = sDict['API_KEYS_BB_NO_IP']
+    API_SECRETS_BB = sDict['API_SECRETS_BB_NO_IP']
     APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
     CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False
   else:
-    API_KEYS_BB = sl.jLoad('API_KEYS_BB')
-    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
+    API_KEYS_BB = sDict['API_KEYS_BB']
+    API_SECRETS_BB = sDict['API_SECRETS_BB']
     from win32api import GetKeyState
     from win32con import VK_CAPITAL
     CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   #####
-  API_KEY_FTX = sl.jLoad('API_KEY_FTX')
-  API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
-  API_KEY_KF = sl.jLoad('API_KEY_KF')
-  API_SECRET_KF = sl.jLoad('API_SECRET_KF')
-  API_KEY_DB = sl.jLoad('API_KEY_DB')
-  API_SECRET_DB = sl.jLoad('API_SECRET_DB')
-  API_KEYS_KUT = sl.jLoad('API_KEYS_KUT')
-  API_SECRETS_KUT = sl.jLoad('API_SECRETS_KUT')
-  API_PASSWORDS_KUT = sl.jLoad('API_PASSWORDS_KUT')
+  API_KEY_FTX = sDict['API_KEY_FTX']
+  API_SECRET_FTX = sDict['API_SECRET_FTX']
+  API_KEY_KF = sDict['API_KEY_KF']
+  API_SECRET_KF = sDict['API_SECRET_KF']
+  API_KEY_DB = sDict['API_KEY_DB']
+  API_SECRET_DB = sDict['API_SECRET_DB']
+  API_KEYS_KUT = sDict['API_KEYS_KUT']
+  API_SECRETS_KUT = sDict['API_SECRETS_KUT']
+  API_PASSWORDS_KUT = sDict['API_PASSWORDS_KUT']
   #####
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
