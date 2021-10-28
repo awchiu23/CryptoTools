@@ -59,7 +59,7 @@ CT_CONFIGS_DICT['BBT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 CT_CONFIGS_DICT['BB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['DB_LEG2_DISTANCE_TICKS']=0          # Execution setting
 CT_CONFIGS_DICT['KF_LEG2_DISTANCE_TICKS']=1          # Execution setting
-CT_CONFIGS_DICT['KUT_LEG2_DISTANCE_TICKS']=0          # Execution setting
+CT_CONFIGS_DICT['KUT_LEG2_DISTANCE_TICKS']=0         # Execution setting
 
 #############################################################################################
 
@@ -96,7 +96,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.1
+SMB_DICT['BASE_RATE']=0.15
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -141,7 +141,7 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':27})
-  SHARED_ETC_DICT['SHIFT'] = 10
+  SHARED_ETC_DICT['SHIFT'] = 5
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=[]
