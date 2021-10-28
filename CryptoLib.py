@@ -920,7 +920,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
 ####################
 # Smart basis models
 ####################
-def getFundingDict(apiDict,ccy,isRateLimit=False):
+def getFundingDict(apiDict,ccy):
   def getMarginal(ftxWallet,borrowS,lendingS,ccy):
     if ftxWallet.loc[ccy, 'total'] >= 0:
       return lendingS[ccy]
@@ -958,9 +958,6 @@ def getFundingDict(apiDict,ccy,isRateLimit=False):
     d['kfEstFunding2'] = kfGetEstFunding2(kf, ccy, kfTickers)
   if 'kut' in validExchs:
     d['kutEstFunding1'],d['kutEstFunding2'] = kutGetEstFundings(kut, ccy)
-
-  if isRateLimit: time.sleep(2)
-
   return d
 
 #############################################################################################
@@ -1143,13 +1140,14 @@ def caRun(ccy, color):
   apiDict = getApiDict()
   #####
   while True:
-    fundingDict = getFundingDict(apiDict,ccy,isRateLimit=True)
+    fundingDict = getFundingDict(apiDict,ccy)
     smartBasisDict = getSmartBasisDict(apiDict,ccy, fundingDict, isSkipAdj=True)
     print(getCurrentTime(isCondensed=True).ljust(10),end='')
     print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
       process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf', 'kut'], color)
     print()
+    time.sleep(2)
 
 #############################################################################################
 
@@ -1329,7 +1327,7 @@ def ctRun(ccy, notional, tgtBps, color):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(apiDict, ccy, isRateLimit=False)
+      fundingDict=getFundingDict(apiDict, ccy)
       smartBasisDict = getSmartBasisDict(apiDict ,ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
       smartBasisDict['spotBasis'] = 0
