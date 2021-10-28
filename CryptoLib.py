@@ -1205,6 +1205,11 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
+def ctAssertNoStepper():
+  if CT_CONFIGS_DICT['IS_BBT_STEPPER'] or CT_CONFIGS_DICT['IS_KUT_STEPPER']:
+    print('Cannot use more than two parameters when using steppers!')
+    sys.exit(1)
+
 def ctBBTStepper(side, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_BBT_STEPPER']:
     print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ....')
@@ -1315,10 +1320,8 @@ def ctRun(ccy, notional, tgtBps, color):
   apiDict, trade_qty, trade_notional, spot = ctInit(ccy, notional, tgtBps)
   ftx = apiDict['ftx']
   bb = apiDict['bb']
-  bbtCurrent = apiDict['bbtCurrent']
   db = apiDict['db']
   kf = apiDict['kf']
-  kutCurrent = apiDict['kutCurrent']
   #####
   realizedSlippageBps = []
   for i in range(CT_CONFIGS_DICT['NPROGRAMS']):
@@ -1326,7 +1329,7 @@ def ctRun(ccy, notional, tgtBps, color):
     chosenLong = ''
     chosenShort = ''
     while True:
-      fundingDict=getFundingDict(apiDict, ccy, isRateLimit=True)
+      fundingDict=getFundingDict(apiDict, ccy, isRateLimit=False)
       smartBasisDict = getSmartBasisDict(apiDict ,ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
       smartBasisDict['spotBasis'] = 0
@@ -1365,31 +1368,22 @@ def ctRun(ccy, notional, tgtBps, color):
           chosenLong = keyMin[:len(keyMin) - 10]
           chosenShort = keyMax[:len(keyMax) - 10]
           #####
-          maxPosUSDLong = 1e9
-          signLong=0
           dLong = CT_CONFIGS_DICT[chosenLong.upper() + '_' + ccy]
           if len(dLong) > 2:
-            if CT_CONFIGS_DICT['IS_BBT_STEPPER'] or CT_CONFIGS_DICT['IS_KUT_STEPPER']:
-              print('Cannot use more than two parameters when using steppers!')
-              sys.exit(1)
-            if dLong[2] is not None: maxPosUSDLong = dLong[2]
-          if len(dLong) > 3: signLong=np.sign(dLong[3])
+            ctAssertNoStepper()
+            posUSDLong = ctGetPosUSD(apiDict, chosenLong, ccy, spot)
+            if posUSDLong >= dLong[2]:
+              del d[chosenLong + 'SmartBasis']
+              continue
           #####
-          maxPosUSDShort = 1e9
-          signShort=0
           dShort = CT_CONFIGS_DICT[chosenShort.upper() + '_' + ccy]
           if len(dShort) > 2:
-            if dShort[2] is not None: maxPosUSDShort = dShort[2]
-          if len(dShort) > 3: signShort=np.sign(dShort[3])
+            ctAssertNoStepper()
+            posUSDShort = ctGetPosUSD(apiDict, chosenShort, ccy, spot)
+            if posUSDShort <= -dShort[2]:
+              del d[chosenShort + 'SmartBasis']
+              continue
           #####
-          posUSDLong = ctGetPosUSD(apiDict, chosenLong, ccy, spot)
-          posUSDShort = ctGetPosUSD(apiDict, chosenShort, ccy, spot)
-          if (posUSDLong>=maxPosUSDLong) or (posUSDLong>=0 and signLong==-1):
-            del d[chosenLong+'SmartBasis']
-            continue
-          if (posUSDShort<=-maxPosUSDShort) or (posUSDShort<=0 and signShort==1):
-            del d[chosenShort+'SmartBasis']
-            continue
           break
 
         ###############
@@ -1472,16 +1466,7 @@ def ctRun(ccy, notional, tgtBps, color):
           distance = ctGetDistance('DB', completedLegs)
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-        if 'kut' == chosenLong and not isCancelled:
-          kutCurrent = ctKUTStepper('BUY', ccy, trade_qty)
-          distance = ctGetDistance('KUT', completedLegs)
-          longFill = kutRelOrder('BUY', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
-          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
-        if 'kut' == chosenShort and not isCancelled:
-          kutCurrent = ctKUTStepper('SELL', ccy, trade_qty)
-          distance = ctGetDistance('KUT', completedLegs)
-          shortFill = kutRelOrder('SELL', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
-          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
+
         if 'spot' == chosenLong and not isCancelled:
           distance = ctGetDistance('SPOT', completedLegs)
           longFill = ftxRelOrder('BUY', ftx, ccy + '/USD', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
@@ -1498,7 +1483,16 @@ def ctRun(ccy, notional, tgtBps, color):
           distance = ctGetDistance('FTX', completedLegs)
           shortFill = ftxRelOrder('SELL', ftx, ccy + '-PERP', trade_qty, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
-
+        if 'kut' == chosenLong and not isCancelled:
+          kutCurrent = ctKUTStepper('BUY', ccy, trade_qty)
+          distance = ctGetDistance('KUT', completedLegs)
+          longFill = kutRelOrder('BUY', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
+        if 'kut' == chosenShort and not isCancelled:
+          kutCurrent = ctKUTStepper('SELL', ccy, trade_qty)
+          distance = ctGetDistance('KUT', completedLegs)
+          shortFill = kutRelOrder('SELL', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
+          completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if isCancelled:
           status=(min(abs(status),CT_CONFIGS_DICT['STREAK'])-1)*np.sign(status)
           print()
