@@ -1220,7 +1220,7 @@ def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
       if isBuild is None:
         isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
       posSim = pos + trade_qty * mult
-      if not isBuild and pos * posSim <= 0: # ie., during unwind, if sign is flipped:
+      if not isBuild and ((side == 'BUY' and posSim > 0) or (side == 'SELL' and posSim < 0)):
         bbtN+=1
         if bbtN > SHARED_EXCH_DICT['BBT']:
           print('No more unwind opportunities!')
@@ -1290,7 +1290,7 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
           sys.exit(1)
         else:
           continue
-      elif not isBuild and pos * posSim < 0: # ie., during unwind, if sign is flipped:
+      elif not isBuild and ((side=='BUY' and posSim > 0) or (side=='SELL' and posSim < 0)):
         kutN+=1
         if kutN > SHARED_EXCH_DICT['kut']:
           print('No more unwind opportunities!')

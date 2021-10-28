@@ -96,7 +96,7 @@ SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.15
+SMB_DICT['BASE_RATE']=0.1
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -148,8 +148,8 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','LINK','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ATOM','AXS','DOT','FIL','LUNA','ONE','SHIB','VET']
+  my_FTX_KUT=['XRP','DOGE','FTM','SOL','SUSHI']
+  my_FTX_KUT_flowless=['ADA','ATOM','AXS','DOT','DYDX','FIL','LUNA','ONE','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
