@@ -148,7 +148,7 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','SOL','SUSHI']
+  my_FTX_KUT=['XRP','DOGE','FTM','LINK','SOL','SUSHI']
   my_FTX_KUT_flowless=['ADA','ATOM','AXS','DYDX','FIL','LUNA','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
