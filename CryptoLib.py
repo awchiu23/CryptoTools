@@ -793,6 +793,10 @@ def kutGetUSDTDict(kut):
   return kut.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
 
 @retry(wait_fixed=1000)
+def kutGetPos(kut, ccy):
+  return kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
+
+@retry(wait_fixed=1000)
 def kutGetPositions(kut):
   return pd.DataFrame(kut.futuresPrivate_get_positions()['data']).set_index('symbol')
 
@@ -838,9 +842,6 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
     try:
       result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
-    except ccxt.RateLimitExceeded: # observe over a period of time whether this has triggered or not
-      print(getCurrentTime()+': KuCoin rate limit exceeded!')
-      sys.exit(1)
     except:
       print(traceback.print_exc())
       sys.exit(1)
@@ -1204,7 +1205,7 @@ def ctStreakEnded(i, realizedSlippageBps, color):
   chosenShort = ''
   return prevSmartBasis, chosenLong, chosenShort
 
-def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
+def ctBBTStepper(side, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_BBT_STEPPER']:
     print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ....')
     key = 'ct_bbtN'
@@ -1217,9 +1218,13 @@ def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
     while True:
       bbtCurrent = bbCCXTInit(bbtN)
       pos = bbtGetFutPos(bbtCurrent, ccy)
+      # first iteration
       if isBuild is None:
         isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
-      posSim = pos + trade_qty * mult
+      # every time
+      if not isBuild:
+        posSim = pos + trade_qty * mult
+      # branches
       if not isBuild and ((side == 'BUY' and posSim > 0) or (side == 'SELL' and posSim < 0)):
         bbtN+=1
         if bbtN > SHARED_EXCH_DICT['BBT']:
@@ -1233,36 +1238,7 @@ def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
         break
   return bbtCurrent
 
-'''
-def ctBBTStepper(side, bbtCurrent, ccy, trade_qty):
-  if CT_CONFIGS_DICT['IS_BBT_STEPPER']:
-    print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ....')
-    key = 'ct_bbtN'
-    bbtN = cache('r', key)
-    if bbtN is None:
-      bbtN=CT_CONFIGS_DICT['CURRENT_BBT']
-      cache('w',key,bbtN)
-    while True:
-      bbtCurrent = bbCCXTInit(bbtN)
-      pos = bbtGetFutPos(bbtCurrent, ccy)
-      mult = 1 if side=='BUY' else -1
-      posSim = pos + trade_qty * mult
-      if pos==0 and side=='BUY':
-        print('Cannot initiate long positions from zero!')
-        sys.exit(1)
-      elif pos * posSim < 0: # ie., if flip sign:
-        bbtN -=1
-        if bbtN < 1:
-          print('No more unwind possibilities!')
-          sys.exit(1)
-      else:
-        print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
-        cache('w', key, bbtN)
-        break
-  return bbtCurrent
-'''
-
-def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
+def ctKUTStepper(side, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
     print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ....')
     key = 'ct_kutN'
@@ -1276,14 +1252,19 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
     mult = 1 if side == 'BUY' else -1
     while True:
       kutCurrent = kutCCXTInit(kutN)
-      pos = kutGetFutPos(kutCurrent, ccy) * kutGetMult(kutCurrent, ccy)
+      posData=kutGetPos(kutCurrent, ccy)
+      pos = posData['currentQty'] * kutGetMult(kutCurrent, ccy)
+      # first iteration
       if isBuild is None:
         isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
-        if isBuild:
-          riskLimit = kutCurrent.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit'] * 0.93
-          mid = kutGetMid(kutCurrent, ccy)
-      posSim = pos + trade_qty * mult
-      if isBuild and abs(posSim)>riskLimit/mid:
+      # every time
+      if isBuild:
+        if riskLimit is None: riskLimit = kutCurrent.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit']
+        if mid is None: mid = kutGetMid(kutCurrent, ccy)
+      else:
+        posSim = pos + trade_qty * mult
+      # branches
+      if isBuild and trade_qty>(riskLimit-abs(posData['posCost']))*.9/mid:
         kutN +=1
         if kutN > SHARED_EXCH_DICT['kut']:
           print('No more build opportunities!')
@@ -1302,45 +1283,6 @@ def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
         cache('w', key, kutN)
         break
   return kutCurrent
-
-'''
-def ctKUTStepper(side, kutCurrent, ccy, trade_qty):
-  if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
-    print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ....')
-    key = 'ct_kutN'
-    kutN = cache('r', key)
-    if kutN is None:
-      kutN=CT_CONFIGS_DICT['CURRENT_KUT']
-      cache('w',key,kutN)
-    mid = None
-    riskLimit = None
-    while True:
-      kutCurrent = kutCCXTInit(kutN)
-      pos = kutGetFutPos(kutCurrent, ccy) * kutGetMult(kutCurrent, ccy)
-      if mid is None: mid = kutGetMid(kutCurrent, ccy)
-      if riskLimit is None: riskLimit = kutCurrent.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy)+'USDTM'})['data']['maxRiskLimit']*0.93
-      #avgEntryPrice = kutCurrent.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['avgEntryPrice']
-      mult = 1 if side=='BUY' else -1
-      posSim = pos + trade_qty * mult
-      if pos==0 and side=='BUY':
-        print('Cannot initiate long positions from zero!')
-        sys.exit(1)
-      elif pos * posSim < 0: # ie., if flip sign:
-        kutN -=1
-        if kutN < 1:
-          print('No more unwind possibilities!')
-          sys.exit(1)
-      elif abs(posSim)>max(abs(pos),riskLimit/mid): # ie., if position increases and goes above risk limit
-        kutN +=1
-        if kutN > SHARED_EXCH_DICT['kut']:
-          print('No more add-on possibilities!')
-          sys.exit(1)
-      else:
-        print((getCurrentTime() + ':').ljust(20) + ' Using KUT' + str(kutN) + ' ....')
-        cache('w', key, kutN)
-        break
-  return kutCurrent
-'''
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
@@ -1497,12 +1439,12 @@ def ctRun(ccy, notional, tgtBps, color):
         completedLegs = 0
         isCancelled=False
         if 'bbt' == chosenLong and not isCancelled:
-          bbtCurrent = ctBBTStepper('BUY', bbtCurrent, ccy, trade_qty)
+          bbtCurrent = ctBBTStepper('BUY', ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
           longFill = bbtRelOrder('BUY', bbtCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(longFill,completedLegs,isCancelled)
         if 'bbt' == chosenShort and not isCancelled:
-          bbtCurrent = ctBBTStepper('SELL', bbtCurrent, ccy, trade_qty)
+          bbtCurrent = ctBBTStepper('SELL', ccy, trade_qty)
           distance = ctGetDistance('BBT', completedLegs)
           shortFill = bbtRelOrder('SELL', bbtCurrent, ccy, trade_qty,maxChases=ctGetMaxChases(completedLegs),distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs,isCancelled=ctProcessFill(shortFill,completedLegs,isCancelled)
@@ -1531,12 +1473,12 @@ def ctRun(ccy, notional, tgtBps, color):
           shortFill = dbRelOrder('SELL', db, ccy, trade_notional, maxChases=ctGetMaxChases(completedLegs),distance=distance)
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)
         if 'kut' == chosenLong and not isCancelled:
-          kutCurrent = ctKUTStepper('BUY', kutCurrent, ccy, trade_qty)
+          kutCurrent = ctKUTStepper('BUY', ccy, trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
           longFill = kutRelOrder('BUY', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(longFill, completedLegs, isCancelled)
         if 'kut' == chosenShort and not isCancelled:
-          kutCurrent = ctKUTStepper('SELL', kutCurrent, ccy, trade_qty)
+          kutCurrent = ctKUTStepper('SELL', ccy, trade_qty)
           distance = ctGetDistance('KUT', completedLegs)
           shortFill = kutRelOrder('SELL', kutCurrent, ccy, trade_qty, maxChases=ctGetMaxChases(completedLegs), distance=distance) * ftxGetMid(ftx, 'USDT/USD')
           completedLegs, isCancelled = ctProcessFill(shortFill, completedLegs, isCancelled)

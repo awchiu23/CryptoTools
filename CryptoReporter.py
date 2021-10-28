@@ -780,7 +780,6 @@ class core:
         kutLock = threading.Lock()
         cl.cache('w',key,kutLock)
       with kutLock:
-        #print(cl.getCurrentTime()+':'+self.name+' '+ccy)
         while True:
           try:
             fundingHistory = self.api.futuresPrivate_get_funding_history({'symbol': cl.kutGetCcy(ccy) + 'USDTM', 'startAt': startAt})['data']['dataList']
