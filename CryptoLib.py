@@ -1241,7 +1241,7 @@ def ctBBTStepper(side, ccy, trade_qty):
         break
     return bbtCurrent
   else:
-    return None
+    return bbCCXTInit(CT_CONFIGS_DICT['CURRENT_BBT'])
 
 def ctKUTStepper(side, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
@@ -1289,7 +1289,7 @@ def ctKUTStepper(side, ccy, trade_qty):
         break
     return kutCurrent
   else:
-    return None
+    return kutCCXTInit(CT_CONFIGS_DICT['CURRENT_KUT'])
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
