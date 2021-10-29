@@ -146,6 +146,17 @@ def getCores(isRetry=True):
   
   return coresDict, spotDict, objs, isOk
 
+def getNAV(objs,spotDict):
+  nav = 0
+  for obj in objs:
+    nav+=obj.nav
+  extCoinsNAV=0
+  for ccy in CR_AG_CCY_DICT.keys():
+    extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
+  extCoinsNAV += CR_EXT_DELTA_USDT * spotDict['USDT']
+  nav+= extCoinsNAV
+  return nav, extCoinsNAV
+
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
 
@@ -888,20 +899,14 @@ if __name__ == '__main__':
   #############
   # Aggregation
   #############
+  nav, extCoinsNAV=getNAV(objs,spotDict)
   agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'SpotDelta': CR_AG_CCY_DICT.values(), 'FutDelta': [0] * len(CR_AG_CCY_DICT.keys())}).set_index('Ccy')
-  nav=0
   oneDayIncome=0
   for obj in objs:
-    nav+=obj.nav
     oneDayIncome += obj.oneDayIncome
     for ccy in CR_AG_CCY_DICT.keys():
       agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
       agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
-  extCoinsNAV=0
-  for ccy in CR_AG_CCY_DICT.keys():
-    extCoinsNAV += CR_AG_CCY_DICT[ccy] * spotDict[ccy]
-  extCoinsNAV += CR_EXT_DELTA_USDT * spotDict['USDT']
-  nav+= extCoinsNAV
   oneDayIncome+=ftxCore.oneDayFlows
 
   ########

@@ -1239,7 +1239,9 @@ def ctBBTStepper(side, ccy, trade_qty):
         print((getCurrentTime() + ':').ljust(20) + ' Using BBT' + str(bbtN) + ' ....')
         cache('w', key, bbtN)
         break
-  return bbtCurrent
+    return bbtCurrent
+  else:
+    return None
 
 def ctKUTStepper(side, ccy, trade_qty):
   if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
@@ -1285,7 +1287,9 @@ def ctKUTStepper(side, ccy, trade_qty):
         print((getCurrentTime() + ':').ljust(20) + ' Using KUT' + str(kutN) + ' ....')
         cache('w', key, kutN)
         break
-  return kutCurrent
+    return kutCurrent
+  else:
+    return None
 
 def ctGetMaxChases(completedLegs):
   if completedLegs == 0:
