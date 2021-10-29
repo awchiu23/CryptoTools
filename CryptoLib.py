@@ -541,11 +541,14 @@ def bbtGetRiskDf(bb, spotDict):
     tmp = plDf.loc[symbol].set_index('side')
     position_value = tmp.loc['Buy', 'position_value'] - tmp.loc['Sell', 'position_value']
     dominantSide = 'Buy' if tmp.loc['Buy', 'size'] >= tmp.loc['Sell', 'size'] else 'Sell'
-    spot_price = spotDict[ccy] / spotDict['USDT']
+    if ccy=='SHIB1000':
+      spot_price = spotDict['SHIB'] / spotDict['USDT'] * 1000 # Special fix for SHIB
+    else:
+      spot_price = spotDict[ccy] / spotDict['USDT']
     liq_price = tmp.loc[dominantSide, 'liq_price']
     liq = liq_price / spot_price
     unrealised_pnl = tmp['unrealised_pnl'].sum()
-    df = df.append({'ccy': ccy,
+    df = df.append({'ccy': 'SHIB' if ccy=='SHIB1000' else ccy, # Special fix for SHIB
                     'position_value': position_value,
                     'spot_price': spot_price,
                     'liq_price': liq_price,
@@ -560,6 +563,13 @@ def bbtGetRiskDf(bb, spotDict):
   df['mm_value'] = (df['position_value'] * df['mm']).abs()
   df['delta_value'] = df['position_value'] + df['unrealised_pnl']
   return df[['position_value', 'delta_value', 'spot_price', 'liq_price', 'liq', 'unrealised_pnl', 'im_value', 'mm_value']]
+
+@retry(wait_fixed=1000)
+def bbtGetTradeExecutionList(bb,ccy):
+  if ccy=='SHIB':
+    return bbtGetTradeExecutionList(bb,'SHIB1000') # special fix for SHIB
+  else:
+    return bb.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   @retry(wait_fixed=1000)
