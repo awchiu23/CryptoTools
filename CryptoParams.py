@@ -141,14 +141,14 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':0,'bb':0,'db':0,'kf':0,'kut':27})
-  SHARED_ETC_DICT['SHIFT'] = 5
+  SHARED_ETC_DICT['SHIFT'] = 10
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=[]
   my_FTX_BBT_KUT_flowless=[]
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','FTM','LINK','SOL','SUSHI']
+  my_FTX_KUT=['XRP','DOGE','FTM','LINK','MATIC','SOL','SUSHI']
   my_FTX_KUT_flowless=['ADA','ATOM','AXS','DYDX','FIL','LUNA','SHIB','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
