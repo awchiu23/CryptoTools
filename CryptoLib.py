@@ -541,11 +541,11 @@ def bbtGetRiskDf(bb, spotDict):
     tmp = plDf.loc[symbol].set_index('side')
     position_value = tmp.loc['Buy', 'position_value'] - tmp.loc['Sell', 'position_value']
     dominantSide = 'Buy' if tmp.loc['Buy', 'size'] >= tmp.loc['Sell', 'size'] else 'Sell'
-    if ccy=='SHIB1000' and 'SHIB' in spotDict:
-      spot_price = spotDict['SHIB'] / spotDict['USDT'] * 1000 # Special fix for SHIB
-    elif ccy not in spotDict:
-      spot_price = 0
+    if ccy=='SHIB1000': # Special fix for SHIB
+      if 'SHIB' not in spotDict: spotDict['SHIB'] = bbtGetMid(bb,'SHIB')
+      spot_price = spotDict['SHIB'] / spotDict['USDT'] * 1000
     else:
+      if ccy not in spotDict: spotDict[ccy] = bbtGetMid(bb,ccy)
       spot_price = spotDict[ccy] / spotDict['USDT']
     liq_price = tmp.loc[dominantSide, 'liq_price']
     liq = liq_price / spot_price
