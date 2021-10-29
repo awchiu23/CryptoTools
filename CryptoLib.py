@@ -1327,6 +1327,7 @@ def ctRun(ccy, notional, tgtBps, color):
     chosenLong = ''
     chosenShort = ''
     while True:
+      time.sleep(2)
       fundingDict=getFundingDict(apiDict, ccy)
       smartBasisDict = getSmartBasisDict(apiDict ,ccy, fundingDict)
       smartBasisDict['spotSmartBasis'] = 0
