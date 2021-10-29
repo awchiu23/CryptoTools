@@ -99,6 +99,7 @@ def getCores(isRetry=True):
   for ccy in ccyList:
     spotDict[ccy]=cl.ftxGetMid(ftx,ccy+'/USD')
   spotDict['USD']=1
+  if 'SHIB' in ccyList: spotDict['SHIB1000'] = spotDict['SHIB']*1000 # Special fix for SHIB
   #####
   objs = []
   ftxCore=processCore('ftx',spotDict,objs)
@@ -604,13 +605,17 @@ class core:
   def bbtInit(self):
     @retry(wait_fixed=1000)
     def getTradeExecutionList(ccy):
-      return self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
+      if ccy=='SHIB':
+        return getTradeExecutionList('SHIB1000') # special fix for SHIB
+      else:
+        return self.api.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': cl.getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
     #####
     self.api = cl.bbCCXTInit(n=self.n)
-    riskDf = cl.bbtGetRiskDf(self.api, self.validCcys, self.spotDict)
+    riskDf = cl.bbtGetRiskDf(self.api, self.spotDict)
     for ccy in self.validCcys:
       self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
-      self.liqDict[ccy] = riskDf.loc[ccy,'liq']
+      ccy2 = 'SHIB1000' if ccy == 'SHIB' else ccy  # special fix for SHIB
+      self.liqDict[ccy] = riskDf.loc[ccy2,'liq']
     self.calcFuturesDeltaUSD()
     #####
     if self.n>=2: # trim list for auxiliary BBTs

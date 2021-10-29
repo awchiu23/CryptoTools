@@ -145,11 +145,11 @@ if os.environ.get('USERNAME')=='Simon':
   ############################################################################################################
   my_FTX=['LINK']
   my_FTX_BBT_KUT=['FTM']
-  my_FTX_BBT_KUT_flowless=[]
+  my_FTX_BBT_KUT_flowless=['SHIB']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['XRP','DOGE','MATIC','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ATOM','LUNA','SHIB','VET']
+  my_FTX_KUT_flowless=['ADA','ATOM','LUNA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -166,7 +166,7 @@ if os.environ.get('USERNAME')=='Simon':
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
   #SHARED_CCY_DICT['XRP']['futExch'].append('bb')
   #####
-  CR_AG_CCY_DICT['BTC']=1.501 #bbftx
+  #CR_AG_CCY_DICT['BTC']=1.501 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
   #CR_EXT_DELTA_USDT = 18020 #bbftx

@@ -86,7 +86,7 @@ def kutCCXTInit(n=1):
 #########
 # Helpers
 #########
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetMid(ftx, name):
   for z in SHARED_ETC_DICT['FTX_SPOTLESS']:
     if name==z+'/USD':
@@ -97,35 +97,35 @@ def ftxGetMid(ftx, name):
   else:
     return (float(d['bid'])+float(d['ask']))/2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetBid(ftx,ticker):
   return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['bid'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetAsk(ftx,ticker):
   if ticker=='SHIB-PERP': # Special fix for SHIB
     return ftxGetBid(ftx,ticker)+2e-8
   else:
     return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetFuture(ftx,ccy):
   return ftx.public_get_futures_future_name({'future_name':ccy+'-PERP'})['result']
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetMid(bb, ccy):
   d = bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]
   return (float(d['bid_price']) + float(d['ask_price'])) / 2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetBid(bb,ccy):
   return float(bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]['bid_price'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetAsk(bb,ccy):
   return float(bb.v2PublicGetTickers({'symbol': ccy + 'USD'})['result'][0]['ask_price'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetMid(bb, ccy):
   if ccy == 'SHIB':  # Special fix for SHIB
     return bbtGetMid(bb, 'SHIB1000')/1000
@@ -133,59 +133,59 @@ def bbtGetMid(bb, ccy):
     d = bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]
     return (float(d['bid_price']) + float(d['ask_price'])) / 2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetBid(bb,ccy):
   if ccy == 'SHIB': # Special fix for SHIB
     return bbtGetBid(bb, 'SHIB1000')/1000
   else:
     return float(bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]['bid_price'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetAsk(bb,ccy):
   if ccy == 'SHIB': # Special fix for SHIB
     return bbtGetAsk(bb, 'SHIB1000')/1000
   else:
     return float(bb.v2PublicGetTickers({'symbol': ccy + 'USDT'})['result'][0]['ask_price'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetMid(db,ccy):
   d=db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']
   return (float(d['best_bid_price'])+float(d['best_ask_price']))/2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetBid(db,ccy):
   return float(db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']['best_bid_price'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetAsk(db,ccy):
   return float(db.public_get_ticker({'instrument_name': ccy+'-PERPETUAL'})['result']['best_ask_price'])
 
-# Do not use #@retry
+# Do not use @retry
 def kfGetMid(kf, ccy, kfTickers=None):
   if kfTickers is None: kfTickers = kfGetTickers(kf)
   ticker=kfCcyToSymbol(ccy)
   return (kfTickers.loc[ticker, 'bid'] + kfTickers.loc[ticker, 'ask']) / 2
 
-# Do not use #@retry
+# Do not use @retry
 def kfGetBid(kf, ccy, kfTickers=None):
   if kfTickers is None: kfTickers = kfGetTickers(kf)
   return kfTickers.loc[kfCcyToSymbol(ccy), 'bid']
 
-# Do not use #@retry
+# Do not use @retry
 def kfGetAsk(kf, ccy, kfTickers=None):
   if kfTickers is None: kfTickers = kfGetTickers(kf)
   return kfTickers.loc[kfCcyToSymbol(ccy), 'ask']
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetMid(kut, ccy):
   d=kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
   return (float(d['bestBidPrice'])+float(d['bestAskPrice']))/2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetBid(kut, ccy):
   return float(kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestBidPrice'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetAsk(kut, ccy):
   return float(kut.futuresPublic_get_ticker({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['bestAskPrice'])
 
@@ -225,7 +225,7 @@ def roundQty(api, ccyOrTicker, qty):
 #####
 # FTX
 #####
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetWallet(ftx):
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
   for name in SHARED_ETC_DICT['FTX_SPOTLESS']:
@@ -236,7 +236,7 @@ def ftxGetWallet(ftx):
   dfSetFloat(wallet,wallet.columns)
   return wallet
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetFutPos(ftx,ccy):
   df = pd.DataFrame(ftx.private_get_account()['result']['positions']).set_index('future')
   ccy2=ccy+'-PERP'
@@ -249,11 +249,11 @@ def ftxGetFutPos(ftx,ccy):
   else:
     return 0
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetEstFunding(ftx, ccy):
   return float(ftx.public_get_futures_future_name_stats({'future_name': ccy+'-PERP'})['result']['nextFundingRate']) * 24 * 365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetEstBorrow(ftx, ccy=None):
   s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
   if ccy is None:
@@ -261,7 +261,7 @@ def ftxGetEstBorrow(ftx, ccy=None):
   else:
     return s[ccy]
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetEstLending(ftx, ccy=None):
   s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
   if ccy is None:
@@ -269,7 +269,7 @@ def ftxGetEstLending(ftx, ccy=None):
   else:
     return s[ccy]
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetTickSize(ftx,ticker):
   key='ftxTickSize'
   df=cache('r',key)
@@ -278,7 +278,7 @@ def ftxGetTickSize(ftx,ticker):
     cache('w',key,df)
   return float(df.loc[ticker, 'priceIncrement'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetLotSize(ftx,ticker):
   key='ftxLotSize'
   df=cache('r',key)
@@ -288,13 +288,13 @@ def ftxGetLotSize(ftx,ticker):
   return float(df.loc[ticker, 'sizeIncrement'])
 
 def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def ftxGetRemainingSize(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['remainingSize'])
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def ftxGetFilledSize(ftx, orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['filledSize'])
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def ftxGetFillPrice(ftx,orderId):
     return float(ftx.private_get_orders_order_id({'order_id': orderId})['result']['avgFillPrice'])
   #####
@@ -368,7 +368,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
 ####
 # BB
 ####
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetFutPos(bb,ccy):
   df = bb.v2_private_get_position_list()['result']
   df = pd.DataFrame([pos['data'] for pos in df]).set_index('symbol')
@@ -378,20 +378,20 @@ def bbGetFutPos(bb,ccy):
     pos *= -1
   return pos
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetSpotPos(bb,ccy):
   wallet = pd.DataFrame(bb.v2_private_get_wallet_balance()['result']).transpose()
   return float(wallet.loc[ccy, 'equity'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetEstFunding1(bb,ccy):
   return float(bb.v2PrivateGetFundingPrevFundingRate({'symbol': ccy+'USD'})['result']['funding_rate']) * 3 * 365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetEstFunding2(bb, ccy):
   return float(bb.v2PrivateGetFundingPredictedFunding({'symbol': ccy+'USD'})['result']['predicted_funding_rate']) * 3 * 365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetTickSize(bb,ccy,isBBT=False):
   ticker=ccy+'USD'
   if isBBT: ticker+='T'
@@ -403,7 +403,7 @@ def bbGetTickSize(bb,ccy,isBBT=False):
   return float(df[ticker]['tick_size'])
 
 def bbRelOrderCore(side,bb,ccy,maxChases,distance,exch,ticker,qty,getBidFunc,getAskFunc,getOrderFunc,getFillPriceFunc,orderReplaceFunc,orderCancelFunc):
-  # Do not use #@retry
+  # Do not use @retry
   def getIsReduceOnly(bb, ccy, side, qty):
     df = pd.DataFrame(bb.private_linear_get_position_list({'symbol': ccy + 'USDT'})['result']).set_index('side')
     oppSide = 'Sell' if side == 'BUY' else 'Buy'
@@ -461,20 +461,18 @@ def bbRelOrderCore(side,bb,ccy,maxChases,distance,exch,ticker,qty,getBidFunc,get
     time.sleep(1)
   fill=getFillPriceFunc(bb, ticker, orderId)
   print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
-  if ccy=='SHIB1000': # Special fix for SHIB
-    return fill/1000
-  else:
-    return fill
+  if ccy=='SHIB1000': fill/=1000 # Special fix for SHIB
+  return fill
 
 def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def bbGetOrder(bb,ticker,orderId):
     result=bb.v2_private_get_order({'symbol': ticker, 'order_id': orderId})['result']
     if len(result)==0:
       result=dict()
       result['orderStatus']='Filled'
     return result
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def bbGetFillPrice(bb, ticker, orderId):
     df = pd.DataFrame(bb.v2_private_get_execution_list({'symbol': ticker, 'order_id': orderId})['result']['trade_list'])
     df['exec_qty'] = [float(n) for n in df['exec_qty']]
@@ -494,7 +492,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
 #####
 # BBT
 #####
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetFutPos(bb,ccy):
   if ccy=='SHIB': # Special fix for SHIB
     return bbtGetFutPos(bb,'SHIB1000')*1000
@@ -502,63 +500,72 @@ def bbtGetFutPos(bb,ccy):
     df=pd.DataFrame(bb.private_linear_get_position_list({'symbol':ccy+'USDT'})['result']).set_index('side')
     return float(df.loc['Buy','size'])-float(df.loc['Sell','size'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetEstFunding1(bb,ccy):
   if ccy=='SHIB': # Special fix for SHIB
     return bbtGetEstFunding1(bb, 'SHIB1000')
   else:
     return float(bb.public_linear_get_funding_prev_funding_rate({'symbol': ccy+'USDT'})['result']['funding_rate'])*3*365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetEstFunding2(bb,ccy):
   if ccy == 'SHIB':
     return bbtGetEstFunding2(bb, 'SHIB1000')
   else:
     return float(bb.private_linear_get_funding_predicted_funding({'symbol': ccy+'USDT'})['result']['predicted_funding_rate'])* 3 * 365
 
-#@retry(wait_fixed=1000)
-def bbtGetRiskDf(bb,ccys,spotDict):
+@retry(wait_fixed=1000)
+def bbtGetRiskDf(bb, spotDict):
+  # Get position list dataframe
+  plDf = bb.private_linear_get_position_list()['result']
+  plDf = pd.DataFrame([pos['data'] for pos in plDf]).set_index('symbol')
+  buyDf = plDf[plDf['side'] == 'Buy']
+  sellDf = plDf[plDf['side'] == 'Sell']
+  validSymbols = []
+  for symbol in plDf.index.unique():
+    if buyDf.loc[symbol, 'size'] != sellDf.loc[symbol, 'size']: validSymbols.append(symbol)
+  plDf = plDf.loc[validSymbols]
+  dfSetFloat(plDf, ['size', 'position_value', 'liq_price', 'unrealised_pnl', 'entry_price', 'leverage'])
+
   # Get dictionaries of risk_id -> mm
   mmDict = dict()
-  for ccy in ccys:
-    riskLimit=bb.public_linear_get_risk_limit({'symbol': ccy + 'USDT'})['result']
+  for symbol in validSymbols:
+    riskLimit = bb.public_linear_get_risk_limit({'symbol': symbol})['result']
     for i in range(len(riskLimit)):
-      mmDict[riskLimit[i]['id']]=float(riskLimit[i]['maintain_margin'])
+      mmDict[riskLimit[i]['id']] = float(riskLimit[i]['maintain_margin'])
 
-  # Set up risk df
-  positionList = bb.private_linear_get_position_list()['result']
-  positionList = pd.DataFrame([pos['data'] for pos in positionList]).set_index('symbol')
-  dfSetFloat(positionList, ['size', 'position_value', 'liq_price','unrealised_pnl','entry_price','leverage'])
-  df=pd.DataFrame()
-  for ccy in ccys:
-    tmp=positionList.loc[ccy + 'USDT'].set_index('side')
+  # Generate riskDf
+  df = pd.DataFrame()
+  for symbol in validSymbols:
+    ccy = symbol[:(len(symbol) - 4)]
+    tmp = plDf.loc[symbol].set_index('side')
     position_value = tmp.loc['Buy', 'position_value'] - tmp.loc['Sell', 'position_value']
-    dominantSide='Buy' if tmp.loc['Buy', 'size'] >= tmp.loc['Sell', 'size'] else 'Sell'
-    spot_price = spotDict[ccy]/spotDict['USDT']
+    dominantSide = 'Buy' if tmp.loc['Buy', 'size'] >= tmp.loc['Sell', 'size'] else 'Sell'
+    spot_price = spotDict[ccy] / spotDict['USDT']
     liq_price = tmp.loc[dominantSide, 'liq_price']
     liq = liq_price / spot_price
     unrealised_pnl = tmp['unrealised_pnl'].sum()
-    df=df.append({'ccy':ccy,
-                    'position_value':position_value,
-                    'spot_price':spot_price,
-                    'liq_price':liq_price,
-                    'liq':liq,
-                    'unrealised_pnl':unrealised_pnl,
+    df = df.append({'ccy': ccy,
+                    'position_value': position_value,
+                    'spot_price': spot_price,
+                    'liq_price': liq_price,
+                    'liq': liq,
+                    'unrealised_pnl': unrealised_pnl,
                     'size': tmp.loc[dominantSide, 'size'],
                     'entry_price': tmp.loc[dominantSide, 'entry_price'],
                     'leverage': tmp.loc[dominantSide, 'leverage'],
                     'mm': mmDict[tmp.loc[dominantSide, 'risk_id']]}, ignore_index=True)
-  df=df.set_index('ccy')
+  df = df.set_index('ccy')
   df['im_value'] = abs(df['size']) * (df['entry_price'] / df['leverage'])
-  df['mm_value']=(df['position_value']*df['mm']).abs()
-  df['delta_value']=df['position_value']+df['unrealised_pnl']
-  return df[['position_value','delta_value','spot_price','liq_price','liq','unrealised_pnl','im_value','mm_value']]
+  df['mm_value'] = (df['position_value'] * df['mm']).abs()
+  df['delta_value'] = df['position_value'] + df['unrealised_pnl']
+  return df[['position_value', 'delta_value', 'spot_price', 'liq_price', 'liq', 'unrealised_pnl', 'im_value', 'mm_value']]
 
 def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def bbtGetOrder(bb, ticker, orderId):
     return bb.private_linear_get_order_search({'symbol': ticker, 'order_id': orderId})['result']
-  # Do not use #@retry
+  # Do not use @retry
   def bbtGetFillPrice(bb, ticker, orderId):
     orderStatus = bbtGetOrder(bb, ticker, orderId)
     return float(orderStatus['cum_exec_value']) / float(orderStatus['cum_exec_qty'])
@@ -580,15 +587,15 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
 ####
 # DB
 ####
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetFutPos(db,ccy):
   return float(db.private_get_get_position({'instrument_name': ccy + '-PERPETUAL'})['result']['size'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetSpotPos(db,ccy):
   return float(db.private_get_get_account_summary({'currency': ccy})['result']['equity'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetEstFunding(db,ccy,mins=15):
   now=datetime.datetime.now()
   start_timestamp = int(datetime.datetime.timestamp(now - pd.DateOffset(minutes=mins)))*1000
@@ -596,10 +603,10 @@ def dbGetEstFunding(db,ccy,mins=15):
   return float(db.public_get_get_funding_rate_value({'instrument_name': ccy+'-PERPETUAL', 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp})['result'])*(60/mins)*24*365
 
 def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def dbGetOrder(db, orderId):
     return db.private_get_get_order_state({'order_id': orderId})['result']
-  # Do not use #@retry
+  # Do not use @retry
   def dbEditOrder(db, orderId, trade_notional, limitPrice):
     if dbGetOrder(db, orderId)['order_state'] == 'filled':
       return False
@@ -679,12 +686,12 @@ def kfCcyToSymbol(ccy,isIndex=False):
   else:
     return 'pi'+suffix
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetFutPos(kf,ccy):
   symbol=kfCcyToSymbol(ccy)
   return kf.query('accounts')['accounts']['f'+symbol[1:]]['balances'][symbol]
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetSpotPos(kf,ccy,isIncludeHoldingWallets=False):
   accounts = kf.query('accounts')['accounts']
   ccy2 = 'xbt' if ccy == 'BTC' else ccy.lower()
@@ -692,24 +699,24 @@ def kfGetSpotPos(kf,ccy,isIncludeHoldingWallets=False):
   if isIncludeHoldingWallets: pos+=accounts['cash']['balances'][ccy2]
   return pos
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetTickers(kf):
   return pd.DataFrame(kf.query('tickers')['tickers']).set_index('symbol')
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetEstFunding1(kf,ccy,kfTickers=None):
   if kfTickers is None: kfTickers=kfGetTickers(kf)
   symbol=kfCcyToSymbol(ccy)
   return kfTickers.loc[symbol,'fundingRate']*kfTickers.loc[symbol,'markPrice']*24*365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetEstFunding2(kf, ccy,kfTickers=None):
   if kfTickers is None: kfTickers = kfGetTickers(kf)
   symbol = kfCcyToSymbol(ccy)
   return kfTickers.loc[symbol, 'fundingRatePrediction']*kfTickers.loc[symbol,'markPrice']*24*365
 
 def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def kfGetOrderStatus(kf, orderId):
     l = kf.query('openorders')['openOrders']
     if len(l)==0:
@@ -720,7 +727,7 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
         return df.loc[orderId]
       else:
         return None
-  # Do not use #@retry
+  # Do not use @retry
   def kfGetFillPrice(kf, orderId):
     df=pd.DataFrame(kf.query('fills')['fills']).set_index('order_id').loc[orderId]
     if isinstance(df, pd.Series):
@@ -796,36 +803,36 @@ def kutGetCcy(ccy):
   ccy2 = 'XBT' if ccy == 'BTC' else ccy
   return ccy2
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetFutPos(kut, ccy):
   return float(kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['currentQty'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetEstFunding1(kut, ccy):
   return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['value']) * 3 * 365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetEstFunding2(kut, ccy):
   return float(kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']['predictedValue']) * 3 * 365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetEstFundings(kut, ccy):
   data=kut.futuresPublic_get_funding_rate_symbol_current({'symbol': '.' + kutGetCcy(ccy) + 'USDTMFPI8H'})['data']
   return float(data['value']) * 3 * 365, float(data['predictedValue']) * 3 * 365
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetUSDTDict(kut):
   return kut.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetPos(kut, ccy):
   return kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetPositions(kut):
   return pd.DataFrame(kut.futuresPrivate_get_positions()['data']).set_index('symbol')
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetRiskDf(kut):
   df=pd.DataFrame(kut.futuresPrivate_get_positions()['data'])
   if len(df)==0:
@@ -835,7 +842,7 @@ def kutGetRiskDf(kut):
     df['liquidationRatio']=df['liquidationPrice']/df['markPrice']
     return df
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetTickSize(kut, ccy):
   key='kutTickSize'
   df=cache('r',key)
@@ -843,7 +850,7 @@ def kutGetTickSize(kut, ccy):
     df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
   return float(df.loc[kutGetCcy(ccy)+'USDTM','tickSize'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetMult(kut, ccy):
   key='kutMult'
   df=cache('r',key)
@@ -851,7 +858,7 @@ def kutGetMult(kut, ccy):
     df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
   return float(df.loc[kutGetCcy(ccy)+'USDTM','multiplier'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetMaxLeverage(kut, ccy):
   key='kutMaxLeverage'
   df=cache('r',key)
@@ -860,10 +867,10 @@ def kutGetMaxLeverage(kut, ccy):
   return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
 
 def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
-  #@retry(wait_fixed=1000)
+  @retry(wait_fixed=1000)
   def kutGetOrder(kut, orderId):
     return kut.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
-  # Do not use #@retry
+  # Do not use @retry
   def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
     try:
       result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
@@ -876,7 +883,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
     except:
       print(result)
       sys.exit(1)
-  # Do not use #@retry
+  # Do not use @retry
   def kutCancelOrder(kut, orderId):
     try:
       kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
@@ -1020,7 +1027,7 @@ def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pct
 
 #############################################################################################
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def ftxGetOneDayShortFutEdge(ftx, fundingDict, basis):
   keySnap='ftxEMASnap'+fundingDict['Ccy']
   if cache('r',keySnap) is None:
@@ -1031,7 +1038,7 @@ def ftxGetOneDayShortFutEdge(ftx, fundingDict, basis):
   cache('w',keySnap,smoothedSnapFundingRate)
   return getOneDayShortFutEdge(1,basis,smoothedSnapFundingRate, fundingDict['ftxEstFunding'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbGetOneDayShortFutEdge(bb, fundingDict, basis):
   start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
   premIndex=np.mean([float(n) for n in pd.DataFrame(bb.v2_public_get_premium_index_kline({'symbol':fundingDict['Ccy']+'USD','interval':'1','from':start_time})['result'])['close']])
@@ -1039,7 +1046,7 @@ def bbGetOneDayShortFutEdge(bb, fundingDict, basis):
   snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbEstFunding2'], prevFundingRate=fundingDict['bbEstFunding1'])
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def bbtGetOneDayShortFutEdge(bb, fundingDict, basis):
   start_time = int((datetime.datetime.timestamp(datetime.datetime.now() - pd.DateOffset(minutes=15))))
   ccy=fundingDict['Ccy']
@@ -1049,13 +1056,13 @@ def bbtGetOneDayShortFutEdge(bb, fundingDict, basis):
   snapFundingRate=premIndexClamped*365*3
   return getOneDayShortFutEdge(8, basis, snapFundingRate, fundingDict['bbtEstFunding2'], prevFundingRate=fundingDict['bbtEstFunding1']) - getOneDayUSDTCollateralBleed(fundingDict)
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def dbGetOneDayShortFutEdge(db, fundingDict, basis):
   edge = basis - getOneDayDecayedValues(basis, SMB_DICT['BASE_BASIS'], SMB_DICT['HALF_LIFE_HOURS'])[-1] # basis
   edge += getOneDayDecayedMean(fundingDict['dbEstFunding'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365 # funding
   return edge
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
   est2=fundingDict['kfEstFunding2']
   mid = kfGetMid(kf, fundingDict['Ccy'], kfTickers=kfTickers)
@@ -1068,7 +1075,7 @@ def kfGetOneDayShortFutEdge(kf, kfTickers, fundingDict, basis):
   cache('w', keySnap, smoothedSnapFundingRate)
   return getOneDayShortFutEdge(4, basis, smoothedSnapFundingRate, est2, pctElapsedPower=4, prevFundingRate=fundingDict['kfEstFunding1'], isKF=True)
 
-#@retry(wait_fixed=1000)
+@retry(wait_fixed=1000)
 def kutGetOneDayShortFutEdge(kut, fundingDict, basis):
   premIndex=pd.DataFrame(kut.futuresPublic_get_premium_query({'symbol': '.' + kutGetCcy(fundingDict['Ccy']) + 'USDTMPI', 'maxCount':15})['data']['dataList'])['value'].astype(float).mean()
   premIndexClamped  = premIndex + np.clip(0.0001 - premIndex, -0.0005, 0.0005)
