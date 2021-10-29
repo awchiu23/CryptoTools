@@ -245,7 +245,7 @@ class core:
     self.name = exch.upper()
     self.spotDict = spotDict
     self.n = n
-    if self.n is not None and self.n!=1: self.name += str(n)
+    if self.n is not None: self.name += str(n)
     #####
     self.validCcys = cl.getValidCcys(exch)
     #####
