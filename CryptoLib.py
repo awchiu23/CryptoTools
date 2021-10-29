@@ -1276,7 +1276,7 @@ def ctBBTStepper(side, ccy, trade_qty):
       # branches
       if not isBuild and ((side == 'BUY' and posSim > 0) or (side == 'SELL' and posSim < 0)):
         bbtN+=1
-        if bbtN > SHARED_EXCH_DICT['BBT']:
+        if bbtN > SHARED_EXCH_DICT['bbt']:
           print('No more unwind opportunities!')
           sys.exit(1)
         else:
