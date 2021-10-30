@@ -89,7 +89,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx', 'bbt']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ALGO', 'ATOM', 'AVAX', 'DOT', 'EOS', 'ETC', 'FIL', 'LUNA', 'ONE','VET','XLM']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ATOM', 'AVAX', 'DOT', 'EOS', 'LUNA', 'VET']
 
 #############
 # Smart Basis
@@ -143,13 +143,13 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':27})
   SHARED_ETC_DICT['SHIFT'] = 10
   ############################################################################################################
-  my_FTX=['LINK']
+  my_FTX=[]
   my_FTX_BBT_KUT=['FTM']
   my_FTX_BBT_KUT_flowless=['SHIB']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','MATIC','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ATOM','LUNA','VET']
+  my_FTX_KUT=['XRP','DOGE','LINK','MATIC','SOL','SUSHI']
+  my_FTX_KUT_flowless=['ADA','ATOM','DOT','SAND','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -159,8 +159,8 @@ if os.environ.get('USERNAME')=='Simon':
   for ccy in (my_FTX_BBT + my_FTX_BBT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'bbt']}
   for ccy in (my_FTX_KUT + my_FTX_KUT_flowless): SHARED_CCY_DICT[ccy] = {'futExch': ['ftx', 'kut']}
   ############################################################################################################
-  #SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
-  #SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
+  SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
   SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
   #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')

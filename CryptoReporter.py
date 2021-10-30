@@ -604,8 +604,11 @@ class core:
     self.api = cl.bbCCXTInit(n=self.n)
     riskDf = cl.bbtGetRiskDf(self.api, self.spotDict)
     for ccy in self.validCcys:
-      self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
-      self.liqDict[ccy] = riskDf.loc[ccy,'liq']
+      if ccy in riskDf.index:
+        self.futures.loc[ccy, 'FutDelta']=cl.bbtGetFutPos(self.api,ccy)
+        self.liqDict[ccy] = riskDf.loc[ccy,'liq']
+      else:
+        self.liqDict[ccy] = 0
     self.calcFuturesDeltaUSD()
     #####
     if self.n>=2: # trim list for auxiliary BBTs

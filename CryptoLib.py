@@ -569,7 +569,10 @@ def bbtGetRiskDf(bb, spotDict):
 @retry(wait_fixed=1000)
 def bbtGetTradeExecutionList(bb,ccy):
   if ccy=='SHIB':
-    return bbtGetTradeExecutionList(bb,'SHIB1000') # special fix for SHIB
+    myList=bbtGetTradeExecutionList(bb,'SHIB1000') # special fix for SHIB
+    for i in range(len(myList)):
+      myList[i]['symbol']='SHIBUSDT'
+    return myList
   else:
     return bb.private_linear_get_trade_execution_list({'symbol': ccy + 'USDT', 'start_time': getYest() * 1000, 'exec_type': 'Funding', 'limit': 1000})['result']['data']
 
