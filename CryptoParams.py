@@ -89,7 +89,7 @@ SHARED_CCY_DICT['BTC'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx', 'bbt']}
 SHARED_ETC_DICT=dict()
-SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ATOM', 'AVAX', 'DOT', 'EOS', 'LUNA', 'VET']
+SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ATOM', 'DOT', 'EOS', 'LUNA', 'VET']
 SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'CCY':0}
 
 #############
@@ -142,15 +142,15 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':27})
-  SHARED_ETC_DICT['SHIFT'] = 10
+  SHARED_ETC_DICT['SHIFT'] = 20
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT_KUT=['FTM']
-  my_FTX_BBT_KUT_flowless=['SHIB','VET']
+  my_FTX_BBT_KUT=['DOGE','FTM','MATIC']
+  my_FTX_BBT_KUT_flowless=['ATOM','AXS','SHIB','VET']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','LINK','MATIC','SOL']
-  my_FTX_KUT_flowless=['ADA','ATOM','BAT','DOT','LUNA','MANA','SAND']
+  my_FTX_KUT=['XRP','LINK','SOL']
+  my_FTX_KUT_flowless=['ADA','DOT','LUNA','MANA']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -162,12 +162,12 @@ if os.environ.get('USERNAME')=='Simon':
   ############################################################################################################
   SHARED_CCY_DICT['BTC']['futExch'].remove('bbt')
   SHARED_CCY_DICT['ETH']['futExch'].remove('bbt')
-  SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
+  #SHARED_CCY_DICT['FTT']['futExch'].remove('bbt')
   #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
   #SHARED_CCY_DICT['XRP']['futExch'].append('bb')
   #####
-  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'BAT':20000,'CHZ':20000,'ENJ':20000,'MANA': 20000,'SAND':20000,'SHIB':100000}
+  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'AXS':50000}
   #####
   #CR_AG_CCY_DICT['BTC']=1.501 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
