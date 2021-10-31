@@ -836,6 +836,13 @@ def kutGetEstFundings(kut, ccy):
   return float(data['value']) * 3 * 365, float(data['predictedValue']) * 3 * 365
 
 @retry(wait_fixed=1000)
+def kutGetRiskLimit(kut,ccy):
+  if ccy in SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE']:
+    return SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'][ccy]
+  else:
+    return kut.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit']
+
+@retry(wait_fixed=1000)
 def kutGetUSDTDict(kut):
   return kut.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
 
@@ -1313,7 +1320,7 @@ def ctKUTStepper(side, ccy, trade_qty):
         isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
       # every time
       if isBuild:
-        if riskLimit is None: riskLimit = kutCurrent.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit']
+        if riskLimit is None: riskLimit = kutGetRiskLimit(kutCurrent,ccy)
         if mid is None: mid = kutGetMid(kutCurrent, ccy)
       else:
         posSim = pos + trade_qty * mult

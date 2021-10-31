@@ -90,6 +90,7 @@ SHARED_CCY_DICT['ETH'] = {'futExch': ['ftx', 'bbt', 'bb', 'db', 'kf', 'kut']}
 SHARED_CCY_DICT['FTT'] = {'futExch':['ftx', 'bbt']}
 SHARED_ETC_DICT=dict()
 SHARED_ETC_DICT['FTX_SPOTLESS'] = ['ADA', 'ATOM', 'AVAX', 'DOT', 'EOS', 'LUNA', 'VET']
+SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'CCY':0}
 
 #############
 # Smart Basis
@@ -145,11 +146,11 @@ if os.environ.get('USERNAME')=='Simon':
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=['FTM']
-  my_FTX_BBT_KUT_flowless=['SHIB']
+  my_FTX_BBT_KUT_flowless=['SHIB','VET']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','DOGE','LINK','MATIC','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ADA','ATOM','DOT','SAND','VET']
+  my_FTX_KUT=['XRP','DOGE','LINK','MATIC','SOL']
+  my_FTX_KUT_flowless=['ADA','ATOM','BAT','DOT','LUNA','MANA','SAND']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -165,6 +166,8 @@ if os.environ.get('USERNAME')=='Simon':
   #SHARED_CCY_DICT['BTC']['futExch'].remove('kut')
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
   #SHARED_CCY_DICT['XRP']['futExch'].append('bb')
+  #####
+  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'BAT':20000,'CHZ':20000,'ENJ':20000,'MANA': 20000,'SAND':20000,'SHIB':100000}
   #####
   #CR_AG_CCY_DICT['BTC']=1.501 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
