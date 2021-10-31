@@ -819,8 +819,15 @@ def kutGetCcy(ccy):
   return ccy2
 
 @retry(wait_fixed=1000)
+def kutGetPos(kut, ccy):
+  return kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
+
+@retry(wait_fixed=1000)
+def kutGetPositions(kut):
+  return pd.DataFrame(kut.futuresPrivate_get_positions()['data']).set_index('symbol')
+
 def kutGetFutPos(kut, ccy):
-  return float(kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['currentQty'])
+  return float(kutGetPos(kut,ccy)['currentQty'])
 
 @retry(wait_fixed=1000)
 def kutGetEstFunding1(kut, ccy):
@@ -846,23 +853,16 @@ def kutGetRiskLimit(kut,ccy):
 def kutGetUSDTDict(kut):
   return kut.futuresPrivate_get_account_overview({'currency': 'USDT'})['data']
 
-@retry(wait_fixed=1000)
-def kutGetPos(kut, ccy):
-  return kut.futuresPrivate_get_position({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']
-
-@retry(wait_fixed=1000)
-def kutGetPositions(kut):
-  return pd.DataFrame(kut.futuresPrivate_get_positions()['data']).set_index('symbol')
-
-@retry(wait_fixed=1000)
-def kutGetRiskDf(kut):
-  df=pd.DataFrame(kut.futuresPrivate_get_positions()['data'])
-  if len(df)==0:
-    return df
-  else:
-    df = df.set_index('symbol')[['markPrice','markValue','maintMargin','liquidationPrice']].astype(float)
-    df['liquidationRatio']=df['liquidationPrice']/df['markPrice']
-    return df
+def kutGetRiskDf(kut,availableBalance=None):
+  if availableBalance is None:
+    availableBalance = float(kutGetUSDTDict(kut)['availableBalance'])
+  df = kutGetPositions(kut)
+  df = df[['markPrice','markValue','maintMargin','liquidationPrice']].astype(float)
+  df['liqRaw'] = df['liquidationPrice'] / df['markPrice']
+  df['liq'] = df['liqRaw'] - (availableBalance / df['markValue'])
+  df['ratio'] = df['maintMargin'] / df['markValue']
+  df=df[['liqRaw','liq','maintMargin','markValue','ratio']]
+  return df
 
 @retry(wait_fixed=1000)
 def kutGetTickSize(kut, ccy):

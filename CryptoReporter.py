@@ -355,7 +355,7 @@ class core:
       isOk = False
       for i in range(100):
         sim_liq_ratio = (1 + ((i + 1) * increment))
-        df['sim_add_liq_ratio'] = sim_liq_ratio - df['liquidationRatio']
+        df['sim_add_liq_ratio'] = sim_liq_ratio - df['liqRaw']
         df['sim_add_margin'] = df['sim_add_liq_ratio'].clip(0, None) * abs(df['markValue'])
         cushion = availableBalance - df['sim_add_margin'].sum()
         if cushion < 0:
@@ -801,8 +801,9 @@ class core:
         return fundingHistory
     #####
     self.api = cl.kutCCXTInit(n=self.n)
-    usdtDict = cl.kutGetUSDTDict(self.api)
-    availableBalance = float(usdtDict['availableBalance'])
+    self.usdtDict = cl.kutGetUSDTDict(self.api)
+    self.availableBalance = float(self.usdtDict['availableBalance'])
+    self.riskDf=cl.kutGetRiskDf(self.api,self.availableBalance)
     #####
     posData=cl.kutGetPositions(self.api)
     for ccy in self.validCcys:
@@ -817,12 +818,12 @@ class core:
     for ccy in self.validCcys:
       ccy2=cl.kutGetCcy(ccy)+'USDTM'
       if ccy2 in posData.index:
-        self.liqDict[ccy] = float(posData.loc[ccy2,'liquidationPrice']) / float(posData.loc[ccy2,'markPrice'])
+        self.liqDict[ccy] = self.riskDf.loc[ccy2,'liq']
       else:
         self.liqDict[ccy] = 0
-      futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']
-      if futDeltaUSD != 0:
-        self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy, 'FutDeltaUSD'])
+      #futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']
+      #if futDeltaUSD != 0:
+      #  self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy, 'FutDeltaUSD'])
     #####
     pmts=pd.DataFrame()
     if CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS']:
@@ -841,7 +842,7 @@ class core:
       self.prevIncome=pmts.loc[pmts.index[-1]]['fundingUSD'].sum()
     self.setAnnRets()
     #####
-    equity = float(usdtDict['accountEquity'])
+    equity = float(self.usdtDict['accountEquity'])
     self.nav = equity * self.spotDict['USDT']
     self.spots.loc['USDT', 'SpotDelta'] = equity
     self.calcSpotDeltaUSD()
@@ -862,7 +863,7 @@ class core:
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
-    self.makeLiqStr(riskDf=cl.kutGetRiskDf(self.api), availableBalance=availableBalance)
+    self.makeLiqStr(riskDf=self.riskDf, availableBalance=self.availableBalance)
     self.isDone = True
 
   def kutGetEstFundings_fast(self,ccy):
