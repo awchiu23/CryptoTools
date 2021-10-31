@@ -1325,7 +1325,7 @@ def ctKUTStepper(side, ccy, trade_qty):
       else:
         posSim = pos + trade_qty * mult
       # branches
-      if isBuild and trade_qty>(riskLimit-abs(posData['posCost']))*.9/mid:
+      if isBuild and trade_qty>(riskLimit-abs(posData['posCost'])-1000)/mid:
         kutN +=1
         if kutN > SHARED_EXCH_DICT['kut']:
           print('No more build opportunities!')
