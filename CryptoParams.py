@@ -77,8 +77,8 @@ CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'FTT':0})             # Aggregated cu
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
 CR_EXT_DELTA_USDT = 0
 CR_CONFIGS_DICT=dict()
-CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = True
-CR_CONFIGS_DICT['KU_FUNDING_HISTORY_SLEEP'] = 0.5
+CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = True
+CR_CONFIGS_DICT['KUT_FUNDING_HISTORY_SLEEP'] = 2/3               # Number of seconds to wait before successive calls to API to get KUT payments
 
 ########
 # Shared
@@ -119,13 +119,13 @@ if os.environ.get('USERNAME')=='Simon':
     API_KEYS_BB = sDict['API_KEYS_BB_NO_IP']
     API_SECRETS_BB = sDict['API_SECRETS_BB_NO_IP']
     APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-    CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = False
+    CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = False
   else:
     API_KEYS_BB = sDict['API_KEYS_BB']
     API_SECRETS_BB = sDict['API_SECRETS_BB']
     from win32api import GetKeyState
     from win32con import VK_CAPITAL
-    CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
+    CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
   #####
   API_KEY_FTX = sDict['API_KEY_FTX']
   API_SECRET_FTX = sDict['API_SECRET_FTX']

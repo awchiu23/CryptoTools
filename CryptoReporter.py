@@ -813,7 +813,7 @@ class core:
             print("[DEBUG: Error from KuCoin's futuresPrivate_get_funding_history ("+self.name+':'+ccy+')!  Pausing for 30 seconds ....]')
             time.sleep(30)
             print('[DEBUG: Resuming ....]')
-        time.sleep(CR_CONFIGS_DICT['KU_FUNDING_HISTORY_SLEEP'])
+        time.sleep(CR_CONFIGS_DICT['KUT_FUNDING_HISTORY_SLEEP'])
         return fundingHistory
     #####
     self.api = cl.kutCCXTInit(n=self.n)
@@ -839,7 +839,7 @@ class core:
         self.liqDict[ccy] = 0
     #####
     pmts=pd.DataFrame()
-    if CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS']:
+    if CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS']:
       startAt = cl.getYest() * 1000
       for ccy in self.validCcys:
         df=pd.DataFrame(getFundingHistory(ccy,startAt))
