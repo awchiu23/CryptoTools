@@ -88,14 +88,18 @@ def kutCCXTInit(n=1):
 #########
 @retry(wait_fixed=1000)
 def ftxGetMid(ftx, name):
-  for z in SHARED_ETC_DICT['FTX_SPOTLESS']:
-    if name==z+'/USD':
-      return float(ftx.public_get_futures_future_name({'future_name': z+'-PERP'})['result']['index'])
-  d=ftx.public_get_markets_market_name({'market_name': name})['result']
-  if name=='SHIB-PERP': # Special fix for SHIB
-    return float(d['bid'])+1e-8
+  if name not in ftxGetNames(ftx):
+    if name.endswith('/USD'):
+      return float(ftx.public_get_futures_future_name({'future_name': name[:(len(name) - 4)] + '-PERP'})['result']['index'])
+    else:
+      print('Invalid FTX name: '+name+'!')
+      sys.exit(1)
   else:
-    return (float(d['bid'])+float(d['ask']))/2
+    d=ftx.public_get_markets_market_name({'market_name': name})['result']
+    if name=='SHIB-PERP': # Special fix for SHIB
+      return float(d['bid'])+1e-8
+    else:
+      return (float(d['bid'])+float(d['ask']))/2
 
 @retry(wait_fixed=1000)
 def ftxGetBid(ftx,ticker):
@@ -226,13 +230,24 @@ def roundQty(api, ccyOrTicker, qty):
 # FTX
 #####
 @retry(wait_fixed=1000)
-def ftxGetWallet(ftx):
+def ftxGetNames(ftx):
+  key='ftxNames'
+  myList=cache('r',key)
+  if myList is None:
+    myList=pd.DataFrame(ftx.public_get_markets()['result'])['name'].to_list()
+    cache('w',key,myList)
+  return myList
+
+@retry(wait_fixed=1000)
+def ftxGetWallet(ftx,validCcys=None):
   wallet = pd.DataFrame(ftx.private_get_wallet_all_balances()['result']['main']).set_index('coin')
-  for name in SHARED_ETC_DICT['FTX_SPOTLESS']:
-    s=wallet.iloc[-1].copy()
-    s[:]=0
-    s.name=name
-    wallet=wallet.append(s)
+  if validCcys is not None:
+    for ccy in validCcys:
+      if ccy not in wallet.index:
+        s = wallet.iloc[-1].copy()
+        s[:] = 0
+        s.name = ccy
+        wallet = wallet.append(s)
   dfSetFloat(wallet,wallet.columns)
   return wallet
 

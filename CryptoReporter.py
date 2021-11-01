@@ -454,7 +454,7 @@ class core:
       return d
     ######
     self.api = cl.ftxCCXTInit()
-    self.wallet = cl.ftxGetWallet(self.api)
+    self.wallet = cl.ftxGetWallet(self.api,self.validCcys)
     ccys=self.validCcys.copy()
     cl.appendUnique(ccys,'USDT')
     for ccy in ccys:
