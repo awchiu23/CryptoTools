@@ -11,8 +11,10 @@ import threading
 ###########
 # Functions
 ###########
-def appendDeltas(myList, ccy, spotDict, spotDelta, futDelta):
-  spot = spotDict[ccy]
+def appendDeltas(myList, ccy, agDf):
+  spot = agDf.loc[ccy, 'Spot']
+  spotDelta = agDf.loc[ccy, 'SpotDelta']
+  futDelta = agDf.loc[ccy, 'FutDelta']
   netDelta=spotDelta+futDelta
   nDigits=2 if ccy=='BTC' else 1
   zLabel = 'spot/'
@@ -158,6 +160,20 @@ def getNAV(objs,spotDict):
 
 def getNAVStr(name, nav):
   return name + ': $' + str(round(nav/1000)) + 'K'
+
+def getAgDf(objs,spotDict):
+  zeroes = [0] * len(CR_AG_CCY_DICT.keys())
+  agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'Spot':zeroes, 'SpotDelta':zeroes, 'FutDelta':zeroes, 'SpotDeltaUSD':zeroes, 'FutDeltaUSD':zeroes}).set_index('Ccy')
+  for obj in objs:
+    for ccy in CR_AG_CCY_DICT.keys():
+      spotDelta = obj.spots.loc[ccy,'SpotDelta']
+      futDelta = obj.futures.loc[ccy, 'FutDelta']
+      agDf.loc[ccy,'Spot']=spotDict[ccy]
+      agDf.loc[ccy,'SpotDelta']+= spotDelta
+      agDf.loc[ccy,'FutDelta']+= futDelta
+      agDf.loc[ccy,'SpotDeltaUSD']+=spotDelta*spotDict[ccy]
+      agDf.loc[ccy,'FutDeltaUSD']+=futDelta*spotDict[ccy]
+  return agDf
 
 def printAllDual(core1, core2):
   if core1.exch == 'dummy' and core2.exch == 'dummy': return
@@ -821,9 +837,6 @@ class core:
         self.liqDict[ccy] = self.riskDf.loc[ccy2,'liq']
       else:
         self.liqDict[ccy] = 0
-      #futDeltaUSD = self.futures.loc[ccy, 'FutDeltaUSD']
-      #if futDeltaUSD != 0:
-      #  self.liqDict[ccy] -= (availableBalance / self.futures.loc[ccy, 'FutDeltaUSD'])
     #####
     pmts=pd.DataFrame()
     if CR_CONFIGS_DICT['IS_KU_CALC_PAYMENTS']:
@@ -899,14 +912,10 @@ if __name__ == '__main__':
   # Aggregation
   #############
   nav, extCoinsNAV=getNAV(objs,spotDict)
-  agDf = pd.DataFrame({'Ccy': CR_AG_CCY_DICT.keys(), 'SpotDelta': CR_AG_CCY_DICT.values(), 'FutDelta': [0] * len(CR_AG_CCY_DICT.keys())}).set_index('Ccy')
-  oneDayIncome=0
+  agDf = getAgDf(objs,spotDict)
+  oneDayIncome=ftxCore.oneDayFlows
   for obj in objs:
     oneDayIncome += obj.oneDayIncome
-    for ccy in CR_AG_CCY_DICT.keys():
-      agDf.loc[ccy,'SpotDelta']+=obj.spots.loc[ccy,'SpotDelta']
-      agDf.loc[ccy,'FutDelta']+=obj.futures.loc[ccy,'FutDelta']
-  oneDayIncome+=ftxCore.oneDayFlows
 
   ########
   # Output
@@ -925,7 +934,7 @@ if __name__ == '__main__':
   #####
   agList=[]
   for ccy in CR_AG_CCY_DICT.keys():
-    appendDeltas(agList, ccy, spotDict, agDf.loc[ccy, 'SpotDelta'], agDf.loc[ccy, 'FutDelta'])
+    appendDeltas(agList, ccy, agDf)
   usdtCores=[]
   for core in bbtCores:
     usdtCores.append(core)

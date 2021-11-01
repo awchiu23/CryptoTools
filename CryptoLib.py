@@ -1631,6 +1631,10 @@ def filterDict(d, keyword):
       d2[key] = value
   return d2
 
+# Format number as percentage (string)
+def fmtPct(n, ndigits=1):
+  return str(round(n * 100, ndigits))+'%'
+
 # Get max abs position USD (bb/db/kf only)
 def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=3, negMult=6):
   if exch=='bb':
