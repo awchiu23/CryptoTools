@@ -144,11 +144,11 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['SHIFT'] = 10
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT_KUT=['DOGE','FTM','MATIC']
+  my_FTX_BBT_KUT=['DOGE','FTM','MATIC','XRP']
   my_FTX_BBT_KUT_flowless=['ATOM','AXS','SHIB','VET']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['XRP','LINK','SOL']
+  my_FTX_KUT=['LINK','SOL']
   my_FTX_KUT_flowless=['ADA','DOT','LUNA']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
