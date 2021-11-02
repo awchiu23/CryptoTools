@@ -1,6 +1,5 @@
 from CryptoParams import *
 import CryptoLib as cl
-from joblib import Parallel, delayed
 import pandas as pd
 import datetime
 import time
@@ -121,7 +120,7 @@ def getCores(isRetry=True):
   #####
   isOk=True
   try:
-    Parallel(n_jobs=len(objs), backend='threading')(delayed(obj.run)() for obj in objs)
+    cl.parallelRun(objs)
   except:
     if not isRetry: return None, None, None, False
     print('[WARNING: Parallel run failed!  Rerunning in serial ....]')
