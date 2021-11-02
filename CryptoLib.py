@@ -1245,17 +1245,8 @@ def ctInit(ccy, notional, tgtBps):
   print('Per Trade Quantity: '+str(round(qty, 6)))
   print('Target:             '+str(round(tgtBps))+'bps')
   print()
-
-  if CT_CONFIGS_DICT['IS_BBT_STEPPER']:
-    ctBBTStepper.bbtN=None
-    ctBBTStepper.isBuild=None
-
-  if CT_CONFIGS_DICT['IS_KUT_STEPPER']:
-    ctKUTStepper.kutN = None
-    ctKUTStepper.isBuild = None
-    ctKUTStepper.riskLimit = None
-    ctKUTStepper.mid = None
-
+  if CT_CONFIGS_DICT['IS_BBT_STEPPER']: cache('w','bbtStepperDict',None)    
+  if CT_CONFIGS_DICT['IS_KUT_STEPPER']: cache('w','kutStepperDict',None)
   return apiDict,qty,notional,spot
 
 def ctGetPosUSD(apiDict,exch, ccy, spot):
@@ -1301,64 +1292,71 @@ def ctAssertNoStepper():
 
 def ctBBTStepper(side, ccy, trade_qty):
   print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ....')
-  if ctBBTStepper.bbtN is None: ctBBTStepper.bbtN = CT_CONFIGS_DICT['CURRENT_BBT']
-  mult = 1 if side == 'BUY' else -1
+  buySell = 1 if side == 'BUY' else -1
+  key='bbtStepperDict'
+  d=cache('r',key)
+  if d is None:
+    d=dict()
+    d['n']=CT_CONFIGS_DICT['CURRENT_BBT']
+    d['isBuild'] = None
   while True:
-    bbt = bbCCXTInit(ctBBTStepper.bbtN)
-    pos = bbtGetFutPos(bbt, ccy)
+    bb = bbCCXTInit(d['n'])
+    pos = bbtGetFutPos(bb, ccy)
+    posSim = pos + trade_qty * buySell
     # first iteration
-    if ctBBTStepper.isBuild is None:
-      ctBBTStepper.isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
-    # every time
-    if not ctBBTStepper.isBuild:
-      posSim = pos + trade_qty * mult
+    if d['isBuild'] is None:
+      d['isBuild'] = pos==0 or (pos*buySell>0)
     # branches
-    if not ctBBTStepper.isBuild and ((side == 'BUY' and posSim > 0) or (side == 'SELL' and posSim < 0)):
-      ctBBTStepper.bbtN+=1
-      if ctBBTStepper.bbtN > SHARED_EXCH_DICT['bbt']:
+    if not d['isBuild'] and posSim*buySell>=0:
+      d['n']+=1
+      if d['n'] > SHARED_EXCH_DICT['bbt']:
         print('No more unwind opportunities!')
         sys.exit(1)
       else:
         continue
     else:
-      print((getCurrentTime() + ':').ljust(20) + ' Selecting BBT' + str(ctBBTStepper.bbtN) + ' ....')
+      print((getCurrentTime() + ':').ljust(20) + ' Selecting BBT' + str(d['n']) + ' ....')
+      cache('w', key, d)
       break
-  return bbt
+  return bb
 
 def ctKUTStepper(side, ccy, trade_qty):
   print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ....')
-  if ctKUTStepper.kutN is None: ctKUTStepper.kutN = CT_CONFIGS_DICT['CURRENT_KUT']
-  mult = 1 if side == 'BUY' else -1
+  buySell = 1 if side == 'BUY' else -1
+  key='kutStepperDict'
+  d=cache('r',key)
+  if d is None:
+    d=dict()
+    d['n']=CT_CONFIGS_DICT['CURRENT_KUT']
+    d['isBuild'] = None
   while True:
-    kut = kutCCXTInit(ctKUTStepper.kutN)
+    kut = kutCCXTInit(d['n'])
     posData=kutGetPos(kut, ccy)
     pos = posData['currentQty'] * kutGetMult(kut, ccy)
+    posSim = pos + trade_qty * buySell
     # first iteration
-    if ctKUTStepper.isBuild is None:
-      ctKUTStepper.isBuild = (pos==0 or (pos>0 and side=='BUY') or (pos<0 and side=='SELL'))
-    # every time
-    if ctKUTStepper.isBuild:
-      if ctKUTStepper.riskLimit is None: ctKUTStepper.riskLimit = kutGetRiskLimit(kut,ccy)
-      if ctKUTStepper.mid is None: ctKUTStepper.mid = kutGetMid(kut, ccy)
-    else:
-      posSim = pos + trade_qty * mult
+    if d['isBuild'] is None:
+      d['isBuild'] = pos==0 or (pos*buySell>0)
+      d['riskLimit'] = kutGetRiskLimit(kut, ccy)
+      d['mid'] = kutGetMid(kut, ccy)
     # branches
-    if ctKUTStepper.isBuild and trade_qty>(ctKUTStepper.riskLimit-abs(posData['posCost'])-1000)/ctKUTStepper.mid:
-      ctKUTStepper.kutN +=1
-      if ctKUTStepper.kutN > SHARED_EXCH_DICT['kut']:
+    if d['isBuild'] and trade_qty>(d['riskLimit']-abs(posData['posCost'])-1000)/d['mid']:
+      d['n'] +=1
+      if d['n'] > SHARED_EXCH_DICT['kut']:
         print('No more build opportunities!')
         sys.exit(1)
       else:
         continue
-    elif not ctKUTStepper.isBuild and ((side=='BUY' and posSim > 0) or (side=='SELL' and posSim < 0)):
-      ctKUTStepper.kutN+=1
-      if ctKUTStepper.kutN > SHARED_EXCH_DICT['kut']:
+    elif not d['isBuild'] and posSim*buySell>=0:
+      d['n']+=1
+      if d['n'] > SHARED_EXCH_DICT['kut']:
         print('No more unwind opportunities!')
         sys.exit(1)
       else:
         continue
     else:
-      print((getCurrentTime() + ':').ljust(20) + ' Selecting KUT' + str(ctKUTStepper.kutN) + ' ....')
+      print((getCurrentTime() + ':').ljust(20) + ' Selecting KUT' + str(d['n']) + ' ....')
+      cache('w', key, d)
       break
   return kut
 

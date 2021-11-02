@@ -167,7 +167,7 @@ if os.environ.get('USERNAME')=='Simon':
   #SHARED_CCY_DICT['ETH']['futExch'].remove('kut')
   #SHARED_CCY_DICT['XRP']['futExch'].append('bb')
   #####
-  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'AXS':50000,'ADA':100000,'DOT':100000,'LINK':100000}
+  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'AXS':50000,'DOT':100000,'LINK':100000,'ADA':50000}
   #####
   #CR_AG_CCY_DICT['BTC']=1.501 #bbftx
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
