@@ -95,6 +95,7 @@ def kutCCXTInit(n=1):
 #########
 # Helpers
 #########
+'''
 @retry(wait_fixed=1000)
 def ftxGetMid(ftx, name):
   if name not in ftxGetNames(ftx):
@@ -120,6 +121,33 @@ def ftxGetAsk(ftx,ticker):
     return ftxGetBid(ftx,ticker)+2e-8
   else:
     return float(ftx.public_get_markets_market_name({'market_name':ticker})['result']['ask'])
+'''
+
+@retry(wait_fixed=1000)
+def ftxGetMid(ftx, name):
+  if name not in ftxGetNames(ftx):
+    if name.endswith('/USD'):
+      return float(ftx.public_get_futures_future_name({'future_name': name[:(len(name) - 4)] + '-PERP'})['result']['index'])
+    else:
+      print('Invalid FTX name: '+name+'!')
+      sys.exit(1)
+  else:
+    d=ftx.publicGetMarketsMarketNameOrderbook({'market_name': name, 'depth': 1})['result']
+    if name=='SHIB-PERP': # Special fix for SHIB
+      return float(d['bids'][0][0])+1e-8
+    else:
+      return (float(d['bids'][0][0])+float(d['asks'][0][0]))/2
+
+@retry(wait_fixed=1000)
+def ftxGetBid(ftx,ticker):
+  return float(ftx.publicGetMarketsMarketNameOrderbook({'market_name': ticker,'depth': 1})['result']['bids'][0][0])
+
+@retry(wait_fixed=1000)
+def ftxGetAsk(ftx,ticker):
+  if ticker == 'SHIB-PERP':  # Special fix for SHIB
+    return ftxGetBid(ftx, ticker) + 2e-8
+  else:
+    return float(ftx.publicGetMarketsMarketNameOrderbook({'market_name': ticker,'depth': 1})['result']['asks'][0][0])
 
 @retry(wait_fixed=1000)
 def ftxGetFuture(ftx,ccy):
