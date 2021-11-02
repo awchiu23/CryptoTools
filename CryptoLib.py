@@ -1771,6 +1771,16 @@ def printHeader(header=''):
     print('['+header+']')
     print()
 
+# Print list in wrapped format
+def printListWrapped(items, n):
+  items = list(items)
+  lines = []
+  for i in range(0, len(items), n):
+    chunk = items[i:i + n]
+    line = ', '.join(map(repr, chunk))
+    lines.append(line)
+  print('[{}]'.format(',\n '.join(lines)))
+
 # Sleep until time chosen
 def sleepUntil(h, m, s):
   t = datetime.datetime.today()
