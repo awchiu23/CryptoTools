@@ -353,7 +353,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   assertSide(side)
   qty=roundQty(ftx,ticker,trade_qty)
   maxWaitTime = CT_CONFIGS_DICT['FTX_MAX_WAIT_TIME'] if 'PERP' in ticker else CT_CONFIGS_DICT['SPOT_MAX_WAIT_TIME']
-  print(getCurrentTime()+': Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....')
+  print(timeTag('Sending FTX '+side+' order of '+ticker+' (qty='+str(qty)+') ....'))
   if side == 'BUY':
     refPrice = ftxGetBid(ftx, ticker)
   else:
@@ -367,7 +367,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       isOk=True
       break
     except ccxt.RateLimitExceeded:
-      print(getCurrentTime()+': FTX rate limit exceeded; trying to recover ....')
+      print(timeTag('FTX rate limit exceeded; trying to recover ....'))
       time.sleep(3)
     except:
       print(traceback.print_exc())
@@ -375,7 +375,7 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
   if not isOk:
     sys.exit(1)
   #####
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  print(timeTag('[DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] '))
   refTime = time.time()
   nChases=0
   while True:
@@ -396,23 +396,23 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
           break
         if ftxGetRemainingSize(ftx, orderId) == qty:
           ftx.private_delete_orders_order_id({'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
+          print(timeTag('Cancelled'))
           return 0
       else:
         refTime=time.time()
         newLimitPrice=roundPrice(ftx,'ftx',ticker,refPrice,side=side,distance=distance)
         if ((side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          print(timeTag('[DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']'))
           limitPrice=newLimitPrice
           try:
             orderId=ftx.private_post_orders_order_id_modify({'order_id':orderId,'price':limitPrice})['result']['id']
           except:
             break
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
+          print(timeTag('[DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']'))
     time.sleep(1)
   fill=ftxGetFillPrice(ftx,orderId)
-  print(getCurrentTime() + ': Filled at '+str(round(fill,6)))
+  print(timeTag('Filled at '+str(round(fill,6))))
   return fill
 
 #############################################################################################
@@ -471,7 +471,7 @@ def bbRelOrderCore(side,bb,ccy,maxChases,distance,exch,ticker,qty,getBidFunc,get
   else:
     orderId = bb.private_linear_post_order_create({'side': side.capitalize(), 'symbol': ticker, 'order_type': 'Limit', 'qty': qty, 'price': limitPrice, 'time_in_force': 'GoodTillCancel',
                                                    'reduce_only': bool(getIsReduceOnly(bb, ccy, side, qty)), 'close_on_trigger': False})['result']['order_id']
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  print(timeTag('[DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] '))
   refTime = time.time()
   nChases=0
   while True:
@@ -496,23 +496,23 @@ def bbRelOrderCore(side,bb,ccy,maxChases,distance,exch,ticker,qty,getBidFunc,get
         orderStatus = getOrderFunc(bb, ticker, orderId)
         if float(orderStatus['cum_exec_qty']) == 0:
           orderCancelFunc({'symbol': ticker, 'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
+          print(timeTag('Cancelled'))
           return 0
       else:
         refTime = time.time()
         newLimitPrice=roundPrice(bb,exch,ccy,refPrice,side=side,distance=distance)
         if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          print(timeTag('[DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']'))
           limitPrice=newLimitPrice
           try:
             orderReplaceFunc({'symbol':ticker,'order_id':orderId, 'p_r_price': limitPrice})
           except:
             break
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases)+'; price='+str(limitPrice)+']')
+          print(timeTag('[DEBUG: leave order alone; nChases=' + str(nChases)+'; price='+str(limitPrice)+']'))
     time.sleep(1)
   fill=getFillPriceFunc(bb, ticker, orderId)
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  print(timeTag('Filled at ' + str(round(fill, 6))))
   if ccy=='SHIB1000': fill/=1000 # Special fix for SHIB
   return fill
 
@@ -534,7 +534,7 @@ def bbRelOrder(side,bb,ccy,trade_notional,maxChases=0,distance=0):
   assertSide(side)
   ticker=ccy+'USD'
   trade_notional = round(trade_notional)
-  print(getCurrentTime() + ': Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....')
+  print(timeTag('Sending BB ' + side + ' order of ' + ticker + ' (notional=$'+ str(trade_notional)+') ....'))
   return bbRelOrderCore(side,bb,ccy,maxChases,distance,'bb',ticker,trade_notional,
                         bbGetBid,bbGetAsk,bbGetOrder,bbGetFillPrice,
                         bb.v2_private_post_order_replace,bb.v2_private_post_order_cancel)
@@ -644,7 +644,7 @@ def bbtRelOrder(side,bb,ccy,trade_qty,maxChases=0,distance=0):
   assertSide(side)
   ticker=ccy+'USDT'
   qty = round(trade_qty, 3)
-  print(getCurrentTime() + ': Sending BBT ' + side + ' order of ' + ticker + ' (qty='+ str(qty)+') ....')
+  print(timeTag('Sending BBT ' + side + ' order of ' + ticker + ' (qty='+ str(qty)+') ....'))
   return bbRelOrderCore(side,bb,ccy,maxChases,distance,'bbt',ticker,qty,
                         bbtGetBid,bbtGetAsk,bbtGetOrder,bbtGetFillPrice,
                         bb.private_linear_post_order_replace,bb.private_linear_post_order_cancel)
@@ -691,7 +691,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
   else:
     sys.exit(1)
   ticker = ccy + '-PERPETUAL'
-  print(getCurrentTime() + ': Sending DB ' + side + ' order of ' + ticker + ' (notional=$' + str(trade_notional) + ') ....')
+  print(timeTag('Sending DB ' + side + ' order of ' + ticker + ' (notional=$' + str(trade_notional) + ') ....'))
   if side == 'BUY':
     refPrice = dbGetBid(db, ccy)
     limitPrice = roundPrice(db, 'db', ccy, refPrice, side=side, distance=distance)
@@ -700,7 +700,7 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
     refPrice = dbGetAsk(db, ccy)
     limitPrice = roundPrice(db, 'db', ccy, refPrice, side=side, distance=distance)
     orderId = db.private_get_sell({'instrument_name': ticker, 'amount': trade_notional, 'type': 'limit', 'price': limitPrice})['result']['order']['order_id']
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  print(timeTag('[DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] '))
   refTime = time.time()
   nChases = 0
   while True:
@@ -723,21 +723,21 @@ def dbRelOrder(side,db,ccy,trade_notional,maxChases=0,distance=0):
           break
         if float(dbGetOrder(db, orderId)['filled_amount']) == 0:
           db.private_get_cancel({'order_id': orderId})
-          print(getCurrentTime() + ': Cancelled')
+          print(timeTag('Cancelled'))
           return 0
       else:
         refTime = time.time()
         newLimitPrice = roundPrice(db, 'db', ccy, refPrice, side=side, distance=distance)
         if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          print(timeTag('[DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']'))
           limitPrice = newLimitPrice
           if not dbEditOrder(db, orderId, trade_notional, limitPrice):
             break
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
+          print(timeTag('[DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']'))
     time.sleep(1)
   fill = float(dbGetOrder(db, orderId)['average_price'])
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  print(timeTag('Filled at ' + str(round(fill, 6))))
   return fill
 
 #############################################################################################
@@ -806,14 +806,14 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
   assertSide(side)
   symbol=kfCcyToSymbol(ccy)
   trade_notional = round(trade_notional)
-  print(getCurrentTime() + ': Sending KF ' + side + ' order of ' + symbol + ' (notional=$' + str(trade_notional) + ') ....')
+  print(timeTag('Sending KF ' + side + ' order of ' + symbol + ' (notional=$' + str(trade_notional) + ') ....'))
   if side == 'BUY':
     refPrice = kfGetBid(kf, ccy)
   else:
     refPrice = kfGetAsk(kf, ccy)
   limitPrice = roundPrice(kf,'kf',ccy,refPrice,side=side,distance=distance)
   orderId=kf.query('sendorder',{'orderType':'lmt','symbol':symbol,'side':side.lower(),'size':trade_notional,'limitPrice':limitPrice})['sendStatus']['order_id']
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  print(timeTag('[DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] '))
   refTime=time.time()
   nChases=0
   while True:
@@ -842,23 +842,23 @@ def kfRelOrder(side,kf,ccy,trade_notional,maxChases=0,distance=0):
           break
         if float(orderStatus['filledSize']) == 0:
           kf.query('cancelorder',{'order_id':orderId})
-          print(getCurrentTime() + ': Cancelled')
+          print(timeTag('Cancelled'))
           return 0
       else:
         refTime=time.time()
         newLimitPrice = roundPrice(kf,'kf',ccy,refPrice,side=side,distance=distance)
         if ((side=='BUY' and newLimitPrice > limitPrice) or (side=='SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          print(timeTag('[DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']'))
           limitPrice=newLimitPrice
           try:
             kf.query('editorder', {'orderId': orderId, 'limitPrice': limitPrice})
           except:
             break
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
+          print(timeTag('[DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']'))
     time.sleep(1)
   fill=kfGetFillPrice(kf, orderId)
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  print(timeTag('Filled at ' + str(round(fill, 6))))
   return fill
 
 #############################################################################################
@@ -972,14 +972,14 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   ticker=kutGetCcy(ccy)+'USDTM'
   mult=kutGetMult(kut, ccy)
   qty=round(trade_qty/mult)
-  print(getCurrentTime()+': Sending KUT '+side+' order of '+ticker+' (qty='+str(qty)+'; mult='+str(mult)+') ....')
+  print(timeTag('Sending KUT '+side+' order of '+ticker+' (qty='+str(qty)+'; mult='+str(mult)+') ....'))
   if side == 'BUY':
     refPrice = kutGetBid(kut, ccy)
   else:
     refPrice = kutGetAsk(kut, ccy)
   limitPrice = roundPrice(kut, 'kut', ccy, refPrice, side=side, distance=distance)
   orderId=kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy)
-  print(getCurrentTime() + ': [DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] ')
+  print(timeTag('[DEBUG: orderId=' + orderId + '; price=' + str(limitPrice) + '] '))
   refTime = time.time()
   nChases=0
   while True:
@@ -997,19 +997,19 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
       if nChases > maxChases and float(orderStatus['size'])==qty and float(orderStatus['filledSize']) == 0:
         leavesQty = kutCancelOrder(kut, orderId)
         if leavesQty == 0: break
-        print(getCurrentTime() + ': Cancelled')
+        print(timeTag('Cancelled'))
         return 0
       else:
         refTime = time.time()
         newLimitPrice = roundPrice(kut, 'kut', ccy, refPrice, side=side, distance=distance)
         if ((side == 'BUY' and newLimitPrice > limitPrice) or (side == 'SELL' and newLimitPrice < limitPrice)) and limitPrice!=refPrice:
-          print(getCurrentTime() + ': [DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']')
+          print(timeTag('[DEBUG: replace order; nChases=' + str(nChases) + '; price=' + str(limitPrice) + '->' + str(newLimitPrice) + ']'))
           limitPrice = newLimitPrice
           leavesQty = kutCancelOrder(kut, orderId)
           if leavesQty == 0: break
           orderId = kutPlaceOrder(kut, ticker, side, leavesQty, limitPrice, ccy)
         else:
-          print(getCurrentTime() + ': [DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']')
+          print(timeTag('[DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']'))
     time.sleep(1)
   orderStatus = kutGetOrder(kut, orderId)
   filledSize=float(orderStatus['filledSize'])
@@ -1018,7 +1018,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
     fill=0
   else:
     fill=filledValue/filledSize/mult
-  print(getCurrentTime() + ': Filled at ' + str(round(fill, 6)))
+  print(timeTag('Filled at ' + str(round(fill, 6))))
   return fill
 
 #############################################################################################
@@ -1319,7 +1319,7 @@ def ctAssertNoStepper():
     sys.exit(1)
 
 def ctBBTStepper(side, ccy, trade_qty):
-  print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ....')
+  print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct BBT account ... ',end='')
   buySell = 1 if side == 'BUY' else -1
   key='bbtStepperDict'
   d=cache('r',key)
@@ -1343,13 +1343,13 @@ def ctBBTStepper(side, ccy, trade_qty):
       else:
         continue
     else:
-      print((getCurrentTime() + ':').ljust(20) + ' Selecting BBT' + str(d['n']) + ' ....')
+      print('BBT' + str(d['n']))
       cache('w', key, d)
       break
   return bb
 
 def ctKUTStepper(side, ccy, trade_qty):
-  print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ....')
+  print((getCurrentTime() + ':').ljust(20) + ' Searching for the correct KUT account ... ',end='')
   buySell = 1 if side == 'BUY' else -1
   key='kutStepperDict'
   d=cache('r',key)
@@ -1383,7 +1383,7 @@ def ctKUTStepper(side, ccy, trade_qty):
       else:
         continue
     else:
-      print((getCurrentTime() + ':').ljust(20) + ' Selecting KUT' + str(d['n']) + ' ....')
+      print('KUT' + str(d['n']))
       cache('w', key, d)
       break
   return kut
@@ -1611,12 +1611,12 @@ def ctRun(ccy, notional, tgtBps, color):
           continue # to next iteration in While True loop
         else:
           realizedSlippageBps = ctPrintTradeStats(longFill, shortFill, basisBps, realizedSlippageBps)
-          print(getCurrentTime() + ': Done')
+          print(timeTag('Done'))
           print()
           speak('Done')
           break # Go to next program
-  print(getCurrentTime() + ': ' + termcolor.colored('Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps', 'red'))
-  print(getCurrentTime()+': All done')
+  print(timeTag(termcolor.colored('Avg realized slippage = ' + str(round(np.mean(realizedSlippageBps))) + 'bps', 'red')))
+  print(timeTag('All done'))
   speak('All done')
 
 #############################################################################################
@@ -1807,3 +1807,7 @@ def speak(text):
   except:
     print('[Speaking: "'+text+'"]')
     print()
+
+# Tag message with time
+def timeTag(msg):
+  return getCurrentTime()+': '+msg
