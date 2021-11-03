@@ -109,7 +109,8 @@ import os
 if os.environ.get('USERNAME')=='Simon':
   import filelock
   import json
-  fn = os.path.dirname(__file__) + '\\data\\Simon.json'
+  ROOT_PATH = '.' if 'COLAB' in os.environ else 'c:/onedrive/py'
+  fn = ROOT_PATH + '/data/Simon.json'
   with filelock.FileLock(fn + '.lock'):
     with open(fn) as f:
       sDict = json.load(f)
