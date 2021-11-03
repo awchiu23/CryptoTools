@@ -143,7 +143,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL']
   SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','ADA','ATOM','AXS','DOT','LUNA','MANA','SHIB','VET']
   SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','ADA','ATOM','AXS','DOT','LUNA','SHIB','VET']
-  SHARED_ETC_DICT['SHIFT'] = 15
+  SHARED_ETC_DICT['SHIFT'] = 20
   SHARED_ETC_DICT['SPREAD'] = 20
   SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'BTC':100000,'ETH':100000,'DOT':100000,'MANA': 20000, 'AXS': 50000, 'LINK': 100000, 'ADA': 50000}
   ############################################################################################################
