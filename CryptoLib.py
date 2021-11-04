@@ -938,7 +938,7 @@ def kutGetMaxLeverage(kut, ccy):
   df=cache('r',key)
   if df is None:
     df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
-    #df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
+    df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
   return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
 
 def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
@@ -947,10 +947,20 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
     return kut.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
   # Do not use @retry
   def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
-    try:
-      result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
-    except:
-      print(traceback.print_exc())
+    isOk=False
+    for i in range(3):
+      try:
+        result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
+        isOk=True
+        break
+      except ccxt.RateLimitExceeded:
+        print(timeTag('KUT rate limit exceeded; trying to recover ....'))
+        speak('KUT rate limit exceeded; trying to recover')
+        time.sleep(3)
+      except:
+        print(traceback.print_exc())
+        sys.exit(1)
+    if not isOk:
       sys.exit(1)
     #####
     try:

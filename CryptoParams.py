@@ -79,7 +79,7 @@ CR_EXT_DELTA_USDT = 0
 CR_CONFIGS_DICT=dict()
 CR_CONFIGS_DICT['IS_CALC_ESTS'] = True
 CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = True
-CR_CONFIGS_DICT['KUT_FUNDING_HISTORY_SLEEP'] = 2/3               # Number of seconds to wait before successive calls to API to get KUT payments
+CR_CONFIGS_DICT['KUT_FUNDING_HISTORY_SLEEP'] = 2/3               # Number of seconds to wait in-between successive calls to API for getting KUT payments
 
 ########
 # Shared
@@ -126,7 +126,9 @@ if os.environ.get('USERNAME')=='Simon':
     API_SECRETS_BB = sDict['API_SECRETS_BB']
     from win32api import GetKeyState
     from win32con import VK_CAPITAL
-    CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = bool(GetKeyState(VK_CAPITAL))
+    isCap=bool(GetKeyState(VK_CAPITAL))
+    CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] =isCap
+    CR_CONFIGS_DICT['IS_CALC_ESTS'] = isCap
   #####
   API_KEY_FTX = sDict['API_KEY_FTX']
   API_SECRET_FTX = sDict['API_SECRET_FTX']
@@ -147,34 +149,15 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL']
   SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC', 'ETH', 'FTT', 'XRP', 'DOGE', 'FTM', 'LINK', 'LTC', 'MATIC', 'SOL', 'ADA', 'ATOM', 'AXS', 'DOT', 'LUNA', 'SHIB', 'VET']
   SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','ADA','ATOM','AXS','DOT','LUNA','MANA','SHIB','VET']
-  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {
-    'BTC':50000,
-    'ETH':50000,
-    'XRP':50000,
-    'DOGE':50000,
-    'DOT':50000,
-    'FTM':50000,
-    'LINK':50000,
-    'LTC': 20000,
-    'MATIC':50000,
-    'SOL':50000,
-    'ADA': 50000,
-    'ATOM':50000,
-    'AXS': 50000,
-    'DOT':50000,
-    'LUNA':50000,
-    'MANA': 20000,
-    'SHIB':100000,
-    'VET':50000
-  }
+  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'ADA': 50000}
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=['DOGE','FTM']
-  my_FTX_BBT_KUT_flowless=['SHIB','VET']
+  my_FTX_BBT_KUT_flowless=['SHIB']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['LINK','LTC','MATIC','SOL','XRP']
-  my_FTX_KUT_flowless=['ADA','ATOM','DOT','MANA']
+  my_FTX_KUT_flowless=['ADA','ATOM','DOT','LUNA','MANA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
@@ -195,3 +178,7 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
   #CR_EXT_DELTA_USDT = 18020 #bbftx
+
+  # Temp for Nov 5:
+  API_KEYS_BB = sDict['API_KEYS_BB_NO_IP']
+  API_SECRETS_BB = sDict['API_SECRETS_BB_NO_IP']
