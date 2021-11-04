@@ -938,7 +938,7 @@ def kutGetMaxLeverage(kut, ccy):
   df=cache('r',key)
   if df is None:
     df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
-    df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
+    #df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
   return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
 
 def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
@@ -955,7 +955,7 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
         break
       except ccxt.RateLimitExceeded:
         print(timeTag('KUT rate limit exceeded; trying to recover ....'))
-        speak('KUT rate limit exceeded; trying to recover')
+        speak('Please tell Simon you heard this message')
         time.sleep(3)
       except:
         print(traceback.print_exc())
