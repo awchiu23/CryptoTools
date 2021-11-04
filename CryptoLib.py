@@ -895,11 +895,11 @@ def kutGetEstFundings(kut, ccy):
   return float(data['value']) * 3 * 365, float(data['predictedValue']) * 3 * 365
 
 @retry(wait_fixed=1000)
-def kutGetRiskLimit(kut,ccy):
-  if ccy in SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE']:
-    return SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'][ccy]
-  else:
-    return kut.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit']
+def kutGetRiskLimit(kut,ccy,isAllowOverrides=True):
+  if isAllowOverrides:
+    if ccy in SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE']:
+      return SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'][ccy]
+  return kut.futuresPublic_get_contracts_symbol({'symbol': kutGetCcy(ccy) + 'USDTM'})['data']['maxRiskLimit']
 
 @retry(wait_fixed=1000)
 def kutGetUSDTDict(kut):
