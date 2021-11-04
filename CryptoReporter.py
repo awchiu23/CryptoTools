@@ -524,7 +524,10 @@ class core:
       cl.dfSetFloat(df,'rate')
       oneDayFunding = df['rate'].mean() * 24 * 365
       prevFunding = df['rate'][-1] * 24 * 365
-      estFunding = cl.ftxGetEstFunding(self.api, ccy)
+      if CR_CONFIGS_DICT['IS_CALC_ESTS']:
+        estFunding = cl.ftxGetEstFunding(self.api, ccy)
+      else:
+        estFunding = 0
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
     #####
     self.makeIncomesStr()
@@ -605,8 +608,11 @@ class core:
         if len(df) > 0:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = cl.bbGetEstFunding1(self.api, ccy)
-      estFunding2 = cl.bbGetEstFunding2(self.api, ccy)
+      if CR_CONFIGS_DICT['IS_CALC_ESTS']:
+        estFunding = cl.bbGetEstFunding1(self.api, ccy)
+        estFunding2 = cl.bbGetEstFunding2(self.api, ccy)
+      else:
+        estFunding,estFunding2=0,0
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
@@ -666,8 +672,11 @@ class core:
         else:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = self.bbtGetEstFunding1_fast(ccy)
-      estFunding2 = self.bbtGetEstFunding2_fast(ccy)
+      if CR_CONFIGS_DICT['IS_CALC_ESTS']:
+        estFunding = self.bbtGetEstFunding1_fast(ccy)
+        estFunding2 = self.bbtGetEstFunding2_fast(ccy)
+      else:
+        estFunding,estFunding2=0,0
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
@@ -723,9 +732,12 @@ class core:
     self.nav = self.spots['SpotDeltaUSD'].sum()
     #####
     for ccy in self.validCcys:
-      oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
-      prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
-      estFunding = cl.dbGetEstFunding(self.api, ccy)
+      if CR_CONFIGS_DICT['IS_CALC_ESTS']:
+        oneDayFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 24)
+        prevFunding = cl.dbGetEstFunding(self.api, ccy, mins=60 * 8)
+        estFunding = cl.dbGetEstFunding(self.api, ccy)
+      else:
+        oneDayFunding, prevFunding, estFunding = 0
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding)
     #####
     self.makeIncomesStr()
@@ -786,8 +798,11 @@ class core:
         if len(df) > 0:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding = cl.kfGetEstFunding1(self.api, ccy)
-      estFunding2 = cl.kfGetEstFunding2(self.api, ccy)
+      if CR_CONFIGS_DICT['IS_CALC_ESTS']:
+        estFunding = cl.kfGetEstFunding1(self.api, ccy)
+        estFunding2 = cl.kfGetEstFunding2(self.api, ccy)
+      else:
+        estFunding,estFunding2=0,0
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()
@@ -871,7 +886,10 @@ class core:
         else:
           oneDayFunding = df.mean() * 3 * 365
           prevFunding = df[df.index[-1]].mean() * 3 * 365
-      estFunding,estFunding2 = self.kutGetEstFundings_fast(ccy)
+      if CR_CONFIGS_DICT['IS_CALC_ESTS']:
+        estFunding,estFunding2 = self.kutGetEstFundings_fast(ccy)
+      else:
+        estFunding,estFunding2 = 0,0
       self.makeFundingStr(ccy, oneDayFunding, prevFunding, estFunding, estFunding2)
     #####
     self.makeIncomesStr()

@@ -77,6 +77,7 @@ CR_AG_CCY_DICT = dict({'BTC': 0, 'ETH': 0, 'FTT':0})             # Aggregated cu
 CR_FTX_FLOWS_CCYS = ['BTC', 'ETH']                               # FTX-flows currencies; borrow/lending cash flows are calculated for use in income calculations
 CR_EXT_DELTA_USDT = 0
 CR_CONFIGS_DICT=dict()
+CR_CONFIGS_DICT['IS_CALC_ESTS'] = True
 CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = True
 CR_CONFIGS_DICT['KUT_FUNDING_HISTORY_SLEEP'] = 2/3               # Number of seconds to wait before successive calls to API to get KUT payments
 
@@ -141,12 +142,31 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':27})
-  SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL']
-  SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','ADA','ATOM','AXS','DOT','LUNA','MANA','SHIB','VET']
-  SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','ADA','ATOM','AXS','DOT','LUNA','SHIB','VET']
   SHARED_ETC_DICT['SHIFT'] = 20
   SHARED_ETC_DICT['SPREAD'] = 20
-  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'BTC':100000,'ETH':100000,'DOT':100000,'MANA': 20000, 'AXS': 50000, 'LINK': 100000, 'ADA': 50000,'LTC':30000}
+  SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL']
+  SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC', 'ETH', 'FTT', 'XRP', 'DOGE', 'FTM', 'LINK', 'LTC', 'MATIC', 'SOL', 'ADA', 'ATOM', 'AXS', 'DOT', 'LUNA', 'SHIB', 'VET']
+  SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','ADA','ATOM','AXS','DOT','LUNA','MANA','SHIB','VET']
+  SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {
+    'BTC':50000,
+    'ETH':50000,
+    'XRP':50000,
+    'DOGE':50000,
+    'DOT':50000,
+    'FTM':50000,
+    'LINK':50000,
+    'LTC': 20000,
+    'MATIC':50000,
+    'SOL':50000,
+    'ADA': 50000,
+    'ATOM':50000,
+    'AXS': 50000,
+    'DOT':50000,
+    'LUNA':50000,
+    'MANA': 20000,
+    'SHIB':100000,
+    'VET':50000
+  }
   ############################################################################################################
   my_FTX=[]
   my_FTX_BBT_KUT=['FTM']
