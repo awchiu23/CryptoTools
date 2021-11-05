@@ -135,7 +135,7 @@ def getCores(isRetry=True):
         isOk=False
         print('[WARNING: Corrupted results for ' + obj.name + '!]')
     print()
-    
+
   coresDict=dict()
   coresDict['ftx']=ftxCore
   coresDict['bb']=bbCore
