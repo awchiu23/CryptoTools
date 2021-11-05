@@ -145,12 +145,12 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'ADA': 50000}
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT_KUT=[]
+  my_FTX_BBT_KUT=['MATIC','XRP']
   my_FTX_BBT_KUT_flowless=['SHIB']
   my_FTX_BBT=[]
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI','XRP']
-  my_FTX_KUT_flowless=['ADA','ATOM','DOT','MANA','VET']
+  my_FTX_KUT=['DOGE','FTM','LINK','LTC','SOL','SUSHI']
+  my_FTX_KUT_flowless=['ADA','ATOM','DOT','LUNA','MANA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
