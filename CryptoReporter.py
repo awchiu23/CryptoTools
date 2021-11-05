@@ -1,5 +1,5 @@
-from CryptoParams import *
 import CryptoLib as cl
+from CryptoParams import *
 import pandas as pd
 import datetime
 import time
@@ -117,7 +117,7 @@ def getCores(isRetry=True):
   else:
     for n in range(SHARED_EXCH_DICT['kut']):
       kutCores.append(processCore('kut',spotDict,objs,n=n+1))
-  #####
+
   isOk=True
   try:
     cl.parallelRun(objs)

@@ -97,7 +97,7 @@ SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'CCY':0}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.2
+SMB_DICT['BASE_RATE']=0.15
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -109,16 +109,15 @@ SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 import os
 if os.environ.get('USERNAME')=='Simon':
   import SimonLib as sl
+  CR_CONFIGS_DICT['IS_CALC_ESTS'] = False
   if 'COLAB' in os.environ:
     API_KEYS_BB = sl.jLoad('API_KEYS_BB_NO_IP')
     API_SECRETS_BB = sl.jLoad('API_SECRETS_BB_NO_IP')
     APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
-    CR_CONFIGS_DICT['IS_CALC_ESTS'] = False
     CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = False
   else:
     API_KEYS_BB = sl.jLoad('API_KEYS_BB')
     API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
-    CR_CONFIGS_DICT['IS_CALC_ESTS'] = False
     from win32api import GetKeyState
     from win32con import VK_CAPITAL
     isCap=bool(GetKeyState(VK_CAPITAL))
