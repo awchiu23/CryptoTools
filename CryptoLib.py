@@ -369,6 +369,10 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
     except ccxt.RateLimitExceeded:
       print(timeTag('FTX rate limit exceeded; trying to recover ....'))
       time.sleep(3)
+    except ccxt.RequestTimeout:
+      print(timeTag('FTX request timed out; trying to recover ....'))
+      speak('Please tell Simon you heard this message - F T X request timed out')
+      time.sleep(3)
     except:
       print(traceback.print_exc())
       sys.exit(1)
@@ -938,7 +942,7 @@ def kutGetMaxLeverage(kut, ccy):
   df=cache('r',key)
   if df is None:
     df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
-    #df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
+    df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
   return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
 
 def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
@@ -955,7 +959,6 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
         break
       except ccxt.RateLimitExceeded:
         print(timeTag('KUT rate limit exceeded; trying to recover ....'))
-        speak('Please tell Simon you heard this message')
         time.sleep(3)
       except:
         print(traceback.print_exc())
@@ -1656,12 +1659,6 @@ def cache(mode,key,value=None):
       return cache.cacheDict[key]
     except:
       return None
-
-# Delay in CryptoTools based on currency choices
-def ccyDelay(ccy, base=0):
-  if not ccy in ['BTC','ETH']:
-    base+=1
-  time.sleep(base)
 
 # Cast column of dataframe to float
 def dfSetFloat(df,colName):
