@@ -108,36 +108,29 @@ SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 ##################################
 import os
 if os.environ.get('USERNAME')=='Simon':
-  import filelock
-  import json
-  ROOT_PATH = '.' if 'COLAB' in os.environ else 'c:/onedrive/py'
-  fn = ROOT_PATH + '/data/Simon.json'
-  with filelock.FileLock(fn + '.lock'):
-    with open(fn) as f:
-      sDict = json.load(f)
-  #####
+  import SimonLib as sl
   if 'COLAB' in os.environ:
-    API_KEYS_BB = sDict['API_KEYS_BB_NO_IP']
-    API_SECRETS_BB = sDict['API_SECRETS_BB_NO_IP']
+    API_KEYS_BB = sl.jLoad('API_KEYS_BB_NO_IP')
+    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB_NO_IP')
     APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
     CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] = False
   else:
-    API_KEYS_BB = sDict['API_KEYS_BB']
-    API_SECRETS_BB = sDict['API_SECRETS_BB']
+    API_KEYS_BB = sl.jLoad('API_KEYS_BB')
+    API_SECRETS_BB = sl.jLoad('API_SECRETS_BB')
     from win32api import GetKeyState
     from win32con import VK_CAPITAL
     isCap=bool(GetKeyState(VK_CAPITAL))
-    CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS'] =isCap
+    CR_CONFIGS_DICT['IS_KUT_CALC_PAYMENTS']=isCap
   #####
-  API_KEY_FTX = sDict['API_KEY_FTX']
-  API_SECRET_FTX = sDict['API_SECRET_FTX']
-  API_KEY_KF = sDict['API_KEY_KF']
-  API_SECRET_KF = sDict['API_SECRET_KF']
-  API_KEY_DB = sDict['API_KEY_DB']
-  API_SECRET_DB = sDict['API_SECRET_DB']
-  API_KEYS_KUT = sDict['API_KEYS_KUT']
-  API_SECRETS_KUT = sDict['API_SECRETS_KUT']
-  API_PASSWORDS_KUT = sDict['API_PASSWORDS_KUT']
+  API_KEY_FTX = sl.jLoad('API_KEY_FTX')
+  API_SECRET_FTX = sl.jLoad('API_SECRET_FTX')
+  API_KEY_KF = sl.jLoad('API_KEY_KF')
+  API_SECRET_KF = sl.jLoad('API_SECRET_KF')
+  API_KEY_DB = sl.jLoad('API_KEY_DB')
+  API_SECRET_DB = sl.jLoad('API_SECRET_DB')
+  API_KEYS_KUT = sl.jLoad('API_KEYS_KUT')
+  API_SECRETS_KUT = sl.jLoad('API_SECRETS_KUT')
+  API_PASSWORDS_KUT = sl.jLoad('API_PASSWORDS_KUT')
   #####
   CT_CONFIGS_DICT['IS_BBT_STEPPER'] = True
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
@@ -177,7 +170,3 @@ if os.environ.get('USERNAME')=='Simon':
   #CR_AG_CCY_DICT['ETH']=33.995 #bbftx
   #CR_AG_CCY_DICT['XRP'] = 261190 #bbftx
   #CR_EXT_DELTA_USDT = 18020 #bbftx
-
-  # Temp for Nov 5:
-  API_KEYS_BB = sDict['API_KEYS_BB_NO_IP']
-  API_SECRETS_BB = sDict['API_SECRETS_BB_NO_IP']
