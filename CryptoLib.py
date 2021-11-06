@@ -1067,12 +1067,8 @@ def kutCrossOrder(kutNB, kutNS, ccy, trade_qty, distance=0):
     fillSAvg = (fillS1 * (qty - leavesQtyS) + fillS2 * leavesQtyS) / qty
     fillBAvg=fillB1
   else: # partial fills for both
-    fillB2 = kutRelOrder('BUY', kutB, ccy, leavesQtyB * mult, maxChases=888, distance=distance)
-    fillS2 = kutRelOrder('SELL', kutS, ccy, leavesQtyS * mult, maxChases=888, distance=distance)
-    print(timeTag('[DEBUG: fillB2=' + str(fillB2) + ']'))
-    print(timeTag('[DEBUG: fillS2=' + str(fillS2) + ']'))
-    fillBAvg = (fillB1 * (qty - leavesQtyB) + fillB2 * leavesQtyB) / qty
-    fillSAvg = (fillS1 * (qty - leavesQtyS) + fillS2 * leavesQtyS) / qty
+    print('kutCrossOrder abnormal termination!')
+    sys.exit(1)
   print(timeTag('[DEBUG: fillBAvg=' + str(fillBAvg) + ']'))
   print(timeTag('[DEBUG: fillSAvg=' + str(fillSAvg) + ']'))
   return fillBAvg / fillSAvg - 1 # slippage
