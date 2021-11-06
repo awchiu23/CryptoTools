@@ -97,7 +97,7 @@ SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'CCY':0}
 #############
 SMB_DICT=dict()
 SMB_DICT['HALF_LIFE_HOURS']=8
-SMB_DICT['BASE_RATE']=0.15
+SMB_DICT['BASE_RATE']=0.11
 SMB_DICT['BASE_BASIS']=SMB_DICT['BASE_RATE']/365
 SMB_DICT['USDT_COLLATERAL_COVERAGE']=1/6
 
@@ -140,8 +140,8 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['SHIFT'] = 10
   SHARED_ETC_DICT['SPREAD'] = 20
   SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI']
-  SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC', 'ETH', 'FTT', 'XRP', 'DOGE', 'FTM', 'LINK', 'LTC', 'MATIC', 'SOL', 'SUSHI', 'ADA', 'ATOM', 'AXS', 'DOT', 'LUNA', 'SHIB', 'VET']
-  SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI', 'ADA','ATOM','AXS','DOT','GRT','LUNA','MANA','SHIB','VET']
+  SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC', 'ETH', 'FTT', 'XRP', 'DOGE', 'FTM', 'LINK', 'LTC', 'MATIC', 'SOL', 'SUSHI', 'ADA', 'ATOM', 'AXS', 'DOT', 'ICP','LUNA', 'SHIB', 'VET']
+  SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI', 'ADA','ATOM','AXS','DOT','GRT','ICP','LUNA','MANA','SHIB','VET']
   SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'ADA': 50000}
   ############################################################################################################
   my_FTX=[]
@@ -150,7 +150,7 @@ if os.environ.get('USERNAME')=='Simon':
   my_FTX_BBT=['OMG']
   my_FTX_BBT_flowless=[]
   my_FTX_KUT=['DOGE','FTM','LINK','LTC','SOL','SUSHI']
-  my_FTX_KUT_flowless=['ATOM','DOT','GRT','LUNA','MANA','VET']
+  my_FTX_KUT_flowless=['ATOM','DOT','GRT','ICP','LUNA','MANA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0

@@ -343,7 +343,6 @@ def ftxRelOrder(side,ftx,ticker,trade_qty,maxChases=0,distance=0):
       time.sleep(3)
     except ccxt.RequestTimeout:
       print(timeTag('FTX request timed out; trying to recover ....'))
-      speak('Please tell Simon you heard this message - F T X request timed out')
       time.sleep(3)
     except:
       print(traceback.print_exc())
