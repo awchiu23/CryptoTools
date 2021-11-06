@@ -957,10 +957,9 @@ def kutCalcFill(orderStatus,mult):
   filledSize = float(orderStatus['filledSize'])
   filledValue = float(orderStatus['filledValue'])
   if filledSize == 0:
-    fill = 0
+    return 0
   else:
-    fill = filledValue / filledSize / mult
-  return fill
+    return filledValue / filledSize / mult
 
 def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   assertSide(side)
@@ -1057,16 +1056,23 @@ def kutCrossOrder(kutNB, kutNS, ccy, trade_qty, distance=0):
   if leavesQtyB==0 and leavesQtyS==0:
     print(timeTag('[DEBUG: clean cross!]'))
     return 0 # zero slippage
-  elif leavesQtyB>0:
+  elif leavesQtyB>0 and leavesQtyS==0:
     fillB2=kutRelOrder('BUY', kutB, ccy, leavesQtyB*mult, maxChases=888, distance=distance)
     print(timeTag('[DEBUG: fillB2=' + str(fillB2) + ']'))
     fillBAvg=(fillB1*(qty-leavesQtyB) + fillB2*leavesQtyB)/qty
     fillSAvg=fillS1
-  else:
+  elif leavesQtyB==0 and leavesQtyS>0:
     fillS2=kutRelOrder('SELL', kutS, ccy, leavesQtyS*mult, maxChases=888, distance=distance)
     print(timeTag('[DEBUG: fillS2=' + str(fillS2) + ']'))
     fillSAvg = (fillS1 * (qty - leavesQtyS) + fillS2 * leavesQtyS) / qty
     fillBAvg=fillB1
+  else: # partial fills for both
+    fillB2 = kutRelOrder('BUY', kutB, ccy, leavesQtyB * mult, maxChases=888, distance=distance)
+    fillS2 = kutRelOrder('SELL', kutS, ccy, leavesQtyS * mult, maxChases=888, distance=distance)
+    print(timeTag('[DEBUG: fillB2=' + str(fillB2) + ']'))
+    print(timeTag('[DEBUG: fillS2=' + str(fillS2) + ']'))
+    fillBAvg = (fillB1 * (qty - leavesQtyB) + fillB2 * leavesQtyB) / qty
+    fillSAvg = (fillS1 * (qty - leavesQtyS) + fillS2 * leavesQtyS) / qty
   print(timeTag('[DEBUG: fillBAvg=' + str(fillBAvg) + ']'))
   print(timeTag('[DEBUG: fillSAvg=' + str(fillSAvg) + ']'))
   return fillBAvg / fillSAvg - 1 # slippage
