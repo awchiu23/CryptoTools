@@ -137,20 +137,20 @@ if os.environ.get('USERNAME')=='Simon':
   CT_CONFIGS_DICT['IS_KUT_STEPPER'] = True
   APOPHIS_CONFIGS_DICT['IS_IP_WHITELIST'] = False
   SHARED_EXCH_DICT=dict({'ftx':1,'bbt':1,'bb':0,'db':0,'kf':0,'kut':27})
-  SHARED_ETC_DICT['SHIFT'] = 15
+  SHARED_ETC_DICT['SHIFT'] = 10
   SHARED_ETC_DICT['SPREAD'] = 20
   SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI']
   SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC', 'ETH', 'FTT', 'XRP', 'DOGE', 'FTM', 'LINK', 'LTC', 'MATIC', 'SOL', 'SUSHI', 'ADA', 'ATOM', 'AXS', 'DOT', 'LUNA', 'SHIB', 'VET']
-  SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI', 'ADA','ATOM','AXS','DOT','LUNA','MANA','SHIB','VET']
+  SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','GRT','LINK','LTC','MATIC','SOL','SUSHI', 'ADA','ATOM','AXS','DOT','LUNA','MANA','SHIB','VET']
   SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'ADA': 50000}
   ############################################################################################################
   my_FTX=[]
-  my_FTX_BBT_KUT=['MATIC','SUSHI','XRP']
-  my_FTX_BBT_KUT_flowless=['ATOM','SHIB']
-  my_FTX_BBT=[]
+  my_FTX_BBT_KUT=['MATIC','XRP']
+  my_FTX_BBT_KUT_flowless=['SHIB']
+  my_FTX_BBT=['OMG']
   my_FTX_BBT_flowless=[]
-  my_FTX_KUT=['DOGE','FTM','LINK','LTC','SOL']
-  my_FTX_KUT_flowless=['ADA','DOT','LUNA','MANA','VET']
+  my_FTX_KUT=['DOGE','FTM','LINK','LTC','SOL','SUSHI']
+  my_FTX_KUT_flowless=['ADA','ATOM','DOT','GRT','LUNA','MANA','VET']
   ############################################################################################################
   for ccy in (my_FTX + my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless): CR_QUOTE_CCY_DICT[ccy] = 4
   for ccy in (my_FTX_BBT_KUT + my_FTX_BBT_KUT_flowless + my_FTX_BBT + my_FTX_BBT_flowless + my_FTX_KUT + my_FTX_KUT_flowless):  CR_AG_CCY_DICT[ccy] = 0
