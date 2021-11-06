@@ -914,46 +914,55 @@ def kutGetMaxLeverage(kut, ccy):
   df=cache('r',key)
   if df is None:
     df = pd.DataFrame(kut.futuresPublic_get_contracts_active()['data']).set_index('symbol')
-    df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
+    #df.loc['ADAUSDTM','maxLeverage']=10 # Special fix for ADA
   return float(df.loc[kutGetCcy(ccy)+'USDTM','maxLeverage'])
 
-def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
-  @retry(wait_fixed=1000)
-  def kutGetOrder(kut, orderId):
-    return kut.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
-  # Do not use @retry
-  def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
-    isOk=False
-    for i in range(3):
-      try:
-        result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
-        isOk=True
-        break
-      except ccxt.RateLimitExceeded:
-        print(timeTag('KUT rate limit exceeded; trying to recover ....'))
-        time.sleep(3)
-      except:
-        print(traceback.print_exc())
-        sys.exit(1)
-    if not isOk:
-      sys.exit(1)
-    #####
+@retry(wait_fixed=1000)
+def kutGetOrder(kut, orderId):
+  return kut.futuresPrivate_get_orders_order_id({'order-id': orderId})['data']
+
+def kutPlaceOrder(kut, ticker, side, qty, limitPrice, ccy):
+  isOk=False
+  for i in range(3):
     try:
-      return result['data']['orderId']
+      result=kut.futuresPrivate_post_orders({'clientOid': uuid.uuid4().hex, 'side': side.lower(), 'symbol': ticker, 'type': 'limit', 'leverage': kutGetMaxLeverage(kut, ccy), 'price': limitPrice, 'size': qty})
+      isOk=True
+      break
+    except ccxt.RateLimitExceeded:
+      print(timeTag('KUT rate limit exceeded; trying to recover ....'))
+      time.sleep(3)
     except:
-      print(result)
+      print(traceback.print_exc())
       sys.exit(1)
-  # Do not use @retry
-  def kutCancelOrder(kut, orderId):
-    try:
-      kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
-    except:
-      pass
-    while True:
-      orderStatus = kutGetOrder(kut, orderId)
-      if orderStatus['status'] == 'done': return float(orderStatus['size']) - float(orderStatus['filledSize'])
-      time.sleep(1)
+  if not isOk:
+    sys.exit(1)
   #####
+  try:
+    return result['data']['orderId']
+  except:
+    print(result)
+    sys.exit(1)
+
+def kutCancelOrder(kut, orderId):
+  try:
+    kut.futuresPrivate_delete_orders_order_id({'order-id': orderId})
+  except:
+    pass
+  while True:
+    orderStatus = kutGetOrder(kut, orderId)
+    if orderStatus['status'] == 'done': return float(orderStatus['size']) - float(orderStatus['filledSize'])
+    time.sleep(1)
+
+def kutCalcFill(orderStatus,mult):
+  filledSize = float(orderStatus['filledSize'])
+  filledValue = float(orderStatus['filledValue'])
+  if filledSize == 0:
+    fill = 0
+  else:
+    fill = filledValue / filledSize / mult
+  return fill
+
+def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
   assertSide(side)
   ticker=kutGetCcy(ccy)+'USDTM'
   mult=kutGetMult(kut, ccy)
@@ -998,14 +1007,69 @@ def kutRelOrder(side, kut, ccy, trade_qty, maxChases=0, distance=0):
           print(timeTag('[DEBUG: leave order alone; nChases=' + str(nChases) + '; price=' + str(limitPrice) + ']'))
     time.sleep(1)
   orderStatus = kutGetOrder(kut, orderId)
-  filledSize=float(orderStatus['filledSize'])
-  filledValue=float(orderStatus['filledValue'])
-  if filledSize==0:
-    fill=0
+  return kutCalcFill(orderStatus,mult)
+
+def kutCrossOrder(kutNB, kutNS, ccy, trade_qty, distance=0):
+  @retry(wait_fixed=1000)
+  def getData(kut,ticker):
+    return kut.futuresPublic_get_ticker({'symbol': ticker})['data']
+  #####
+  if kutNB==kutNS:
+    print('Cannot cross against oneself!')
+    sys.exit(1)
+  kutB=kutCCXTInit(kutNB)
+  kutS=kutCCXTInit(kutNS)
+  ticker=kutGetCcy(ccy)+'USDTM'
+  mult=kutGetMult(kutB, ccy)
+  qty=round(trade_qty/mult)
+  print(timeTag('Monitoring '+ticker+' in KUT ....'))
+  tickSize=kutGetTickSize(kutB, ccy)
+  prevMid=0
+  stableCount = 0
+  while True:
+    data = getData(kutB,ticker)
+    bid = float(data['bestBidPrice'])
+    ask = float(data['bestAskPrice'])
+    mid = roundPrice(kutB, 'kut', ccy, (bid+ask)/2, side='BUY', distance=0)
+    spread = round((ask-bid)/tickSize)
+    if bid < prevMid < ask:
+      stableCount+=1
+    else:
+      stableCount=0
+    prevMid = mid
+    print(timeTag('Spread='+str(spread)+'; stable count='+str(stableCount)))
+    if spread>=2 and stableCount >=2: break
+    time.sleep(2)
+  suffix = ' (qty=' + str(qty) + '; mult=' + str(mult) + ') ....'
+  print(timeTag('Sending buy order in KUT' + str(kutNB) + suffix))
+  print(timeTag('Sending sell order in KUT' + str(kutNS) + suffix))
+  buyOrderId = kutPlaceOrder(kutB, ticker, 'BUY', qty, mid, ccy)
+  print(timeTag('[DEBUG: buyOrderId=' + buyOrderId + '; price=' + str(mid) + '] '))
+  sellOrderId = kutPlaceOrder(kutS, ticker, 'SELL', qty, mid, ccy)
+  print(timeTag('[DEBUG: sellOrderId=' + sellOrderId + '; price=' + str(mid) + '] '))
+  time.sleep(3)
+  leavesQtyB=kutCancelOrder(kutB,buyOrderId)
+  leavesQtyS=kutCancelOrder(kutS,sellOrderId)
+  fillB1 = kutCalcFill(kutGetOrder(kutB, buyOrderId), mult)
+  fillS1 = kutCalcFill(kutGetOrder(kutS, sellOrderId), mult)
+  print(timeTag('[DEBUG: leavesQtyB='+str(round(leavesQtyB))+'; fillB1=' + str(fillB1) + ']'))
+  print(timeTag('[DEBUG: leavesQtyS='+str(round(leavesQtyS))+'; fillS1='+str(fillS1)+']'))
+  if leavesQtyB==0 and leavesQtyS==0:
+    print(timeTag('[DEBUG: clean cross!]'))
+    return 0 # zero slippage
+  elif leavesQtyB>0:
+    fillB2=kutRelOrder('BUY', kutB, ccy, leavesQtyB*mult, maxChases=888, distance=distance)
+    print(timeTag('[DEBUG: fillB2=' + str(fillB2) + ']'))
+    fillBAvg=(fillB1*(qty-leavesQtyB) + fillB2*leavesQtyB)/qty
+    fillSAvg=fillS1
   else:
-    fill=filledValue/filledSize/mult
-  print(timeTag('Filled at ' + str(round(fill, 6))))
-  return fill
+    fillS2=kutRelOrder('SELL', kutS, ccy, leavesQtyS*mult, maxChases=888, distance=distance)
+    print(timeTag('[DEBUG: fillS2=' + str(fillS2) + ']'))
+    fillSAvg = (fillS1 * (qty - leavesQtyS) + fillS2 * leavesQtyS) / qty
+    fillBAvg=fillB1
+  print(timeTag('[DEBUG: fillBAvg=' + str(fillBAvg) + ']'))
+  print(timeTag('[DEBUG: fillSAvg=' + str(fillSAvg) + ']'))
+  return fillBAvg / fillSAvg - 1 # slippage
 
 #############################################################################################
 
