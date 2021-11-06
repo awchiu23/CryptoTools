@@ -1745,11 +1745,14 @@ def getMaxAbsPosUSD(exch, ccy, spotDeltaUSDAdj=0, posMult=3, negMult=6):
   return notional
 
 # Get current time
-def getCurrentTime(isCondensed=False):
+def getCurrentTime(isCondensed=False,offsetH=0):
+  t=datetime.datetime.today()
+  if offsetH!=0:
+    t=t+datetime.timedelta(hours=offsetH)
   if isCondensed:
-    return datetime.datetime.today().strftime('%H:%M:%S')
+    return t.strftime('%H:%M:%S')
   else:
-    return datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    return t.strftime('%Y-%m-%d %H:%M:%S')
 
 # Get values over next 1440 minutes (one day) with exponential decay features
 def getOneDayDecayedValues(current,terminal,halfLifeHours):
