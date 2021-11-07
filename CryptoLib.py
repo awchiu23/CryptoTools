@@ -1289,7 +1289,7 @@ def caRun(ccy, color):
   #####
   printHeader(ccy+'a')
   col1N = 20
-  print('Column 1:'.ljust(col1N)+'USD marginal rate / USDT marginal rate')
+  print('Column 1:'.ljust(col1N)+'USD borrow rate / USDT borrow rate')
   print('Columns 2+:'.ljust(col1N)+'Smart basis / raw basis (est. funding rate)')
   print()
   #####
