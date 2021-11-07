@@ -1236,7 +1236,6 @@ def getSmartBasisDict(apiDict, ccy, fundingDict, isSkipAdj=False):
   if 'kut' in validExchs:
     kutPrices = getPrices('kut',kut,ccy)
     objs.append(kutPrices)
-
   parallelRun(objs)
   #####
   d = dict()
@@ -1844,6 +1843,10 @@ def sleepUntil(h, m, s):
 # Safer del function
 def safeDel(d, key):
   if key in d.keys(): del d[key]
+
+# Trigger serial run for objects
+def serialRun(objs):
+  for obj in objs: obj.run()
 
 # Speak text
 def speak(text):
