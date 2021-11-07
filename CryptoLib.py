@@ -279,7 +279,11 @@ def ftxGetEstFunding(ftx, ccy):
 
 @retry(wait_fixed=1000)
 def ftxGetEstBorrow(ftx, ccy=None):
-  s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
+  key='ftxGetEstBorrow'
+  s=cacheMinute('r',key)
+  if s is None:
+    s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
+    cacheMinute('w',key,s)
   if ccy is None:
     return s
   else:
@@ -287,7 +291,11 @@ def ftxGetEstBorrow(ftx, ccy=None):
 
 @retry(wait_fixed=1000)
 def ftxGetEstLending(ftx, ccy=None):
-  s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
+  key='ftxGetEstLending'
+  s = cacheMinute('r', key)
+  if s is None:
+    s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
+    cacheMinute('w',key,s)
   if ccy is None:
     return s
   else:
@@ -1078,25 +1086,16 @@ def kutCrossOrder(kutNB, kutNS, ccy, trade_qty, distance=0):
 # Smart basis models
 ####################
 def getFundingDict(apiDict,ccy):
-  def getMarginal(ftxWallet,borrowS,lendingS,ccy):
-    if ftxWallet.loc[ccy, 'total'] >= 0:
-      return lendingS[ccy]
-    else:
-      return borrowS[ccy]
-  #####
   ftx = apiDict['ftx']
   bb = apiDict['bb']
   db = apiDict['db']
   kf = apiDict['kf']
   kut = apiDict['kut']
   #####
-  # Common
-  ftxWallet = ftxGetWallet(ftx)
   borrowS = ftxGetEstBorrow(ftx)
-  lendingS = ftxGetEstLending(ftx)
   d=dict()
-  d['ftxEstMarginalUSD'] = getMarginal(ftxWallet,borrowS,lendingS,'USD')
-  d['ftxEstMarginalUSDT'] = getMarginal(ftxWallet,borrowS,lendingS,'USDT')
+  d['ftxEstBorrowUSD'] = borrowS['USD']
+  d['ftxEstBorrowUSDT'] = borrowS['USDT']
   #####
   # Ccy-specific
   d['Ccy'] = ccy
@@ -1120,10 +1119,10 @@ def getFundingDict(apiDict,ccy):
 #############################################################################################
 
 def getOneDayShortSpotEdge(fundingDict):
-  return getOneDayDecayedMean(fundingDict['ftxEstMarginalUSD'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365
+  return getOneDayDecayedMean(fundingDict['ftxEstBorrowUSD'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365
 
 def getOneDayUSDTCollateralBleed(fundingDict):
-  return -getOneDayDecayedMean(fundingDict['ftxEstMarginalUSDT'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365 * SMB_DICT['USDT_COLLATERAL_COVERAGE']
+  return -getOneDayDecayedMean(fundingDict['ftxEstBorrowUSDT'], SMB_DICT['BASE_RATE'], SMB_DICT['HALF_LIFE_HOURS']) / 365 * SMB_DICT['USDT_COLLATERAL_COVERAGE']
 
 def getOneDayShortFutEdge(hoursInterval,basis,snapFundingRate,estFundingRate,pctElapsedPower=1,prevFundingRate=None,isKF=False,isKU=False):
   # gain on projected basis mtm after 1 day
@@ -1301,7 +1300,7 @@ def caRun(ccy, color):
     fundingDict = getFundingDict(apiDict,ccy)
     smartBasisDict = getSmartBasisDict(apiDict,ccy, fundingDict, isSkipAdj=True)
     print(getCurrentTime(isCondensed=True).ljust(10),end='')
-    print(termcolor.colored((str(round(fundingDict['ftxEstMarginalUSD'] * 100))+'/'+str(round(fundingDict['ftxEstMarginalUSDT'] * 100))).ljust(col1N-10),'red'),end='')
+    print(termcolor.colored((str(round(fundingDict['ftxEstBorrowUSD'] * 100))+'/'+str(round(fundingDict['ftxEstBorrowUSDT'] * 100))).ljust(col1N-10),'red'),end='')
     for exch in validExchs:
       process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf', 'kut'], color)
     print()
@@ -1493,7 +1492,7 @@ def ctRun(ccy, notional, tgtBps, color):
           safeDel(smartBasisDict,exch+'Basis')
 
       # Remove spots when high spot rate
-      if CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] and fundingDict['ftxEstMarginalUSD'] >= 1:
+      if CT_CONFIGS_DICT['IS_HIGH_USD_RATE_PAUSE'] and fundingDict['ftxEstBorrowUSD'] >= 1:
         for key in filterDict(smartBasisDict, 'spot'):
           del smartBasisDict[key]
 
@@ -1695,6 +1694,24 @@ def cache(mode,key,value=None):
       return cache.cacheDict[key]
     except:
       return None
+
+def cacheMinute(mode,key,value=None):
+  if not hasattr(cacheMinute, 'cacheMinuteDict'):
+    cacheMinute.cacheMinuteDict=dict()
+  if mode=='w':
+    cacheMinute.cacheMinuteDict[key]=value
+    cacheMinute.cacheMinuteDict[key+'_time']=time.time()
+  elif mode=='r':
+    prevTime=cacheMinute.cacheMinuteDict.get(key+'_time',None)
+    if prevTime is None:
+      return None
+    elif time.time()-prevTime>=60:
+      return None
+    else:
+      try:
+        return cacheMinute.cacheMinuteDict[key]
+      except:
+        return None
 
 # Cast column of dataframe to float
 def dfSetFloat(df,colName):
