@@ -1322,11 +1322,6 @@ def caRun(ccy, color):
     print(termcolor.colored(z.ljust(n), color), end='')
   #####
   printHeader(ccy+'a')
-  col1N = 20
-  print('Column 1:'.ljust(col1N)+'USD borrow rate / USDT borrow rate')
-  print('Columns 2+:'.ljust(col1N)+'Smart basis / raw basis (est. funding rate)')
-  print()
-  #####
   validExchs=getValidExchs(ccy)
   apiDict = getApiDict()
   #####
@@ -1334,7 +1329,7 @@ def caRun(ccy, color):
     fundingDict = getFundingDict(apiDict,ccy)
     smartBasisDict = getSmartBasisDict(apiDict,ccy, fundingDict, isSkipAdj=True)
     print(getCurrentTime(isCondensed=True).ljust(10),end='')
-    print(termcolor.colored((str(round(fundingDict['ftxEstBorrowUSD'] * 100))+'/'+str(round(fundingDict['ftxEstBorrowUSDT'] * 100))).ljust(col1N-10),'red'),end='')
+    print(termcolor.colored((str(round(fundingDict['ftxEstBorrowUSD'] * 100))+'/'+str(round(fundingDict['ftxEstBorrowUSDT'] * 100))).ljust(10),'red'),end='')
     for exch in validExchs:
       process(exch, fundingDict, smartBasisDict, exch in ['bb', 'bbt', 'kf', 'kut'], color)
     print()
@@ -1354,7 +1349,7 @@ def ctInit(ccy, notional, tgtBps):
   printHeader(ccy+'t')
   print('Per Trade Notional: $'+str(notional))
   print('Per Trade Quantity: '+str(round(qty, 6)))
-  print('Target:             '+str(round(tgtBps))+'bps')
+  if tgtBps!=0: print('Target:             '+str(round(tgtBps))+'bps')
   print()
   if CT_CONFIGS_DICT['IS_BBT_STEPPER']: cache('w','bbtStepperDict',None)    
   if CT_CONFIGS_DICT['IS_KUT_STEPPER']: cache('w','kutStepperDict',None)

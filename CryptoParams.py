@@ -141,7 +141,7 @@ if os.environ.get('USERNAME')=='Simon':
   SHARED_ETC_DICT['FTX_SPOT_USED'] = ['BTC','ETH','FTT','XRP','DOGE','FTM','LINK','LTC','MATIC','OMG','SOL','SUSHI']
   SHARED_ETC_DICT['BBT_MONITOR_UNIVERSE'] = ['BTC', 'ETH', 'FTT', 'XRP', 'DOGE', 'FTM', 'LINK', 'LTC', 'MATIC','SOL', 'SUSHI', 'ADA', 'ATOM', 'AXS', 'CHZ','DOT', 'ENJ','LUNA', 'SHIB', 'VET']
   SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'] = ['BTC','ETH','XRP','DOGE','FTM','LINK','LTC','MATIC','SOL','SUSHI', 'ADA','ATOM','AXS','CHZ','DOT','ENJ','GRT','LUNA','MANA','SHIB','VET']
-  #SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'].extend(['ONE','DYDX','SAND'])
+  #SHARED_ETC_DICT['KUT_MONITOR_UNIVERSE'].extend(['ALICE','ONE'])
   SHARED_ETC_DICT['KUT_RISKLIMIT_OVERRIDE'] = {'ADA': 50000}
   ############################################################################################################
   my_FTX=['OMG']
