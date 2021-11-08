@@ -313,11 +313,7 @@ def ftxGetEstFunding(ftx, ccy):
 
 @retry(wait_fixed=1000)
 def ftxGetEstBorrow(ftx, ccy=None):
-  key='ftxGetEstBorrow'
-  s=cacheMinute('r',key)
-  if s is None:
-    s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
-    cacheMinute('w',key,s)
+  s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
   if ccy is None:
     return s
   else:
@@ -325,11 +321,7 @@ def ftxGetEstBorrow(ftx, ccy=None):
 
 @retry(wait_fixed=1000)
 def ftxGetEstLending(ftx, ccy=None):
-  key='ftxGetEstLending'
-  s = cacheMinute('r', key)
-  if s is None:
-    s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
-    cacheMinute('w',key,s)
+  s=pd.DataFrame(ftx.private_get_spot_margin_lending_rates()['result']).set_index('coin')['estimate'].astype(float) * 24 * 365
   if ccy is None:
     return s
   else:
@@ -1728,24 +1720,6 @@ def cache(mode,key,value=None):
       return cache.cacheDict[key]
     except:
       return None
-
-def cacheMinute(mode,key,value=None):
-  if not hasattr(cacheMinute, 'cacheMinuteDict'):
-    cacheMinute.cacheMinuteDict=dict()
-  if mode=='w':
-    cacheMinute.cacheMinuteDict[key]=value
-    cacheMinute.cacheMinuteDict[key+'_time']=time.time()
-  elif mode=='r':
-    prevTime=cacheMinute.cacheMinuteDict.get(key+'_time',None)
-    if prevTime is None:
-      return None
-    elif time.time()-prevTime>=60:
-      return None
-    else:
-      try:
-        return cacheMinute.cacheMinuteDict[key]
-      except:
-        return None
 
 # Cast column of dataframe to float
 def dfSetFloat(df,colName):
