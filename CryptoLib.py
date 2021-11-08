@@ -51,6 +51,40 @@ class kutGetRiskDfs:
     self.availableBalance = float(kutGetUSDTDict(self.api)['availableBalance'])
     self.riskDf = kutGetRiskDf(self.api,availableBalance=self.availableBalance)
 
+class kutGetCcyData:
+  def __init__(self, ccy, apiDict, riskDfs):
+    self.ccy = ccy
+    self.apiDict = apiDict
+    self.riskDfs = riskDfs
+
+  def run(self):
+    ccy2 = kutGetCcy(self.ccy)
+    self.df = pd.DataFrame()
+    for i in range(SHARED_EXCH_DICT['kut']):
+      if ccy2 + 'USDTM' in self.riskDfs[i].riskDf.index:
+        s = self.riskDfs[i].riskDf.loc[ccy2 + 'USDTM']
+        self.df = self.df.append({'account': 'KUT' + str(i + 1),
+                                  'liq': s['liq'],
+                                  'markValue': s['markValue'],
+                                  'maintMargin': s['maintMargin'],
+                                  'ratio': s['ratio']}, ignore_index=True)
+    if len(self.df) > 0:
+      self.df = self.df.set_index('account')
+      self.liq = self.df['liq'].min()
+      self.ratio = self.df['ratio'].min()
+      self.futDeltaUSD = self.df['markValue'].sum()
+    #####
+    SHARED_CCY_DICT[self.ccy] = {'futExch': ['ftx', 'kut']}
+    self.fDict = getFundingDict(self.apiDict, self.ccy)
+    self.sbDict = getSmartBasisDict(self.apiDict, self.ccy, self.fDict, isSkipAdj=True)
+    self.yld = (self.fDict['kutEstFunding1'] + self.fDict['kutEstFunding2']) / 2
+    self.sb = self.sbDict['kutSmartBasis']
+    if self.ccy in SHARED_ETC_DICT['FTX_SPOT_USED']:
+      self.yld -= self.fDict['ftxEstBorrowUSD']
+    else:
+      self.yld -= self.fDict['ftxEstFunding']
+      self.sb -= self.sbDict['ftxSmartBasis']
+
 #####################################################################################################################################
 
 ###########
