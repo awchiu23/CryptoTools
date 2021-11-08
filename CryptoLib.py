@@ -316,6 +316,7 @@ def ftxGetEstBorrow(ftx, ccy=None):
   key='ftxGetEstBorrow'
   s=cacheMinute('r',key)
   if s is None:
+    print('refresh')
     s=pd.DataFrame(ftx.private_get_spot_margin_borrow_rates()['result']).set_index('coin')['estimate'].astype(float)*24*365
     cacheMinute('w',key,s)
   if ccy is None:
